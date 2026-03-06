@@ -9,7 +9,7 @@
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
             <h3 class="font-bold text-gray-800"><i class="fas fa-edit text-amber-500 mr-2"></i>Edit: {{ $customer->name }}</h3>
         </div>
-        <form action="{{ route('customers.update', $customer->id) }}" method="POST" class="p-6">
+        <form action="{{ route('customers.update', $customer->id) }}" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf @method('PUT')
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -43,17 +43,27 @@
                     <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-id-card text-cyan-500 mr-2"></i>Identity Proof</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="form-label">ID Type <span class="text-red-500">*</span></label>
+                            <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
                             <select name="id_type" class="form-input" required>
-                                <option value="aadhaar" {{ old('id_type', $customer->id_type) == 'aadhaar' ? 'selected' : '' }}>Aadhaar Card</option>
-                                <option value="passport" {{ old('id_type', $customer->id_type) == 'passport' ? 'selected' : '' }}>Passport</option>
+                                <option value="aadhaar"         {{ old('id_type', $customer->id_type) == 'aadhaar'         ? 'selected' : '' }}>Aadhaar Card</option>
+                                <option value="passport"        {{ old('id_type', $customer->id_type) == 'passport'        ? 'selected' : '' }}>Passport</option>
                                 <option value="driving_license" {{ old('id_type', $customer->id_type) == 'driving_license' ? 'selected' : '' }}>Driving License</option>
-                                <option value="voter_id" {{ old('id_type', $customer->id_type) == 'voter_id' ? 'selected' : '' }}>Voter ID</option>
+                                <option value="voter_id"        {{ old('id_type', $customer->id_type) == 'voter_id'        ? 'selected' : '' }}>Voter ID</option>
+                                <option value="pan_card"        {{ old('id_type', $customer->id_type) == 'pan_card'        ? 'selected' : '' }}>PAN Card</option>
+                                <option value="visa"            {{ old('id_type', $customer->id_type) == 'visa'            ? 'selected' : '' }}>Visa</option>
+                                <option value="other"           {{ old('id_type', $customer->id_type) == 'other'           ? 'selected' : '' }}>Other</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">ID Number <span class="text-red-500">*</span></label>
-                            <input type="text" name="id_number" value="{{ old('id_number', $customer->id_number) }}" class="form-input" required>
+                            <label class="form-label">Upload More Documents <span class="text-gray-400 font-normal text-xs">(optional, multiple)</span></label>
+                            <input type="file" name="documents[]" multiple accept=".jpg,.jpeg,.png,.pdf" class="form-input" style="padding:8px;">
+                            <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>JPG, PNG or PDF · Max 5 MB each · Adds to existing documents</p>
+                            @if($customer->documents->count() > 0)
+                            <p class="text-xs text-cyan-600 mt-1">
+                                <i class="fas fa-paperclip mr-1"></i>{{ $customer->documents->count() }} document(s) already on file —
+                                <a href="{{ route('documents.index', $customer->id) }}" class="underline">manage</a>
+                            </p>
+                            @endif
                         </div>
                     </div>
                 </div>

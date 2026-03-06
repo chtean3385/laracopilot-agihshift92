@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\CustomerDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
@@ -40,13 +42,15 @@ class CustomerController extends Controller
             'city'          => 'nullable|string|max:100',
             'state'         => 'nullable|string|max:100',
             'country'       => 'nullable|string|max:100',
-            'id_type'       => 'required|in:aadhaar,passport,driving_license,voter_id',
-            'id_number'     => 'required|string|max:50',
+            'id_type'       => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
             'date_of_birth' => 'nullable|date',
             'nationality'   => 'nullable|string|max:100',
             'notes'         => 'nullable|string',
+            'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
+        $validated['id_number'] = '';
         $customer = Customer::create($validated);
+        $this->saveDocuments($request, $customer->id, $validated['id_type']);
         return redirect()->route('customers.show', $customer->id)->with('success', 'Guest profile created successfully!');
     }
 
@@ -60,7 +64,7 @@ class CustomerController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $customer = Customer::findOrFail($id);
+        $customer = Customer::with('documents')->findOrFail($id);
         return view('admin.customers.edit', compact('customer'));
     }
 
@@ -76,13 +80,15 @@ class CustomerController extends Controller
             'city'          => 'nullable|string|max:100',
             'state'         => 'nullable|string|max:100',
             'country'       => 'nullable|string|max:100',
-            'id_type'       => 'required|in:aadhaar,passport,driving_license,voter_id',
-            'id_number'     => 'required|string|max:50',
+            'id_type'       => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
             'date_of_birth' => 'nullable|date',
             'nationality'   => 'nullable|string|max:100',
             'notes'         => 'nullable|string',
+            'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
+        $validated['id_number'] = $customer->id_number ?: '';
         $customer->update($validated);
+        $this->saveDocuments($request, $customer->id, $validated['id_type']);
         return redirect()->route('customers.show', $customer->id)->with('success', 'Guest profile updated!');
     }
 
@@ -91,5 +97,33 @@ class CustomerController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         Customer::findOrFail($id)->delete();
         return redirect()->route('customers.index')->with('success', 'Guest deleted.');
+    }
+
+    private function saveDocuments(Request $request, int $customerId, string $idType): void
+    {
+        if (!$request->hasFile('documents')) return;
+        $typeMap = [
+            'aadhaar'         => 'Aadhaar Card',
+            'passport'        => 'Passport',
+            'driving_license' => 'Driving License',
+            'voter_id'        => 'Voter ID',
+            'pan_card'        => 'PAN Card',
+            'visa'            => 'Visa',
+            'other'           => 'Other',
+        ];
+        $docType = $typeMap[$idType] ?? 'Other';
+        foreach ($request->file('documents') as $file) {
+            if (!$file || !$file->isValid()) continue;
+            $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+            $filePath = $file->storeAs('documents/' . $customerId, $fileName, 'public');
+            CustomerDocument::create([
+                'customer_id'   => $customerId,
+                'document_type' => $docType,
+                'file_name'     => $file->getClientOriginalName(),
+                'file_path'     => $filePath,
+                'file_type'     => $file->getClientMimeType(),
+                'file_size'     => $file->getSize(),
+            ]);
+        }
     }
 }

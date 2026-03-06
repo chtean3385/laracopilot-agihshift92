@@ -9,7 +9,7 @@
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
             <h3 class="font-bold text-gray-800"><i class="fas fa-user-plus text-cyan-500 mr-2"></i>Guest Information</h3>
         </div>
-        <form action="{{ route('customers.store') }}" method="POST" class="p-6">
+        <form action="{{ route('customers.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -56,20 +56,26 @@
                     <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-id-card text-cyan-500 mr-2"></i>Identity Proof</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="form-label">ID Type <span class="text-red-500">*</span></label>
+                            <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
                             <select name="id_type" class="form-input @error('id_type') border-red-400 @enderror" required>
-                                <option value="">Select ID Type</option>
-                                <option value="aadhaar" {{ old('id_type') == 'aadhaar' ? 'selected' : '' }}>Aadhaar Card</option>
-                                <option value="passport" {{ old('id_type') == 'passport' ? 'selected' : '' }}>Passport</option>
+                                <option value="">Select Document Type</option>
+                                <option value="aadhaar"         {{ old('id_type') == 'aadhaar'         ? 'selected' : '' }}>Aadhaar Card</option>
+                                <option value="passport"        {{ old('id_type') == 'passport'        ? 'selected' : '' }}>Passport</option>
                                 <option value="driving_license" {{ old('id_type') == 'driving_license' ? 'selected' : '' }}>Driving License</option>
-                                <option value="voter_id" {{ old('id_type') == 'voter_id' ? 'selected' : '' }}>Voter ID</option>
+                                <option value="voter_id"        {{ old('id_type') == 'voter_id'        ? 'selected' : '' }}>Voter ID</option>
+                                <option value="pan_card"        {{ old('id_type') == 'pan_card'        ? 'selected' : '' }}>PAN Card</option>
+                                <option value="visa"            {{ old('id_type') == 'visa'            ? 'selected' : '' }}>Visa</option>
+                                <option value="other"           {{ old('id_type') == 'other'           ? 'selected' : '' }}>Other</option>
                             </select>
                             @error('id_type')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="form-label">ID Number <span class="text-red-500">*</span></label>
-                            <input type="text" name="id_number" value="{{ old('id_number') }}" class="form-input @error('id_number') border-red-400 @enderror" placeholder="ID number" required>
-                            @error('id_number')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            <label class="form-label">Upload Documents <span class="text-gray-400 font-normal text-xs">(optional, multiple allowed)</span></label>
+                            <input type="file" name="documents[]" multiple accept=".jpg,.jpeg,.png,.pdf"
+                                class="form-input @error('documents.*') border-red-400 @enderror"
+                                style="padding:8px;">
+                            <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>JPG, PNG or PDF · Max 5 MB each · You can select multiple files</p>
+                            @error('documents.*')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                     </div>
                 </div>
