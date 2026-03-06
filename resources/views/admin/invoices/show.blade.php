@@ -58,17 +58,22 @@
                     </tr>
                 </tbody>
             </table>
+            @php
+                $gstAmount    = ($settings && $settings->gst_number) ? $invoice->total_amount * ($settings->tax_rate / 100) : 0;
+                $grandTotal   = $invoice->total_amount + $gstAmount;
+                $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
+            @endphp
             <div class="flex justify-end">
                 <div class="w-64 space-y-2">
                     <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($invoice->total_amount) }}</span></div>
                     @if($settings && $settings->gst_number)
-                    <div class="flex justify-between text-sm"><span class="text-gray-500">GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($invoice->total_amount * ($settings->tax_rate / 100)) }}</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-500">GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($gstAmount) }}</span></div>
                     @endif
-                    <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total</span><span>₹{{ number_format($invoice->total_amount) }}</span></div>
+                    <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total</span><span>₹{{ number_format($grandTotal) }}</span></div>
                     <div class="flex justify-between text-sm text-emerald-600"><span>Amount Paid</span><span>₹{{ number_format($invoice->paid_amount) }}</span></div>
                     <div class="flex justify-between text-lg font-black border-t-2 border-gray-800 pt-2">
                         <span>Balance Due</span>
-                        <span class="{{ $invoice->balance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($invoice->balance) }}</span>
+                        <span class="{{ $displayBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($displayBalance) }}</span>
                     </div>
                 </div>
             </div>

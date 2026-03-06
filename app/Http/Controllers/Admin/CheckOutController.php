@@ -75,8 +75,7 @@ class CheckOutController extends Controller
             ]);
         }
 
-        $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount')
-                   + ($request->final_payment ?? 0);
+        $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
 
         $booking->update([
             'status'             => 'checked_out',

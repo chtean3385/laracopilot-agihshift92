@@ -60,11 +60,20 @@
                     </tr>
                 </tbody>
             </table>
+            @php
+                $gstAmount    = ($settings && $settings->gst_number) ? $invoice->total_amount * ($settings->tax_rate / 100) : 0;
+                $grandTotal   = $invoice->total_amount + $gstAmount;
+                $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
+            @endphp
             <div class="flex justify-end">
                 <div class="w-56 text-sm space-y-1">
-                    <div class="flex justify-between"><span class="text-gray-500">Total</span><span class="font-bold">₹{{ number_format($invoice->total_amount) }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($invoice->total_amount) }}</span></div>
+                    @if($settings && $settings->gst_number)
+                    <div class="flex justify-between"><span class="text-gray-500">GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($gstAmount) }}</span></div>
+                    @endif
+                    <div class="flex justify-between border-t pt-1"><span class="font-bold">Total</span><span class="font-bold">₹{{ number_format($grandTotal) }}</span></div>
                     <div class="flex justify-between text-emerald-600"><span>Paid</span><span class="font-bold">₹{{ number_format($invoice->paid_amount) }}</span></div>
-                    <div class="flex justify-between border-t pt-1 font-black text-base"><span>Balance</span><span class="{{ $invoice->balance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($invoice->balance) }}</span></div>
+                    <div class="flex justify-between border-t pt-1 font-black text-base"><span>Balance</span><span class="{{ $displayBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($displayBalance) }}</span></div>
                 </div>
             </div>
             <div class="mt-6 text-center">
