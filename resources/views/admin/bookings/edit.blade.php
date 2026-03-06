@@ -6,7 +6,7 @@
 @section('content')
 <div class="max-w-3xl">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-        <form action="{{ route('admin.bookings.update',$booking->id) }}" method="POST" class="space-y-5">
+        <form action="{{ route('bookings.update',$booking->id) }}" method="POST" class="space-y-5">
             @csrf @method('PUT')
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -60,7 +60,7 @@
             </div>
             <div class="flex gap-3">
                 <button type="submit" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition"><i class="fas fa-save mr-2"></i>Update Booking</button>
-                <a href="{{ route('admin.bookings.show',$booking->id) }}" class="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-200 transition">Cancel</a>
+                <a href="{{ route('bookings.show',$booking->id) }}" class="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-200 transition">Cancel</a>
             </div>
         </form>
     </div>

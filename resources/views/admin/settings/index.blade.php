@@ -9,6 +9,7 @@
             <h3 class="font-bold text-gray-800"><i class="fas fa-cog text-slate-500 mr-2"></i>Resort Configuration</h3>
         </div>
         <form action="{{ route('settings.update') }}" method="POST" class="p-6">
+            @method('PUT')
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
