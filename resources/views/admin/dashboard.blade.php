@@ -5,7 +5,8 @@
 
 @section('content')
 <div class="space-y-6">
-    <!-- KPI Cards Row 1 -->
+
+    <!-- KPI Row 1: Operational (all roles) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="stat-card">
             <div class="flex items-start justify-between">
@@ -57,8 +58,9 @@
         </div>
     </div>
 
-    <!-- KPI Cards Row 2 -->
+    <!-- KPI Row 2: Financial (reports.view only) + Operational -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        @canDo('reports.view')
         <div class="stat-card">
             <div class="flex items-start justify-between">
                 <div>
@@ -83,6 +85,8 @@
                 </div>
             </div>
         </div>
+        @endCanDo
+
         <div class="stat-card">
             <div class="flex items-start justify-between">
                 <div>
@@ -109,7 +113,8 @@
         </div>
     </div>
 
-    <!-- Middle Section: Room Status + Quick Actions -->
+    <!-- Middle Section: Room Status + Revenue Chart -->
+    @canDo('reports.view')
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Occupancy Chart -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -166,13 +171,15 @@
             </div>
         </div>
     </div>
+    @endCanDo
 
-    <!-- Bottom Section: Today's Activity + Quick Actions -->
+    <!-- Bottom Section: Quick Actions + Recent Bookings -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Quick Actions -->
+        <!-- Quick Actions (gated by permission) -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <h3 class="font-bold text-gray-800 mb-5">Quick Actions</h3>
             <div class="space-y-3">
+                @canDo('bookings.create')
                 <a href="{{ route('bookings.create') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 rounded-xl transition-all group">
                     <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center shadow-sm">
                         <i class="fas fa-plus text-white text-sm"></i>
@@ -183,6 +190,8 @@
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
                 </a>
+                @endCanDo
+                @canDo('checkin.process')
                 <a href="{{ route('checkin.index') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 rounded-xl transition-all group">
                     <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-sm">
                         <i class="fas fa-sign-in-alt text-white text-sm"></i>
@@ -193,6 +202,8 @@
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
                 </a>
+                @endCanDo
+                @canDo('checkout.process')
                 <a href="{{ route('checkout.index') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 rounded-xl transition-all group">
                     <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-sm">
                         <i class="fas fa-sign-out-alt text-white text-sm"></i>
@@ -203,6 +214,8 @@
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
                 </a>
+                @endCanDo
+                @canDo('guests.create')
                 <a href="{{ route('customers.create') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 rounded-xl transition-all group">
                     <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center shadow-sm">
                         <i class="fas fa-user-plus text-white text-sm"></i>
@@ -213,6 +226,7 @@
                     </div>
                     <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
                 </a>
+                @endCanDo
             </div>
         </div>
 
@@ -233,7 +247,9 @@
                         <div class="text-xs text-gray-400">Room {{ $booking->room->room_number }} • {{ $booking->check_in_date->format('d M') }} - {{ $booking->check_out_date->format('d M') }}</div>
                     </div>
                     <div class="text-right flex-shrink-0">
+                        @canDo('reports.view')
                         <div class="text-sm font-bold text-gray-700">₹{{ number_format($booking->total_amount) }}</div>
+                        @endCanDo
                         <span class="badge-{{ $booking->status_color }} text-xs">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
                     </div>
                 </div>
@@ -247,7 +263,7 @@
         </div>
     </div>
 
-    <!-- Today's Check-In & Check-Out Lists -->
+    <!-- Today's Arrivals & Departures -->
     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         @if($todayCheckins->count() > 0)
@@ -265,9 +281,11 @@
                         <div class="font-semibold text-gray-800 text-sm">{{ $booking->customer->name }}</div>
                         <div class="text-xs text-gray-500">Room {{ $booking->room->room_number }} • {{ $booking->nights }} night(s)</div>
                     </div>
+                    @canDo('checkin.process')
                     <a href="{{ route('checkin.show', $booking->id) }}" class="bg-cyan-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-cyan-600 transition-all font-medium">
                         Check In
                     </a>
+                    @endCanDo
                 </div>
                 @endforeach
             </div>
@@ -287,11 +305,15 @@
                 <div class="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
                     <div>
                         <div class="font-semibold text-gray-800 text-sm">{{ $booking->customer->name }}</div>
-                        <div class="text-xs text-gray-500">Room {{ $booking->room->room_number }} • Due: ₹{{ number_format($booking->balance_due) }}</div>
+                        <div class="text-xs text-gray-500">Room {{ $booking->room->room_number }}
+                            @canDo('reports.view') • Due: ₹{{ number_format($booking->balance_due) }} @endCanDo
+                        </div>
                     </div>
+                    @canDo('checkout.process')
                     <a href="{{ route('checkout.show', $booking->id) }}" class="bg-amber-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-all font-medium">
                         Check Out
                     </a>
+                    @endCanDo
                 </div>
                 @endforeach
             </div>
@@ -299,5 +321,6 @@
         @endif
     </div>
     @endif
+
 </div>
 @endsection
