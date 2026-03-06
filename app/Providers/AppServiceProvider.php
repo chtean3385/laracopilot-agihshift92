@@ -25,8 +25,12 @@ class AppServiceProvider extends ServiceProvider
             View::share('settings', null);
         }
 
-        Blade::if('canDo', function (string $permission) {
-            return PermissionService::check($permission);
+        Blade::directive('canDo', function (string $expression) {
+            return "<?php if (\\App\\Services\\PermissionService::check({$expression})): ?>";
+        });
+
+        Blade::directive('endCanDo', function () {
+            return '<?php endif; ?>';
         });
     }
 }
