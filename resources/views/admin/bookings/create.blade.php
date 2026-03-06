@@ -3,6 +3,28 @@
 @section('page-title', 'Create New Booking')
 @section('page-subtitle', 'Reserve a room for a guest')
 
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-wrapper.form-control, .ts-wrapper.form-select { padding: 0; }
+    .ts-control {
+        border: 1.5px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        padding: 10px 16px !important;
+        font-size: 14px !important;
+        color: #374151 !important;
+        box-shadow: none !important;
+        min-height: 44px !important;
+    }
+    .ts-wrapper.focus .ts-control { border-color: #06b6d4 !important; box-shadow: 0 0 0 3px rgba(6,182,212,.1) !important; }
+    .ts-dropdown { border: 1.5px solid #e5e7eb !important; border-radius: 12px !important; box-shadow: 0 8px 24px rgba(0,0,0,.1) !important; margin-top: 4px !important; overflow: hidden; }
+    .ts-dropdown .option { padding: 10px 16px; font-size: 13.5px; color: #374151; }
+    .ts-dropdown .option:hover, .ts-dropdown .option.active { background: linear-gradient(90deg,rgba(6,182,212,.08),rgba(59,130,246,.06)) !important; color: #0f172a !important; }
+    .ts-dropdown .option.selected { background: linear-gradient(90deg,rgba(6,182,212,.15),rgba(59,130,246,.1)) !important; }
+    .ts-dropdown input { border: none !important; border-bottom: 1.5px solid #f1f5f9 !important; border-radius: 0 !important; padding: 10px 16px !important; font-size: 13px !important; }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-4xl">
     <a href="{{ route('bookings.index') }}" class="btn-secondary text-sm mb-5 inline-flex"><i class="fas fa-arrow-left mr-2"></i>Back to Bookings</a>
@@ -15,8 +37,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="form-label">Guest <span class="text-red-500">*</span></label>
-                    <select name="customer_id" class="form-input @error('customer_id') border-red-400 @enderror" required>
-                        <option value="">Select Guest</option>
+                    <select name="customer_id" id="guestSelect" class="form-input @error('customer_id') border-red-400 @enderror" required placeholder="Search guest by name or phone...">
+                        <option value="">Search guest by name or phone...</option>
                         @foreach($customers as $customer)
                         <option value="{{ $customer->id }}" {{ old('customer_id', request('customer_id')) == $customer->id ? 'selected' : '' }}>{{ $customer->name }} - {{ $customer->phone }}</option>
                         @endforeach
@@ -25,11 +47,11 @@
                 </div>
                 <div>
                     <label class="form-label">Room <span class="text-red-500">*</span></label>
-                    <select name="room_id" class="form-input @error('room_id') border-red-400 @enderror" required id="roomSelect">
-                        <option value="">Select Available Room</option>
+                    <select name="room_id" class="form-input @error('room_id') border-red-400 @enderror" required id="roomSelect" placeholder="Search room by number or type...">
+                        <option value="">Search room by number or type...</option>
                         @foreach($rooms as $room)
                         <option value="{{ $room->id }}" data-price="{{ $room->price_per_night }}" {{ old('room_id') == $room->id ? 'selected' : '' }}>
-                            Room {{ $room->room_number }} - {{ ucfirst($room->type) }} - ₹{{ number_format($room->price_per_night) }}/night
+                            Room {{ $room->room_number }} — {{ ucfirst($room->type) }} — ₹{{ number_format($room->price_per_night) }}/night
                         </option>
                         @endforeach
                     </select>
@@ -100,12 +122,28 @@
     </div>
 </div>
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+    new TomSelect('#guestSelect', {
+        placeholder: 'Search guest by name or phone...',
+        allowEmptyOption: true,
+        maxOptions: 200,
+    });
+
+    const roomTomSelect = new TomSelect('#roomSelect', {
+        placeholder: 'Search room by number or type...',
+        allowEmptyOption: true,
+        maxOptions: 100,
+        onChange: function(value) {
+            calculateTotal();
+        }
+    });
+
     function calculateTotal() {
         const checkin = document.getElementById('checkIn').value;
         const checkout = document.getElementById('checkOut').value;
-        const roomSelect = document.getElementById('roomSelect');
-        const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+        const roomEl = document.getElementById('roomSelect');
+        const selectedOption = roomEl.options[roomEl.selectedIndex];
         const pricePerNight = selectedOption ? parseFloat(selectedOption.dataset.price) || 0 : 0;
         if (checkin && checkout) {
             const d1 = new Date(checkin);
@@ -117,7 +155,9 @@
             document.getElementById('totalDisplay').textContent = total ? '₹' + total.toLocaleString('en-IN') : '—';
         }
     }
-    document.getElementById('roomSelect').addEventListener('change', calculateTotal);
+
+    document.getElementById('checkIn').addEventListener('change', calculateTotal);
+    document.getElementById('checkOut').addEventListener('change', calculateTotal);
 </script>
 @endpush
 @endsection
