@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DocumentController;
@@ -21,7 +21,7 @@ Route::get('/', function () {
 
 // ── Auth ───────────────────────────────────────────────
 Route::get('/login',  [AdminAuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AdminAuthController::class, 'login']);
+Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
 Route::post('/logout',[AdminAuthController::class, 'logout'])->name('logout');
 
 // ── Dashboard ──────────────────────────────────────────
@@ -85,7 +85,13 @@ Route::get('/invoices/{id}/print',[InvoiceController::class, 'print']  )->name('
 Route::delete('/invoices/{id}',   [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 
 // ── Reports ────────────────────────────────────────────
-Route::get('/reports',            [ReportController::class, 'index']   )->name('reports.index');
+Route::get('/reports',            [ReportController::class, 'index']    )->name('reports.index');
+Route::get('/reports/revenue',    [ReportController::class, 'revenue']  )->name('reports.revenue');
+Route::get('/reports/occupancy',  [ReportController::class, 'occupancy'])->name('reports.occupancy');
+Route::get('/reports/bookings',   [ReportController::class, 'bookings'] )->name('reports.bookings');
+
+// ── Register (redirect to login) ───────────────────────
+Route::get('/register', fn() => redirect()->route('login'))->name('register');
 
 // ── Settings ───────────────────────────────────────────
 Route::get('/settings',           [SettingController::class, 'index']  )->name('settings.index');

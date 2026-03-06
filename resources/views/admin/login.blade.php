@@ -58,7 +58,7 @@
             </div>
             @endif
 
-            <form action="{{ route('admin.login.post') }}" method="POST" class="space-y-5">
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
                 @csrf
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Email Address</label>
