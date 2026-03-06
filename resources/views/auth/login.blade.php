@@ -72,6 +72,12 @@
                     class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-0.5 transform">
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In to CRM
                 </button>
+
+                <div class="text-center mt-4">
+                    <a href="{{ route('password.request') }}" class="text-slate-400 text-sm hover:text-cyan-400 transition-colors">
+                        <i class="fas fa-key mr-1 text-xs"></i> Forgot Password?
+                    </a>
+                </div>
             </form>
         </div>
 

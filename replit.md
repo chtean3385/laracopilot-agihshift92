@@ -20,13 +20,31 @@ A full hotel/resort management CRM built with Laravel 12, SQLite, and Tailwind C
 6. `php artisan storage:link`
 7. `php artisan serve --host=0.0.0.0 --port=5000`
 
-## Hardcoded Users
+## Users (DB-driven)
+Users are now stored in the `users` table and can be managed via `/users`. Super Admin is still hardcoded as a bypass.
 | Email | Password | Role |
 |-------|----------|------|
-| superadmin@gmail.com | Super@#3385 | Super Admin (full bypass) |
+| superadmin@gmail.com | Super@#3385 | Super Admin (hardcoded bypass) |
 | admin@resort.com | admin123 | Admin |
 | manager@resort.com | manager123 | Manager |
 | receptionist@resort.com | recept123 | Receptionist |
+
+Seed users with: `php artisan db:seed --class=UsersTableSeeder`
+
+## Email Configuration
+Currently set to `MAIL_MAILER=log` — password reset emails are written to `storage/logs/laravel.log` instead of being sent.
+To enable real email sending, provide SMTP credentials and update `.env`:
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.resend.com   # or smtp.gmail.com / smtp.mailtrap.io
+MAIL_PORT=465
+MAIL_ENCRYPTION=tls
+MAIL_USERNAME=resend        # or your SMTP username
+MAIL_PASSWORD=your_api_key  # store as Replit secret MAIL_PASSWORD
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="Resort CRM"
+```
+Resend.com integration is available in Replit but was not connected. Re-connect it to get an API key automatically.
 
 ## Key Routes
 - `/login` — Login page (dynamic branding from settings)

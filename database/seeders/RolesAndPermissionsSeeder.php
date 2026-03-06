@@ -45,6 +45,11 @@ class RolesAndPermissionsSeeder extends Seeder
 
             ['slug' => 'roles.view',        'label' => 'View Roles & Permissions', 'module' => 'System',  'sort_order' => 24],
             ['slug' => 'roles.edit',        'label' => 'Edit Roles & Permissions', 'module' => 'System',  'sort_order' => 25],
+
+            ['slug' => 'users.view',        'label' => 'View Users',             'module' => 'System',   'sort_order' => 26],
+            ['slug' => 'users.create',      'label' => 'Create Users',           'module' => 'System',   'sort_order' => 27],
+            ['slug' => 'users.edit',        'label' => 'Edit Users',             'module' => 'System',   'sort_order' => 28],
+            ['slug' => 'users.delete',      'label' => 'Delete Users',           'module' => 'System',   'sort_order' => 29],
         ];
 
         foreach ($permissions as $p) {
@@ -65,6 +70,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'reports.view',
                     'settings.view', 'settings.edit',
                     'activity_log.view',
+                    'users.view', 'users.create', 'users.edit', 'users.delete',
                 ],
             ],
             'Manager' => [
@@ -78,6 +84,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'payments.view', 'payments.create',
                     'invoices.view',
                     'reports.view',
+                    'users.view',
                 ],
             ],
             'Receptionist' => [

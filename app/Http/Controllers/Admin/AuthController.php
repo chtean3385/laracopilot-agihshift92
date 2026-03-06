@@ -4,17 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    private array $users = [
-        'superadmin@gmail.com'    => ['password' => 'Super@#3385', 'name' => 'Super Admin',    'role' => 'Super Admin',  'avatar' => 'S'],
-        'admin@resort.com'        => ['password' => 'admin123',    'name' => 'Admin User',      'role' => 'Admin',        'avatar' => 'A'],
-        'manager@resort.com'      => ['password' => 'manager123',  'name' => 'Resort Manager',  'role' => 'Manager',      'avatar' => 'M'],
-        'receptionist@resort.com' => ['password' => 'recept123',   'name' => 'Front Desk',      'role' => 'Receptionist', 'avatar' => 'R'],
-    ];
+    private const SUPER_ADMIN_EMAIL    = 'superadmin@gmail.com';
+    private const SUPER_ADMIN_PASSWORD = 'Super@#3385';
+    private const SUPER_ADMIN_NAME     = 'Super Admin';
 
     public function showLogin()
     {
@@ -31,34 +30,50 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $email    = $request->email;
+        $email    = strtolower(trim($request->email));
         $password = $request->password;
 
-        if (isset($this->users[$email]) && $this->users[$email]['password'] === $password) {
-            $user = $this->users[$email];
-
-            if ($user['role'] === 'Super Admin') {
-                $permissions = ['*'];
-            } else {
-                $role = Role::where('name', $user['role'])->with('permissions')->first();
-                $permissions = $role ? $role->permissionSlugs() : [];
-            }
-
+        if ($email === self::SUPER_ADMIN_EMAIL && $password === self::SUPER_ADMIN_PASSWORD) {
             session([
                 'crm_logged_in'   => true,
-                'crm_user_name'   => $user['name'],
-                'crm_user_email'  => $email,
-                'crm_user_role'   => $user['role'],
-                'crm_user_avatar' => $user['avatar'],
-                'crm_permissions' => $permissions,
+                'crm_user_id'     => 0,
+                'crm_user_name'   => self::SUPER_ADMIN_NAME,
+                'crm_user_email'  => self::SUPER_ADMIN_EMAIL,
+                'crm_user_role'   => 'Super Admin',
+                'crm_user_avatar' => 'S',
+                'crm_permissions' => ['*'],
             ]);
 
-            ActivityLogger::log('Logged In', 'Auth', $user['name'] . ' logged in from ' . $request->ip());
-
-            return redirect()->route('dashboard')->with('success', 'Welcome back, ' . $user['name'] . '!');
+            ActivityLogger::log('Logged In', 'Auth', self::SUPER_ADMIN_NAME . ' logged in from ' . $request->ip());
+            return redirect()->route('dashboard')->with('success', 'Welcome back, ' . self::SUPER_ADMIN_NAME . '!');
         }
 
-        return back()->withErrors(['email' => 'Invalid email or password.'])->withInput($request->only('email'));
+        $user = User::where('email', $email)->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
+            return back()->withErrors(['email' => 'Invalid email or password.'])->withInput($request->only('email'));
+        }
+
+        if ($user->status !== 'active') {
+            return back()->withErrors(['email' => 'Your account has been deactivated. Contact the administrator.'])->withInput($request->only('email'));
+        }
+
+        $role        = Role::where('name', $user->role)->with('permissions')->first();
+        $permissions = $role ? $role->permissionSlugs() : [];
+
+        session([
+            'crm_logged_in'   => true,
+            'crm_user_id'     => $user->id,
+            'crm_user_name'   => $user->name,
+            'crm_user_email'  => $email,
+            'crm_user_role'   => $user->role,
+            'crm_user_avatar' => $user->avatar,
+            'crm_permissions' => $permissions,
+        ]);
+
+        ActivityLogger::log('Logged In', 'Auth', $user->name . ' logged in from ' . $request->ip());
+
+        return redirect()->route('dashboard')->with('success', 'Welcome back, ' . $user->name . '!');
     }
 
     public function logout()

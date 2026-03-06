@@ -308,10 +308,21 @@
             </a>
             @endCanDo
 
+            @canDo('users.view')
+            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-user-cog"></i></span>
+                User Management
+            </a>
+            @endCanDo
+
         </nav>
 
         <!-- Logout -->
         <div style="padding:10px 10px 16px;border-top:1px solid rgba(255,255,255,.06);margin-top:10px;">
+            <a href="{{ route('password.change.form') }}" class="logout-btn" style="text-decoration:none;margin-bottom:4px;">
+                <span class="icon"><i class="fas fa-lock"></i></span>
+                Change Password
+            </a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="logout-btn">
