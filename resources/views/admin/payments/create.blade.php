@@ -4,24 +4,91 @@
 @section('page-subtitle','Add a new payment transaction')
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.default.min.css" rel="stylesheet">
 <style>
-    .ts-wrapper.form-control, .ts-wrapper.form-select { padding: 0; }
+    .ts-wrapper { position: relative; }
     .ts-control {
-        border: 1.5px solid #e5e7eb !important;
-        border-radius: 10px !important;
-        padding: 10px 16px !important;
-        font-size: 14px !important;
-        color: #374151 !important;
-        box-shadow: none !important;
-        min-height: 44px !important;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0 40px 0 14px;
+        min-height: 44px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        background: #fff;
+        font-size: 14px;
+        color: #374151;
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s;
+        box-shadow: none;
     }
-    .ts-wrapper.focus .ts-control { border-color: #06b6d4 !important; box-shadow: 0 0 0 3px rgba(6,182,212,.1) !important; }
-    .ts-dropdown { border: 1.5px solid #e5e7eb !important; border-radius: 12px !important; box-shadow: 0 8px 24px rgba(0,0,0,.1) !important; margin-top: 4px !important; overflow: hidden; }
-    .ts-dropdown .option { padding: 10px 16px; font-size: 13.5px; color: #374151; }
-    .ts-dropdown .option:hover, .ts-dropdown .option.active { background: linear-gradient(90deg,rgba(6,182,212,.08),rgba(59,130,246,.06)) !important; color: #0f172a !important; }
-    .ts-dropdown .option.selected { background: linear-gradient(90deg,rgba(6,182,212,.15),rgba(59,130,246,.1)) !important; }
-    .ts-dropdown input { border: none !important; border-bottom: 1.5px solid #f1f5f9 !important; border-radius: 0 !important; padding: 10px 16px !important; font-size: 13px !important; }
+    .ts-wrapper.focus .ts-control {
+        border-color: #06b6d4;
+        box-shadow: 0 0 0 3px rgba(6,182,212,.12);
+        outline: none;
+    }
+    .ts-control input {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        flex: 1;
+        font-size: 14px;
+        color: #374151;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-width: 60px;
+        height: auto;
+    }
+    .ts-control .item {
+        font-size: 14px;
+        color: #374151;
+        line-height: 1;
+    }
+    .ts-control::after {
+        content: '';
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid #9ca3af;
+        pointer-events: none;
+    }
+    .ts-wrapper.open .ts-control::after { border-top: none; border-bottom: 5px solid #06b6d4; }
+    .ts-wrapper.open .ts-control { border-color: #06b6d4; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .ts-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0; right: 0;
+        z-index: 9999;
+        background: #fff;
+        border: 1.5px solid #06b6d4;
+        border-top: none;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.1);
+        overflow: hidden;
+    }
+    .ts-dropdown .ts-dropdown-content { max-height: 220px; overflow-y: auto; }
+    .ts-dropdown-content::-webkit-scrollbar { width: 5px; }
+    .ts-dropdown-content::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+    .ts-dropdown .option {
+        padding: 10px 14px;
+        font-size: 13.5px;
+        color: #374151;
+        cursor: pointer;
+        border-bottom: 1px solid #f9fafb;
+        transition: background .1s;
+    }
+    .ts-dropdown .option:last-child { border-bottom: none; }
+    .ts-dropdown .option:hover,
+    .ts-dropdown .option.active { background: #f0fdfe; color: #0891b2; }
+    .ts-dropdown .option.selected { background: #cffafe; color: #0e7490; font-weight: 500; }
+    .ts-dropdown .no-results { padding: 12px 14px; font-size: 13px; color: #9ca3af; text-align: center; }
 </style>
 @endpush
 
@@ -36,7 +103,7 @@
             @csrf
             <div>
                 <label class="form-label">Booking <span class="text-red-500">*</span></label>
-                <select name="booking_id" id="bookingSelect" class="form-input" required placeholder="Search by booking number or guest name...">
+                <select name="booking_id" id="bookingSelect" required>
                     <option value="">Search by booking number or guest name...</option>
                     @foreach($bookings as $booking)
                     <option value="{{ $booking->id }}" {{ old('booking_id') == $booking->id ? 'selected' : '' }}>
@@ -84,9 +151,9 @@
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
     new TomSelect('#bookingSelect', {
+        allowEmptyOption: false,
         placeholder: 'Search by booking number or guest name...',
-        allowEmptyOption: true,
-        maxOptions: 200,
+        maxOptions: 300,
     });
 </script>
 @endpush
