@@ -77,7 +77,8 @@
                 </div>
             </div>
             <div class="mt-6 text-center">
-                <span class="px-4 py-1 rounded-full text-xs font-bold {{ $invoice->status == 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ strtoupper($invoice->status) }}</span>
+                @php $displayStatus = $displayBalance <= 0 ? 'paid' : ($invoice->paid_amount > 0 ? 'partial' : 'unpaid'); @endphp
+                <span class="px-4 py-1 rounded-full text-xs font-bold {{ $displayStatus == 'paid' ? 'bg-emerald-100 text-emerald-700' : ($displayStatus == 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">{{ strtoupper($displayStatus) }}</span>
             </div>
             <div class="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
                 Thank you for staying at {{ $settings->resort_name ?? 'Azure Paradise Resort' }}. We hope to see you again!

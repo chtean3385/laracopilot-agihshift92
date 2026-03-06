@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Resort CRM') — Azure Paradise</title>
+    <title>@yield('title', 'Resort CRM') — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -192,7 +192,7 @@
                     <i class="fas fa-umbrella-beach" style="color:#fff;font-size:18px;"></i>
                 </div>
                 <div style="min-width:0;">
-                    <div style="color:#fff;font-weight:800;font-size:14px;line-height:1.2;">Azure Paradise</div>
+                    <div style="color:#fff;font-weight:800;font-size:14px;line-height:1.2;">{{ $settings->resort_name ?? 'Resort CRM' }}</div>
                     <div style="color:#475569;font-size:11px;margin-top:1px;">Resort & Spa CRM</div>
                 </div>
             </div>
@@ -352,10 +352,12 @@
         <!-- Footer -->
         <footer style="background:#fff;border-top:1px solid #f1f5f9;padding:14px 24px;text-align:center;">
             <p style="font-size:12px;color:#94a3b8;margin:0;">
-                © {{ date('Y') }} Azure Paradise Resort & Spa. All rights reserved.
+                © {{ date('Y') }} {{ $settings->resort_name ?? 'Resort CRM' }}. All rights reserved.
+                <span style="margin:0 8px;">•</span>
+                Support: <a href="tel:+918460765785" style="color:#06b6d4;font-weight:600;text-decoration:none;">+91 84607 65785</a>
                 <span style="margin:0 8px;">•</span>
                 Made with <span style="color:#ef4444;">♥</span> by
-                <a href="https://laracopilot.com/" target="_blank" style="color:#06b6d4;font-weight:600;text-decoration:none;">LaraCopilot</a>
+                <a href="https://www.dreams-technology.com" target="_blank" style="color:#06b6d4;font-weight:600;text-decoration:none;">Dreams Technology</a>
             </p>
         </footer>
 

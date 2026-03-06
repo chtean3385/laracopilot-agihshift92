@@ -78,8 +78,9 @@
                 </div>
             </div>
             <div class="mt-8 pt-6 border-t border-gray-100 text-center">
-                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold {{ $invoice->status == 'paid' ? 'bg-emerald-100 text-emerald-700' : ($invoice->status == 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
-                    {{ strtoupper($invoice->status) }}
+                @php $displayStatus = $displayBalance <= 0 ? 'paid' : ($invoice->paid_amount > 0 ? 'partial' : 'unpaid'); @endphp
+                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold {{ $displayStatus == 'paid' ? 'bg-emerald-100 text-emerald-700' : ($displayStatus == 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
+                    {{ strtoupper($displayStatus) }}
                 </span>
             </div>
         </div>
