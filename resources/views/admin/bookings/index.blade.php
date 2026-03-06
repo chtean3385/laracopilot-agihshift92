@@ -92,9 +92,11 @@
                                     <i class="fas fa-sign-out-alt text-xs"></i>
                                 </a>
                                 @endif
+                                @canDo('bookings.edit')
                                 <a href="{{ route('bookings.edit', $booking->id) }}" class="w-8 h-8 flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg transition-all" title="Edit">
                                     <i class="fas fa-edit text-xs"></i>
                                 </a>
+                                @endCanDo
                             </div>
                         </td>
                     </tr>

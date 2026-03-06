@@ -9,7 +9,9 @@
         <a href="{{ route('rooms.index') }}" class="btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i>Back to Rooms</a>
         <div class="flex gap-3">
             <a href="{{ route('bookings.create') }}" class="btn-primary text-sm"><i class="fas fa-plus mr-2"></i>New Booking</a>
+            @canDo('rooms.edit')
             <a href="{{ route('rooms.edit', $room->id) }}" class="btn-secondary text-sm"><i class="fas fa-edit mr-2"></i>Edit Room</a>
+            @endCanDo
         </div>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

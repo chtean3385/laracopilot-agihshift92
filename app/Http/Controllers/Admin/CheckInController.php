@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -69,6 +70,8 @@ class CheckInController extends Controller
                 'payment_status'  => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
             ]);
         }
+        $booking->load('customer');
+        ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — Room ' . $booking->room->room_number . ' (Booking #' . $booking->booking_number . ')');
         return redirect()->route('checkin.index')->with('success', 'Check-in completed for ' . $booking->customer->name . '!');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Room;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
@@ -52,7 +53,8 @@ class RoomController extends Controller
             'description'    => 'nullable|string',
             'status'         => 'required|in:available,occupied,maintenance',
         ]);
-        Room::create($validated);
+        $room = Room::create($validated);
+        ActivityLogger::log('Created', 'Room', 'Created room: ' . $room->room_number . ' (' . ucfirst($room->type) . ')');
         return redirect()->route('rooms.index')->with('success', 'Room added!');
     }
 
@@ -86,13 +88,17 @@ class RoomController extends Controller
             'status'         => 'required|in:available,occupied,maintenance',
         ]);
         $room->update($validated);
+        ActivityLogger::log('Updated', 'Room', 'Updated room: ' . $room->room_number);
         return redirect()->route('rooms.index')->with('success', 'Room updated!');
     }
 
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        Room::findOrFail($id)->delete();
+        $room = Room::findOrFail($id);
+        $number = $room->room_number;
+        $room->delete();
+        ActivityLogger::log('Deleted', 'Room', 'Deleted room: ' . $number);
         return redirect()->route('rooms.index')->with('success', 'Room removed.');
     }
 }

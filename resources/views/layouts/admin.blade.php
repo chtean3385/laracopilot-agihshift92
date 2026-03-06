@@ -207,10 +207,16 @@
         <!-- User -->
         <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
             <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;">
-                <div style="width:36px;height:36px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0;">{{ session('crm_user_avatar','A') }}</div>
+                @php
+                    $roleColors = ['Super Admin'=>'#7c3aed','Admin'=>'#dc2626','Manager'=>'#2563eb','Receptionist'=>'#16a34a'];
+                    $roleBg = $roleColors[session('crm_user_role','Admin')] ?? '#475569';
+                @endphp
+                <div style="width:36px;height:36px;background:{{ $roleBg }};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0;">{{ session('crm_user_avatar','A') }}</div>
                 <div style="min-width:0;">
                     <div style="color:#e2e8f0;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_user_name','Admin') }}</div>
-                    <div style="color:#475569;font-size:11px;">{{ session('crm_user_role','Admin') }}</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
+                        <span style="display:inline-block;background:{{ $roleBg }};color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;letter-spacing:.05em;text-transform:uppercase;">{{ session('crm_user_role','Admin') }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,19 +276,37 @@
                 Invoices
             </a>
 
+            @canDo('reports.view')
             <div class="nav-section">Analytics</div>
 
             <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-bar"></i></span>
                 Reports
             </a>
+            @endCanDo
 
             <div class="nav-section">System</div>
 
+            @canDo('settings.view')
             <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-cog"></i></span>
                 Settings
             </a>
+            @endCanDo
+
+            @canDo('activity_log.view')
+            <a href="{{ route('activity_log.index') }}" class="nav-link {{ request()->routeIs('activity_log.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-history"></i></span>
+                Activity Log
+            </a>
+            @endCanDo
+
+            @canDo('roles.view')
+            <a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-shield-halved"></i></span>
+                Roles & Permissions
+            </a>
+            @endCanDo
 
         </nav>
 

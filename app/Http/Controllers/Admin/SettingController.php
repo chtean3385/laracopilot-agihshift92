@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
@@ -72,6 +72,8 @@ class SettingController extends Controller
         } else {
             Setting::create($data);
         }
+
+        ActivityLogger::log('Updated', 'Settings', 'Resort settings updated by ' . session('crm_user_name'));
 
         return redirect()->route('settings.index')->with('success', 'Settings saved successfully!');
     }

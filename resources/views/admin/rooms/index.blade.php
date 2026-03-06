@@ -62,7 +62,9 @@
             <a href="{{ route('rooms.index') }}" class="text-sm text-gray-500 hover:text-gray-700 underline">Clear</a>
             @endif
         </form>
+        @canDo('rooms.create')
         <a href="{{ route('rooms.create') }}" class="btn-primary"><i class="fas fa-plus mr-2"></i>Add New Room</a>
+        @endCanDo
     </div>
 
     <!-- Rooms Grid -->
@@ -111,9 +113,11 @@
                     <a href="{{ route('rooms.show', $room->id) }}" class="flex-1 text-center bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl text-xs font-semibold transition-all">
                         <i class="fas fa-eye mr-1"></i>View
                     </a>
+                    @canDo('rooms.edit')
                     <a href="{{ route('rooms.edit', $room->id) }}" class="flex-1 text-center bg-amber-50 hover:bg-amber-100 text-amber-700 py-2 rounded-xl text-xs font-semibold transition-all">
                         <i class="fas fa-edit mr-1"></i>Edit
                     </a>
+                    @endCanDo
                 </div>
             </div>
         </div>

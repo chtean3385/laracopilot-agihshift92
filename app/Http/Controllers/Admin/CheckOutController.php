@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Invoice;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -35,14 +36,10 @@ class CheckOutController extends Controller
 
         $booking = Booking::with(['customer', 'room', 'payments'])->findOrFail($bookingId);
 
-        // Use the BOOKED nights from the booking record (not calculated from now)
-        // This is the correct value — how many nights they actually booked
         $checkinDate  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
         $checkoutDate = Carbon::parse($booking->check_out_date)->startOfDay();
-
         $actualNights = $checkinDate->diffInDays($checkoutDate);
 
-        // Fallback to stored nights if calculation gives 0 or 1 unexpectedly
         if ($actualNights < 1) {
             $actualNights = $booking->nights;
         }
@@ -66,7 +63,7 @@ class CheckOutController extends Controller
             'notes'          => 'nullable|string',
         ]);
 
-        $booking = Booking::with(['room', 'payments'])->findOrFail($bookingId);
+        $booking = Booking::with(['room', 'payments', 'customer'])->findOrFail($bookingId);
 
         if ($request->final_payment > 0) {
             Payment::create([
@@ -103,6 +100,8 @@ class CheckOutController extends Controller
             'status'         => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
             'issued_at'      => now(),
         ]);
+
+        ActivityLogger::log('Checked Out', 'Check-Out', 'Checked out: ' . $booking->customer->name . ' — Room ' . $booking->room->room_number . ' (Invoice #' . $invoice->invoice_number . ')');
 
         return redirect()->route('invoices.show', $invoice->id)
             ->with('success', 'Check-out complete! Invoice generated.');

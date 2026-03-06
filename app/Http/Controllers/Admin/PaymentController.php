@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Booking;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -58,6 +59,8 @@ class PaymentController extends Controller
             'balance_due'    => max(0, $booking->total_amount - $totalPaid),
             'payment_status' => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
         ]);
+        $booking->load('customer');
+        ActivityLogger::log('Created', 'Payment', 'Payment of ₹' . number_format($payment->amount, 2) . ' recorded for Booking #' . $booking->booking_number . ' (' . $booking->customer->name . ')');
         return redirect()->route('payments.show', $payment->id)->with('success', 'Payment recorded!');
     }
 
@@ -66,5 +69,15 @@ class PaymentController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $payment = Payment::with(['booking.customer', 'booking.room'])->findOrFail($id);
         return view('admin.payments.show', compact('payment'));
+    }
+
+    public function destroy($id)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        $payment = Payment::with('booking')->findOrFail($id);
+        $txn     = $payment->transaction_id;
+        $payment->delete();
+        ActivityLogger::log('Deleted', 'Payment', 'Deleted payment transaction: ' . $txn);
+        return redirect()->route('payments.index')->with('success', 'Payment deleted.');
     }
 }

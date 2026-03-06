@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -51,6 +52,7 @@ class CustomerController extends Controller
         $validated['id_number'] = '';
         $customer = Customer::create($validated);
         $this->saveDocuments($request, $customer->id, $validated['id_type']);
+        ActivityLogger::log('Created', 'Guest', 'Created guest profile: ' . $customer->name . ' (' . $customer->phone . ')');
         return redirect()->route('customers.show', $customer->id)->with('success', 'Guest profile created successfully!');
     }
 
@@ -89,13 +91,17 @@ class CustomerController extends Controller
         $validated['id_number'] = $customer->id_number ?: '';
         $customer->update($validated);
         $this->saveDocuments($request, $customer->id, $validated['id_type']);
+        ActivityLogger::log('Updated', 'Guest', 'Updated guest profile: ' . $customer->name);
         return redirect()->route('customers.show', $customer->id)->with('success', 'Guest profile updated!');
     }
 
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        Customer::findOrFail($id)->delete();
+        $customer = Customer::findOrFail($id);
+        $name = $customer->name;
+        $customer->delete();
+        ActivityLogger::log('Deleted', 'Guest', 'Deleted guest profile: ' . $name);
         return redirect()->route('customers.index')->with('success', 'Guest deleted.');
     }
 

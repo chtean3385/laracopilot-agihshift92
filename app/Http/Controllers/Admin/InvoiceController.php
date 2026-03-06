@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Setting;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
@@ -43,5 +44,15 @@ class InvoiceController extends Controller
         $invoice  = Invoice::with(['booking.room', 'booking.payments', 'customer'])->findOrFail($id);
         $settings = Setting::first();
         return view('admin.invoices.print', compact('invoice', 'settings'));
+    }
+
+    public function destroy($id)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        $invoice = Invoice::findOrFail($id);
+        $number  = $invoice->invoice_number;
+        $invoice->delete();
+        ActivityLogger::log('Deleted', 'Invoice', 'Deleted invoice: ' . $number);
+        return redirect()->route('invoices.index')->with('success', 'Invoice deleted.');
     }
 }

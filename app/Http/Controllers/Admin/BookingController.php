@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\Room;
 use App\Models\Payment;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -83,6 +84,8 @@ class BookingController extends Controller
                 'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
             ]);
         }
+        $customer = Customer::find($validated['customer_id']);
+        ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Room ' . $room->room_number);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking created! #' . $booking->booking_number);
     }
 
@@ -122,6 +125,7 @@ class BookingController extends Controller
             'total_amount'=> $total,
             'balance_due' => max(0, $total - $booking->advance_payment),
         ]));
+        ActivityLogger::log('Updated', 'Booking', 'Updated booking #' . $booking->booking_number);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking updated!');
     }
 
@@ -129,7 +133,9 @@ class BookingController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $booking = Booking::findOrFail($id);
+        $number  = $booking->booking_number;
         $booking->update(['status' => 'cancelled']);
+        ActivityLogger::log('Deleted', 'Booking', 'Cancelled booking #' . $number);
         return redirect()->route('bookings.index')->with('success', 'Booking cancelled.');
     }
 }
