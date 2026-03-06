@@ -84,6 +84,7 @@ class BookingController extends Controller
                 'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
             ]);
         }
+        $room->update(['status' => 'occupied']);
         $customer = Customer::find($validated['customer_id']);
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Room ' . $room->room_number);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking created! #' . $booking->booking_number);
@@ -110,6 +111,7 @@ class BookingController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $booking   = Booking::findOrFail($id);
         $validated = $request->validate([
+            'room_id'        => 'required|exists:rooms,id',
             'check_in_date'  => 'required|date',
             'check_out_date' => 'required|date|after:check_in_date',
             'adults'         => 'required|integer|min:1',
@@ -117,14 +119,32 @@ class BookingController extends Controller
             'special_requests'=> 'nullable|string',
             'status'         => 'required|in:confirmed,checked_in,checked_out,cancelled',
         ]);
-        $room    = Room::findOrFail($booking->room_id);
-        $nights  = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
-        $total   = $nights * $room->price_per_night;
+        $oldRoomId = $booking->room_id;
+        $newRoomId = (int) $validated['room_id'];
+        $room      = Room::findOrFail($newRoomId);
+        $nights    = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+        $total     = $nights * $room->price_per_night;
         $booking->update(array_merge($validated, [
             'nights'      => $nights,
             'total_amount'=> $total,
             'balance_due' => max(0, $total - $booking->advance_payment),
         ]));
+        $newStatus = $validated['status'];
+        if ($oldRoomId !== $newRoomId) {
+            $oldRoom = Room::find($oldRoomId);
+            if ($oldRoom) {
+                $oldRoom->update(['status' => 'available']);
+            }
+            if (in_array($newStatus, ['confirmed', 'checked_in'])) {
+                $room->update(['status' => 'occupied']);
+            }
+        } else {
+            if (in_array($newStatus, ['cancelled', 'checked_out'])) {
+                $room->update(['status' => 'available']);
+            } elseif (in_array($newStatus, ['confirmed', 'checked_in'])) {
+                $room->update(['status' => 'occupied']);
+            }
+        }
         ActivityLogger::log('Updated', 'Booking', 'Updated booking #' . $booking->booking_number);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking updated!');
     }
@@ -132,9 +152,12 @@ class BookingController extends Controller
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking = Booking::findOrFail($id);
+        $booking = Booking::with('room')->findOrFail($id);
         $number  = $booking->booking_number;
         $booking->update(['status' => 'cancelled']);
+        if ($booking->room) {
+            $booking->room->update(['status' => 'available']);
+        }
         ActivityLogger::log('Deleted', 'Booking', 'Cancelled booking #' . $number);
         return redirect()->route('bookings.index')->with('success', 'Booking cancelled.');
     }
