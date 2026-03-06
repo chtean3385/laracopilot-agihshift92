@@ -14,7 +14,16 @@ class RoomController extends Controller
         $query = Room::query();
         if ($request->status) $query->where('status', $request->status);
         if ($request->type)   $query->where('type', $request->type);
-        $rooms = $query->orderBy('room_number')->paginate(20);
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('room_number', 'like', "%$s%")
+                  ->orWhere('view', 'like', "%$s%")
+                  ->orWhere('amenities', 'like', "%$s%")
+                  ->orWhere('type', 'like', "%$s%");
+            });
+        }
+        $rooms = $query->orderBy('room_number')->paginate(20)->withQueryString();
         $stats = [
             'available'   => Room::where('status', 'available')->count(),
             'occupied'    => Room::where('status', 'occupied')->count(),

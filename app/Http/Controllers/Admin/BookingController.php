@@ -26,7 +26,7 @@ class BookingController extends Controller
         }
         if ($request->date_from) $query->whereDate('check_in_date', '>=', $request->date_from);
         if ($request->date_to)   $query->whereDate('check_out_date', '<=', $request->date_to);
-        $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
+        $bookings = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         return view('admin.bookings.index', compact('bookings'));
     }
 

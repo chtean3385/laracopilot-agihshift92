@@ -38,7 +38,11 @@
 
     <!-- Filter + Actions -->
     <div class="flex flex-wrap gap-3 items-center justify-between">
-        <form method="GET" class="flex gap-3">
+        <form method="GET" class="flex flex-wrap gap-3 items-center">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Room #, type, view, amenities..." class="border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none w-64">
+            </div>
             <select name="status" onchange="this.form.submit()" class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
                 <option value="">All Status</option>
                 <option value="available" {{ request('status') == 'available' ? 'selected' : '' }}>Available</option>
@@ -53,6 +57,10 @@
                 <option value="villa" {{ request('type') == 'villa' ? 'selected' : '' }}>Villa</option>
                 <option value="penthouse" {{ request('type') == 'penthouse' ? 'selected' : '' }}>Penthouse</option>
             </select>
+            <button type="submit" class="btn-primary text-sm"><i class="fas fa-search mr-1"></i>Search</button>
+            @if(request()->anyFilled(['search','status','type']))
+            <a href="{{ route('rooms.index') }}" class="text-sm text-gray-500 hover:text-gray-700 underline">Clear</a>
+            @endif
         </form>
         <a href="{{ route('rooms.create') }}" class="btn-primary"><i class="fas fa-plus mr-2"></i>Add New Room</a>
     </div>
@@ -116,6 +124,6 @@
         </div>
         @endforelse
     </div>
-    <div>{{ $rooms->links() }}</div>
+    <div class="mt-4">{{ $rooms->links() }}</div>
 </div>
 @endsection

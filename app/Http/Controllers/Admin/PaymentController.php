@@ -16,7 +16,16 @@ class PaymentController extends Controller
         if ($request->payment_method) $query->where('payment_method', $request->payment_method);
         if ($request->date_from)      $query->whereDate('created_at', '>=', $request->date_from);
         if ($request->date_to)        $query->whereDate('created_at', '<=', $request->date_to);
-        $payments     = $query->orderBy('created_at', 'desc')->paginate(20);
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('transaction_id', 'like', "%$s%")
+                  ->orWhere('amount', 'like', "%$s%")
+                  ->orWhereHas('booking', fn($b) => $b->where('booking_number', 'like', "%$s%"))
+                  ->orWhereHas('booking.customer', fn($c) => $c->where('name', 'like', "%$s%"));
+            });
+        }
+        $payments     = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
         $totalRevenue = Payment::where('status', 'completed')->sum('amount');
         return view('admin.payments.index', compact('payments', 'totalRevenue'));
     }

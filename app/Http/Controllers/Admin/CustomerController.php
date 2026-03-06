@@ -19,7 +19,7 @@ class CustomerController extends Controller
                   ->orWhere('phone', 'like', '%' . $request->search . '%');
             });
         }
-        $customers = $query->orderBy('created_at', 'desc')->paginate(15);
+        $customers = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         return view('admin.customers.index', compact('customers'));
     }
 

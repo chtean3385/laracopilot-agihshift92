@@ -11,15 +11,21 @@ use Carbon\Carbon;
 
 class CheckOutController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-
-        $pendingCheckouts = Booking::with(['customer', 'room'])
+        $query = Booking::with(['customer', 'room'])
             ->where('status', 'checked_in')
-            ->orderBy('check_out_date')
-            ->get();
-
+            ->orderBy('check_out_date');
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('booking_number', 'like', "%$s%")
+                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%$s%")->orWhere('phone', 'like', "%$s%"))
+                  ->orWhereHas('room', fn($r) => $r->where('room_number', 'like', "%$s%")->orWhere('type', 'like', "%$s%"));
+            });
+        }
+        $pendingCheckouts = $query->paginate(12)->withQueryString();
         return view('admin.checkout.index', compact('pendingCheckouts'));
     }
 

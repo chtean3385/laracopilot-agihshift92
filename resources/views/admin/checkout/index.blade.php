@@ -11,11 +11,23 @@
             </div>
             <div>
                 <h2 class="text-xl font-bold">Pending Check-Outs</h2>
-                <p class="text-amber-100">{{ $pendingCheckouts->count() }} guest(s) awaiting check-out</p>
+                <p class="text-amber-100">{{ $pendingCheckouts->total() }} guest(s) awaiting check-out</p>
             </div>
         </div>
     </div>
-    @if($pendingCheckouts->count() > 0)
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <form method="GET" class="flex gap-3 items-center">
+            <div class="relative flex-1">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Guest name, phone, booking #, room..." class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+            </div>
+            <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition-all"><i class="fas fa-search mr-1"></i>Search</button>
+            @if(request('search'))
+            <a href="{{ route('checkout.index') }}" class="text-sm text-gray-500 hover:text-gray-700 underline">Clear</a>
+            @endif
+        </form>
+    </div>
+    @if($pendingCheckouts->total() > 0)
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         @foreach($pendingCheckouts as $booking)
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 card-hover">
@@ -40,13 +52,14 @@
         </div>
         @endforeach
     </div>
+    <div class="mt-2">{{ $pendingCheckouts->appends(request()->query())->links() }}</div>
     @else
     <div class="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
         <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-check-double text-amber-500 text-3xl"></i>
         </div>
         <h3 class="text-xl font-bold text-gray-700 mb-2">No Pending Check-Outs</h3>
-        <p class="text-gray-400">All guests have been checked out.</p>
+        <p class="text-gray-400">{{ request('search') ? 'No results found for your search.' : 'All guests have been checked out.' }}</p>
     </div>
     @endif
 </div>

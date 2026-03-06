@@ -17,6 +17,28 @@
             <a href="{{ route('payments.create') }}" class="btn-primary"><i class="fas fa-plus mr-2"></i>Record Payment</a>
         </div>
     </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <form method="GET" class="flex flex-wrap gap-3 items-end">
+            <div class="relative flex-1 min-w-[220px]">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Transaction ID, guest name, booking #, amount..." class="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
+            </div>
+            <select name="payment_method" class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
+                <option value="">All Methods</option>
+                <option value="cash" {{ request('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
+                <option value="card" {{ request('payment_method') == 'card' ? 'selected' : '' }}>Card</option>
+                <option value="upi" {{ request('payment_method') == 'upi' ? 'selected' : '' }}>UPI</option>
+                <option value="bank_transfer" {{ request('payment_method') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                <option value="cheque" {{ request('payment_method') == 'cheque' ? 'selected' : '' }}>Cheque</option>
+            </select>
+            <input type="date" name="date_from" value="{{ request('date_from') }}" class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
+            <input type="date" name="date_to" value="{{ request('date_to') }}" class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none">
+            <button type="submit" class="btn-primary text-sm"><i class="fas fa-search mr-1"></i>Search</button>
+            @if(request()->anyFilled(['search','payment_method','date_from','date_to']))
+            <a href="{{ route('payments.index') }}" class="text-sm text-gray-500 hover:text-gray-700 underline">Clear</a>
+            @endif
+        </form>
+    </div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -50,7 +72,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="px-6 py-4 border-t border-gray-100">{{ $payments->links() }}</div>
+        <div class="px-6 py-4 border-t border-gray-100">{{ $payments->appends(request()->query())->links() }}</div>
     </div>
 </div>
 @endsection

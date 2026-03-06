@@ -16,7 +16,16 @@ class InvoiceController extends Controller
         if ($request->status)    $query->where('status', $request->status);
         if ($request->date_from) $query->whereDate('issued_at', '>=', $request->date_from);
         if ($request->date_to)   $query->whereDate('issued_at', '<=', $request->date_to);
-        $invoices = $query->orderBy('created_at', 'desc')->paginate(15);
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('invoice_number', 'like', "%$s%")
+                  ->orWhere('total_amount', 'like', "%$s%")
+                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%$s%"))
+                  ->orWhereHas('booking.room', fn($r) => $r->where('room_number', 'like', "%$s%"));
+            });
+        }
+        $invoices = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         return view('admin.invoices.index', compact('invoices'));
     }
 
