@@ -58,8 +58,10 @@ Route::get('/rooms/create',    [RoomController::class, 'create'])->middleware('p
 Route::post('/rooms',          [RoomController::class, 'store'] )->middleware('permission:rooms.create')->name('rooms.store');
 Route::get('/rooms/{id}/edit', [RoomController::class, 'edit']  )->middleware('permission:rooms.edit')->name('rooms.edit');
 Route::put('/rooms/{id}',      [RoomController::class, 'update'])->middleware('permission:rooms.edit')->name('rooms.update');
-Route::delete('/rooms/{id}',   [RoomController::class, 'destroy'])->middleware('permission:rooms.delete')->name('rooms.destroy');
-Route::get('/rooms/{id}',      [RoomController::class, 'show'] )->name('rooms.show');
+Route::delete('/rooms/{id}',        [RoomController::class, 'destroy']  )->middleware('permission:rooms.delete')->name('rooms.destroy');
+Route::post('/rooms/{id}/deactivate',[RoomController::class, 'deactivate'])->middleware('permission:rooms.edit')->name('rooms.deactivate');
+Route::post('/rooms/{id}/activate',  [RoomController::class, 'activate']  )->middleware('permission:rooms.edit')->name('rooms.activate');
+Route::get('/rooms/{id}',            [RoomController::class, 'show']      )->name('rooms.show');
 
 // ── Bookings ───────────────────────────────────────────────────────────────
 Route::get('/bookings',           [BookingController::class, 'index'])->name('bookings.index');

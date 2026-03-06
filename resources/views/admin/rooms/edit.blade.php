@@ -44,9 +44,10 @@
                 <div>
                     <label class="form-label">Status <span class="text-red-500">*</span></label>
                     <select name="status" class="form-input" required>
-                        <option value="available" {{ old('status', $room->status) == 'available' ? 'selected' : '' }}>Available</option>
-                        <option value="occupied" {{ old('status', $room->status) == 'occupied' ? 'selected' : '' }}>Occupied</option>
+                        <option value="available"   {{ old('status', $room->status) == 'available'   ? 'selected' : '' }}>Available</option>
+                        <option value="occupied"    {{ old('status', $room->status) == 'occupied'    ? 'selected' : '' }}>Occupied</option>
                         <option value="maintenance" {{ old('status', $room->status) == 'maintenance' ? 'selected' : '' }}>Under Maintenance</option>
+                        <option value="inactive"    {{ old('status', $room->status) == 'inactive'    ? 'selected' : '' }}>Inactive (Deactivated)</option>
                     </select>
                 </div>
                 <div class="md:col-span-2">

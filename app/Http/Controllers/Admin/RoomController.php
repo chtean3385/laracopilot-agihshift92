@@ -29,6 +29,7 @@ class RoomController extends Controller
             'available'   => Room::where('status', 'available')->count(),
             'occupied'    => Room::where('status', 'occupied')->count(),
             'maintenance' => Room::where('status', 'maintenance')->count(),
+            'inactive'    => Room::where('status', 'inactive')->count(),
         ];
         return view('admin.rooms.index', compact('rooms', 'stats'));
     }
@@ -85,20 +86,60 @@ class RoomController extends Controller
             'view'           => 'nullable|string|max:100',
             'amenities'      => 'nullable|string',
             'description'    => 'nullable|string',
-            'status'         => 'required|in:available,occupied,maintenance',
+            'status'         => 'required|in:available,occupied,maintenance,inactive',
         ]);
         $room->update($validated);
         ActivityLogger::log('Updated', 'Room', 'Updated room: ' . $room->room_number);
         return redirect()->route('rooms.index')->with('success', 'Room updated!');
     }
 
+    public function deactivate($id)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        $room = Room::findOrFail($id);
+
+        if ($this->isOccupiedByGuest($room)) {
+            return redirect()->route('rooms.index')
+                ->with('error', 'Room ' . $room->room_number . ' cannot be deactivated — it is currently occupied or has an active booking today.');
+        }
+
+        $room->update(['status' => 'inactive']);
+        ActivityLogger::log('Deactivated', 'Room', 'Deactivated room: ' . $room->room_number);
+        return redirect()->route('rooms.index')->with('success', 'Room ' . $room->room_number . ' has been deactivated.');
+    }
+
+    public function activate($id)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        $room = Room::findOrFail($id);
+        $room->update(['status' => 'available']);
+        ActivityLogger::log('Activated', 'Room', 'Re-activated room: ' . $room->room_number);
+        return redirect()->route('rooms.index')->with('success', 'Room ' . $room->room_number . ' is now active and available.');
+    }
+
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $room = Room::findOrFail($id);
+
+        if ($this->isOccupiedByGuest($room)) {
+            return redirect()->route('rooms.index')
+                ->with('error', 'Room ' . $room->room_number . ' cannot be deleted — it is currently occupied or has an active booking today.');
+        }
+
         $number = $room->room_number;
         $room->delete();
         ActivityLogger::log('Deleted', 'Room', 'Deleted room: ' . $number);
-        return redirect()->route('rooms.index')->with('success', 'Room removed.');
+        return redirect()->route('rooms.index')->with('success', 'Room ' . $number . ' has been permanently deleted.');
+    }
+
+    private function isOccupiedByGuest(Room $room): bool
+    {
+        $today = now()->toDateString();
+        return $room->bookings()
+            ->whereIn('status', ['checked_in', 'confirmed', 'pending'])
+            ->where('check_in_date', '<=', $today)
+            ->where('check_out_date', '>=', $today)
+            ->exists();
     }
 }
