@@ -46,12 +46,18 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Guests</span>
-                    <span style="font-weight:600;">{{ $booking->adults }} Adults@if($booking->children > 0), {{ $booking->children }} Children@endif</span>
+                    <span style="font-weight:600;">{{ $booking->adults }} Adults{{ $booking->children > 0 ? ', ' . $booking->children . ' Children' : '' }}</span>
                 </div>
             </div>
         </div>
 
         {{-- Bill Summary --}}
+        @php
+            $taxRate       = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float)$settings->tax_rate : 0;
+            $gstAmount     = round($actualTotal * ($taxRate / 100), 2);
+            $grandTotal    = $actualTotal + $gstAmount;
+            $gstBalanceDue = max(0, $grandTotal - $totalPaid);
+        @endphp
         <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:22px;">
             <h3 style="font-weight:800;color:#1e293b;margin-bottom:16px;font-size:15px;"><i class="fas fa-receipt" style="color:#f59e0b;margin-right:8px;"></i>Bill Summary</h3>
             <div style="display:flex;flex-direction:column;gap:10px;">
@@ -59,9 +65,15 @@
                     <span style="color:#64748b;">{{ $actualNights }} nights × Rs{{ number_format($booking->room->price_per_night) }}</span>
                     <span style="font-weight:700;">Rs{{ number_format($actualTotal) }}</span>
                 </div>
+                @if($taxRate > 0)
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">GST ({{ $taxRate }}%)</span>
+                    <span style="font-weight:600;">Rs{{ number_format($gstAmount) }}</span>
+                </div>
+                @endif
                 <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid #f1f5f9;padding-top:10px;">
                     <span style="color:#64748b;">Total Charges</span>
-                    <span style="font-weight:800;">Rs{{ number_format($actualTotal) }}</span>
+                    <span style="font-weight:800;">Rs{{ number_format($grandTotal) }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Amount Paid</span>
@@ -69,7 +81,7 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:2px solid #0f172a;padding-top:12px;margin-top:4px;">
                     <span>Balance Due</span>
-                    <span style="color:{{ $balanceDue > 0 ? '#ef4444' : '#16a34a' }};font-size:26px;">Rs{{ number_format($balanceDue) }}</span>
+                    <span style="color:{{ $gstBalanceDue > 0 ? '#ef4444' : '#16a34a' }};font-size:26px;">Rs{{ number_format($gstBalanceDue) }}</span>
                 </div>
             </div>
 
@@ -94,9 +106,9 @@
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label class="form-label">Final Payment (Rs)</label>
-                    <input type="number" name="final_payment" value="{{ $balanceDue }}" min="0" step="0.01" class="form-input">
-                    <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Pre-filled with balance due. Adjust if needed.</p>
+                    <label class="form-label">Final Payment (Rs){{ $taxRate > 0 ? ' incl. GST' : '' }}</label>
+                    <input type="number" name="final_payment" value="{{ $gstBalanceDue }}" min="0" step="0.01" class="form-input">
+                    <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Pre-filled with balance due{{ $taxRate > 0 ? ' (incl. ' . $taxRate . '% GST)' : '' }}. Adjust if needed.</p>
                 </div>
                 <div>
                     <label class="form-label">Payment Method</label>
