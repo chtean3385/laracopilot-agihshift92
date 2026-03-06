@@ -13,12 +13,20 @@
     </div>
     <div class="border border-gray-200 rounded-xl overflow-hidden">
         <div class="bg-slate-800 text-white px-8 py-6">
-            <div class="flex justify-between">
-                <div>
-                    <div class="text-xl font-black">{{ $settings->resort_name ?? 'Azure Paradise Resort' }}</div>
-                    <div class="text-slate-400 text-sm">{{ $settings->address ?? '' }}</div>
-                    <div class="text-slate-400 text-sm">{{ $settings->phone ?? '' }}</div>
-                    @if($settings && $settings->gst_number)<div class="text-slate-400 text-xs mt-1">GST: {{ $settings->gst_number }}</div>@endif
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-4">
+                    @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
+                    <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-1 flex-shrink-0">
+                        <img src="{{ asset('storage/' . $settings->logo) }}" alt="Logo" class="max-w-full max-h-full object-contain">
+                    </div>
+                    @endif
+                    <div>
+                        <div class="text-xl font-black">{{ $settings->resort_name ?? 'Azure Paradise Resort' }}</div>
+                        @if($settings && $settings->tagline)<div class="text-cyan-400 text-xs font-semibold mb-1">{{ $settings->tagline }}</div>@endif
+                        <div class="text-slate-400 text-sm">{{ $settings->address ?? '' }}</div>
+                        <div class="text-slate-400 text-sm">{{ $settings->phone ?? '' }}</div>
+                        @if($settings && $settings->gst_number)<div class="text-slate-400 text-xs mt-1">GST: {{ $settings->gst_number }}</div>@endif
+                    </div>
                 </div>
                 <div class="text-right">
                     <div class="text-2xl font-black text-cyan-400">INVOICE</div>

@@ -11,10 +11,18 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-6 text-white">
             <div class="flex items-start justify-between">
-                <div>
-                    <div class="text-2xl font-black">{{ $settings->resort_name ?? 'Azure Paradise Resort' }}</div>
-                    <div class="text-slate-400 text-sm mt-1">{{ $settings->address ?? '' }}</div>
-                    <div class="text-slate-400 text-sm">{{ $settings->phone ?? '' }} • {{ $settings->email ?? '' }}</div>
+                <div class="flex items-center gap-4">
+                    @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
+                    <div class="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-1 flex-shrink-0">
+                        <img src="{{ asset('storage/' . $settings->logo) }}" alt="Logo" class="max-w-full max-h-full object-contain">
+                    </div>
+                    @endif
+                    <div>
+                        <div class="text-2xl font-black">{{ $settings->resort_name ?? 'Azure Paradise Resort' }}</div>
+                        @if($settings && $settings->tagline)<div class="text-cyan-400 text-xs font-semibold mb-0.5">{{ $settings->tagline }}</div>@endif
+                        <div class="text-slate-400 text-sm mt-1">{{ $settings->address ?? '' }}</div>
+                        <div class="text-slate-400 text-sm">{{ $settings->phone ?? '' }} • {{ $settings->email ?? '' }}</div>
+                    </div>
                 </div>
                 <div class="text-right">
                     <div class="text-3xl font-black text-cyan-400">INVOICE</div>

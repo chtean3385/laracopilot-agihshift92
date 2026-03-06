@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Azure Paradise Resort CRM</title>
+    <title>Login — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -18,11 +18,17 @@
     <div class="relative w-full max-w-md">
         <!-- Logo Card -->
         <div class="text-center mb-8">
+            @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
+            <div class="inline-flex w-24 h-24 bg-white/10 backdrop-blur rounded-3xl items-center justify-center shadow-2xl mb-4 p-2">
+                <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->resort_name }}" class="max-w-full max-h-full object-contain">
+            </div>
+            @else
             <div class="inline-flex w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-3xl items-center justify-center shadow-2xl mb-4">
                 <i class="fas fa-umbrella-beach text-white text-3xl"></i>
             </div>
-            <h1 class="text-3xl font-bold text-white">Azure Paradise</h1>
-            <p class="text-cyan-300 text-sm mt-1">Resort & Spa • Staff Portal</p>
+            @endif
+            <h1 class="text-3xl font-bold text-white">{{ $settings->resort_name ?? 'Resort CRM' }}</h1>
+            <p class="text-cyan-300 text-sm mt-1">{{ $settings->tagline ?? 'Resort & Spa' }} • Staff Portal</p>
         </div>
 
         <!-- Login Form -->

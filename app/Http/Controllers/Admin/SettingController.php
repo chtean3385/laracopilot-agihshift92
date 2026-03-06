@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -18,6 +19,7 @@ class SettingController extends Controller
         if (!$settings) {
             $settings = new Setting();
             $settings->resort_name         = 'Azure Paradise Resort and Spa';
+            $settings->tagline             = 'Resort & Spa CRM';
             $settings->address             = '45 Beachside Boulevard, Calangute, Goa 403516 India';
             $settings->phone               = '+91 832 267 8900';
             $settings->email               = 'reservations@azureparadise.com';
@@ -41,6 +43,7 @@ class SettingController extends Controller
 
         $request->validate([
             'resort_name'     => 'required|string|max:255',
+            'tagline'         => 'nullable|string|max:150',
             'address'         => 'required|string',
             'phone'           => 'required|string|max:30',
             'email'           => 'required|email',
@@ -48,14 +51,26 @@ class SettingController extends Controller
             'check_out_time'  => 'required|string',
             'tax_rate'        => 'required|string|max:10',
             'currency_symbol' => 'required|string|max:10',
+            'logo'            => 'nullable|file|max:2048|mimes:jpg,jpeg,png,gif,svg,webp',
         ]);
 
-        $settings = Setting::first();
+        $settings = Setting::first() ?? new Setting();
 
-        if (!$settings) {
-            Setting::create($request->except('_token', '_method'));
+        $data = $request->except(['_token', '_method', 'logo']);
+
+        if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
+            if ($settings->logo && Storage::disk('public')->exists($settings->logo)) {
+                Storage::disk('public')->delete($settings->logo);
+            }
+            $file     = $request->file('logo');
+            $fileName = 'resort_logo_' . time() . '.' . $file->getClientOriginalExtension();
+            $data['logo'] = $file->storeAs('logos', $fileName, 'public');
+        }
+
+        if ($settings->exists) {
+            $settings->update($data);
         } else {
-            $settings->update($request->except('_token', '_method'));
+            Setting::create($data);
         }
 
         return redirect()->route('settings.index')->with('success', 'Settings saved successfully!');

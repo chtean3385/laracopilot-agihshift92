@@ -188,12 +188,18 @@
         <!-- Logo -->
         <div style="padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,.06);">
             <div style="display:flex; align-items:center; gap:12px;">
+                @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
+                <div style="width:42px;height:42px;border-radius:12px;overflow:hidden;flex-shrink:0;background:#fff;">
+                    <img src="{{ asset('storage/' . $settings->logo) }}" alt="Logo" style="width:42px;height:42px;object-fit:contain;padding:4px;">
+                </div>
+                @else
                 <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(6,182,212,.4);flex-shrink:0;">
                     <i class="fas fa-umbrella-beach" style="color:#fff;font-size:18px;"></i>
                 </div>
+                @endif
                 <div style="min-width:0;">
                     <div style="color:#fff;font-weight:800;font-size:14px;line-height:1.2;">{{ $settings->resort_name ?? 'Resort CRM' }}</div>
-                    <div style="color:#475569;font-size:11px;margin-top:1px;">Resort & Spa CRM</div>
+                    <div style="color:#475569;font-size:11px;margin-top:1px;">{{ $settings->tagline ?? 'Resort & Spa CRM' }}</div>
                 </div>
             </div>
         </div>
