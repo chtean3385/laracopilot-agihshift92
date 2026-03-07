@@ -18,6 +18,9 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ForgotPasswordController;
 
+// ── Healthcheck ────────────────────────────────────────────────────────────
+Route::get('/health', fn() => response('OK', 200));
+
 // ── Root redirect ──────────────────────────────────────────────────────────
 Route::get('/', fn() => redirect()->route('dashboard'));
 
