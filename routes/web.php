@@ -21,8 +21,8 @@ use App\Http\Controllers\Admin\ForgotPasswordController;
 // ── Healthcheck ────────────────────────────────────────────────────────────
 Route::get('/health', fn() => response('OK', 200));
 
-// ── Root redirect ──────────────────────────────────────────────────────────
-Route::get('/', fn() => redirect()->route('dashboard'));
+// ── Root ───────────────────────────────────────────────────────────────────
+Route::get('/', [AdminAuthController::class, 'showLogin'])->name('home');
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 Route::get('/login',  [AdminAuthController::class, 'showLogin'])->name('login');

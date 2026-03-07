@@ -16,8 +16,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        \URL::forceScheme('https');
-
         try {
             $settings = Setting::first();
             View::share('settings', $settings);
