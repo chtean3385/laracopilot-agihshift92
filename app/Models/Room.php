@@ -12,6 +12,7 @@ class Room extends Model
         'has_breakfast', 'breakfast_price',
         'has_lunch',     'lunch_price',
         'has_dinner',    'dinner_price',
+        'has_extra_bed', 'extra_bed_price',
     ];
 
     protected $casts = [
@@ -24,6 +25,8 @@ class Room extends Model
         'lunch_price'      => 'decimal:2',
         'has_dinner'       => 'boolean',
         'dinner_price'     => 'decimal:2',
+        'has_extra_bed'    => 'boolean',
+        'extra_bed_price'  => 'decimal:2',
     ];
 
     public function hasMeals(): bool

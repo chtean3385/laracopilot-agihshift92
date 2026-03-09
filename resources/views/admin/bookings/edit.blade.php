@@ -57,6 +57,25 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Special Requests</label>
                     <textarea name="special_requests" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">{{ old('special_requests',$booking->special_requests) }}</textarea>
                 </div>
+                @if($booking->room && $booking->room->has_extra_bed)
+                <div class="md:col-span-2">
+                    <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bed text-blue-500"></i>
+                                <h4 class="font-bold text-slate-700">Extra Beds</h4>
+                                <span class="text-xs text-gray-400">— ₹{{ number_format($booking->room->extra_bed_price) }}/bed/night</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <label class="text-sm text-gray-600">Number of extra beds:</label>
+                                <input type="number" name="extra_beds"
+                                    value="{{ old('extra_beds', $booking->extra_beds) }}" min="0" max="10"
+                                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 w-20 text-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 @if($booking->room && $booking->room->hasMeals())
                 <div class="md:col-span-2">
                     <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">

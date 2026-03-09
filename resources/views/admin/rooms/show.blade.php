@@ -80,6 +80,14 @@
                 </div>
             </div>
             @endif
+            @if($room->has_extra_bed)
+            <div class="mt-4 p-3 bg-blue-50 rounded-xl">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-600"><i class="fas fa-bed text-blue-400 mr-1"></i>Extra Bed</span>
+                    <span class="font-semibold text-blue-700">₹{{ number_format($room->extra_bed_price) }}/bed/night</span>
+                </div>
+            </div>
+            @endif
         </div>
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">

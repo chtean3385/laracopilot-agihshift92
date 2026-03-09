@@ -116,6 +116,30 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Extra Bed -->
+                <div class="md:col-span-2">
+                    <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bed text-blue-500"></i>
+                                <h4 class="font-bold text-gray-700">Extra Bed</h4>
+                            </div>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" name="has_extra_bed" value="1" id="cb_extra_bed"
+                                    class="w-4 h-4 rounded text-blue-500" onchange="toggleExtraBed()"
+                                    {{ old('has_extra_bed') ? 'checked' : '' }}>
+                                <span class="font-semibold text-gray-700">Allow extra bed in this room</span>
+                            </label>
+                            <div id="extra_bed_price_wrap" class="flex items-center gap-3 {{ old('has_extra_bed') ? '' : 'opacity-40 pointer-events-none' }}">
+                                <label class="text-sm text-gray-500">Price per bed per night (₹)</label>
+                                <input type="number" name="extra_bed_price" id="extra_bed_price"
+                                    value="{{ old('extra_bed_price') }}" min="0" step="0.01"
+                                    class="form-input w-36 text-sm" placeholder="e.g. 1500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                 <a href="{{ route('rooms.index') }}" class="btn-secondary">Cancel</a>
@@ -128,6 +152,14 @@
 function togglePrice(meal) {
     const cb = document.getElementById('cb_' + meal);
     const wrap = document.getElementById((meal === 'breakfast' ? 'bf' : meal) + '_price_wrap');
+    if (wrap) {
+        wrap.classList.toggle('opacity-40', !cb.checked);
+        wrap.classList.toggle('pointer-events-none', !cb.checked);
+    }
+}
+function toggleExtraBed() {
+    const cb = document.getElementById('cb_extra_bed');
+    const wrap = document.getElementById('extra_bed_price_wrap');
     if (wrap) {
         wrap.classList.toggle('opacity-40', !cb.checked);
         wrap.classList.toggle('pointer-events-none', !cb.checked);

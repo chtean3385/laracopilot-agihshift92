@@ -56,13 +56,16 @@ class RoomController extends Controller
             'breakfast_price'=> 'nullable|numeric|min:0',
             'lunch_price'    => 'nullable|numeric|min:0',
             'dinner_price'   => 'nullable|numeric|min:0',
+            'extra_bed_price'=> 'nullable|numeric|min:0',
         ]);
         $validated['has_breakfast'] = $request->boolean('has_breakfast');
         $validated['has_lunch']     = $request->boolean('has_lunch');
         $validated['has_dinner']    = $request->boolean('has_dinner');
+        $validated['has_extra_bed'] = $request->boolean('has_extra_bed');
         if (!$validated['has_breakfast']) $validated['breakfast_price'] = null;
         if (!$validated['has_lunch'])     $validated['lunch_price']     = null;
         if (!$validated['has_dinner'])    $validated['dinner_price']    = null;
+        if (!$validated['has_extra_bed']) $validated['extra_bed_price'] = null;
         $room = Room::create($validated);
         ActivityLogger::log('Created', 'Room', 'Created room: ' . $room->room_number . ' (' . ucfirst($room->type) . ')');
         return redirect()->route('rooms.index')->with('success', 'Room added!');
@@ -99,13 +102,16 @@ class RoomController extends Controller
             'breakfast_price'=> 'nullable|numeric|min:0',
             'lunch_price'    => 'nullable|numeric|min:0',
             'dinner_price'   => 'nullable|numeric|min:0',
+            'extra_bed_price'=> 'nullable|numeric|min:0',
         ]);
         $validated['has_breakfast'] = $request->boolean('has_breakfast');
         $validated['has_lunch']     = $request->boolean('has_lunch');
         $validated['has_dinner']    = $request->boolean('has_dinner');
+        $validated['has_extra_bed'] = $request->boolean('has_extra_bed');
         if (!$validated['has_breakfast']) $validated['breakfast_price'] = null;
         if (!$validated['has_lunch'])     $validated['lunch_price']     = null;
         if (!$validated['has_dinner'])    $validated['dinner_price']    = null;
+        if (!$validated['has_extra_bed']) $validated['extra_bed_price'] = null;
         $room->update($validated);
         ActivityLogger::log('Updated', 'Room', 'Updated room: ' . $room->room_number);
         return redirect()->route('rooms.index')->with('success', 'Room updated!');

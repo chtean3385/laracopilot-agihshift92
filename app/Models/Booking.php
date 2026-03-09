@@ -15,6 +15,7 @@ class Booking extends Model
         'special_requests', 'status', 'payment_status',
         'checkin_notes', 'checkout_notes',
         'meal_breakfast', 'meal_lunch', 'meal_dinner', 'meal_cost',
+        'extra_beds', 'extra_bed_cost',
     ];
 
     protected $casts = [
@@ -29,6 +30,8 @@ class Booking extends Model
         'meal_breakfast'     => 'boolean',
         'meal_lunch'         => 'boolean',
         'meal_dinner'        => 'boolean',
+        'extra_beds'         => 'integer',
+        'extra_bed_cost'     => 'decimal:2',
     ];
 
     public function customer()

@@ -126,6 +126,8 @@
                             data-lunch-price="{{ $room->lunch_price ?? 0 }}"
                             data-has-dinner="{{ $room->has_dinner ? '1' : '0' }}"
                             data-dinner-price="{{ $room->dinner_price ?? 0 }}"
+                            data-has-extra-bed="{{ $room->has_extra_bed ? '1' : '0' }}"
+                            data-extra-bed-price="{{ $room->extra_bed_price ?? 0 }}"
                             {{ old('room_id') == $room->id ? 'selected' : '' }}>
                             Room {{ $room->room_number }} — {{ ucfirst($room->type) }} — ₹{{ number_format($room->price_per_night) }}/night
                         </option>
@@ -182,6 +184,25 @@
                                 <span class="font-semibold text-gray-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
                                 <span id="meal_dinner_price" class="text-sm text-indigo-600 font-bold"></span>
                             </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extra Bed Section -->
+                <div class="md:col-span-2" id="extraBedSection" style="display:none">
+                    <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bed text-blue-500"></i>
+                                <h4 class="font-bold text-gray-700">Extra Beds</h4>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <label class="text-sm text-gray-600">How many extra beds?</label>
+                                <input type="number" name="extra_beds" id="extraBedsInput"
+                                    value="{{ old('extra_beds', 0) }}" min="0" max="10"
+                                    class="form-input w-20 text-sm text-center" onchange="calculateTotal()">
+                                <span id="extraBedPriceLabel" class="text-sm text-blue-600 font-semibold"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -275,6 +296,17 @@
         });
         const section = document.getElementById('mealPlanSection');
         if (section) section.style.display = hasMeals ? '' : 'none';
+
+        const hasExtraBed = opt && opt.dataset.hasExtraBed === '1';
+        const extraBedPrice = opt ? parseFloat(opt.dataset.extraBedPrice || 0) : 0;
+        const ebSection = document.getElementById('extraBedSection');
+        const ebLabel   = document.getElementById('extraBedPriceLabel');
+        if (ebSection) ebSection.style.display = hasExtraBed ? '' : 'none';
+        if (!hasExtraBed) {
+            const ebInput = document.getElementById('extraBedsInput');
+            if (ebInput) ebInput.value = 0;
+        }
+        if (ebLabel) ebLabel.textContent = hasExtraBed ? '₹' + extraBedPrice.toLocaleString('en-IN') + '/bed/night' : '';
     }
 
     function calculateTotal() {
@@ -293,12 +325,19 @@
                 const price = opt ? parseFloat(opt.dataset[m + 'Price'] || 0) : 0;
                 if (cb && cb.checked) mealCost += nights * price;
             });
-            const total = nights * pricePerNight + mealCost;
+            const extraBeds = parseInt(document.getElementById('extraBedsInput')?.value || 0);
+            const extraBedPrice = opt ? parseFloat(opt.dataset.extraBedPrice || 0) : 0;
+            const hasExtraBed = opt && opt.dataset.hasExtraBed === '1';
+            const extraBedCost = hasExtraBed ? extraBeds * extraBedPrice * nights : 0;
+            const total = nights * pricePerNight + mealCost + extraBedCost;
             document.getElementById('nightsCount').textContent = nights;
             document.getElementById('rateDisplay').textContent = pricePerNight ? '₹' + pricePerNight.toLocaleString('en-IN') : '—';
             document.getElementById('totalDisplay').textContent = total ? '₹' + total.toLocaleString('en-IN') : '—';
             const mealLine = document.getElementById('mealCostLine');
-            if (mealLine) mealLine.textContent = mealCost > 0 ? '(incl. ₹' + mealCost.toLocaleString('en-IN') + ' meals)' : '';
+            let extras = [];
+            if (mealCost > 0) extras.push('₹' + mealCost.toLocaleString('en-IN') + ' meals');
+            if (extraBedCost > 0) extras.push('₹' + extraBedCost.toLocaleString('en-IN') + ' extra beds');
+            if (mealLine) mealLine.textContent = extras.length > 0 ? '(incl. ' + extras.join(' + ') + ')' : '';
         }
     }
 

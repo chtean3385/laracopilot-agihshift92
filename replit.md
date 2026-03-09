@@ -63,8 +63,10 @@ Resend.com integration is available in Replit but was not connected. Re-connect 
 ## Meal Options Feature
 Each room can offer optional breakfast, lunch, and/or dinner, each with a price-per-night. When creating a booking, available meals are shown as checkboxes; selected meals are added to the booking total. Meal cost is stored in `bookings.meal_cost` (plus `meal_breakfast`, `meal_lunch`, `meal_dinner` booleans). Meals are displayed on booking show, invoice show, and invoice print as a separate line item.
 
-Room model fields: `has_breakfast`, `breakfast_price`, `has_lunch`, `lunch_price`, `has_dinner`, `dinner_price`
-Booking model fields: `meal_breakfast`, `meal_lunch`, `meal_dinner`, `meal_cost`
+Room model fields: `has_breakfast`, `breakfast_price`, `has_lunch`, `lunch_price`, `has_dinner`, `dinner_price`, `has_extra_bed`, `extra_bed_price`
+Booking model fields: `meal_breakfast`, `meal_lunch`, `meal_dinner`, `meal_cost`, `extra_beds`, `extra_bed_cost`
+
+Extra Bed: Each room can optionally allow extra beds at a configured price per bed per night. On booking, staff enter the number of extra beds needed. Cost = extra_beds × extra_bed_price × nights, added to the total. Shown as a line item on booking show, invoice show, and invoice print.
 
 ## Models
 - `Customer` — Hotel guests

@@ -60,7 +60,9 @@ class BookingController extends Controller
         $mealCost       = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
                         + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
                         + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
-        $totalAmount    = $nights * $room->price_per_night + $mealCost;
+        $extraBeds      = ($room->has_extra_bed) ? max(0, (int) $request->input('extra_beds', 0)) : 0;
+        $extraBedCost   = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
+        $totalAmount    = $nights * $room->price_per_night + $mealCost + $extraBedCost;
         $advancePayment = $validated['advance_payment'] ?? 0;
         $booking = Booking::create([
             'booking_number'  => 'BK' . strtoupper(substr(uniqid(), -6)),
@@ -81,6 +83,8 @@ class BookingController extends Controller
             'meal_lunch'      => $mealLunch,
             'meal_dinner'     => $mealDinner,
             'meal_cost'       => $mealCost,
+            'extra_beds'      => $extraBeds,
+            'extra_bed_cost'  => $extraBedCost,
         ]);
         if ($advancePayment > 0) {
             Payment::create([
@@ -139,7 +143,9 @@ class BookingController extends Controller
         $mealCost      = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
                        + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
                        + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
-        $total     = $nights * $room->price_per_night + $mealCost;
+        $extraBeds     = ($room->has_extra_bed) ? max(0, (int) $request->input('extra_beds', 0)) : 0;
+        $extraBedCost  = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
+        $total         = $nights * $room->price_per_night + $mealCost + $extraBedCost;
         $booking->update(array_merge($validated, [
             'nights'         => $nights,
             'total_amount'   => $total,
@@ -148,6 +154,8 @@ class BookingController extends Controller
             'meal_lunch'     => $mealLunch,
             'meal_dinner'    => $mealDinner,
             'meal_cost'      => $mealCost,
+            'extra_beds'     => $extraBeds,
+            'extra_bed_cost' => $extraBedCost,
         ]));
         $newStatus = $validated['status'];
         if ($oldRoomId !== $newRoomId) {

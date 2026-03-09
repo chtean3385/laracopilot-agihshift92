@@ -105,6 +105,14 @@
                             </span>
                             <span class="font-medium text-amber-600">₹{{ number_format($booking->meal_cost) }}</span>
                         </div>
+                        @endif
+                        @if($booking->extra_beds > 0)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500"><i class="fas fa-bed text-blue-400 mr-1"></i>Extra Beds ({{ $booking->extra_beds }})</span>
+                            <span class="font-medium text-blue-600">₹{{ number_format($booking->extra_bed_cost) }}</span>
+                        </div>
+                        @endif
+                        @if($booking->meal_cost > 0 || $booking->extra_beds > 0)
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span class="font-medium">₹{{ number_format($booking->total_amount) }}</span></div>
                         @endif
                         @if($bTaxRate > 0)

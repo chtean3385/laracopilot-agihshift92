@@ -80,6 +80,14 @@
                         <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invoice->booking->meal_cost) }}</td>
                     </tr>
                     @endif
+                    @if($invoice->booking->extra_beds > 0)
+                    <tr class="border-t border-gray-100">
+                        <td class="px-4 py-3 text-sm">Extra Beds × {{ $invoice->booking->extra_beds }}</td>
+                        <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }}</td>
+                        <td class="px-4 py-3 text-sm text-right">₹{{ number_format($invoice->booking->room->extra_bed_price ?? 0) }}/bed</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invoice->booking->extra_bed_cost) }}</td>
+                    </tr>
+                    @endif
                 </tbody>
             </table>
             @php
