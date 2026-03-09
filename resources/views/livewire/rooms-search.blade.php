@@ -173,10 +173,9 @@
         @endforelse
     </div>
     <div class="mt-4">{{ $rooms->links() }}</div>
-</div>
 
-<!-- Confirmation Modal (outside Livewire re-render area via wire:ignore) -->
-<div wire:ignore>
+    <!-- Confirmation Modal (wire:ignore prevents Livewire re-rendering the modal/script) -->
+    <div wire:ignore>
 <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div id="modalHeader" class="px-6 py-4 flex items-center gap-3">
@@ -238,4 +237,5 @@ function confirmDelete(id, num) {
     openModal();
 }
 </script>
+</div>
 </div>
