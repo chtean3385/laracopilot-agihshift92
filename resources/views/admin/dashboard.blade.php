@@ -155,23 +155,126 @@
             </div>
         </div>
 
-        <!-- Weekly Revenue Chart -->
+        <!-- Weekly Revenue Chart (enhanced) -->
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 col-span-1 lg:col-span-2">
-            <h3 class="font-bold text-gray-800 mb-5">7-Day Revenue Overview</h3>
+            <div class="flex items-center justify-between mb-1">
+                <h3 class="font-bold text-gray-800">7-Day Revenue Overview</h3>
+                @php $weekTotal = array_sum(array_column($weeklyRevenue, 'amount')); @endphp
+                <span class="text-sm font-bold text-emerald-600">₹{{ number_format($weekTotal) }} total</span>
+            </div>
+            <p class="text-xs text-gray-400 mb-4">Payments collected over the last 7 days</p>
             @php $maxRevenue = max(array_column($weeklyRevenue, 'amount')) ?: 1; @endphp
-            <div class="flex items-end gap-3 h-32">
+            <div class="flex items-end gap-2 h-36">
                 @foreach($weeklyRevenue as $day)
-                    @php $height = $day['amount'] > 0 ? max(8, round(($day['amount'] / $maxRevenue) * 100)) : 4; @endphp
-                    <div class="flex-1 flex flex-col items-center gap-1">
-                        <div class="text-xs text-gray-500 font-medium">{{ $day['amount'] > 0 ? '₹' . number_format($day['amount']/1000, 0) . 'k' : '—' }}</div>
-                        <div class="w-full bg-gradient-to-t from-cyan-500 to-blue-400 rounded-t-lg hover:from-cyan-600 hover:to-blue-500 transition-all cursor-pointer" style="height: {{ $height }}%;"></div>
-                        <div class="text-xs text-gray-400">{{ $day['day'] }}</div>
+                    @php $height = $day['amount'] > 0 ? max(10, round(($day['amount'] / $maxRevenue) * 100)) : 3; @endphp
+                    <div class="flex-1 flex flex-col items-center gap-1 group">
+                        <div class="text-xs font-semibold {{ $day['amount'] > 0 ? ($day['isToday'] ? 'text-cyan-600' : 'text-gray-600') : 'text-gray-300' }} opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            {{ $day['amount'] > 0 ? '₹' . number_format($day['amount']) : '—' }}
+                        </div>
+                        <div class="w-full rounded-t-lg transition-all relative overflow-hidden {{ $day['isToday'] ? 'bg-gradient-to-t from-cyan-600 to-cyan-400 shadow-md' : 'bg-gradient-to-t from-blue-400 to-sky-300 group-hover:from-cyan-500 group-hover:to-blue-400' }}" style="height: {{ $height }}%;">
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs font-semibold {{ $day['isToday'] ? 'text-cyan-600' : 'text-gray-500' }}">{{ $day['day'] }}</div>
+                            <div class="text-xs {{ $day['isToday'] ? 'text-cyan-400' : 'text-gray-300' }}">{{ $day['date'] }}</div>
+                        </div>
                     </div>
+                @endforeach
+            </div>
+            <div class="mt-4 border-t border-gray-50 pt-3 grid grid-cols-7 gap-2">
+                @foreach($weeklyRevenue as $day)
+                <div class="text-center">
+                    <div class="text-xs {{ $day['amount'] > 0 ? 'text-gray-700 font-semibold' : 'text-gray-300' }}">
+                        {{ $day['amount'] > 0 ? '₹' . number_format($day['amount']/1000, 1) . 'k' : '—' }}
+                    </div>
+                </div>
                 @endforeach
             </div>
         </div>
     </div>
     @endCanDo
+
+    <!-- Booking Calendar -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-white text-xs"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800">Booking Calendar</h3>
+                    <p class="text-xs text-gray-400">{{ $calStart->format('F Y') }} — arrivals & departures</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1">
+                <a href="{{ route('dashboard', ['cal_year' => $prevMonth->year, 'cal_month' => $prevMonth->month]) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-all text-sm">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <a href="{{ route('dashboard') }}" class="px-3 h-8 flex items-center rounded-lg border border-gray-200 hover:bg-gray-50 text-xs text-gray-500 font-medium transition-all">Today</a>
+                <a href="{{ route('dashboard', ['cal_year' => $nextMonth->year, 'cal_month' => $nextMonth->month]) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-all text-sm">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="p-4">
+            <!-- Day-of-week header -->
+            <div class="grid grid-cols-7 mb-1">
+                @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $dow)
+                <div class="text-center text-xs font-semibold text-gray-400 py-2">{{ $dow }}</div>
+                @endforeach
+            </div>
+            <!-- Calendar weeks -->
+            @if(count($calWeeks) > 0)
+            <div class="space-y-1">
+                @foreach($calWeeks as $week)
+                <div class="grid grid-cols-7 gap-1">
+                    @foreach($week as $cell)
+                    @php
+                        $hasActivity = $cell['checkins'] > 0 || $cell['checkouts'] > 0 || $cell['staying'] > 0;
+                        $totalGuests = $cell['checkins'] + $cell['checkouts'] + $cell['staying'];
+                    @endphp
+                    <a href="{{ route('bookings.index', ['check_in_date' => $cell['ds']]) }}"
+                       class="relative min-h-[72px] rounded-xl p-1.5 flex flex-col transition-all
+                           {{ $cell['isToday'] ? 'bg-cyan-50 border-2 border-cyan-400 shadow-sm' : ($cell['inMonth'] ? 'bg-gray-50 hover:bg-gray-100 border border-gray-100' : 'bg-white border border-gray-50 opacity-40') }}">
+                        <span class="text-xs font-bold {{ $cell['isToday'] ? 'text-cyan-600' : ($cell['inMonth'] ? 'text-gray-700' : 'text-gray-300') }} leading-none mb-1">
+                            {{ $cell['day'] }}
+                        </span>
+                        <div class="flex flex-col gap-0.5 mt-auto">
+                            @if($cell['checkins'] > 0)
+                            <div class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
+                                <span class="text-[10px] text-cyan-700 font-semibold leading-none">{{ $cell['checkins'] }} in</span>
+                            </div>
+                            @endif
+                            @if($cell['checkouts'] > 0)
+                            <div class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>
+                                <span class="text-[10px] text-amber-700 font-semibold leading-none">{{ $cell['checkouts'] }} out</span>
+                            </div>
+                            @endif
+                            @if($cell['staying'] > 0)
+                            <div class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                                <span class="text-[10px] text-emerald-700 font-semibold leading-none">{{ $cell['staying'] }} stay</span>
+                            </div>
+                            @endif
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div class="text-center py-8 text-gray-400 text-sm">Calendar unavailable</div>
+            @endif
+            <!-- Legend -->
+            <div class="flex items-center gap-5 mt-4 pt-3 border-t border-gray-100">
+                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span><span class="text-xs text-gray-500">Check-in</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span class="text-xs text-gray-500">Check-out</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span><span class="text-xs text-gray-500">In-house</span></div>
+                <div class="flex items-center gap-1.5 ml-auto"><span class="w-2.5 h-2.5 rounded-full border-2 border-cyan-400 bg-cyan-50"></span><span class="text-xs text-gray-500">Today</span></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bottom Section: Quick Actions + Recent Bookings -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
