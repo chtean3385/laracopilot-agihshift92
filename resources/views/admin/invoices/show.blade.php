@@ -84,6 +84,9 @@
                 $grandTotal   = $invoice->total_amount + $gstAmount;
                 $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
             @endphp
+            @php
+                $overpayment = max(0, $invoice->paid_amount - $grandTotal);
+            @endphp
             <div class="flex justify-end">
                 <div class="w-64 space-y-2">
                     <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($invoice->total_amount) }}</span></div>
@@ -92,17 +95,50 @@
                     @endif
                     <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total</span><span>₹{{ number_format($grandTotal) }}</span></div>
                     <div class="flex justify-between text-sm text-emerald-600"><span>Amount Paid</span><span>₹{{ number_format($invoice->paid_amount) }}</span></div>
+                    @if($overpayment > 0)
+                    <div class="flex justify-between text-sm text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">
+                        <span class="font-medium">Overpayment / Credit Due</span>
+                        <span class="font-bold">₹{{ number_format($overpayment) }}</span>
+                    </div>
+                    @endif
                     <div class="flex justify-between text-lg font-black border-t-2 border-gray-800 pt-2">
                         <span>Balance Due</span>
                         <span class="{{ $displayBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($displayBalance) }}</span>
                     </div>
                 </div>
             </div>
+            @if($invoice->booking->special_requests)
+            <div class="mt-6 pt-5 border-t border-gray-100">
+                <div class="bg-amber-50 border border-amber-100 rounded-xl px-5 py-4">
+                    <p class="text-xs font-bold text-amber-700 uppercase mb-1"><i class="fas fa-star mr-1"></i>Special Requests</p>
+                    <p class="text-sm text-amber-700">{{ $invoice->booking->special_requests }}</p>
+                </div>
+            </div>
+            @endif
+            @if($invoice->booking->checkin_notes || $invoice->booking->checkout_notes)
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @if($invoice->booking->checkin_notes)
+                <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                    <p class="text-xs font-bold text-blue-600 uppercase mb-1"><i class="fas fa-sign-in-alt mr-1"></i>Check-In Notes</p>
+                    <p class="text-sm text-blue-700">{{ $invoice->booking->checkin_notes }}</p>
+                </div>
+                @endif
+                @if($invoice->booking->checkout_notes)
+                <div class="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
+                    <p class="text-xs font-bold text-slate-600 uppercase mb-1"><i class="fas fa-sign-out-alt mr-1"></i>Check-Out Notes</p>
+                    <p class="text-sm text-slate-600">{{ $invoice->booking->checkout_notes }}</p>
+                </div>
+                @endif
+            </div>
+            @endif
             <div class="mt-8 pt-6 border-t border-gray-100 text-center">
                 @php $displayStatus = $displayBalance <= 0 ? 'paid' : ($invoice->paid_amount > 0 ? 'partial' : 'unpaid'); @endphp
                 <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold {{ $displayStatus == 'paid' ? 'bg-emerald-100 text-emerald-700' : ($displayStatus == 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
                     {{ strtoupper($displayStatus) }}
                 </span>
+                @if($overpayment > 0)
+                <p class="text-xs text-violet-500 mt-2">Guest has a credit of ₹{{ number_format($overpayment) }} — please process a refund.</p>
+                @endif
             </div>
         </div>
     </div>

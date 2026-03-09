@@ -37,8 +37,20 @@
                 </div>
                 @if($booking->special_requests)
                 <div class="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                    <p class="text-xs font-semibold text-amber-700">Special Requests:</p>
+                    <p class="text-xs font-semibold text-amber-700"><i class="fas fa-star mr-1"></i>Special Requests</p>
                     <p class="text-sm text-amber-600 mt-1">{{ $booking->special_requests }}</p>
+                </div>
+                @endif
+                @if($booking->checkin_notes)
+                <div class="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                    <p class="text-xs font-semibold text-blue-700"><i class="fas fa-sign-in-alt mr-1"></i>Check-In Notes</p>
+                    <p class="text-sm text-blue-600 mt-1">{{ $booking->checkin_notes }}</p>
+                </div>
+                @endif
+                @if($booking->checkout_notes)
+                <div class="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <p class="text-xs font-semibold text-slate-600"><i class="fas fa-sign-out-alt mr-1"></i>Check-Out Notes</p>
+                    <p class="text-sm text-slate-500 mt-1">{{ $booking->checkout_notes }}</p>
                 </div>
                 @endif
             </div>
@@ -72,11 +84,26 @@
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="font-bold text-gray-800 mb-4">Payment Summary</h3>
+                    @php
+                        $bSettings   = \App\Models\Setting::first();
+                        $bTaxRate    = ($bSettings && $bSettings->gst_number && $bSettings->tax_rate > 0) ? (float) $bSettings->tax_rate : 0;
+                        $bGst        = round($booking->total_amount * ($bTaxRate / 100), 2);
+                        $bGrandTotal = $booking->total_amount + $bGst;
+                        $bTotalPaid  = $booking->payments->where('status','completed')->sum('amount');
+                        $bBalance    = max(0, $bGrandTotal - $bTotalPaid);
+                        $bOverpaid   = max(0, $bTotalPaid - $bGrandTotal);
+                    @endphp
                     <div class="space-y-2">
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room->price_per_night) }}</span></div>
-                        <div class="flex justify-between text-sm border-t pt-2"><span class="text-gray-500">Total Amount</span><span class="font-bold text-gray-800">₹{{ number_format($booking->total_amount) }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">Advance Paid</span><span class="font-semibold text-emerald-600">₹{{ number_format($booking->advance_payment) }}</span></div>
-                        <div class="flex justify-between text-sm border-t pt-2"><span class="font-semibold">Balance Due</span><span class="font-bold {{ $booking->balance_due > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($booking->balance_due) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room->price_per_night) }}</span><span class="font-medium">₹{{ number_format($booking->total_amount) }}</span></div>
+                        @if($bTaxRate > 0)
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">GST ({{ $bTaxRate }}%)</span><span class="text-gray-600">₹{{ number_format($bGst) }}</span></div>
+                        @endif
+                        <div class="flex justify-between text-sm border-t pt-2"><span class="text-gray-500">Grand Total</span><span class="font-bold text-gray-800">₹{{ number_format($bGrandTotal) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Total Paid</span><span class="font-semibold text-emerald-600">₹{{ number_format($bTotalPaid) }}</span></div>
+                        @if($bOverpaid > 0)
+                        <div class="flex justify-between text-sm"><span class="text-gray-500 text-violet-600">Overpayment/Credit</span><span class="font-semibold text-violet-600">₹{{ number_format($bOverpaid) }}</span></div>
+                        @endif
+                        <div class="flex justify-between text-sm border-t pt-2"><span class="font-semibold">Balance Due</span><span class="font-bold {{ $bBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($bBalance) }}</span></div>
                     </div>
                     <div class="mt-3"><span class="badge-{{ $booking->payment_status_color }}">{{ ucfirst($booking->payment_status) }}</span></div>
                 </div>
