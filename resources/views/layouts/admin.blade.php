@@ -181,7 +181,7 @@
 <!-- Mobile Overlay -->
 <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-<div style="display:flex;">
+<div>
 
     <!-- ═══════════════ SIDEBAR ═══════════════ -->
     <aside id="sidebar">
