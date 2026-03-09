@@ -54,7 +54,13 @@ class BookingController extends Controller
         ]);
         $room           = Room::findOrFail($validated['room_id']);
         $nights         = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
-        $totalAmount    = $nights * $room->price_per_night;
+        $mealBreakfast  = $request->boolean('meal_breakfast') && $room->has_breakfast;
+        $mealLunch      = $request->boolean('meal_lunch')     && $room->has_lunch;
+        $mealDinner     = $request->boolean('meal_dinner')    && $room->has_dinner;
+        $mealCost       = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
+                        + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
+                        + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
+        $totalAmount    = $nights * $room->price_per_night + $mealCost;
         $advancePayment = $validated['advance_payment'] ?? 0;
         $booking = Booking::create([
             'booking_number'  => 'BK' . strtoupper(substr(uniqid(), -6)),
@@ -71,6 +77,10 @@ class BookingController extends Controller
             'special_requests'=> $validated['special_requests'] ?? null,
             'status'          => 'confirmed',
             'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+            'meal_breakfast'  => $mealBreakfast,
+            'meal_lunch'      => $mealLunch,
+            'meal_dinner'     => $mealDinner,
+            'meal_cost'       => $mealCost,
         ]);
         if ($advancePayment > 0) {
             Payment::create([
@@ -123,11 +133,21 @@ class BookingController extends Controller
         $newRoomId = (int) $validated['room_id'];
         $room      = Room::findOrFail($newRoomId);
         $nights    = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
-        $total     = $nights * $room->price_per_night;
+        $mealBreakfast = $request->boolean('meal_breakfast') && $room->has_breakfast;
+        $mealLunch     = $request->boolean('meal_lunch')     && $room->has_lunch;
+        $mealDinner    = $request->boolean('meal_dinner')    && $room->has_dinner;
+        $mealCost      = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
+                       + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
+                       + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
+        $total     = $nights * $room->price_per_night + $mealCost;
         $booking->update(array_merge($validated, [
-            'nights'      => $nights,
-            'total_amount'=> $total,
-            'balance_due' => max(0, $total - $booking->advance_payment),
+            'nights'         => $nights,
+            'total_amount'   => $total,
+            'balance_due'    => max(0, $total - $booking->advance_payment),
+            'meal_breakfast' => $mealBreakfast,
+            'meal_lunch'     => $mealLunch,
+            'meal_dinner'    => $mealDinner,
+            'meal_cost'      => $mealCost,
         ]));
         $newStatus = $validated['status'];
         if ($oldRoomId !== $newRoomId) {

@@ -60,11 +60,17 @@ Resend.com integration is available in Replit but was not connected. Re-connect 
 - `/activity-log` — Activity audit log (permission-gated)
 - `/roles` — Roles & Permissions manager (Super Admin + permitted)
 
+## Meal Options Feature
+Each room can offer optional breakfast, lunch, and/or dinner, each with a price-per-night. When creating a booking, available meals are shown as checkboxes; selected meals are added to the booking total. Meal cost is stored in `bookings.meal_cost` (plus `meal_breakfast`, `meal_lunch`, `meal_dinner` booleans). Meals are displayed on booking show, invoice show, and invoice print as a separate line item.
+
+Room model fields: `has_breakfast`, `breakfast_price`, `has_lunch`, `lunch_price`, `has_dinner`, `dinner_price`
+Booking model fields: `meal_breakfast`, `meal_lunch`, `meal_dinner`, `meal_cost`
+
 ## Models
 - `Customer` — Hotel guests
 - `CustomerDocument` — Guest ID documents
-- `Room` — Hotel rooms
-- `Booking` — Room reservations
+- `Room` — Hotel rooms (+ meal option fields)
+- `Booking` — Room reservations (+ meal plan fields)
 - `Payment` — Payment records
 - `Invoice` — Generated invoices
 - `Setting` — App-wide settings (logo, tagline, GST, etc.)

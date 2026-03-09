@@ -55,6 +55,31 @@
                 <p class="text-sm text-cyan-600">{{ $room->amenities }}</p>
             </div>
             @endif
+            @if($room->has_breakfast || $room->has_lunch || $room->has_dinner)
+            <div class="mt-4 p-3 bg-amber-50 rounded-xl">
+                <p class="text-xs font-semibold text-amber-700 mb-2"><i class="fas fa-utensils mr-1"></i>Meal Options</p>
+                <div class="space-y-1">
+                    @if($room->has_breakfast)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
+                        <span class="font-semibold text-amber-700">₹{{ number_format($room->breakfast_price) }}/night</span>
+                    </div>
+                    @endif
+                    @if($room->has_lunch)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
+                        <span class="font-semibold text-orange-700">₹{{ number_format($room->lunch_price) }}/night</span>
+                    </div>
+                    @endif
+                    @if($room->has_dinner)
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
+                        <span class="font-semibold text-indigo-700">₹{{ number_format($room->dinner_price) }}/night</span>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
         </div>
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">

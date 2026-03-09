@@ -57,6 +57,45 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Special Requests</label>
                     <textarea name="special_requests" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">{{ old('special_requests',$booking->special_requests) }}</textarea>
                 </div>
+                @if($booking->room && $booking->room->hasMeals())
+                <div class="md:col-span-2">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-utensils text-amber-500"></i>
+                            <h4 class="font-bold text-slate-700">Meal Plan</h4>
+                        </div>
+                        <div class="flex flex-wrap gap-4">
+                            @if($booking->room->has_breakfast)
+                            <label class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
+                                <input type="checkbox" name="meal_breakfast" value="1"
+                                    class="w-4 h-4 rounded text-amber-500"
+                                    {{ old('meal_breakfast', $booking->meal_breakfast) ? 'checked' : '' }}>
+                                <span class="font-semibold text-slate-700"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
+                                <span class="text-sm text-amber-600 font-bold">₹{{ number_format($booking->room->breakfast_price) }}/night</span>
+                            </label>
+                            @endif
+                            @if($booking->room->has_lunch)
+                            <label class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
+                                <input type="checkbox" name="meal_lunch" value="1"
+                                    class="w-4 h-4 rounded text-orange-500"
+                                    {{ old('meal_lunch', $booking->meal_lunch) ? 'checked' : '' }}>
+                                <span class="font-semibold text-slate-700"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
+                                <span class="text-sm text-orange-600 font-bold">₹{{ number_format($booking->room->lunch_price) }}/night</span>
+                            </label>
+                            @endif
+                            @if($booking->room->has_dinner)
+                            <label class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
+                                <input type="checkbox" name="meal_dinner" value="1"
+                                    class="w-4 h-4 rounded text-indigo-500"
+                                    {{ old('meal_dinner', $booking->meal_dinner) ? 'checked' : '' }}>
+                                <span class="font-semibold text-slate-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
+                                <span class="text-sm text-indigo-600 font-bold">₹{{ number_format($booking->room->dinner_price) }}/night</span>
+                            </label>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="flex gap-3">
                 <button type="submit" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition"><i class="fas fa-save mr-2"></i>Update Booking</button>

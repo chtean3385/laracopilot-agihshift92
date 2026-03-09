@@ -118,7 +118,15 @@
                     <select name="room_id" id="roomSelect" class="@error('room_id') border-red-400 @enderror" required>
                         <option value="">Search room by number or type...</option>
                         @foreach($rooms as $room)
-                        <option value="{{ $room->id }}" data-price="{{ $room->price_per_night }}" {{ old('room_id') == $room->id ? 'selected' : '' }}>
+                        <option value="{{ $room->id }}"
+                            data-price="{{ $room->price_per_night }}"
+                            data-has-breakfast="{{ $room->has_breakfast ? '1' : '0' }}"
+                            data-breakfast-price="{{ $room->breakfast_price ?? 0 }}"
+                            data-has-lunch="{{ $room->has_lunch ? '1' : '0' }}"
+                            data-lunch-price="{{ $room->lunch_price ?? 0 }}"
+                            data-has-dinner="{{ $room->has_dinner ? '1' : '0' }}"
+                            data-dinner-price="{{ $room->dinner_price ?? 0 }}"
+                            {{ old('room_id') == $room->id ? 'selected' : '' }}>
                             Room {{ $room->room_number }} — {{ ucfirst($room->type) }} — ₹{{ number_format($room->price_per_night) }}/night
                         </option>
                         @endforeach
@@ -144,6 +152,40 @@
                     <input type="number" name="children" value="{{ old('children', 0) }}" min="0" class="form-input">
                 </div>
 
+                <!-- Meal Plan Section -->
+                <div class="md:col-span-2" id="mealPlanSection" style="display:none">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-utensils text-amber-500"></i>
+                            <h4 class="font-bold text-gray-700">Meal Plan</h4>
+                            <span class="text-xs text-gray-400 ml-1">— prices are per night</span>
+                        </div>
+                        <div class="flex flex-wrap gap-4">
+                            <label id="meal_breakfast_row" class="hidden items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
+                                <input type="checkbox" name="meal_breakfast" value="1" id="meal_breakfast"
+                                    class="w-4 h-4 rounded text-amber-500" onchange="calculateTotal()"
+                                    {{ old('meal_breakfast') ? 'checked' : '' }}>
+                                <span class="font-semibold text-gray-700"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
+                                <span id="meal_breakfast_price" class="text-sm text-amber-600 font-bold"></span>
+                            </label>
+                            <label id="meal_lunch_row" class="hidden items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
+                                <input type="checkbox" name="meal_lunch" value="1" id="meal_lunch"
+                                    class="w-4 h-4 rounded text-orange-500" onchange="calculateTotal()"
+                                    {{ old('meal_lunch') ? 'checked' : '' }}>
+                                <span class="font-semibold text-gray-700"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
+                                <span id="meal_lunch_price" class="text-sm text-orange-600 font-bold"></span>
+                            </label>
+                            <label id="meal_dinner_row" class="hidden items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
+                                <input type="checkbox" name="meal_dinner" value="1" id="meal_dinner"
+                                    class="w-4 h-4 rounded text-indigo-500" onchange="calculateTotal()"
+                                    {{ old('meal_dinner') ? 'checked' : '' }}>
+                                <span class="font-semibold text-gray-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
+                                <span id="meal_dinner_price" class="text-sm text-indigo-600 font-bold"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Price Summary -->
                 <div class="md:col-span-2 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-5 border border-cyan-100">
                     <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-calculator text-cyan-500 mr-2"></i>Price Summary</h4>
@@ -159,6 +201,7 @@
                         <div>
                             <div class="text-sm text-gray-500">Total Amount</div>
                             <div id="totalDisplay" class="text-2xl font-bold text-cyan-600">—</div>
+                            <div id="mealCostLine" class="text-xs text-amber-600 font-semibold mt-1"></div>
                         </div>
                     </div>
                 </div>
@@ -202,23 +245,60 @@
         allowEmptyOption: false,
         placeholder: 'Search room by number or type...',
         maxOptions: 100,
-        onChange: function() { calculateTotal(); }
+        onChange: function() { updateMealOptions(); calculateTotal(); }
     });
+
+    function updateMealOptions() {
+        const roomEl = document.getElementById('roomSelect');
+        const opt = roomEl.options[roomEl.selectedIndex];
+        const meals = ['breakfast', 'lunch', 'dinner'];
+        let hasMeals = false;
+        meals.forEach(function(m) {
+            const key = 'has' + m.charAt(0).toUpperCase() + m.slice(1);
+            const has = opt && opt.dataset[key] === '1';
+            const price = opt ? parseFloat(opt.dataset[m + 'Price'] || 0) : 0;
+            const row = document.getElementById('meal_' + m + '_row');
+            const priceSpan = document.getElementById('meal_' + m + '_price');
+            if (row) {
+                if (has) {
+                    row.classList.remove('hidden');
+                    row.classList.add('flex');
+                    if (priceSpan) priceSpan.textContent = '₹' + price.toLocaleString('en-IN') + '/night';
+                    hasMeals = true;
+                } else {
+                    row.classList.add('hidden');
+                    row.classList.remove('flex');
+                    const cb = document.getElementById('meal_' + m);
+                    if (cb) cb.checked = false;
+                }
+            }
+        });
+        const section = document.getElementById('mealPlanSection');
+        if (section) section.style.display = hasMeals ? '' : 'none';
+    }
 
     function calculateTotal() {
         const checkin = document.getElementById('checkIn').value;
         const checkout = document.getElementById('checkOut').value;
         const roomEl = document.getElementById('roomSelect');
-        const selectedOption = roomEl.options[roomEl.selectedIndex];
-        const pricePerNight = selectedOption ? parseFloat(selectedOption.dataset.price) || 0 : 0;
+        const opt = roomEl.options[roomEl.selectedIndex];
+        const pricePerNight = opt ? parseFloat(opt.dataset.price) || 0 : 0;
         if (checkin && checkout) {
             const d1 = new Date(checkin);
             const d2 = new Date(checkout);
             const nights = Math.max(0, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
-            const total = nights * pricePerNight;
+            let mealCost = 0;
+            ['breakfast', 'lunch', 'dinner'].forEach(function(m) {
+                const cb = document.getElementById('meal_' + m);
+                const price = opt ? parseFloat(opt.dataset[m + 'Price'] || 0) : 0;
+                if (cb && cb.checked) mealCost += nights * price;
+            });
+            const total = nights * pricePerNight + mealCost;
             document.getElementById('nightsCount').textContent = nights;
             document.getElementById('rateDisplay').textContent = pricePerNight ? '₹' + pricePerNight.toLocaleString('en-IN') : '—';
             document.getElementById('totalDisplay').textContent = total ? '₹' + total.toLocaleString('en-IN') : '—';
+            const mealLine = document.getElementById('mealCostLine');
+            if (mealLine) mealLine.textContent = mealCost > 0 ? '(incl. ₹' + mealCost.toLocaleString('en-IN') + ' meals)' : '';
         }
     }
 

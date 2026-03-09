@@ -94,7 +94,19 @@
                         $bOverpaid   = max(0, $bTotalPaid - $bGrandTotal);
                     @endphp
                     <div class="space-y-2">
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room->price_per_night) }}</span><span class="font-medium">₹{{ number_format($booking->total_amount) }}</span></div>
+                        @php $roomCost = $booking->nights * $booking->room->price_per_night; @endphp
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room->price_per_night) }}</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
+                        @if($booking->meal_cost > 0)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500"><i class="fas fa-utensils text-amber-400 mr-1"></i>Meal Plan
+                                @if($booking->meal_breakfast)<span class="ml-1 text-xs bg-amber-100 text-amber-700 rounded px-1">B</span>@endif
+                                @if($booking->meal_lunch)<span class="ml-1 text-xs bg-orange-100 text-orange-700 rounded px-1">L</span>@endif
+                                @if($booking->meal_dinner)<span class="ml-1 text-xs bg-indigo-100 text-indigo-700 rounded px-1">D</span>@endif
+                            </span>
+                            <span class="font-medium text-amber-600">₹{{ number_format($booking->meal_cost) }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span class="font-medium">₹{{ number_format($booking->total_amount) }}</span></div>
+                        @endif
                         @if($bTaxRate > 0)
                         <div class="flex justify-between text-sm"><span class="text-gray-500">GST ({{ $bTaxRate }}%)</span><span class="text-gray-600">₹{{ number_format($bGst) }}</span></div>
                         @endif

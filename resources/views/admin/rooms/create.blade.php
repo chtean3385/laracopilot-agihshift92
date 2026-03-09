@@ -61,6 +61,61 @@
                     <label class="form-label">Description</label>
                     <textarea name="description" rows="3" class="form-input" placeholder="Describe the room...">{{ old('description') }}</textarea>
                 </div>
+
+                <!-- Meal Options -->
+                <div class="md:col-span-2">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="fas fa-utensils text-amber-500"></i>
+                            <h4 class="font-bold text-gray-700">Meal Options</h4>
+                            <span class="text-xs text-gray-400 ml-1">— tick meals included with this room. Price is per guest per night.</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                                <label class="flex items-center gap-3 cursor-pointer mb-3">
+                                    <input type="checkbox" name="has_breakfast" value="1" id="cb_breakfast"
+                                        class="w-4 h-4 rounded text-amber-500" onchange="togglePrice('breakfast')"
+                                        {{ old('has_breakfast') ? 'checked' : '' }}>
+                                    <span class="font-semibold text-gray-700"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
+                                </label>
+                                <div id="bf_price_wrap" class="{{ old('has_breakfast') ? '' : 'opacity-40 pointer-events-none' }}">
+                                    <label class="text-xs text-gray-500 mb-1 block">Price per night (₹)</label>
+                                    <input type="number" name="breakfast_price" id="breakfast_price"
+                                        value="{{ old('breakfast_price') }}" min="0" step="0.01"
+                                        class="form-input text-sm" placeholder="e.g. 300">
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                                <label class="flex items-center gap-3 cursor-pointer mb-3">
+                                    <input type="checkbox" name="has_lunch" value="1" id="cb_lunch"
+                                        class="w-4 h-4 rounded text-amber-500" onchange="togglePrice('lunch')"
+                                        {{ old('has_lunch') ? 'checked' : '' }}>
+                                    <span class="font-semibold text-gray-700"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
+                                </label>
+                                <div id="lunch_price_wrap" class="{{ old('has_lunch') ? '' : 'opacity-40 pointer-events-none' }}">
+                                    <label class="text-xs text-gray-500 mb-1 block">Price per night (₹)</label>
+                                    <input type="number" name="lunch_price" id="lunch_price"
+                                        value="{{ old('lunch_price') }}" min="0" step="0.01"
+                                        class="form-input text-sm" placeholder="e.g. 500">
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                                <label class="flex items-center gap-3 cursor-pointer mb-3">
+                                    <input type="checkbox" name="has_dinner" value="1" id="cb_dinner"
+                                        class="w-4 h-4 rounded text-amber-500" onchange="togglePrice('dinner')"
+                                        {{ old('has_dinner') ? 'checked' : '' }}>
+                                    <span class="font-semibold text-gray-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
+                                </label>
+                                <div id="dinner_price_wrap" class="{{ old('has_dinner') ? '' : 'opacity-40 pointer-events-none' }}">
+                                    <label class="text-xs text-gray-500 mb-1 block">Price per night (₹)</label>
+                                    <input type="number" name="dinner_price" id="dinner_price"
+                                        value="{{ old('dinner_price') }}" min="0" step="0.01"
+                                        class="form-input text-sm" placeholder="e.g. 600">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                 <a href="{{ route('rooms.index') }}" class="btn-secondary">Cancel</a>
@@ -69,4 +124,14 @@
         </form>
     </div>
 </div>
+<script>
+function togglePrice(meal) {
+    const cb = document.getElementById('cb_' + meal);
+    const wrap = document.getElementById((meal === 'breakfast' ? 'bf' : meal) + '_price_wrap');
+    if (wrap) {
+        wrap.classList.toggle('opacity-40', !cb.checked);
+        wrap.classList.toggle('pointer-events-none', !cb.checked);
+    }
+}
+</script>
 @endsection

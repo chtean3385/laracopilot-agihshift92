@@ -60,12 +60,26 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php $prtRoomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room->price_per_night ?? 0); @endphp
                     <tr class="border-t border-gray-200">
                         <td class="px-4 py-3 text-sm">{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}</td>
                         <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }}</td>
                         <td class="px-4 py-3 text-sm text-right">₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}</td>
-                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invoice->total_amount) }}</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($prtRoomCost) }}</td>
                     </tr>
+                    @if($invoice->booking->meal_cost > 0)
+                    <tr class="border-t border-gray-100">
+                        <td class="px-4 py-3 text-sm">
+                            Meal Plan —
+                            @if($invoice->booking->meal_breakfast) Breakfast @endif
+                            @if($invoice->booking->meal_lunch) Lunch @endif
+                            @if($invoice->booking->meal_dinner) Dinner @endif
+                        </td>
+                        <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }}</td>
+                        <td class="px-4 py-3 text-sm text-right">—</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invoice->booking->meal_cost) }}</td>
+                    </tr>
+                    @endif
                 </tbody>
             </table>
             @php

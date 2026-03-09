@@ -71,12 +71,26 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php $invRoomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room->price_per_night ?? 0); @endphp
                     <tr class="border-b border-gray-100">
                         <td class="px-4 py-3 text-sm">{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }} - {{ $invoice->booking->room->view ?? '' }}</td>
                         <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }} nights</td>
                         <td class="px-4 py-3 text-sm text-right">₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}</td>
-                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invoice->total_amount) }}</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invRoomCost) }}</td>
                     </tr>
+                    @if($invoice->booking->meal_cost > 0)
+                    <tr class="border-b border-gray-100 bg-amber-50">
+                        <td class="px-4 py-3 text-sm text-amber-700">
+                            <i class="fas fa-utensils mr-1 text-amber-500"></i>Meal Plan —
+                            @if($invoice->booking->meal_breakfast) Breakfast @endif
+                            @if($invoice->booking->meal_lunch) Lunch @endif
+                            @if($invoice->booking->meal_dinner) Dinner @endif
+                        </td>
+                        <td class="px-4 py-3 text-sm text-right text-amber-700">{{ $invoice->booking->nights }} nights</td>
+                        <td class="px-4 py-3 text-sm text-right text-amber-700">—</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right text-amber-700">₹{{ number_format($invoice->booking->meal_cost) }}</td>
+                    </tr>
+                    @endif
                 </tbody>
             </table>
             @php

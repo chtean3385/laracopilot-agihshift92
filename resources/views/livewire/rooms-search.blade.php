@@ -130,7 +130,14 @@
                     </div>
                 </div>
                 @if($room->amenities)
-                <p class="text-xs text-gray-400 mb-4 line-clamp-2">{{ $room->amenities }}</p>
+                <p class="text-xs text-gray-400 mb-2 line-clamp-2">{{ $room->amenities }}</p>
+                @endif
+                @if($room->has_breakfast || $room->has_lunch || $room->has_dinner)
+                <div class="flex flex-wrap gap-1 mb-3">
+                    @if($room->has_breakfast)<span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5"><i class="fas fa-coffee mr-0.5"></i>B</span>@endif
+                    @if($room->has_lunch)<span class="text-xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5"><i class="fas fa-sun mr-0.5"></i>L</span>@endif
+                    @if($room->has_dinner)<span class="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5"><i class="fas fa-moon mr-0.5"></i>D</span>@endif
+                </div>
                 @endif
                 @if(\App\Services\PermissionService::check('rooms.edit'))
                 <a href="{{ route('rooms.edit', $room->id) }}" class="w-full text-center block bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">

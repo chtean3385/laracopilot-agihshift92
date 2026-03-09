@@ -14,6 +14,7 @@ class Booking extends Model
         'total_amount', 'advance_payment', 'balance_due',
         'special_requests', 'status', 'payment_status',
         'checkin_notes', 'checkout_notes',
+        'meal_breakfast', 'meal_lunch', 'meal_dinner', 'meal_cost',
     ];
 
     protected $casts = [
@@ -24,6 +25,10 @@ class Booking extends Model
         'total_amount'       => 'decimal:2',
         'advance_payment'    => 'decimal:2',
         'balance_due'        => 'decimal:2',
+        'meal_cost'          => 'decimal:2',
+        'meal_breakfast'     => 'boolean',
+        'meal_lunch'         => 'boolean',
+        'meal_dinner'        => 'boolean',
     ];
 
     public function customer()
