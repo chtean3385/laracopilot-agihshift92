@@ -45,12 +45,15 @@ class CheckOutController extends Controller
             $actualNights = $booking->nights;
         }
 
-        $actualTotal = $actualNights * $booking->room->price_per_night;
+        $roomCost    = $actualNights * $booking->room->price_per_night;
+        $mealCost    = (float)($booking->meal_cost ?? 0);
+        $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
+        $actualTotal = $roomCost + $mealCost + $extraBedCost;
         $totalPaid   = $booking->payments->where('status', 'completed')->sum('amount');
         $balanceDue  = max(0, $actualTotal - $totalPaid);
 
         return view('admin.checkout.show', compact(
-            'booking', 'actualNights', 'actualTotal', 'totalPaid', 'balanceDue'
+            'booking', 'actualNights', 'actualTotal', 'roomCost', 'mealCost', 'extraBedCost', 'totalPaid', 'balanceDue'
         ));
     }
 

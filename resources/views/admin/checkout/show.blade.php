@@ -63,8 +63,26 @@
             <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">{{ $actualNights }} nights × Rs{{ number_format($booking->room->price_per_night) }}</span>
+                    <span style="font-weight:700;">Rs{{ number_format($roomCost) }}</span>
+                </div>
+                @if($mealCost > 0)
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">🍽️ Meal Plan</span>
+                    <span style="font-weight:600;">Rs{{ number_format($mealCost) }}</span>
+                </div>
+                @endif
+                @if($extraBedCost > 0)
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">🛏️ Extra Bed ({{ $booking->extra_beds }})</span>
+                    <span style="font-weight:600;">Rs{{ number_format($extraBedCost) }}</span>
+                </div>
+                @endif
+                @if($mealCost > 0 || $extraBedCost > 0)
+                <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px dashed #e2e8f0;padding-top:8px;">
+                    <span style="color:#64748b;">Subtotal</span>
                     <span style="font-weight:700;">Rs{{ number_format($actualTotal) }}</span>
                 </div>
+                @endif
                 @if($taxRate > 0)
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">GST ({{ $taxRate }}%)</span>
