@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Invoice;
+use App\Models\Setting;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -80,11 +81,19 @@ class CheckOutController extends Controller
 
         $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
 
+        $settings   = Setting::first();
+        $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
+        $gstAmount  = round($booking->total_amount * ($taxRate / 100), 2);
+        $grandTotal = $booking->total_amount + $gstAmount;
+
+        $isPaid     = $totalPaid >= $grandTotal;
+        $balance    = max(0, $grandTotal - $totalPaid);
+
         $booking->update([
             'status'             => 'checked_out',
             'actual_checkout_at' => now(),
-            'payment_status'     => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
-            'balance_due'        => max(0, $booking->total_amount - $totalPaid),
+            'payment_status'     => $isPaid ? 'paid' : 'partial',
+            'balance_due'        => $balance,
             'checkout_notes'     => $request->notes,
         ]);
 
@@ -96,8 +105,8 @@ class CheckOutController extends Controller
             'customer_id'    => $booking->customer_id,
             'total_amount'   => $booking->total_amount,
             'paid_amount'    => $totalPaid,
-            'balance'        => max(0, $booking->total_amount - $totalPaid),
-            'status'         => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
+            'balance'        => $balance,
+            'status'         => $isPaid ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
             'issued_at'      => now(),
         ]);
 

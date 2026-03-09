@@ -106,8 +106,8 @@
                 <select name="booking_id" id="bookingSelect" required>
                     <option value="">Search by booking number or guest name...</option>
                     @foreach($bookings as $booking)
-                    <option value="{{ $booking->id }}" {{ old('booking_id') == $booking->id ? 'selected' : '' }}>
-                        {{ $booking->booking_number }} — {{ $booking->customer->name }} — Room {{ $booking->room->room_number ?? 'N/A' }}
+                    <option value="{{ $booking->id }}" {{ (old('booking_id', $prefillBookingId) == $booking->id) ? 'selected' : '' }}>
+                        {{ $booking->booking_number }} — {{ $booking->customer->name }} — Room {{ $booking->room->room_number ?? 'N/A' }} ({{ ucfirst($booking->status) }})
                     </option>
                     @endforeach
                 </select>
@@ -115,7 +115,7 @@
             </div>
             <div>
                 <label class="form-label">Amount (₹) <span class="text-red-500">*</span></label>
-                <input type="number" name="amount" value="{{ old('amount') }}" step="0.01" min="1" class="form-input" required>
+                <input type="number" name="amount" value="{{ old('amount', $prefillAmount) }}" step="0.01" min="1" class="form-input" required>
             </div>
             <div>
                 <label class="form-label">Payment Method <span class="text-red-500">*</span></label>
@@ -130,10 +130,10 @@
             <div>
                 <label class="form-label">Payment Type <span class="text-red-500">*</span></label>
                 <select name="payment_type" class="form-input" required>
-                    <option value="advance">Advance</option>
-                    <option value="partial">Partial</option>
-                    <option value="final">Final</option>
-                    <option value="refund">Refund</option>
+                    <option value="advance" {{ old('payment_type', $prefillBookingId ? 'final' : 'advance') == 'advance' ? 'selected' : '' }}>Advance</option>
+                    <option value="partial" {{ old('payment_type') == 'partial' ? 'selected' : '' }}>Partial</option>
+                    <option value="final" {{ old('payment_type', $prefillBookingId ? 'final' : '') == 'final' ? 'selected' : '' }}>Final</option>
+                    <option value="refund" {{ old('payment_type') == 'refund' ? 'selected' : '' }}>Refund</option>
                 </select>
             </div>
             <div>

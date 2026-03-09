@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Booking;
+use App\Models\Invoice;
+use App\Models\Setting;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
@@ -34,8 +36,13 @@ class PaymentController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $bookings = Booking::with('customer')->whereIn('status', ['confirmed', 'checked_in'])->get();
-        return view('admin.payments.create', compact('bookings'));
+        $bookings = Booking::with('customer')
+            ->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
+            ->where('payment_status', '!=', 'paid')
+            ->get();
+        $prefillBookingId = request('booking_id');
+        $prefillAmount    = request('amount');
+        return view('admin.payments.create', compact('bookings', 'prefillBookingId', 'prefillAmount'));
     }
 
     public function store(Request $request)
@@ -54,11 +61,29 @@ class PaymentController extends Controller
             'status'         => 'completed',
             'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
         ]));
-        $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
+
+        $totalPaid  = $booking->payments()->where('status', 'completed')->sum('amount');
+        $settings   = Setting::first();
+        $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
+        $gstAmount  = round($booking->total_amount * ($taxRate / 100), 2);
+        $grandTotal = $booking->total_amount + $gstAmount;
+        $isPaid     = $totalPaid >= $grandTotal;
+        $balance    = max(0, $grandTotal - $totalPaid);
+
         $booking->update([
-            'balance_due'    => max(0, $booking->total_amount - $totalPaid),
-            'payment_status' => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
+            'balance_due'    => $balance,
+            'payment_status' => $isPaid ? 'paid' : 'partial',
         ]);
+
+        $invoice = Invoice::where('booking_id', $booking->id)->latest()->first();
+        if ($invoice) {
+            $invoice->update([
+                'paid_amount' => $totalPaid,
+                'balance'     => $balance,
+                'status'      => $isPaid ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
+            ]);
+        }
+
         $booking->load('customer');
         ActivityLogger::log('Created', 'Payment', 'Payment of ₹' . number_format($payment->amount, 2) . ' recorded for Booking #' . $booking->booking_number . ' (' . $booking->customer->name . ')');
         return redirect()->route('payments.show', $payment->id)->with('success', 'Payment recorded!');

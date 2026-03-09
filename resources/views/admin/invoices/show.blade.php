@@ -4,9 +4,22 @@
 @section('page-subtitle',$invoice->invoice_number)
 @section('content')
 <div class="max-w-3xl space-y-5">
-    <div class="flex items-center justify-between">
+    @php
+        $previewGst     = ($settings && $settings->gst_number) ? $invoice->total_amount * ($settings->tax_rate / 100) : 0;
+        $previewGrand   = $invoice->total_amount + $previewGst;
+        $previewBalance = max(0, $previewGrand - $invoice->paid_amount);
+    @endphp
+    <div class="flex items-center justify-between gap-3">
         <a href="{{ route('invoices.index') }}" class="btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i>Back</a>
-        <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
+        <div class="flex items-center gap-3">
+            @if($previewBalance > 0)
+            <a href="{{ route('payments.create', ['booking_id' => $invoice->booking_id, 'amount' => $previewBalance]) }}"
+               class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
+                <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }} Outstanding
+            </a>
+            @endif
+            <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
+        </div>
     </div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-6 text-white">
