@@ -138,7 +138,8 @@
                         [$pBg,$pClr] = $payStyles[$booking->payment_status] ?? ['#f3f4f6','#374151'];
 
                         $gradients = ['linear-gradient(135deg,#22d3ee,#3b82f6)','linear-gradient(135deg,#a78bfa,#7c3aed)','linear-gradient(135deg,#34d399,#0d9488)','linear-gradient(135deg,#fb7185,#ec4899)','linear-gradient(135deg,#fbbf24,#f97316)'];
-                        $ci = crc32($booking->customer->name) % 5; if($ci<0) $ci+=5;
+                        $ci = crc32($booking->customer->name) % 5;
+                        if ($ci < 0) { $ci += 5; }
                     @endphp
                     <tr style="border-top:1px solid #f8fafc;transition:background .12s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
 
@@ -158,7 +159,7 @@
                                 <div>
                                     <a href="{{ route('customers.show', $booking->customer->id) }}" style="font-weight:700;color:#1e293b;font-size:13px;text-decoration:none;" onmouseenter="this.style.color='#0891b2'" onmouseleave="this.style.color='#1e293b'">{{ $booking->customer->name }}</a>
                                     <div style="font-size:11px;color:#94a3b8;margin-top:1px;">
-                                        {{ $booking->adults }} adult{{ $booking->adults!=1?'s':'' }}@if($booking->children > 0) · {{ $booking->children }} child@endif
+                                        {{ $booking->adults }} adult{{ $booking->adults!=1?'s':'' }}{{ $booking->children > 0 ? ' · '.$booking->children.' child' : '' }}
                                     </div>
                                 </div>
                             </div>
