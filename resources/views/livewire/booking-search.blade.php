@@ -156,8 +156,8 @@
                             <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room->type) }}</div>
                         </td>
                         <td class="lv-td">
-                            <div style="font-size:13px;font-weight:600;color:#374151;">{{ $booking->check_in->format('d M') }}</div>
-                            <div class="lv-secondary">→ {{ $booking->check_out->format('d M Y') }}</div>
+                            <div style="font-size:13px;font-weight:600;color:#374151;">{{ $booking->check_in_date->format('d M') }}</div>
+                            <div class="lv-secondary">→ {{ $booking->check_out_date->format('d M Y') }}</div>
                         </td>
                         <td class="lv-td">
                             <span class="lv-badge {{ $sCls }}">
