@@ -153,7 +153,7 @@
                                 <span class="lv-room-pill-label">RM</span>
                                 <span class="lv-room-pill-num">{{ $booking->room->room_number }}</span>
                             </div>
-                            <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room->room_type) }}</div>
+                            <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room->type) }}</div>
                         </td>
                         <td class="lv-td">
                             <div style="font-size:13px;font-weight:600;color:#374151;">{{ $booking->check_in->format('d M') }}</div>

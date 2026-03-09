@@ -87,11 +87,11 @@ class BookingSearch extends Component
         }
 
         if ($this->roomType) {
-            $query->whereHas('room', fn($r) => $r->where('room_type', $this->roomType));
+            $query->whereHas('room', fn($r) => $r->where('type', $this->roomType));
         }
 
         $bookings   = $query->orderBy('created_at', 'desc')->paginate(15);
-        $roomTypes  = Room::distinct()->orderBy('room_type')->pluck('room_type');
+        $roomTypes  = Room::distinct()->orderBy('type')->pluck('type');
 
         return view('livewire.booking-search', compact('bookings', 'roomTypes'));
     }
