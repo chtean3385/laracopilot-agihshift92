@@ -6,6 +6,7 @@
     <title>@yield('title', 'Resort CRM') — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    @livewireStyles
     <style>
         * { box-sizing: border-box; }
 
@@ -446,5 +447,6 @@
 </script>
 
 @stack('scripts')
+@livewireScripts
 </body>
 </html>

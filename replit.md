@@ -7,7 +7,7 @@ A full hotel/resort management CRM built with Laravel 12, SQLite, and Tailwind C
 - **Framework**: Laravel 12
 - **Language**: PHP 8.2
 - **Database**: SQLite (`database/database.sqlite`)
-- **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome
+- **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome + Livewire 4
 - **Authentication**: Custom session-based auth (hardcoded users)
 - **RBAC**: Dynamic DB-driven roles & permissions system
 
@@ -93,7 +93,7 @@ Resend.com integration is available in Replit but was not connected. Re-connect 
 - Accessed via `asset('storage/' . $settings->logo)`
 - Settings globally shared via `AppServiceProvider::View::share('settings', ...)`
 - Logo + tagline appear: sidebar, login screen, invoice view, invoice print
-- `forceScheme('https')` in AppServiceProvider for Replit proxy
+- `trustProxies(at: '*')` in `bootstrap/app.php` — trusts Replit's HTTPS proxy headers so generated URLs use correct scheme without forcing HTTPS globally
 
 ## Workflow
 "Start application" runs `php artisan serve --host=0.0.0.0 --port=5000`
