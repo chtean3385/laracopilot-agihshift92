@@ -158,6 +158,330 @@
         .badge-gray   { display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#f3f4f6; color:#374151; }
         .badge-purple { display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#ede9fe; color:#5b21b6; }
 
+        /* ══════════════════════════════════════
+           List-view shared component classes
+           ══════════════════════════════════════ */
+
+        /* Filter bar card */
+        .lv-filter-bar {
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px 22px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.05);
+            border: 1px solid #f1f5f9;
+            margin-bottom: 18px;
+        }
+        .lv-filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .lv-filter-group { display: flex; flex-direction: column; }
+        .lv-filter-group-grow { flex: 1; min-width: 200px; }
+        .lv-filter-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 6px;
+        }
+        .lv-filter-input, .lv-filter-select {
+            padding: 9px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #374151;
+            outline: none;
+            background: #fff;
+            transition: border-color .15s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .lv-filter-input:focus, .lv-filter-select:focus { border-color: #06b6d4; }
+        .lv-filter-input-icon { padding-left: 38px; }
+        .lv-filter-icon-wrap {
+            position: relative;
+        }
+        .lv-filter-icon-wrap i {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        .lv-filter-spinner {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .lv-filter-result {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .lv-clear-btn {
+            padding: 9px 16px;
+            background: #fff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .lv-clear-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #374151; }
+
+        /* Main table card */
+        .lv-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.05);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+        }
+        .lv-card-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lv-card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .lv-card-icon i { color: #fff; font-size: 14px; }
+        .lv-card-title {
+            font-weight: 800;
+            color: #1e293b;
+            font-size: 15px;
+        }
+        .lv-card-title span {
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        .lv-card-subtitle { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+
+        /* Table */
+        .lv-table-wrap { overflow-x: auto; }
+        .lv-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        .lv-th {
+            text-align: left;
+            padding: 11px 18px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            white-space: nowrap;
+            background: #f8fafc;
+        }
+        .lv-th-right { text-align: right; }
+        .lv-td {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: #374151;
+            border-top: 1px solid #f8fafc;
+        }
+        .lv-td-right { text-align: right; }
+        .lv-td-center { text-align: center; }
+        .lv-row { transition: background .12s; }
+        .lv-row:hover { background: #f8fafc; }
+        .lv-pagination { padding: 16px 22px; border-top: 1px solid #f8fafc; }
+
+        /* Avatar */
+        .lv-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,.12);
+        }
+
+        /* Name link */
+        .lv-name-link {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            text-decoration: none;
+            transition: color .12s;
+        }
+        .lv-name-link:hover { color: #0891b2; }
+
+        /* Secondary / muted text */
+        .lv-secondary { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+        /* Monospace identifiers */
+        .lv-mono {
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        /* Room number pill */
+        .lv-room-pill {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 40px;
+            background: linear-gradient(135deg, #0f172a, #1e3a5f);
+            border-radius: 10px;
+        }
+        .lv-room-pill-label {
+            font-size: 8px;
+            color: rgba(255,255,255,.45);
+            font-weight: 600;
+            letter-spacing: .04em;
+            line-height: 1;
+        }
+        .lv-room-pill-num {
+            font-size: 13px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        /* Action icon buttons */
+        .lv-action-btn {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background .12s;
+            flex-shrink: 0;
+        }
+        .lv-action-btn i { font-size: 11px; }
+        .lv-action-btn-blue   { background: #eff6ff; color: #2563eb; }
+        .lv-action-btn-blue:hover   { background: #dbeafe; color: #1d4ed8; }
+        .lv-action-btn-amber  { background: #fffbeb; color: #d97706; }
+        .lv-action-btn-amber:hover  { background: #fef3c7; color: #b45309; }
+        .lv-action-btn-purple { background: #faf5ff; color: #7c3aed; }
+        .lv-action-btn-purple:hover { background: #ede9fe; color: #6d28d9; }
+        .lv-action-btn-red    { background: #fff1f2; color: #e11d48; }
+        .lv-action-btn-red:hover    { background: #ffe4e6; color: #be123c; }
+        .lv-action-btn-green  { background: #f0fdf4; color: #16a34a; }
+        .lv-action-btn-green:hover  { background: #dcfce7; color: #15803d; }
+        .lv-action-btn-gray   { background: #f8fafc; color: #475569; }
+        .lv-action-btn-gray:hover   { background: #f1f5f9; color: #334155; }
+        .lv-action-btn-cyan   { background: #ecfeff; color: #0891b2; }
+        .lv-action-btn-cyan:hover   { background: #cffafe; color: #0e7490; }
+
+        /* Inline badge variants (pill shape) */
+        .lv-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .lv-badge-green  { background: #dcfce7; color: #15803d; }
+        .lv-badge-amber  { background: #fef3c7; color: #92400e; }
+        .lv-badge-red    { background: #fee2e2; color: #b91c1c; }
+        .lv-badge-blue   { background: #dbeafe; color: #1d4ed8; }
+        .lv-badge-purple { background: #ede9fe; color: #6d28d9; }
+        .lv-badge-cyan   { background: #ecfeff; color: #0e7490; }
+        .lv-badge-gray   { background: #f1f5f9; color: #475569; }
+        .lv-badge-cash   { background: #dcfce7; color: #15803d; }
+        .lv-badge-card   { background: #dbeafe; color: #1d4ed8; }
+        .lv-badge-upi    { background: #ede9fe; color: #6d28d9; }
+        .lv-badge-bank   { background: #ecfeff; color: #0e7490; }
+        .lv-badge-cheque { background: #fef3c7; color: #92400e; }
+
+        /* Empty state */
+        .lv-empty {
+            padding: 56px 24px;
+            text-align: center;
+        }
+        .lv-empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+        }
+        .lv-empty-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .lv-empty-sub { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+
+        /* Stats grid (payments page) */
+        .lv-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 16px;
+            margin-bottom: 18px;
+            align-items: stretch;
+        }
+        @media (max-width: 768px) {
+            .lv-stats-grid { grid-template-columns: 1fr 1fr; }
+            .lv-stats-grid > *:last-child { grid-column: span 2; }
+        }
+        .lv-stat-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.05);
+            border: 1px solid #f1f5f9;
+        }
+        .lv-stat-card-accent {
+            border-radius: 18px;
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .lv-stat-card-accent::after {
+            content: '';
+            position: absolute;
+            top: -24px; right: -24px;
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.12);
+        }
+        .lv-stat-label { font-size: 12px; font-weight: 600; letter-spacing: .04em; margin-bottom: 6px; }
+        .lv-stat-value { font-size: 26px; font-weight: 900; line-height: 1; }
+        .lv-stat-sub   { font-size: 12px; margin-top: 4px; }
+
         /* Mobile overlay */
         #sidebar-overlay {
             display: none;
