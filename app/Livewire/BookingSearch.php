@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Booking;
+use App\Models\Room;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,6 +23,9 @@ class BookingSearch extends Component
 
     #[Url]
     public string $dateTo = '';
+
+    #[Url]
+    public string $roomType = '';
 
     public function updatedSearch(): void
     {
@@ -43,12 +47,18 @@ class BookingSearch extends Component
         $this->resetPage();
     }
 
+    public function updatedRoomType(): void
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters(): void
     {
-        $this->search   = '';
-        $this->status   = '';
-        $this->dateFrom = '';
-        $this->dateTo   = '';
+        $this->search    = '';
+        $this->status    = '';
+        $this->dateFrom  = '';
+        $this->dateTo    = '';
+        $this->roomType  = '';
         $this->resetPage();
     }
 
@@ -76,8 +86,13 @@ class BookingSearch extends Component
             $query->whereDate('check_out_date', '<=', $this->dateTo);
         }
 
-        $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
+        if ($this->roomType) {
+            $query->whereHas('room', fn($r) => $r->where('room_type', $this->roomType));
+        }
 
-        return view('livewire.booking-search', compact('bookings'));
+        $bookings   = $query->orderBy('created_at', 'desc')->paginate(15);
+        $roomTypes  = Room::distinct()->orderBy('room_type')->pluck('room_type');
+
+        return view('livewire.booking-search', compact('bookings', 'roomTypes'));
     }
 }
