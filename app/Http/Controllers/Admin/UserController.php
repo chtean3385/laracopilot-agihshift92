@@ -11,23 +11,40 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    private function isSuperAdmin(): bool
+    {
+        return session('crm_user_role') === 'Super Admin';
+    }
+
     public function index()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $users = User::orderBy('name')->paginate(20);
+        $query = User::orderBy('name');
+        if (!$this->isSuperAdmin()) {
+            $query->where('is_super_admin', false);
+        }
+        $users = $query->paginate(20);
         return view('admin.users.index', compact('users'));
     }
 
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::orderBy('name');
+        if (!$this->isSuperAdmin()) {
+            $roles->where('slug', '!=', 'super_admin');
+        }
+        $roles = $roles->get();
         return view('admin.users.create', compact('roles'));
     }
 
     public function store(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+
+        if (!$this->isSuperAdmin() && $request->role === 'super_admin') {
+            return back()->with('error', 'You are not allowed to assign the Super Admin role.');
+        }
 
         $request->validate([
             'name'                  => 'required|string|max:100',
@@ -53,8 +70,15 @@ class UserController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $user  = User::findOrFail($id);
-        $roles = Role::orderBy('name')->get();
+        $user = User::findOrFail($id);
+        if (!$this->isSuperAdmin() && $user->is_super_admin) {
+            return redirect()->route('users.index')->with('error', 'You are not allowed to edit the Super Admin account.');
+        }
+        $roles = Role::orderBy('name');
+        if (!$this->isSuperAdmin()) {
+            $roles->where('slug', '!=', 'super_admin');
+        }
+        $roles = $roles->get();
         return view('admin.users.edit', compact('user', 'roles'));
     }
 
@@ -63,6 +87,12 @@ class UserController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
 
         $user = User::findOrFail($id);
+        if (!$this->isSuperAdmin() && $user->is_super_admin) {
+            return redirect()->route('users.index')->with('error', 'You are not allowed to edit the Super Admin account.');
+        }
+        if (!$this->isSuperAdmin() && $request->role === 'super_admin') {
+            return back()->with('error', 'You are not allowed to assign the Super Admin role.');
+        }
 
         $request->validate([
             'name'     => 'required|string|max:100',
