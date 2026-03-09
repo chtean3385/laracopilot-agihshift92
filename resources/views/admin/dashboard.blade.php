@@ -4,188 +4,235 @@
 @section('page-subtitle', 'Welcome back, ' . session('crm_user_name') . '! Here\'s what\'s happening today.')
 
 @section('content')
-<div class="space-y-6">
+<style>
+.kpi-card {
+    border-radius: 20px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,.07);
+    transition: transform .2s, box-shadow .2s;
+}
+.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+.kpi-card .kpi-shine {
+    position: absolute; top: -40px; right: -40px;
+    width: 130px; height: 130px; border-radius: 50%;
+    background: rgba(255,255,255,.12);
+}
+.kpi-card .kpi-shine2 {
+    position: absolute; bottom: -30px; left: -20px;
+    width: 90px; height: 90px; border-radius: 50%;
+    background: rgba(255,255,255,.08);
+}
+.kpi-num { font-size: 2.4rem; font-weight: 900; line-height: 1; color: #fff; }
+.kpi-label { font-size: .78rem; font-weight: 600; color: rgba(255,255,255,.82); margin-top: 4px; }
+.kpi-sub { font-size: .72rem; color: rgba(255,255,255,.65); margin-top: 6px; }
+.kpi-icon { font-size: 1.8rem; opacity: .35; position: absolute; top: 18px; right: 20px; color: #fff; }
 
-    <!-- KPI Row 1: Operational (all roles) -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Today's Check-Ins</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $todayCheckins->count() }}</p>
-                    <p class="text-xs text-cyan-600 mt-1 font-medium">Pending arrival</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-sign-in-alt text-white"></i>
-                </div>
-            </div>
+/* Occupancy circle animation */
+@keyframes dashDraw {
+    from { stroke-dasharray: 0, 100; }
+}
+.occ-ring { animation: dashDraw 1.2s ease-out forwards; }
+@keyframes pulseGlow {
+    0%,100% { filter: drop-shadow(0 0 4px rgba(6,182,212,.4)); }
+    50%      { filter: drop-shadow(0 0 12px rgba(6,182,212,.8)); }
+}
+.occ-svg { animation: pulseGlow 3s ease-in-out infinite; }
+
+/* Bar chart bar */
+.rev-bar { transition: height .6s cubic-bezier(.34,1.56,.64,1); }
+.rev-bar:hover { filter: brightness(1.12); }
+
+/* Calendar cell */
+.cal-cell {
+    border-radius: 14px; padding: 8px 6px;
+    min-height: 90px; display: flex; flex-direction: column;
+    transition: all .18s;
+    text-decoration: none;
+}
+.cal-cell:hover { transform: scale(1.04); z-index: 2; box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+.cal-cell.today { background: linear-gradient(135deg,#ecfeff,#e0f2fe); border: 2px solid #22d3ee; }
+.cal-cell.in-month { background: #f8fafc; border: 1px solid #f1f5f9; }
+.cal-cell.in-month:hover { background: #f1f5f9; }
+.cal-cell.out-month { background: #fff; border: 1px solid #f8fafc; opacity: .4; }
+.cal-day-num { font-size: 1rem; font-weight: 800; line-height: 1; }
+
+/* Quick actions */
+.qa-btn { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all .18s; }
+.qa-btn:hover { transform: translateX(4px); }
+</style>
+
+<div style="display:flex;flex-direction:column;gap:24px;">
+
+    {{-- KPI Row 1 --}}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
+        {{-- Check-Ins --}}
+        <div class="kpi-card" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-sign-in-alt kpi-icon"></i>
+            <div class="kpi-label">Today's Check-Ins</div>
+            <div class="kpi-num" data-count="{{ $todayCheckins->count() }}">{{ $todayCheckins->count() }}</div>
+            <div class="kpi-sub">Pending arrival</div>
         </div>
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Today's Check-Outs</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $todayCheckouts->count() }}</p>
-                    <p class="text-xs text-amber-600 mt-1 font-medium">Pending departure</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-sign-out-alt text-white"></i>
-                </div>
-            </div>
+        {{-- Check-Outs --}}
+        <div class="kpi-card" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-sign-out-alt kpi-icon"></i>
+            <div class="kpi-label">Today's Check-Outs</div>
+            <div class="kpi-num" data-count="{{ $todayCheckouts->count() }}">{{ $todayCheckouts->count() }}</div>
+            <div class="kpi-sub">Pending departure</div>
         </div>
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Available Rooms</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $availableRooms }}</p>
-                    <p class="text-xs text-emerald-600 mt-1 font-medium">of {{ $totalRooms }} total</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-door-open text-white"></i>
-                </div>
-            </div>
+        {{-- Available Rooms --}}
+        <div class="kpi-card" style="background:linear-gradient(135deg,#10b981,#059669);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-door-open kpi-icon"></i>
+            <div class="kpi-label">Available Rooms</div>
+            <div class="kpi-num" data-count="{{ $availableRooms }}">{{ $availableRooms }}</div>
+            <div class="kpi-sub">of {{ $totalRooms }} total</div>
         </div>
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Occupied Rooms</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $occupiedRooms }}</p>
-                    <p class="text-xs text-red-500 mt-1 font-medium">{{ $occupancyRate }}% occupancy</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-rose-400 to-red-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-bed text-white"></i>
-                </div>
-            </div>
+        {{-- Occupied Rooms --}}
+        <div class="kpi-card" style="background:linear-gradient(135deg,#f43f5e,#be185d);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-bed kpi-icon"></i>
+            <div class="kpi-label">Occupied Rooms</div>
+            <div class="kpi-num" data-count="{{ $occupiedRooms }}">{{ $occupiedRooms }}</div>
+            <div class="kpi-sub">{{ $occupancyRate }}% occupancy</div>
         </div>
     </div>
 
-    <!-- KPI Row 2: Financial (reports.view only) + Operational -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    {{-- KPI Row 2: Financial + Operational --}}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
         @canDo('reports.view')
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Today's Revenue</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">₹{{ number_format($todayRevenue) }}</p>
-                    <p class="text-xs text-gray-400 mt-1">Collected today</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-violet-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-rupee-sign text-white"></i>
-                </div>
-            </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-rupee-sign kpi-icon"></i>
+            <div class="kpi-label">Today's Revenue</div>
+            <div class="kpi-num" data-count="{{ $todayRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($todayRevenue) }}</div>
+            <div class="kpi-sub">Collected today</div>
         </div>
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Month Revenue</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">₹{{ number_format($monthRevenue) }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ now()->format('F Y') }}</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-chart-line text-white"></i>
-                </div>
-            </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-chart-line kpi-icon"></i>
+            <div class="kpi-label">Month Revenue</div>
+            <div class="kpi-num" data-count="{{ $monthRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($monthRevenue) }}</div>
+            <div class="kpi-sub">{{ now()->format('F Y') }}</div>
         </div>
         @endCanDo
-
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Pending Payments</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $pendingPayments }}</p>
-                    <p class="text-xs text-amber-600 mt-1 font-medium">Needs attention</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-exclamation-triangle text-white"></i>
-                </div>
-            </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#d97706,#b45309);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-exclamation-triangle kpi-icon"></i>
+            <div class="kpi-label">Pending Payments</div>
+            <div class="kpi-num" data-count="{{ $pendingPayments }}">{{ $pendingPayments }}</div>
+            <div class="kpi-sub">Needs attention</div>
         </div>
-        <div class="stat-card">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Total Guests</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-1">{{ $totalCustomers }}</p>
-                    <p class="text-xs text-blue-500 mt-1 font-medium">+{{ $newCustomersMonth }} this month</p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-md">
-                    <i class="fas fa-users text-white"></i>
-                </div>
-            </div>
+        <div class="kpi-card" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
+            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+            <i class="fas fa-users kpi-icon"></i>
+            <div class="kpi-label">Total Guests</div>
+            <div class="kpi-num" data-count="{{ $totalCustomers }}">{{ $totalCustomers }}</div>
+            <div class="kpi-sub">+{{ $newCustomersMonth }} this month</div>
         </div>
     </div>
 
-    <!-- Middle Section: Room Status + Revenue Chart -->
+    {{-- Occupancy + Revenue --}}
     @canDo('reports.view')
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Occupancy Chart -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h3 class="font-bold text-gray-800 mb-5">Room Occupancy</h3>
-            <div class="flex items-center justify-center mb-4">
-                <div class="relative w-36 h-36">
-                    <svg viewBox="0 0 36 36" class="w-36 h-36 transform -rotate-90">
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e5e7eb" stroke-width="3"/>
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#grad)" stroke-width="3" stroke-dasharray="{{ $occupancyRate }}, 100"/>
-                        <defs>
-                            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#06b6d4"/>
-                                <stop offset="100%" style="stop-color:#3b82f6"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-gray-800">{{ $occupancyRate }}%</div>
-                            <div class="text-xs text-gray-400">Occupied</div>
-                        </div>
-                    </div>
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:stretch;" class="occ-rev-grid">
+
+        {{-- Occupancy Circle --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;display:flex;flex-direction:column;align-items:center;">
+            <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:20px;align-self:flex-start;width:100%;">Room Occupancy</div>
+            <div style="position:relative;width:200px;height:200px;flex-shrink:0;">
+                <svg viewBox="0 0 36 36" class="occ-svg" style="width:200px;height:200px;transform:rotate(-90deg);">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" stroke-width="3.2"/>
+                    @php
+                        $occ = (int)$occupancyRate;
+                        $color1 = $occ >= 80 ? '#ef4444' : ($occ >= 50 ? '#f59e0b' : '#06b6d4');
+                        $color2 = $occ >= 80 ? '#be185d' : ($occ >= 50 ? '#d97706' : '#3b82f6');
+                    @endphp
+                    <defs>
+                        <linearGradient id="occGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:{{ $color1 }}"/>
+                            <stop offset="100%" style="stop-color:{{ $color2 }}"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="occ-ring" cx="18" cy="18" r="15.9" fill="none"
+                        stroke="url(#occGrad)" stroke-width="3.2"
+                        stroke-linecap="round"
+                        stroke-dasharray="{{ $occ }}, 100"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                    <div style="font-size:2.4rem;font-weight:900;color:#1e293b;line-height:1;">{{ $occupancyRate }}%</div>
+                    <div style="font-size:.72rem;color:#94a3b8;font-weight:600;margin-top:2px;">Occupied</div>
                 </div>
             </div>
-            <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-emerald-400"></div><span class="text-sm text-gray-600">Available</span></div>
-                    <span class="font-bold text-gray-700">{{ $availableRooms }}</span>
+            <div style="width:100%;margin-top:22px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="width:12px;height:12px;border-radius:50%;background:#10b981;"></div>
+                        <span style="font-size:13px;color:#475569;">Available</span>
+                    </div>
+                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $availableRooms }}</span>
                 </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-red-400"></div><span class="text-sm text-gray-600">Occupied</span></div>
-                    <span class="font-bold text-gray-700">{{ $occupiedRooms }}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="width:12px;height:12px;border-radius:50%;background:#f43f5e;"></div>
+                        <span style="font-size:13px;color:#475569;">Occupied</span>
+                    </div>
+                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $occupiedRooms }}</span>
                 </div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-amber-400"></div><span class="text-sm text-gray-600">Maintenance</span></div>
-                    <span class="font-bold text-gray-700">{{ $maintenanceRooms }}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="width:12px;height:12px;border-radius:50%;background:#f59e0b;"></div>
+                        <span style="font-size:13px;color:#475569;">Maintenance</span>
+                    </div>
+                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $maintenanceRooms }}</span>
+                </div>
+                <div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:12px;color:#94a3b8;">Total Rooms</span>
+                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $totalRooms }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Weekly Revenue Chart (enhanced) -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 col-span-1 lg:col-span-2">
-            <div class="flex items-center justify-between mb-1">
-                <h3 class="font-bold text-gray-800">7-Day Revenue Overview</h3>
-                @php $weekTotal = array_sum(array_column($weeklyRevenue, 'amount')); @endphp
-                <span class="text-sm font-bold text-emerald-600">₹{{ number_format($weekTotal) }} total</span>
+        {{-- Weekly Revenue Chart --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+            @php $weekTotal = array_sum(array_column($weeklyRevenue, 'amount')); @endphp
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                <div>
+                    <div style="font-weight:800;color:#1e293b;font-size:15px;">7-Day Revenue Overview</div>
+                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Payments collected over the last 7 days</div>
+                </div>
+                <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);padding:6px 14px;border-radius:20px;">
+                    <span style="font-weight:800;color:#059669;font-size:14px;">₹{{ number_format($weekTotal) }} total</span>
+                </div>
             </div>
-            <p class="text-xs text-gray-400 mb-4">Payments collected over the last 7 days</p>
             @php $maxRevenue = max(array_column($weeklyRevenue, 'amount')) ?: 1; @endphp
-            <div class="flex items-end gap-2 h-36">
+            <div style="display:flex;align-items:flex-end;gap:8px;height:160px;margin-top:24px;">
                 @foreach($weeklyRevenue as $day)
-                    @php $height = $day['amount'] > 0 ? max(10, round(($day['amount'] / $maxRevenue) * 100)) : 3; @endphp
-                    <div class="flex-1 flex flex-col items-center gap-1 group">
-                        <div class="text-xs font-semibold {{ $day['amount'] > 0 ? ($day['isToday'] ? 'text-cyan-600' : 'text-gray-600') : 'text-gray-300' }} opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {{ $day['amount'] > 0 ? '₹' . number_format($day['amount']) : '—' }}
+                    @php $pct = $day['amount'] > 0 ? max(8, round(($day['amount']/$maxRevenue)*100)) : 3; @endphp
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;" class="bar-col">
+                        <div style="font-size:11px;font-weight:700;color:{{ $day['amount']>0 ? '#475569' : '#cbd5e1' }};white-space:nowrap;opacity:0;" class="bar-label">
+                            {{ $day['amount']>0 ? '₹'.number_format($day['amount']) : '—' }}
                         </div>
-                        <div class="w-full rounded-t-lg transition-all relative overflow-hidden {{ $day['isToday'] ? 'bg-gradient-to-t from-cyan-600 to-cyan-400 shadow-md' : 'bg-gradient-to-t from-blue-400 to-sky-300 group-hover:from-cyan-500 group-hover:to-blue-400' }}" style="height: {{ $height }}%;">
+                        <div class="rev-bar" style="width:100%;border-radius:10px 10px 4px 4px;
+                            background:{{ $day['isToday'] ? 'linear-gradient(to top,#0891b2,#22d3ee)' : 'linear-gradient(to top,#3b82f6,#93c5fd)' }};
+                            height:{{ $pct }}%;box-shadow:{{ $day['isToday'] ? '0 4px 14px rgba(6,182,212,.35)' : 'none' }};"
+                            onmouseenter="this.previousElementSibling.style.opacity=1"
+                            onmouseleave="this.previousElementSibling.style.opacity=0">
                         </div>
-                        <div class="text-center">
-                            <div class="text-xs font-semibold {{ $day['isToday'] ? 'text-cyan-600' : 'text-gray-500' }}">{{ $day['day'] }}</div>
-                            <div class="text-xs {{ $day['isToday'] ? 'text-cyan-400' : 'text-gray-300' }}">{{ $day['date'] }}</div>
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;font-weight:700;color:{{ $day['isToday'] ? '#0891b2' : '#64748b' }};">{{ $day['day'] }}</div>
+                            <div style="font-size:11px;color:{{ $day['isToday'] ? '#22d3ee' : '#cbd5e1' }};">{{ $day['date'] }}</div>
                         </div>
                     </div>
                 @endforeach
             </div>
-            <div class="mt-4 border-t border-gray-50 pt-3 grid grid-cols-7 gap-2">
+            <div style="margin-top:16px;border-top:1px solid #f8fafc;padding-top:12px;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
                 @foreach($weeklyRevenue as $day)
-                <div class="text-center">
-                    <div class="text-xs {{ $day['amount'] > 0 ? 'text-gray-700 font-semibold' : 'text-gray-300' }}">
-                        {{ $day['amount'] > 0 ? '₹' . number_format($day['amount']/1000, 1) . 'k' : '—' }}
-                    </div>
+                <div style="text-align:center;font-size:11px;font-weight:{{ $day['amount']>0 ? '700' : '400' }};color:{{ $day['amount']>0 ? '#475569' : '#cbd5e1' }};">
+                    {{ $day['amount']>0 ? '₹'.number_format($day['amount']/1000,1).'k' : '—' }}
                 </div>
                 @endforeach
             </div>
@@ -193,68 +240,64 @@
     </div>
     @endCanDo
 
-    <!-- Booking Calendar -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-calendar-alt text-white text-xs"></i>
+    {{-- Booking Calendar --}}
+    <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+        <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(6,182,212,.3);">
+                    <i class="fas fa-calendar-alt" style="color:#fff;font-size:16px;"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-gray-800">Booking Calendar</h3>
-                    <p class="text-xs text-gray-400">{{ $calStart->format('F Y') }} — arrivals & departures</p>
+                    <div style="font-weight:800;color:#1e293b;font-size:16px;">Booking Calendar</div>
+                    <div style="font-size:12px;color:#64748b;">{{ $calStart->format('F Y') }} — arrivals &amp; departures</div>
                 </div>
             </div>
-            <div class="flex items-center gap-1">
-                <a href="{{ route('dashboard', ['cal_year' => $prevMonth->year, 'cal_month' => $prevMonth->month]) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-all text-sm">
-                    <i class="fas fa-chevron-left"></i>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <a href="{{ route('dashboard', ['cal_year'=>$prevMonth->year,'cal_month'=>$prevMonth->month]) }}"
+                   style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
+                    <i class="fas fa-chevron-left" style="font-size:12px;"></i>
                 </a>
-                <a href="{{ route('dashboard') }}" class="px-3 h-8 flex items-center rounded-lg border border-gray-200 hover:bg-gray-50 text-xs text-gray-500 font-medium transition-all">Today</a>
-                <a href="{{ route('dashboard', ['cal_year' => $nextMonth->year, 'cal_month' => $nextMonth->month]) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-all text-sm">
-                    <i class="fas fa-chevron-right"></i>
+                <a href="{{ route('dashboard') }}"
+                   style="padding:0 14px;height:36px;display:flex;align-items:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;font-size:13px;font-weight:600;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">Today</a>
+                <a href="{{ route('dashboard', ['cal_year'=>$nextMonth->year,'cal_month'=>$nextMonth->month]) }}"
+                   style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
+                    <i class="fas fa-chevron-right" style="font-size:12px;"></i>
                 </a>
             </div>
         </div>
-        <div class="p-4">
-            <!-- Day-of-week header -->
-            <div class="grid grid-cols-7 mb-1">
+        <div style="padding:20px;">
+            {{-- Day headers --}}
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;">
                 @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $dow)
-                <div class="text-center text-xs font-semibold text-gray-400 py-2">{{ $dow }}</div>
+                <div style="text-align:center;font-size:12px;font-weight:700;color:#94a3b8;padding:6px 0;letter-spacing:.04em;">{{ $dow }}</div>
                 @endforeach
             </div>
-            <!-- Calendar weeks -->
+            {{-- Weeks --}}
             @if(count($calWeeks) > 0)
-            <div class="space-y-1">
+            <div style="display:flex;flex-direction:column;gap:6px;">
                 @foreach($calWeeks as $week)
-                <div class="grid grid-cols-7 gap-1">
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
                     @foreach($week as $cell)
-                    @php
-                        $hasActivity = $cell['checkins'] > 0 || $cell['checkouts'] > 0 || $cell['staying'] > 0;
-                        $totalGuests = $cell['checkins'] + $cell['checkouts'] + $cell['staying'];
-                    @endphp
-                    <a href="{{ route('bookings.index', ['check_in_date' => $cell['ds']]) }}"
-                       class="relative min-h-[72px] rounded-xl p-1.5 flex flex-col transition-all
-                           {{ $cell['isToday'] ? 'bg-cyan-50 border-2 border-cyan-400 shadow-sm' : ($cell['inMonth'] ? 'bg-gray-50 hover:bg-gray-100 border border-gray-100' : 'bg-white border border-gray-50 opacity-40') }}">
-                        <span class="text-xs font-bold {{ $cell['isToday'] ? 'text-cyan-600' : ($cell['inMonth'] ? 'text-gray-700' : 'text-gray-300') }} leading-none mb-1">
-                            {{ $cell['day'] }}
-                        </span>
-                        <div class="flex flex-col gap-0.5 mt-auto">
+                    <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
+                       class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}">
+                        <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
+                        <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
                             @if($cell['checkins'] > 0)
-                            <div class="flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
-                                <span class="text-[10px] text-cyan-700 font-semibold leading-none">{{ $cell['checkins'] }} in</span>
+                            <div style="display:flex;align-items:center;gap:4px;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#06b6d4;flex-shrink:0;"></span>
+                                <span style="font-size:11px;color:#0891b2;font-weight:700;line-height:1;">{{ $cell['checkins'] }} in</span>
                             </div>
                             @endif
                             @if($cell['checkouts'] > 0)
-                            <div class="flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>
-                                <span class="text-[10px] text-amber-700 font-semibold leading-none">{{ $cell['checkouts'] }} out</span>
+                            <div style="display:flex;align-items:center;gap:4px;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></span>
+                                <span style="font-size:11px;color:#b45309;font-weight:700;line-height:1;">{{ $cell['checkouts'] }} out</span>
                             </div>
                             @endif
                             @if($cell['staying'] > 0)
-                            <div class="flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span>
-                                <span class="text-[10px] text-emerald-700 font-semibold leading-none">{{ $cell['staying'] }} stay</span>
+                            <div style="display:flex;align-items:center;gap:4px;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;"></span>
+                                <span style="font-size:11px;color:#047857;font-weight:700;line-height:1;">{{ $cell['staying'] }} stay</span>
                             </div>
                             @endif
                         </div>
@@ -264,130 +307,128 @@
                 @endforeach
             </div>
             @else
-            <div class="text-center py-8 text-gray-400 text-sm">Calendar unavailable</div>
+            <div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">Calendar unavailable</div>
             @endif
-            <!-- Legend -->
-            <div class="flex items-center gap-5 mt-4 pt-3 border-t border-gray-100">
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span><span class="text-xs text-gray-500">Check-in</span></div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span><span class="text-xs text-gray-500">Check-out</span></div>
-                <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span><span class="text-xs text-gray-500">In-house</span></div>
-                <div class="flex items-center gap-1.5 ml-auto"><span class="w-2.5 h-2.5 rounded-full border-2 border-cyan-400 bg-cyan-50"></span><span class="text-xs text-gray-500">Today</span></div>
+            <div style="display:flex;align-items:center;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9;">
+                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#06b6d4;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-in</span></div>
+                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-out</span></div>
+                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">In-house</span></div>
+                <div style="display:flex;align-items:center;gap:6px;margin-left:auto;"><span style="width:10px;height:10px;border-radius:50%;border:2px solid #22d3ee;background:#ecfeff;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Today</span></div>
             </div>
         </div>
     </div>
 
-    <!-- Bottom Section: Quick Actions + Recent Bookings -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Quick Actions (gated by permission) -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h3 class="font-bold text-gray-800 mb-5">Quick Actions</h3>
-            <div class="space-y-3">
+    {{-- Quick Actions + Recent Bookings --}}
+    <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;" class="qa-recent-grid">
+
+        {{-- Quick Actions --}}
+        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+            <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:18px;">Quick Actions</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
                 @canDo('bookings.create')
-                <a href="{{ route('bookings.create') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 rounded-xl transition-all group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center shadow-sm">
-                        <i class="fas fa-plus text-white text-sm"></i>
+                <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
+                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3);flex-shrink:0;">
+                        <i class="fas fa-plus" style="color:#fff;font-size:14px;"></i>
                     </div>
                     <div>
-                        <div class="font-semibold text-gray-700 text-sm group-hover:text-blue-700">New Booking</div>
-                        <div class="text-xs text-gray-400">Create reservation</div>
+                        <div style="font-weight:700;color:#1e40af;font-size:14px;">New Booking</div>
+                        <div style="font-size:12px;color:#93c5fd;">Create reservation</div>
                     </div>
-                    <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
+                    <i class="fas fa-chevron-right" style="color:#93c5fd;font-size:11px;margin-left:auto;"></i>
                 </a>
                 @endCanDo
                 @canDo('checkin.process')
-                <a href="{{ route('checkin.index') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 rounded-xl transition-all group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-sm">
-                        <i class="fas fa-sign-in-alt text-white text-sm"></i>
+                <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);" onmouseenter="this.style.background='linear-gradient(135deg,#dcfce7,#bbf7d0)'" onmouseleave="this.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'">
+                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(16,185,129,.3);flex-shrink:0;">
+                        <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
                     </div>
                     <div>
-                        <div class="font-semibold text-gray-700 text-sm group-hover:text-emerald-700">Process Check-In</div>
-                        <div class="text-xs text-gray-400">{{ $todayCheckins->count() }} pending</div>
+                        <div style="font-weight:700;color:#065f46;font-size:14px;">Process Check-In</div>
+                        <div style="font-size:12px;color:#6ee7b7;">{{ $todayCheckins->count() }} pending</div>
                     </div>
-                    <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
+                    <i class="fas fa-chevron-right" style="color:#6ee7b7;font-size:11px;margin-left:auto;"></i>
                 </a>
                 @endCanDo
                 @canDo('checkout.process')
-                <a href="{{ route('checkout.index') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 rounded-xl transition-all group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-sm">
-                        <i class="fas fa-sign-out-alt text-white text-sm"></i>
+                <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);" onmouseenter="this.style.background='linear-gradient(135deg,#fef3c7,#fde68a)'" onmouseleave="this.style.background='linear-gradient(135deg,#fffbeb,#fef3c7)'">
+                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(245,158,11,.3);flex-shrink:0;">
+                        <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
                     </div>
                     <div>
-                        <div class="font-semibold text-gray-700 text-sm group-hover:text-amber-700">Process Check-Out</div>
-                        <div class="text-xs text-gray-400">{{ $todayCheckouts->count() }} pending</div>
+                        <div style="font-weight:700;color:#92400e;font-size:14px;">Process Check-Out</div>
+                        <div style="font-size:12px;color:#fcd34d;">{{ $todayCheckouts->count() }} pending</div>
                     </div>
-                    <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
+                    <i class="fas fa-chevron-right" style="color:#fcd34d;font-size:11px;margin-left:auto;"></i>
                 </a>
                 @endCanDo
                 @canDo('guests.create')
-                <a href="{{ route('customers.create') }}" class="flex items-center gap-3 p-3 bg-gradient-to-r from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 rounded-xl transition-all group">
-                    <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center shadow-sm">
-                        <i class="fas fa-user-plus text-white text-sm"></i>
+                <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#faf5ff,#ede9fe)'">
+                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(139,92,246,.3);flex-shrink:0;">
+                        <i class="fas fa-user-plus" style="color:#fff;font-size:14px;"></i>
                     </div>
                     <div>
-                        <div class="font-semibold text-gray-700 text-sm group-hover:text-violet-700">Add Guest</div>
-                        <div class="text-xs text-gray-400">New guest profile</div>
+                        <div style="font-weight:700;color:#4c1d95;font-size:14px;">Add Guest</div>
+                        <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
                     </div>
-                    <i class="fas fa-chevron-right ml-auto text-gray-300 text-xs"></i>
+                    <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
                 </a>
                 @endCanDo
             </div>
         </div>
 
-        <!-- Recent Bookings -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 col-span-1 lg:col-span-2">
-            <div class="flex items-center justify-between mb-5">
-                <h3 class="font-bold text-gray-800">Recent Bookings</h3>
-                <a href="{{ route('bookings.index') }}" class="text-cyan-600 hover:text-cyan-700 text-sm font-medium">View All <i class="fas fa-arrow-right ml-1"></i></a>
+        {{-- Recent Bookings --}}
+        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                <div style="font-weight:800;color:#1e293b;font-size:15px;">Recent Bookings</div>
+                <a href="{{ route('bookings.index') }}" style="color:#0891b2;font-size:13px;font-weight:600;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
             </div>
-            <div class="space-y-3">
+            <div style="display:flex;flex-direction:column;gap:8px;">
                 @forelse($recentBookings as $booking)
-                <div class="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-all">
-                    <div class="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold text-sm flex-shrink-0">
+                <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:#f8fafc;transition:background .15s;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
+                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:800;font-size:15px;flex-shrink:0;">
                         {{ substr($booking->customer->name, 0, 1) }}
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-gray-800 text-sm truncate">{{ $booking->customer->name }}</div>
-                        <div class="text-xs text-gray-400">Room {{ $booking->room->room_number }} • {{ $booking->check_in_date->format('d M') }} - {{ $booking->check_out_date->format('d M') }}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;color:#1e293b;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $booking->customer->name }}</div>
+                        <div style="font-size:12px;color:#94a3b8;">Room {{ $booking->room->room_number }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }} &bull; {{ $booking->nights }} nights</div>
                     </div>
-                    <div class="text-right flex-shrink-0">
+                    <div style="text-align:right;flex-shrink:0;">
                         @canDo('reports.view')
-                        <div class="text-sm font-bold text-gray-700">₹{{ number_format($booking->total_amount) }}</div>
+                        <div style="font-weight:800;color:#1e293b;font-size:14px;">₹{{ number_format($booking->total_amount) }}</div>
                         @endCanDo
-                        <span class="badge-{{ $booking->status_color }} text-xs">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
+                        <span class="badge-{{ $booking->status_color }}" style="font-size:11px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
                     </div>
                 </div>
                 @empty
-                <div class="text-center py-8 text-gray-400">
-                    <i class="fas fa-calendar-times text-3xl mb-2"></i>
-                    <p class="text-sm">No recent bookings</p>
+                <div style="text-align:center;padding:32px;color:#94a3b8;">
+                    <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+                    <p style="font-size:14px;">No recent bookings</p>
                 </div>
                 @endforelse
             </div>
         </div>
     </div>
 
-    <!-- Today's Arrivals & Departures -->
+    {{-- Today's Arrivals & Departures --}}
     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
         @if($todayCheckins->count() > 0)
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-sign-in-alt text-white text-xs"></i>
+        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
                 </div>
-                <h3 class="font-bold text-gray-800">Today's Arrivals ({{ $todayCheckins->count() }})</h3>
+                <div style="font-weight:800;color:#1e293b;font-size:15px;">Today's Arrivals ({{ $todayCheckins->count() }})</div>
             </div>
-            <div class="space-y-3">
+            <div style="display:flex;flex-direction:column;gap:8px;">
                 @foreach($todayCheckins as $booking)
-                <div class="flex items-center justify-between p-3 bg-cyan-50 rounded-xl">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border-radius:12px;">
                     <div>
-                        <div class="font-semibold text-gray-800 text-sm">{{ $booking->customer->name }}</div>
-                        <div class="text-xs text-gray-500">Room {{ $booking->room->room_number }} • {{ $booking->nights }} night(s)</div>
+                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer->name }}</div>
+                        <div style="font-size:12px;color:#64748b;">Room {{ $booking->room->room_number }} &bull; {{ $booking->nights }} night(s)</div>
                     </div>
                     @canDo('checkin.process')
-                    <a href="{{ route('checkin.show', $booking->id) }}" class="bg-cyan-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-cyan-600 transition-all font-medium">
-                        Check In
-                    </a>
+                    <a href="{{ route('checkin.show', $booking->id) }}" style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(6,182,212,.3);">Check In</a>
                     @endCanDo
                 </div>
                 @endforeach
@@ -396,26 +437,24 @@
         @endif
 
         @if($todayCheckouts->count() > 0)
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-sign-out-alt text-white text-xs"></i>
+        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
                 </div>
-                <h3 class="font-bold text-gray-800">Today's Departures ({{ $todayCheckouts->count() }})</h3>
+                <div style="font-weight:800;color:#1e293b;font-size:15px;">Today's Departures ({{ $todayCheckouts->count() }})</div>
             </div>
-            <div class="space-y-3">
+            <div style="display:flex;flex-direction:column;gap:8px;">
                 @foreach($todayCheckouts as $booking)
-                <div class="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:12px;">
                     <div>
-                        <div class="font-semibold text-gray-800 text-sm">{{ $booking->customer->name }}</div>
-                        <div class="text-xs text-gray-500">Room {{ $booking->room->room_number }}
-                            @canDo('reports.view') • Due: ₹{{ number_format($booking->balance_due) }} @endCanDo
+                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer->name }}</div>
+                        <div style="font-size:12px;color:#64748b;">Room {{ $booking->room->room_number }}
+                            @canDo('reports.view') &bull; Due: ₹{{ number_format($booking->balance_due) }} @endCanDo
                         </div>
                     </div>
                     @canDo('checkout.process')
-                    <a href="{{ route('checkout.show', $booking->id) }}" class="bg-amber-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-amber-600 transition-all font-medium">
-                        Check Out
-                    </a>
+                    <a href="{{ route('checkout.show', $booking->id) }}" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(245,158,11,.3);">Check Out</a>
                     @endCanDo
                 </div>
                 @endforeach
@@ -426,4 +465,46 @@
     @endif
 
 </div>
+
+{{-- Mobile responsiveness --}}
+<style>
+@media (max-width: 1024px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .occ-rev-grid { grid-template-columns: 1fr !important; }
+    .qa-recent-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .kpi-num { font-size: 1.7rem !important; }
+    .cal-cell { min-height: 60px !important; }
+    .cal-day-num { font-size: .85rem !important; }
+}
+</style>
+
+{{-- Count-up animation --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-count]').forEach(function(el) {
+        var target = parseFloat(el.getAttribute('data-count')) || 0;
+        var fmt = el.getAttribute('data-format');
+        var prefix = el.getAttribute('data-prefix') || '';
+        var duration = 900;
+        var start = performance.now();
+        function update(now) {
+            var elapsed = now - start;
+            var progress = Math.min(elapsed / duration, 1);
+            var ease = 1 - Math.pow(1 - progress, 3);
+            var val = Math.round(target * ease);
+            if (fmt === 'currency') {
+                el.textContent = prefix + val.toLocaleString('en-IN');
+            } else {
+                el.textContent = prefix + val.toLocaleString('en-IN');
+            }
+            if (progress < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    });
+});
+</script>
+
 @endsection
