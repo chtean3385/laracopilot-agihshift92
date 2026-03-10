@@ -118,7 +118,8 @@ class DashboardController extends Controller
             $prevMonth    = $calStart->copy()->subMonth();
             $nextMonth    = $calStart->copy()->addMonth();
 
-            $calBookings = Booking::whereNotIn('status', ['cancelled'])
+            $calBookings = Booking::whereIn('status', ['confirmed', 'checked_in'])
+                ->with(['customer', 'room'])
                 ->where(function ($q) use ($calGridStart, $calGridEnd) {
                     $q->whereBetween('check_in_date', [$calGridStart->toDateString(), $calGridEnd->toDateString()])
                       ->orWhereBetween('check_out_date', [$calGridStart->toDateString(), $calGridEnd->toDateString()])
@@ -133,19 +134,36 @@ class DashboardController extends Controller
             $cur = $calGridStart->copy();
             while ($cur <= $calGridEnd) {
                 $ds = $cur->toDateString();
+
+                $checkinBookings  = $calBookings->filter(fn($b) => $b->check_in_date->toDateString() === $ds);
+                $checkoutBookings = $calBookings->filter(fn($b) => $b->check_out_date->toDateString() === $ds);
+                $stayingBookings  = $calBookings->filter(
+                    fn($b) => $b->check_in_date->toDateString() < $ds
+                           && $b->check_out_date->toDateString() > $ds
+                           && $b->status === 'checked_in'
+                );
+
+                $buildTooltip = function ($collection) {
+                    return $collection->map(fn($b) => [
+                        'name'   => $b->customer->name ?? '—',
+                        'room'   => $b->room->room_number ?? '—',
+                        'type'   => $b->room->type ?? '',
+                        'status' => $b->status,
+                    ])->values()->toArray();
+                };
+
                 $calDays[] = [
-                    'date'      => $cur->copy(),
-                    'ds'        => $ds,
-                    'day'       => $cur->day,
-                    'inMonth'   => $cur->month === $calMonth,
-                    'isToday'   => $cur->isToday(),
-                    'checkins'  => $calBookings->filter(fn($b) => $b->check_in_date->toDateString() === $ds)->count(),
-                    'checkouts' => $calBookings->filter(fn($b) => $b->check_out_date->toDateString() === $ds)->count(),
-                    'staying'   => $calBookings->filter(
-                        fn($b) => $b->check_in_date->toDateString() < $ds
-                               && $b->check_out_date->toDateString() > $ds
-                               && $b->status === 'checked_in'
-                    )->count(),
+                    'date'             => $cur->copy(),
+                    'ds'               => $ds,
+                    'day'              => $cur->day,
+                    'inMonth'          => $cur->month === $calMonth,
+                    'isToday'          => $cur->isToday(),
+                    'checkins'         => $checkinBookings->count(),
+                    'checkouts'        => $checkoutBookings->count(),
+                    'staying'          => $stayingBookings->count(),
+                    'checkin_guests'   => $buildTooltip($checkinBookings),
+                    'checkout_guests'  => $buildTooltip($checkoutBookings),
+                    'staying_guests'   => $buildTooltip($stayingBookings),
                 ];
                 $cur->addDay();
             }

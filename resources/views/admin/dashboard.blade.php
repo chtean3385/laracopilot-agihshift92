@@ -51,12 +51,29 @@
     transition: all .18s;
     text-decoration: none;
 }
-.cal-cell:hover { transform: scale(1.04); z-index: 2; box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+.cal-cell:hover { z-index: 2; box-shadow: 0 6px 20px rgba(0,0,0,.1); }
 .cal-cell.today { background: linear-gradient(135deg,#ecfeff,#e0f2fe); border: 2px solid #22d3ee; }
 .cal-cell.in-month { background: #f8fafc; border: 1px solid #f1f5f9; }
 .cal-cell.in-month:hover { background: #f1f5f9; }
 .cal-cell.out-month { background: #fff; border: 1px solid #f8fafc; opacity: .4; }
 .cal-day-num { font-size: 1rem; font-weight: 800; line-height: 1; }
+/* Calendar tooltip */
+#calTooltip {
+    position: fixed; z-index: 9999; pointer-events: none;
+    background: #1e293b; color: #fff; border-radius: 12px;
+    padding: 10px 13px; min-width: 180px; max-width: 260px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.28);
+    font-size: 12px; line-height: 1.5;
+    opacity: 0; transition: opacity .15s ease;
+}
+#calTooltip.visible { opacity: 1; }
+#calTooltip .tt-date { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+#calTooltip .tt-section { font-size: 11px; font-weight: 700; margin: 6px 0 3px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,.1); }
+#calTooltip .tt-section:first-of-type { border-top: none; margin-top: 2px; }
+#calTooltip .tt-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
+#calTooltip .tt-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+#calTooltip .tt-name { font-weight: 600; color: #f1f5f9; }
+#calTooltip .tt-room { color: #94a3b8; font-size: 11px; }
 
 /* Quick actions */
 .qa-btn { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all .18s; }
@@ -278,8 +295,18 @@
                 @foreach($calWeeks as $week)
                 <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
                     @foreach($week as $cell)
+                    @php
+                        $hasGuests = ($cell['checkins'] + $cell['checkouts'] + $cell['staying']) > 0;
+                        $ttData = json_encode([
+                            'date'     => $cell['date']->format('D, d M Y'),
+                            'checkins' => $cell['checkin_guests'],
+                            'checkouts'=> $cell['checkout_guests'],
+                            'staying'  => $cell['staying_guests'],
+                        ], JSON_HEX_QUOT | JSON_HEX_APOS);
+                    @endphp
                     <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
-                       class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}">
+                       class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
+                       @if($hasGuests) data-cal-guests="{{ htmlspecialchars($ttData, ENT_QUOTES) }}" @endif>
                         <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
                         <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
                             @if($cell['checkins'] > 0)
@@ -480,6 +507,65 @@
     .cal-day-num { font-size: .85rem !important; }
 }
 </style>
+
+{{-- Calendar tooltip --}}
+<div id="calTooltip"></div>
+
+<script>
+(function() {
+    var tooltip = document.getElementById('calTooltip');
+    var hideTimer = null;
+
+    function buildHtml(data) {
+        var html = '<div class="tt-date">' + data.date + '</div>';
+        var sections = [
+            { key: 'checkins',  label: 'Check-In',  color: '#06b6d4' },
+            { key: 'checkouts', label: 'Check-Out', color: '#f59e0b' },
+            { key: 'staying',   label: 'In-House',  color: '#10b981' },
+        ];
+        sections.forEach(function(s) {
+            var guests = data[s.key];
+            if (!guests || guests.length === 0) return;
+            html += '<div class="tt-section" style="color:' + s.color + ';">' + s.label + ' (' + guests.length + ')</div>';
+            guests.forEach(function(g) {
+                html += '<div class="tt-row">' +
+                    '<span class="tt-dot" style="background:' + s.color + ';"></span>' +
+                    '<span class="tt-name">' + g.name + '</span>' +
+                    '<span class="tt-room">Rm ' + g.room + '</span>' +
+                '</div>';
+            });
+        });
+        return html;
+    }
+
+    function positionTooltip(e) {
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var tw = tooltip.offsetWidth || 220, th = tooltip.offsetHeight || 120;
+        var x = e.clientX + 14, y = e.clientY + 14;
+        if (x + tw > vw - 10) x = e.clientX - tw - 10;
+        if (y + th > vh - 10) y = e.clientY - th - 10;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top  = y + 'px';
+    }
+
+    document.querySelectorAll('[data-cal-guests]').forEach(function(cell) {
+        var data = null;
+        try { data = JSON.parse(cell.getAttribute('data-cal-guests')); } catch(e) {}
+        if (!data) return;
+
+        cell.addEventListener('mouseenter', function(e) {
+            clearTimeout(hideTimer);
+            tooltip.innerHTML = buildHtml(data);
+            positionTooltip(e);
+            tooltip.classList.add('visible');
+        });
+        cell.addEventListener('mousemove', positionTooltip);
+        cell.addEventListener('mouseleave', function() {
+            hideTimer = setTimeout(function() { tooltip.classList.remove('visible'); }, 80);
+        });
+    });
+})();
+</script>
 
 {{-- Count-up animation --}}
 <script>
