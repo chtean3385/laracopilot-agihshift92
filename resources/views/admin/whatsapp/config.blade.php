@@ -70,7 +70,7 @@
                     <div id="field-phone-number-id" style="display:{{ in_array($selectedProvider, ['meta','wati','gupshup']) ? 'block' : 'none' }};">
                         <label class="form-label" id="label-phone-number-id">Phone Number ID / Server ID</label>
                         <input type="text" name="phone_number_id" value="{{ old('phone_number_id', $config->phone_number_id) }}"
-                            class="form-input" placeholder="e.g. 123456789012345">
+                            class="form-input" placeholder="e.g. 15558143257 — numbers only, no + sign">
                     </div>
 
                     <div id="field-business-account-id" style="display:{{ in_array($selectedProvider, ['meta','twilio']) ? 'block' : 'none' }};">
@@ -169,7 +169,7 @@
                 @foreach([
                     ['Sign up at WATI', 'https://wati.io', 'Create a WATI account and connect your WhatsApp number'],
                     ['Get API Key', 'https://app.wati.io/settings/api', 'Settings → API → Copy your access token'],
-                    ['Get Server Instance', 'https://app.wati.io', 'Your server ID is in your WATI dashboard URL'],
+                    ['Get Server Instance', 'https://app.wati.io', 'Find your server ID in your WATI dashboard URL — enter numbers only, no + sign'],
                     ['Create Templates', 'https://app.wati.io/broadcast/templates', 'Create and submit templates for approval'],
                 ] as $i => [$title, $link, $desc])
                 <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;">

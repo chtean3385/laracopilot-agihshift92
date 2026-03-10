@@ -19,8 +19,9 @@ class WatiProvider implements WhatsAppProviderInterface
         }
 
         try {
+            $serverId = preg_replace('/[^a-zA-Z0-9]/', '', $this->config->phone_number_id);
             $response = Http::withToken($this->config->api_key)
-                ->post("https://live-server-{$this->config->phone_number_id}.wati.io/api/v1/sendSessionMessage/{$to}", [
+                ->post("https://live-server-{$serverId}.wati.io/api/v1/sendSessionMessage/{$to}", [
                     'messageText' => $message,
                 ]);
 
