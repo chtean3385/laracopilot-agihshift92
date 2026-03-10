@@ -120,7 +120,7 @@
     {{-- Process Form --}}
     <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:24px;">
         <h3 style="font-weight:800;color:#1e293b;margin-bottom:20px;font-size:15px;"><i class="fas fa-sign-out-alt" style="color:#f59e0b;margin-right:8px;"></i>Complete Check-Out</h3>
-        <form action="{{ route('checkout.process', $booking->id) }}" method="POST">
+        <form id="checkoutForm" action="{{ route('checkout.process', $booking->id) }}" method="POST">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -224,7 +224,8 @@ function showCoUpiQr() {
                   '<button onclick="downloadCoQr()" style="flex:1;padding:9px 0;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;"><i class="fas fa-download"></i> Download QR</button>' +
                   '<button onclick="sendCoWhatsApp()" style="flex:1;padding:9px 0;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;"><i class="fab fa-whatsapp"></i> Send to Guest</button>' +
                 '</div>' +
-                '<button onclick="closeCoUpiModal()" style="margin-top:8px;width:100%;padding:8px;background:#f1f5f9;border:none;border-radius:10px;font-weight:600;font-size:12px;color:#475569;cursor:pointer;">Close</button>';
+                '<button onclick="confirmCoUpiPaid()" style="margin-top:10px;width:100%;padding:11px;background:#0891b2;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:7px;"><i class="fas fa-check-circle"></i> Payment Received — Record &amp; Complete Checkout</button>' +
+                '<button onclick="closeCoUpiModal()" style="margin-top:6px;width:100%;padding:8px;background:#f1f5f9;border:none;border-radius:10px;font-weight:600;font-size:12px;color:#475569;cursor:pointer;">Cancel</button>';
 
             loadQrLib(function() {
                 new QRCode(document.getElementById('coQrCanvas'), {
@@ -241,6 +242,17 @@ function showCoUpiQr() {
 
 function closeCoUpiModal() {
     document.getElementById('coUpiModal').style.display = 'none';
+}
+
+function confirmCoUpiPaid() {
+    var sel = document.getElementById('coPaymentMethod');
+    if (sel) sel.value = 'upi';
+    var amtInput = document.querySelector('#checkoutForm input[name="final_payment"]');
+    if (amtInput && (!amtInput.value || parseFloat(amtInput.value) === 0)) {
+        amtInput.value = parseFloat(_coUpiBalance).toFixed(2);
+    }
+    closeCoUpiModal();
+    document.getElementById('checkoutForm').submit();
 }
 
 function downloadCoQr() {
