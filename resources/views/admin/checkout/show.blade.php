@@ -183,6 +183,9 @@
 <script>
 var _coUpiBalance = {{ $gstBalanceDue }};
 var _coBookingNum = '{{ $booking->booking_number }}';
+var _coGuestName  = '{{ addslashes($booking->customer->name) }}';
+var _coGuestPhone = '{{ preg_replace('/[^0-9]/', '', $booking->customer->phone) }}';
+var _coUpiId      = '';
 
 function toggleCoUpiBtn(method) {
     var btn = document.getElementById('coUpiQrBtn');
@@ -209,6 +212,7 @@ function showCoUpiQr() {
                        + '&am=' + amt
                        + '&cu=INR'
                        + '&tn=' + encodeURIComponent(note);
+            _coUpiId = cfg.upi_id;
 
             document.getElementById('coUpiQrBody').innerHTML =
                 '<div id="coQrCanvas" style="width:220px;height:220px;margin:0 auto;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.08);background:#fff;display:flex;align-items:center;justify-content:center;"></div>' +
@@ -216,7 +220,11 @@ function showCoUpiQr() {
                 '<p style="font-size:13px;color:#64748b;margin-top:2px;">' + cfg.upi_name + '</p>' +
                 '<p style="font-size:11px;color:#94a3b8;font-family:monospace;margin-top:2px;">' + cfg.upi_id + '</p>' +
                 '<p style="font-size:11px;color:#94a3b8;margin-top:10px;">Scan with GPay · PhonePe · Paytm · any UPI app</p>' +
-                '<button onclick="closeCoUpiModal()" style="margin-top:14px;width:100%;padding:9px;background:#f1f5f9;border:none;border-radius:10px;font-weight:600;font-size:13px;color:#475569;cursor:pointer;">Close</button>';
+                '<div style="display:flex;gap:8px;margin-top:14px;">' +
+                  '<button onclick="downloadCoQr()" style="flex:1;padding:9px 0;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;"><i class="fas fa-download"></i> Download QR</button>' +
+                  '<button onclick="sendCoWhatsApp()" style="flex:1;padding:9px 0;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;"><i class="fab fa-whatsapp"></i> Send to Guest</button>' +
+                '</div>' +
+                '<button onclick="closeCoUpiModal()" style="margin-top:8px;width:100%;padding:8px;background:#f1f5f9;border:none;border-radius:10px;font-weight:600;font-size:12px;color:#475569;cursor:pointer;">Close</button>';
 
             loadQrLib(function() {
                 new QRCode(document.getElementById('coQrCanvas'), {
@@ -233,6 +241,25 @@ function showCoUpiQr() {
 
 function closeCoUpiModal() {
     document.getElementById('coUpiModal').style.display = 'none';
+}
+
+function downloadCoQr() {
+    var canvas = document.querySelector('#coQrCanvas canvas');
+    if (!canvas) { alert('QR not ready — please wait a moment and try again.'); return; }
+    var link = document.createElement('a');
+    link.download = 'UPI-QR-' + _coBookingNum + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+function sendCoWhatsApp() {
+    var phone = _coGuestPhone;
+    if (phone.length === 10) phone = '91' + phone;
+    var msg = 'Dear ' + _coGuestName + ','
+            + '\nYour checkout bill for Booking #' + _coBookingNum + ' is ₹' + parseFloat(_coUpiBalance).toLocaleString('en-IN') + '.'
+            + '\n\nPlease pay via UPI: *' + _coUpiId + '*'
+            + '\n\nThank you for staying with us!';
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function loadQrLib(cb) {
