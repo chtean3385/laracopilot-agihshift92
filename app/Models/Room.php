@@ -38,4 +38,9 @@ class Room extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function channelMapping()
+    {
+        return $this->hasOne(\App\Models\ChannelRoomMapping::class);
+    }
 }

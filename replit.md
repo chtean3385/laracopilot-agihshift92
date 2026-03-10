@@ -103,5 +103,16 @@ Extra Bed: Each room can optionally allow extra beds at a configured price per b
 - Logo + tagline appear: sidebar, login screen, invoice view, invoice print
 - `trustProxies(at: '*')` in `bootstrap/app.php` — trusts Replit's HTTPS proxy headers so generated URLs use correct scheme without forcing HTTPS globally
 
+## OTA Channel Manager Module (slug: `channel_manager`)
+- Routes: `/channel-manager` (dashboard, config, rooms, availability, bookings)
+- Models: `ChannelManagerConfig`, `ChannelRoomMapping`, `ChannelBooking`
+- Providers: eZee Centrix, STAAH, SiteMinder, RateGain (eZee + STAAH have real API push)
+- eZee: XML availability push to `https://live.ezeetechnosys.com/api_live/channelmanager`
+- STAAH: JSON availability push to `https://api.staah.com/api/v1/Availability`
+- Other providers: graceful manual-sync message (no live API yet)
+- OTA booking import → creates Customer + Booking with `OTA-XXXXXX` booking number
+- `special_requests` column stores OTA reference number
+- Sidebar nav item appears when module is enabled (uses `Module::isEnabled('channel_manager')`)
+
 ## Workflow
 "Start application" runs `php artisan serve --host=0.0.0.0 --port=5000`

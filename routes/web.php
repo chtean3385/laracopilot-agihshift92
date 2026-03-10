@@ -162,3 +162,17 @@ Route::get('/payment-links/invoices/{id}/upi-qr',             [PaymentLinksContr
 Route::get('/payment-links/upi-config',                       [PaymentLinksController::class, 'upiConfig']       )->name('payment_links.upi_config');
 Route::post('/payment-links/booking/{id}/razorpay',           [PaymentLinksController::class, 'razorpayForBooking'])->name('payment_links.booking.razorpay');
 Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksController::class, 'razorpayWebhook'] )->name('payment_links.razorpay.webhook')->withoutMiddleware(['web']);
+
+// ── OTA Channel Manager ────────────────────────────────────────────────────
+Route::get('/channel-manager',                            [\App\Http\Controllers\Admin\ChannelManagerController::class, 'index']            )->name('channel_manager.index');
+Route::get('/channel-manager/config',                     [\App\Http\Controllers\Admin\ChannelManagerController::class, 'config']           )->name('channel_manager.config');
+Route::post('/channel-manager/config',                    [\App\Http\Controllers\Admin\ChannelManagerController::class, 'configSave']       )->name('channel_manager.config.save');
+Route::post('/channel-manager/config/test',               [\App\Http\Controllers\Admin\ChannelManagerController::class, 'configTest']       )->name('channel_manager.config.test');
+Route::get('/channel-manager/rooms',                      [\App\Http\Controllers\Admin\ChannelManagerController::class, 'rooms']            )->name('channel_manager.rooms');
+Route::post('/channel-manager/rooms',                     [\App\Http\Controllers\Admin\ChannelManagerController::class, 'roomsSave']        )->name('channel_manager.rooms.save');
+Route::get('/channel-manager/availability',               [\App\Http\Controllers\Admin\ChannelManagerController::class, 'availability']     )->name('channel_manager.availability');
+Route::post('/channel-manager/availability/sync',         [\App\Http\Controllers\Admin\ChannelManagerController::class, 'availabilitySync'] )->name('channel_manager.availability.sync');
+Route::get('/channel-manager/bookings',                   [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookings']         )->name('channel_manager.bookings');
+Route::post('/channel-manager/bookings',                  [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingStore']     )->name('channel_manager.booking.store');
+Route::post('/channel-manager/bookings/{id}/convert',     [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingConvert']   )->name('channel_manager.booking.convert');
+Route::post('/channel-manager/bookings/{id}/cancel',      [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingCancel']    )->name('channel_manager.booking.cancel');

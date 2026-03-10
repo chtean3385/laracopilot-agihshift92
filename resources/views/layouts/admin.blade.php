@@ -627,6 +627,13 @@
             </a>
             @endif
 
+            @if(\App\Models\Module::isEnabled('channel_manager'))
+            <a href="{{ route('channel_manager.index') }}" class="nav-link {{ request()->routeIs('channel_manager.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-sitemap"></i></span>
+                Channel Manager
+            </a>
+            @endif
+
             <div class="nav-section">System</div>
 
             @if(session('crm_user_role') === 'Super Admin')
