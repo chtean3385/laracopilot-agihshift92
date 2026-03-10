@@ -621,7 +621,7 @@
 
             <div class="nav-section">System</div>
 
-            @if(session('crm_user_role') === 'superadmin')
+            @if(session('crm_user_role') === 'Super Admin')
             <a href="{{ route('modules.index') }}" class="nav-link {{ request()->routeIs('modules.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-puzzle-piece"></i></span>
                 Modules
