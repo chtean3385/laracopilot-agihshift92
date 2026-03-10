@@ -64,7 +64,7 @@
                     <div>
                         <label class="form-label">API Key / Access Token <span style="color:#e11d48;">*</span></label>
                         <input type="text" name="api_key" value="{{ old('api_key', $config->api_key) }}"
-                            class="form-input" placeholder="Paste your API key or Bearer token here">
+                            class="form-input" placeholder="Paste token only — do NOT include 'Bearer ' prefix">
                     </div>
 
                     <div id="field-phone-number-id" style="display:{{ in_array($selectedProvider, ['meta','wati','gupshup']) ? 'block' : 'none' }};">
@@ -169,7 +169,7 @@
                 @foreach([
                     ['Sign up at WATI', 'https://wati.io', 'Create a WATI account and connect your WhatsApp number'],
                     ['Get API Key', 'https://app.wati.io/settings/api', 'Settings → API → Copy your access token'],
-                    ['Get Server Instance', 'https://app.wati.io', 'Find your server ID in your WATI dashboard URL — enter numbers only, no + sign'],
+                    ['Get Server Instance', 'https://app.wati.io', 'Open your WATI dashboard — the number in the URL (e.g. app.wati.io/10109284/...) is your server ID. Enter that number only — NOT your WhatsApp phone number'],
                     ['Create Templates', 'https://app.wati.io/broadcast/templates', 'Create and submit templates for approval'],
                 ] as $i => [$title, $link, $desc])
                 <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;">

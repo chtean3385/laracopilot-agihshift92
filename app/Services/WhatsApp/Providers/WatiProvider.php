@@ -20,15 +20,20 @@ class WatiProvider implements WhatsAppProviderInterface
 
         try {
             $serverId = preg_replace('/[^a-zA-Z0-9]/', '', $this->config->phone_number_id);
-            $response = Http::withToken($this->config->api_key)
-                ->post("https://live-server-{$serverId}.wati.io/api/v1/sendSessionMessage/{$to}", [
-                    'messageText' => $message,
-                ]);
+            $token    = trim(preg_replace('/^Bearer\s+/i', '', $this->config->api_key));
+            $url      = "https://live-server-{$serverId}.wati.io/api/v1/sendSessionMessage/{$to}";
+
+            $response = Http::withToken($token)
+                ->post($url, ['messageText' => $message]);
 
             if ($response->successful()) {
                 return true;
             }
-            Log::warning('WhatsApp WATI send failed', ['body' => $response->body()]);
+            Log::warning('WhatsApp WATI send failed', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+                'url'    => $url,
+            ]);
             return false;
         } catch (\Throwable $e) {
             Log::error('WhatsApp WATI exception: ' . $e->getMessage());
