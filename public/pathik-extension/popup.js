@@ -25,7 +25,7 @@ function hideGuest() {
 }
 
 function openSettingsPage() {
-  chrome.runtime.openOptionsPage();
+  chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
 }
 
 function clearData() {
