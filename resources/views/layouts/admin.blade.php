@@ -610,7 +610,23 @@
             </a>
             @endCanDo
 
+            <div class="nav-section">Automation</div>
+
+            @if(\App\Models\Module::isEnabled('whatsapp'))
+            <a href="{{ route('whatsapp.config') }}" class="nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fab fa-whatsapp"></i></span>
+                WhatsApp
+            </a>
+            @endif
+
             <div class="nav-section">System</div>
+
+            @if(session('crm_user_role') === 'superadmin')
+            <a href="{{ route('modules.index') }}" class="nav-link {{ request()->routeIs('modules.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-puzzle-piece"></i></span>
+                Modules
+            </a>
+            @endif
 
             @canDo('settings.view')
             <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">

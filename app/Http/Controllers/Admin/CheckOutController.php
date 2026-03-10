@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\ActivityLogger;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -114,6 +115,7 @@ class CheckOutController extends Controller
         ]);
 
         ActivityLogger::log('Checked Out', 'Check-Out', 'Checked out: ' . $booking->customer->name . ' — Room ' . $booking->room->room_number . ' (Invoice #' . $invoice->invoice_number . ')');
+        WhatsAppService::sendForEvent('checkout.done', $booking);
 
         return redirect()->route('invoices.show', $invoice->id)
             ->with('success', 'Check-out complete! Invoice generated.');

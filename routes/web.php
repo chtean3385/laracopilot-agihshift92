@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ForgotPasswordController;
+use App\Http\Controllers\Admin\ModuleController;
+use App\Http\Controllers\Admin\WhatsAppController;
 
 // ── Healthcheck ────────────────────────────────────────────────────────────
 Route::get('/health', fn() => response('OK', 200));
@@ -138,3 +140,15 @@ Route::delete('/users/{id}',   [UserController::class, 'destroy'])->middleware('
 // ── Change Password (any logged-in user) ───────────────────────────────────
 Route::get('/change-password',  [UserController::class, 'changePasswordForm'])->name('password.change.form');
 Route::post('/change-password', [UserController::class, 'changePassword'])->name('password.change');
+
+// ── Modules (Super Admin only) ─────────────────────────────────────────────
+Route::get('/settings/modules',                  [ModuleController::class, 'index'] )->name('modules.index');
+Route::post('/settings/modules/{module}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+
+// ── WhatsApp Automation ────────────────────────────────────────────────────
+Route::get('/whatsapp/config',                    [WhatsAppController::class, 'config']       )->name('whatsapp.config');
+Route::post('/whatsapp/config',                   [WhatsAppController::class, 'configSave']   )->name('whatsapp.config.save');
+Route::get('/whatsapp/templates',                 [WhatsAppController::class, 'templates']    )->name('whatsapp.templates');
+Route::get('/whatsapp/templates/{template}/edit', [WhatsAppController::class, 'templateEdit'] )->name('whatsapp.template.edit');
+Route::put('/whatsapp/templates/{template}',      [WhatsAppController::class, 'templateSave'] )->name('whatsapp.template.save');
+Route::post('/whatsapp/test-send',                [WhatsAppController::class, 'testSend']     )->name('whatsapp.test.send');

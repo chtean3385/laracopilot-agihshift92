@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Room;
 use App\Models\Payment;
 use App\Services\ActivityLogger;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -101,6 +102,7 @@ class BookingController extends Controller
         $room->update(['status' => 'occupied']);
         $customer = Customer::find($validated['customer_id']);
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Room ' . $room->room_number);
+        WhatsAppService::sendForEvent('booking.created', $booking);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking created! #' . $booking->booking_number);
     }
 
