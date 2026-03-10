@@ -176,3 +176,11 @@ Route::get('/channel-manager/bookings',                   [\App\Http\Controllers
 Route::post('/channel-manager/bookings',                  [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingStore']     )->name('channel_manager.booking.store');
 Route::post('/channel-manager/bookings/{id}/convert',     [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingConvert']   )->name('channel_manager.booking.convert');
 Route::post('/channel-manager/bookings/{id}/cancel',      [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingCancel']    )->name('channel_manager.booking.cancel');
+
+// ── Pathik Autofill ─────────────────────────────────────────────────────────
+Route::get( '/pathik',                 [\App\Http\Controllers\Admin\PathikController::class, 'index']           )->name('pathik.index');
+Route::post('/pathik/token/regenerate',[\App\Http\Controllers\Admin\PathikController::class, 'regenerateToken'] )->name('pathik.token.regenerate');
+Route::post('/pathik/pending',         [\App\Http\Controllers\Admin\PathikController::class, 'pendingStore']    )->name('pathik.pending.store');
+Route::post('/pathik/clear',           [\App\Http\Controllers\Admin\PathikController::class, 'clearPending']    )->name('pathik.clear');
+// Extension endpoint — no session auth, validates api_token param instead
+Route::get( '/pathik/pending',         [\App\Http\Controllers\Admin\PathikController::class, 'pendingFetch']    )->name('pathik.pending.fetch')->withoutMiddleware(['web']);

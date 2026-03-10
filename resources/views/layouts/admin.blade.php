@@ -634,6 +634,13 @@
             </a>
             @endif
 
+            @if(\App\Models\Module::isEnabled('pathik'))
+            <a href="{{ route('pathik.index') }}" class="nav-link {{ request()->routeIs('pathik.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-clipboard-list"></i></span>
+                Pathik Portal
+            </a>
+            @endif
+
             <div class="nav-section">System</div>
 
             @if(session('crm_user_role') === 'Super Admin')
