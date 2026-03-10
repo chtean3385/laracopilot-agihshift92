@@ -297,16 +297,16 @@
                     @foreach($week as $cell)
                     @php
                         $hasGuests = ($cell['checkins'] + $cell['checkouts'] + $cell['staying']) > 0;
-                        $ttData = json_encode([
+                        $ttData = $hasGuests ? htmlspecialchars(json_encode([
                             'date'     => $cell['date']->format('D, d M Y'),
                             'checkins' => $cell['checkin_guests'],
                             'checkouts'=> $cell['checkout_guests'],
                             'staying'  => $cell['staying_guests'],
-                        ], JSON_HEX_QUOT | JSON_HEX_APOS);
+                        ]), ENT_QUOTES, 'UTF-8') : '';
                     @endphp
                     <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
                        class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
-                       @if($hasGuests) data-cal-guests="{{ htmlspecialchars($ttData, ENT_QUOTES) }}" @endif>
+                       @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif>
                         <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
                         <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
                             @if($cell['checkins'] > 0)
