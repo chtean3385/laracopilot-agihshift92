@@ -202,22 +202,29 @@ function showCoUpiQr() {
                 document.getElementById('coUpiQrBody').innerHTML = '<p style="color:#ef4444;font-weight:600;padding:16px 0;">' + cfg.error + '</p>';
                 return;
             }
-            var amt   = parseFloat(_coUpiBalance).toFixed(2);
-            var note  = 'Checkout ' + _coBookingNum;
+            var amt    = parseFloat(_coUpiBalance).toFixed(2);
+            var note   = 'Checkout ' + _coBookingNum;
             var upiUrl = 'upi://pay?pa=' + encodeURIComponent(cfg.upi_id)
                        + '&pn=' + encodeURIComponent(cfg.upi_name)
                        + '&am=' + amt
                        + '&cu=INR'
                        + '&tn=' + encodeURIComponent(note);
-            var qrUrl  = 'https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=' + encodeURIComponent(upiUrl) + '&choe=UTF-8';
 
             document.getElementById('coUpiQrBody').innerHTML =
-                '<img src="' + qrUrl + '" alt="UPI QR" style="width:220px;height:220px;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.08);">' +
+                '<div id="coQrCanvas" style="width:220px;height:220px;margin:0 auto;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.08);background:#fff;display:flex;align-items:center;justify-content:center;"></div>' +
                 '<p style="margin-top:14px;font-size:22px;font-weight:900;color:#1e293b;">₹' + parseFloat(_coUpiBalance).toLocaleString('en-IN') + '</p>' +
                 '<p style="font-size:13px;color:#64748b;margin-top:2px;">' + cfg.upi_name + '</p>' +
                 '<p style="font-size:11px;color:#94a3b8;font-family:monospace;margin-top:2px;">' + cfg.upi_id + '</p>' +
                 '<p style="font-size:11px;color:#94a3b8;margin-top:10px;">Scan with GPay · PhonePe · Paytm · any UPI app</p>' +
                 '<button onclick="closeCoUpiModal()" style="margin-top:14px;width:100%;padding:9px;background:#f1f5f9;border:none;border-radius:10px;font-weight:600;font-size:13px;color:#475569;cursor:pointer;">Close</button>';
+
+            loadQrLib(function() {
+                new QRCode(document.getElementById('coQrCanvas'), {
+                    text: upiUrl, width: 220, height: 220,
+                    colorDark: '#1e293b', colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            });
         })
         .catch(() => {
             document.getElementById('coUpiQrBody').innerHTML = '<p style="color:#ef4444;padding:16px 0;">Failed to load. Please try again.</p>';
@@ -226,6 +233,14 @@ function showCoUpiQr() {
 
 function closeCoUpiModal() {
     document.getElementById('coUpiModal').style.display = 'none';
+}
+
+function loadQrLib(cb) {
+    if (window.QRCode) { cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload = cb;
+    document.head.appendChild(s);
 }
 
 document.getElementById('coUpiModal').addEventListener('click', function(e) {

@@ -238,18 +238,32 @@ function pmShowUpiQr() {
                        + '&am=' + amt.toFixed(2)
                        + '&cu=INR'
                        + '&tn=' + encodeURIComponent(note);
-            var qrUrl  = 'https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=' + encodeURIComponent(upiUrl) + '&choe=UTF-8';
             document.getElementById('pmUpiBody').innerHTML =
-                '<img src="' + qrUrl + '" alt="UPI QR" class="w-52 h-52 mx-auto rounded-xl border border-gray-200 shadow">' +
+                '<div id="pmQrCanvas" style="width:208px;height:208px;margin:0 auto;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.08);background:#fff;display:flex;align-items:center;justify-content:center;"></div>' +
                 '<p class="mt-4 text-xl font-black text-gray-800">₹' + amt.toLocaleString('en-IN') + '</p>' +
                 '<p class="text-sm text-gray-500 mt-1">' + cfg.upi_name + '</p>' +
                 '<p class="text-xs text-gray-400 font-mono mt-0.5">' + cfg.upi_id + '</p>' +
                 '<p class="text-xs text-gray-400 mt-3">GPay · PhonePe · Paytm · any UPI app</p>' +
                 '<button onclick="pmCloseUpi()" class="mt-3 w-full py-2 text-sm font-semibold text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition">Close</button>';
+            pmLoadQrLib(function() {
+                new QRCode(document.getElementById('pmQrCanvas'), {
+                    text: upiUrl, width: 208, height: 208,
+                    colorDark: '#1e293b', colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            });
         })
         .catch(() => {
             document.getElementById('pmUpiBody').innerHTML = '<p class="text-red-500 py-6">Failed to load. Please try again.</p>';
         });
+}
+
+function pmLoadQrLib(cb) {
+    if (window.QRCode) { cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload = cb;
+    document.head.appendChild(s);
 }
 
 function pmCloseUpi() {
