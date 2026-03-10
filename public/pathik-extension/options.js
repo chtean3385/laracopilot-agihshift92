@@ -8,12 +8,12 @@ function showAlert(msg, type) {
   }
 }
 
-function setBtnState(text, bgColor, textColor) {
+function setBtnState(text, bg, color) {
   var btn = document.getElementById('btnSave');
   if (!btn) return;
   btn.innerHTML = text;
-  btn.style.background = bgColor || '';
-  btn.style.color = textColor || '';
+  btn.style.background = bg || '';
+  btn.style.color = color || '';
 }
 
 function copyField(inputId, btnId) {
@@ -55,4 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (settings.crmUrl) document.getElementById('crmUrl').value = settings.crmUrl;
     if (settings.apiToken) document.getElementById('apiToken').value = settings.apiToken;
   });
+
+  document.getElementById('btnSave').addEventListener('click', saveSettings);
+  document.getElementById('btnCopyUrl').addEventListener('click', function() { copyField('crmUrl', 'btnCopyUrl'); });
+  document.getElementById('btnCopyToken').addEventListener('click', function() { copyField('apiToken', 'btnCopyToken'); });
 });

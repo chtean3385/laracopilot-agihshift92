@@ -1,7 +1,7 @@
-const $ = id => document.getElementById(id);
+var $ = function(id) { return document.getElementById(id); };
 
 function setStatus(msg, type) {
-  const el = $('statusMsg');
+  var el = $('statusMsg');
   el.textContent = msg;
   el.className = 'status status-' + (type || 'info');
 }
@@ -70,17 +70,17 @@ function fetchGuest() {
     }
 
     chrome.storage.local.get(['pathik_pending_token'], function(local) {
-      const token = local.pathik_pending_token;
+      var token = local.pathik_pending_token;
       if (!token) {
         setStatus('No pending guest token. Click "Fill Pathik Portal" on a booking first.', 'warn');
         $('btnFetch').disabled = false;
         return;
       }
 
-      const url = settings.crmUrl + '/pathik/pending?token=' + encodeURIComponent(token) + '&api_token=' + encodeURIComponent(settings.apiToken);
+      var url = settings.crmUrl + '/pathik/pending?token=' + encodeURIComponent(token) + '&api_token=' + encodeURIComponent(settings.apiToken);
       fetch(url)
-        .then(r => r.json())
-        .then(data => {
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
           if (data.ok && data.guest) {
             chrome.storage.local.set({ pathik_current_guest: data.guest }, function() {
               setStatus('Guest data loaded!', 'success');
@@ -91,7 +91,7 @@ function fetchGuest() {
           }
           $('btnFetch').disabled = false;
         })
-        .catch(err => {
+        .catch(function(err) {
           setStatus('Network error: ' + err.message, 'error');
           $('btnFetch').disabled = false;
         });
@@ -128,4 +128,12 @@ function autofillNow() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', checkReady);
+document.addEventListener('DOMContentLoaded', function() {
+  $('btnFetch').addEventListener('click', fetchGuest);
+  $('btnAutofill').addEventListener('click', autofillNow);
+  $('btnOpenPortal').addEventListener('click', openPortal);
+  $('btnSettings').addEventListener('click', openSettingsPage);
+  $('lnkClearData').addEventListener('click', clearData);
+
+  checkReady();
+});
