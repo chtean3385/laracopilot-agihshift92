@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pathik CRM Autofill",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Auto-fill Gujarat Pathik tourist registration portal with guest data from your Resort CRM.",
   "permissions": [
     "storage",
@@ -22,6 +22,7 @@
       "128": "icons/icon128.png"
     }
   },
+  "options_page": "options.html",
   "background": {
     "service_worker": "background.js"
   },

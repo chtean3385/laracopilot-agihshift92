@@ -37,7 +37,7 @@
                     <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Paste this into the Chrome extension settings</p>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button onclick="copyToken()" style="padding:8px 14px;background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <button id="btnCopyToken" onclick="copyToken()" style="padding:8px 14px;background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
                         <i class="fas fa-copy" style="margin-right:5px;"></i>Copy Token
                     </button>
                     <form action="{{ route('pathik.token.regenerate') }}" method="POST" style="margin:0;" onsubmit="return confirm('Regenerate token? The old token will stop working.')">
@@ -49,8 +49,14 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top:12px;padding:10px 14px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;">
-            <p style="font-size:12px;color:#92400e;margin:0;"><i class="fas fa-info-circle" style="margin-right:6px;color:#d97706;"></i>Your CRM URL for the extension: <code style="font-weight:700;">{{ url('/') }}</code></p>
+        <div style="margin-top:12px;padding:14px;background:#fffbeb;border-radius:10px;border:1px solid #fde68a;">
+            <p style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px;"><i class="fas fa-link" style="margin-right:5px;color:#d97706;"></i>CRM URL for Extension</p>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <code id="crmUrlDisplay" style="font-size:13px;font-weight:800;color:#78350f;font-family:monospace;background:rgba(0,0,0,.05);padding:5px 10px;border-radius:6px;word-break:break-all;">{{ url('/') }}</code>
+                <button onclick="copyCrmUrl()" style="padding:6px 12px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" id="btnCopyCrmUrl">
+                    <i class="fas fa-copy" style="margin-right:4px;"></i>Copy URL
+                </button>
+            </div>
         </div>
     </div>
 
@@ -148,21 +154,19 @@
 
 <input type="hidden" id="fullToken" value="{{ $fullToken }}">
 <script>
-function copyToken() {
-    var t = document.getElementById('fullToken').value;
+function doCopy(text, btnId, label) {
+    var btn = document.getElementById(btnId);
+    var copy = function() {
+        if (btn) { btn.innerHTML = '<i class="fas fa-check" style="margin-right:4px;"></i>Copied!'; btn.style.background='#dcfce7'; btn.style.color='#15803d'; btn.style.borderColor='#bbf7d0'; }
+        setTimeout(function() { if (btn) { btn.innerHTML = '<i class="fas fa-copy" style="margin-right:4px;"></i>' + label; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; } }, 2000);
+    };
     if (navigator.clipboard) {
-        navigator.clipboard.writeText(t).then(function() {
-            alert('Token copied to clipboard!');
-        });
+        navigator.clipboard.writeText(text).then(copy);
     } else {
-        var ta = document.createElement('textarea');
-        ta.value = t;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        alert('Token copied!');
+        var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); copy();
     }
 }
+function copyToken() { doCopy(document.getElementById('fullToken').value, 'btnCopyToken', 'Copy Token'); }
+function copyCrmUrl() { doCopy(document.getElementById('crmUrlDisplay').textContent.trim(), 'btnCopyCrmUrl', 'Copy URL'); }
 </script>
 @endsection

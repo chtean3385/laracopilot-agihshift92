@@ -24,18 +24,8 @@ function hideGuest() {
   $('btnOpenPortal').style.display = 'none';
 }
 
-function toggleSettings() {
-  const panel = $('settingsPanel');
-  panel.classList.toggle('open');
-}
-
-function saveSettings() {
-  const url = $('crmUrl').value.trim().replace(/\/$/, '');
-  const token = $('apiToken').value.trim();
-  chrome.storage.sync.set({ crmUrl: url, apiToken: token }, function() {
-    setStatus('Settings saved!', 'success');
-    setTimeout(() => checkReady(), 1000);
-  });
+function openSettingsPage() {
+  chrome.runtime.openOptionsPage();
 }
 
 function clearData() {
@@ -52,14 +42,9 @@ function openPortal() {
 function checkReady() {
   chrome.storage.sync.get(['crmUrl', 'apiToken'], function(settings) {
     if (!settings.crmUrl || !settings.apiToken) {
-      $('crmUrl').value = settings.crmUrl || '';
-      $('apiToken').value = settings.apiToken || '';
-      $('settingsPanel').classList.add('open');
       setStatus('Please configure CRM URL and API Token.', 'warn');
       return;
     }
-    $('crmUrl').value = settings.crmUrl;
-    $('apiToken').value = settings.apiToken;
 
     chrome.storage.local.get(['pathik_current_guest'], function(local) {
       if (local.pathik_current_guest) {
