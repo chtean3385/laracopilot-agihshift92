@@ -49,13 +49,19 @@ class ChannelManagerController extends Controller
     public function configSave(Request $request)
     {
         $this->requireModule();
+        $isActive = $request->boolean('is_active');
         $data = $request->validate([
             'provider'    => 'required|in:ezee,staah,siteminder,rategain',
-            'api_key'     => 'nullable|string',
+            'api_key'     => $isActive ? 'required|string|min:8' : 'nullable|string',
             'api_secret'  => 'nullable|string',
-            'hotel_code'  => 'nullable|string',
+            'hotel_code'  => $isActive ? 'required|string|min:2' : 'nullable|string',
             'property_id' => 'nullable|string',
             'is_active'   => 'nullable|boolean',
+        ], [
+            'api_key.required'   => 'API Key / Access Token is required to enable the channel manager.',
+            'api_key.min'        => 'API Key must be at least 8 characters.',
+            'hotel_code.required'=> 'Hotel Code is required to enable the channel manager.',
+            'hotel_code.min'     => 'Hotel Code must be at least 2 characters.',
         ]);
         $data['is_active'] = $request->boolean('is_active');
         ChannelManagerConfig::updateOrCreate(['id' => 1], $data);

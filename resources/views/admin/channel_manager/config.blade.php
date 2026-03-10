@@ -52,11 +52,25 @@
             <form action="{{ route('channel_manager.config.save') }}" method="POST">
                 @csrf
                 <input type="hidden" name="provider" id="providerInput" value="{{ $config->provider ?? 'ezee' }}">
+                @if($errors->any())
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+                    <p style="font-weight:700;font-size:12px;color:#dc2626;margin-bottom:4px;"><i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>Please fix the following errors:</p>
+                    <ul style="margin:0;padding-left:18px;">
+                        @foreach($errors->all() as $error)
+                        <li style="font-size:12px;color:#dc2626;">{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
                 <div style="display:grid;gap:14px;">
                     <div>
                         <label class="form-label">API Key / Access Token <span style="color:#e11d48;">*</span></label>
                         <input type="text" name="api_key" value="{{ old('api_key', $config->api_key) }}"
-                            class="form-input" placeholder="Paste token only — do NOT include 'Bearer ' prefix">
+                            class="form-input" placeholder="Paste token only — do NOT include 'Bearer ' prefix"
+                            style="{{ $errors->has('api_key') ? 'border-color:#ef4444;background:#fef2f2;' : '' }}">
+                        @error('api_key')
+                        <p style="margin-top:4px;font-size:11px;color:#ef4444;"><i class="fas fa-exclamation-circle" style="margin-right:3px;"></i>{{ $message }}</p>
+                        @enderror
                     </div>
                     <div id="field-api-secret">
                         <label class="form-label" id="label-api-secret">API Secret</label>
@@ -66,7 +80,11 @@
                     <div id="field-hotel-code">
                         <label class="form-label" id="label-hotel-code">Hotel Code</label>
                         <input type="text" name="hotel_code" value="{{ old('hotel_code', $config->hotel_code) }}"
-                            class="form-input" placeholder="Your hotel code in the channel manager">
+                            class="form-input" placeholder="Your hotel code in the channel manager"
+                            style="{{ $errors->has('hotel_code') ? 'border-color:#ef4444;background:#fef2f2;' : '' }}">
+                        @error('hotel_code')
+                        <p style="margin-top:4px;font-size:11px;color:#ef4444;"><i class="fas fa-exclamation-circle" style="margin-right:3px;"></i>{{ $message }}</p>
+                        @enderror
                     </div>
                     <div id="field-property-id">
                         <label class="form-label" id="label-property-id">Property ID</label>
