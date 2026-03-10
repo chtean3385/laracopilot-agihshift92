@@ -40,7 +40,7 @@ function openPortal() {
 }
 
 function checkReady() {
-  chrome.storage.sync.get(['crmUrl', 'apiToken'], function(settings) {
+  chrome.storage.local.get(['crmUrl', 'apiToken'], function(settings) {
     if (!settings.crmUrl || !settings.apiToken) {
       setStatus('Please configure CRM URL and API Token.', 'warn');
       return;
@@ -62,7 +62,7 @@ function fetchGuest() {
   $('btnFetch').disabled = true;
   setStatus('Fetching from CRM...', 'info');
 
-  chrome.storage.sync.get(['crmUrl', 'apiToken'], function(settings) {
+  chrome.storage.local.get(['crmUrl', 'apiToken'], function(settings) {
     if (!settings.crmUrl || !settings.apiToken) {
       setStatus('CRM URL or API Token not set.', 'error');
       $('btnFetch').disabled = false;
