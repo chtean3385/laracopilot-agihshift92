@@ -175,4 +175,71 @@ class PaymentLinksController extends Controller
             'amount'    => $balance,
         ]);
     }
+
+    public function upiConfig()
+    {
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
+        if (!Module::isEnabled('payment_links')) return response()->json(['error' => 'Module disabled'], 403);
+        $config = PaymentLinkConfig::getConfig();
+        if (!$config->upi_enabled || !$config->upi_id) {
+            return response()->json(['error' => 'UPI is not configured. Go to Automation → Payment Links to add your UPI ID.'], 422);
+        }
+        return response()->json([
+            'upi_id'   => $config->upi_id,
+            'upi_name' => $config->upi_name ?? 'Resort',
+        ]);
+    }
+
+    public function razorpayForBooking(Request $request, $bookingId)
+    {
+        if ($r = $this->requireModule()) return $r;
+        $booking = \App\Models\Booking::with('customer', 'room')->findOrFail($bookingId);
+        $config  = PaymentLinkConfig::getConfig();
+
+        if (!$config->razorpay_enabled || !$config->razorpay_key_id || !$config->razorpay_key_secret) {
+            return response()->json(['error' => 'Razorpay is not configured or disabled.'], 422);
+        }
+
+        $amount      = (float) $request->input('amount', 0);
+        $note        = $request->input('note', 'Advance Payment');
+        $amountPaisa = (int) round($amount * 100);
+
+        if ($amountPaisa <= 0) {
+            return response()->json(['error' => 'Amount must be greater than zero.'], 422);
+        }
+
+        $payload = [
+            'amount'          => $amountPaisa,
+            'currency'        => 'INR',
+            'accept_partial'  => false,
+            'description'     => $note . ' — ' . $booking->booking_number,
+            'customer'        => [
+                'name'    => $booking->customer->name ?? 'Guest',
+                'email'   => $booking->customer->email ?? null,
+                'contact' => $booking->customer->phone ?? null,
+            ],
+            'notify'          => ['sms' => false, 'email' => false],
+            'reminder_enable' => false,
+            'notes'           => [
+                'booking_id'     => (string) $booking->id,
+                'booking_number' => $booking->booking_number,
+            ],
+        ];
+
+        $response = Http::withBasicAuth($config->razorpay_key_id, $config->razorpay_key_secret)
+            ->post('https://api.razorpay.com/v1/payment_links', $payload);
+
+        if ($response->failed()) {
+            $err = $response->json('error.description') ?? 'Razorpay API error.';
+            return response()->json(['error' => $err], 422);
+        }
+
+        $data = $response->json();
+        ActivityLogger::log('Created', 'Payment Link', 'Razorpay advance link created for Booking #' . $booking->booking_number . ': ' . $data['short_url']);
+
+        return response()->json([
+            'link' => $data['short_url'],
+            'id'   => $data['id'],
+        ]);
+    }
 }

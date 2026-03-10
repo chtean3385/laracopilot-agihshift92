@@ -159,4 +159,6 @@ Route::get('/payment-links/config',                           [PaymentLinksContr
 Route::post('/payment-links/config',                          [PaymentLinksController::class, 'configSave']      )->name('payment_links.config.save');
 Route::post('/payment-links/invoices/{id}/razorpay',          [PaymentLinksController::class, 'razorpayCreate']  )->name('payment_links.razorpay.create');
 Route::get('/payment-links/invoices/{id}/upi-qr',             [PaymentLinksController::class, 'upiQr']           )->name('payment_links.upi_qr');
+Route::get('/payment-links/upi-config',                       [PaymentLinksController::class, 'upiConfig']       )->name('payment_links.upi_config');
+Route::post('/payment-links/booking/{id}/razorpay',           [PaymentLinksController::class, 'razorpayForBooking'])->name('payment_links.booking.razorpay');
 Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksController::class, 'razorpayWebhook'] )->name('payment_links.razorpay.webhook')->withoutMiddleware(['web']);

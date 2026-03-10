@@ -15,21 +15,8 @@
             @if($previewBalance > 0)
             <a href="{{ route('payments.create', ['booking_id' => $invoice->booking_id, 'amount' => $previewBalance]) }}"
                class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
-                <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }}
+                <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }} Outstanding
             </a>
-            @if(\App\Models\Module::isEnabled('payment_links'))
-            <button type="button" id="btnUpiQr"
-                onclick="showUpiQr({{ $invoice->id }})"
-                class="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
-                <i class="fas fa-qrcode"></i>UPI QR
-            </button>
-            <button type="button" id="btnRazorpay"
-                onclick="createRazorpayLink({{ $invoice->id }})"
-                class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
-                <i class="fas fa-link"></i>
-                <span id="rzpBtnText">{{ $invoice->razorpay_payment_link_url ? 'Razorpay Link' : 'Send Payment Link' }}</span>
-            </button>
-            @endif
             @endif
             <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
         </div>
@@ -181,8 +168,8 @@
     </div>
 </div>
 
-@if(\App\Models\Module::isEnabled('payment_links'))
-{{-- UPI QR Modal --}}
+@if(false)
+{{-- removed: payment modals moved to checkout and payments/create --}}
 <div id="upiQrModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-6 py-4 flex items-center justify-between">

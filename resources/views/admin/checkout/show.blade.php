@@ -130,13 +130,19 @@
                 </div>
                 <div>
                     <label class="form-label">Payment Method</label>
-                    <select name="payment_method" class="form-input">
+                    <select name="payment_method" id="coPaymentMethod" class="form-input" onchange="toggleCoUpiBtn(this.value)">
                         <option value="cash">Cash</option>
                         <option value="card">Credit / Debit Card</option>
                         <option value="upi">UPI</option>
                         <option value="bank_transfer">Bank Transfer</option>
                         <option value="cheque">Cheque</option>
                     </select>
+                    @if(\App\Models\Module::isEnabled('payment_links'))
+                    <button type="button" id="coUpiQrBtn" onclick="showCoUpiQr()"
+                        style="display:none;margin-top:8px;width:100%;padding:9px 0;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-qrcode"></i> Show UPI QR for Guest
+                    </button>
+                    @endif
                 </div>
                 <div class="md:col-span-2">
                     <label class="form-label">Check-Out Notes</label>
@@ -152,4 +158,79 @@
         </form>
     </div>
 </div>
+
+@if(\App\Models\Module::isEnabled('payment_links'))
+<div id="coUpiModal" style="display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:340px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-qrcode" style="color:#fff;font-size:20px;"></i>
+                <div>
+                    <div style="font-weight:800;color:#fff;font-size:15px;">UPI Payment</div>
+                    <div style="color:#ddd6fe;font-size:12px;">Guest scans to pay instantly</div>
+                </div>
+            </div>
+            <button onclick="closeCoUpiModal()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;">&times;</button>
+        </div>
+        <div id="coUpiQrBody" style="padding:24px;text-align:center;">
+            <div style="display:flex;align-items:center;justify-content:center;height:120px;">
+                <div style="width:40px;height:40px;border:3px solid #7c3aed;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<script>
+var _coUpiBalance = {{ $gstBalanceDue }};
+var _coBookingNum = '{{ $booking->booking_number }}';
+
+function toggleCoUpiBtn(method) {
+    var btn = document.getElementById('coUpiQrBtn');
+    if (!btn) return;
+    btn.style.display = (method === 'upi') ? 'flex' : 'none';
+}
+
+function showCoUpiQr() {
+    var modal = document.getElementById('coUpiModal');
+    modal.style.display = 'flex';
+    document.getElementById('coUpiQrBody').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:120px;"><div style="width:40px;height:40px;border:3px solid #7c3aed;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div></div>';
+
+    fetch('/payment-links/upi-config', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(cfg => {
+            if (cfg.error) {
+                document.getElementById('coUpiQrBody').innerHTML = '<p style="color:#ef4444;font-weight:600;padding:16px 0;">' + cfg.error + '</p>';
+                return;
+            }
+            var amt   = parseFloat(_coUpiBalance).toFixed(2);
+            var note  = 'Checkout ' + _coBookingNum;
+            var upiUrl = 'upi://pay?pa=' + encodeURIComponent(cfg.upi_id)
+                       + '&pn=' + encodeURIComponent(cfg.upi_name)
+                       + '&am=' + amt
+                       + '&cu=INR'
+                       + '&tn=' + encodeURIComponent(note);
+            var qrUrl  = 'https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=' + encodeURIComponent(upiUrl) + '&choe=UTF-8';
+
+            document.getElementById('coUpiQrBody').innerHTML =
+                '<img src="' + qrUrl + '" alt="UPI QR" style="width:220px;height:220px;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.08);">' +
+                '<p style="margin-top:14px;font-size:22px;font-weight:900;color:#1e293b;">₹' + parseFloat(_coUpiBalance).toLocaleString('en-IN') + '</p>' +
+                '<p style="font-size:13px;color:#64748b;margin-top:2px;">' + cfg.upi_name + '</p>' +
+                '<p style="font-size:11px;color:#94a3b8;font-family:monospace;margin-top:2px;">' + cfg.upi_id + '</p>' +
+                '<p style="font-size:11px;color:#94a3b8;margin-top:10px;">Scan with GPay · PhonePe · Paytm · any UPI app</p>' +
+                '<button onclick="closeCoUpiModal()" style="margin-top:14px;width:100%;padding:9px;background:#f1f5f9;border:none;border-radius:10px;font-weight:600;font-size:13px;color:#475569;cursor:pointer;">Close</button>';
+        })
+        .catch(() => {
+            document.getElementById('coUpiQrBody').innerHTML = '<p style="color:#ef4444;padding:16px 0;">Failed to load. Please try again.</p>';
+        });
+}
+
+function closeCoUpiModal() {
+    document.getElementById('coUpiModal').style.display = 'none';
+}
+
+document.getElementById('coUpiModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCoUpiModal();
+});
+</script>
+@endif
 @endsection
