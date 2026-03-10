@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Resort CRM') — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -616,6 +617,13 @@
             <a href="{{ route('whatsapp.config') }}" class="nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fab fa-whatsapp"></i></span>
                 WhatsApp
+            </a>
+            @endif
+
+            @if(\App\Models\Module::isEnabled('payment_links'))
+            <a href="{{ route('payment_links.config') }}" class="nav-link {{ request()->routeIs('payment_links.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-qrcode"></i></span>
+                Payment Links
             </a>
             @endif
 

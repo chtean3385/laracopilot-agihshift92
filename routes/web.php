@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ForgotPasswordController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\PaymentLinksController;
 
 // ── Healthcheck ────────────────────────────────────────────────────────────
 Route::get('/health', fn() => response('OK', 200));
@@ -152,3 +153,10 @@ Route::get('/whatsapp/templates',                 [WhatsAppController::class, 't
 Route::get('/whatsapp/templates/{template}/edit', [WhatsAppController::class, 'templateEdit'] )->name('whatsapp.template.edit');
 Route::put('/whatsapp/templates/{template}',      [WhatsAppController::class, 'templateSave'] )->name('whatsapp.template.save');
 Route::post('/whatsapp/test-send',                [WhatsAppController::class, 'testSend']     )->name('whatsapp.test.send');
+
+// ── Payment Links ──────────────────────────────────────────────────────────
+Route::get('/payment-links/config',                           [PaymentLinksController::class, 'config']          )->name('payment_links.config');
+Route::post('/payment-links/config',                          [PaymentLinksController::class, 'configSave']      )->name('payment_links.config.save');
+Route::post('/payment-links/invoices/{id}/razorpay',          [PaymentLinksController::class, 'razorpayCreate']  )->name('payment_links.razorpay.create');
+Route::get('/payment-links/invoices/{id}/upi-qr',             [PaymentLinksController::class, 'upiQr']           )->name('payment_links.upi_qr');
+Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksController::class, 'razorpayWebhook'] )->name('payment_links.razorpay.webhook')->withoutMiddleware(['web']);

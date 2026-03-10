@@ -11,12 +11,25 @@
     @endphp
     <div class="flex items-center justify-between gap-3">
         <a href="{{ route('invoices.index') }}" class="btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i>Back</a>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
             @if($previewBalance > 0)
             <a href="{{ route('payments.create', ['booking_id' => $invoice->booking_id, 'amount' => $previewBalance]) }}"
                class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
-                <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }} Outstanding
+                <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }}
             </a>
+            @if(\App\Models\Module::isEnabled('payment_links'))
+            <button type="button" id="btnUpiQr"
+                onclick="showUpiQr({{ $invoice->id }})"
+                class="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
+                <i class="fas fa-qrcode"></i>UPI QR
+            </button>
+            <button type="button" id="btnRazorpay"
+                onclick="createRazorpayLink({{ $invoice->id }})"
+                class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
+                <i class="fas fa-link"></i>
+                <span id="rzpBtnText">{{ $invoice->razorpay_payment_link_url ? 'Razorpay Link' : 'Send Payment Link' }}</span>
+            </button>
+            @endif
             @endif
             <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
         </div>
@@ -167,4 +180,141 @@
         </div>
     </div>
 </div>
+
+@if(\App\Models\Module::isEnabled('payment_links'))
+{{-- UPI QR Modal --}}
+<div id="upiQrModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-qrcode text-white text-xl"></i>
+                <div>
+                    <h3 class="font-bold text-white">UPI Payment</h3>
+                    <p class="text-violet-200 text-xs">Scan to pay instantly</p>
+                </div>
+            </div>
+            <button onclick="closeUpiModal()" class="text-white/70 hover:text-white transition-colors"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <div class="p-6 text-center" id="upiQrBody">
+            <div class="flex items-center justify-center h-40">
+                <div class="animate-spin rounded-full h-10 w-10 border-2 border-violet-500 border-t-transparent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Razorpay Link Modal --}}
+<div id="rzpModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500 to-cyan-600 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-link text-white text-xl"></i>
+                <div>
+                    <h3 class="font-bold text-white">Razorpay Payment Link</h3>
+                    <p class="text-blue-200 text-xs">Share link with guest for online payment</p>
+                </div>
+            </div>
+            <button onclick="closeRzpModal()" class="text-white/70 hover:text-white transition-colors"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <div class="p-6" id="rzpModalBody">
+            <div class="flex items-center justify-center h-24">
+                <div class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUpiQr(invoiceId) {
+    document.getElementById('upiQrModal').classList.remove('hidden');
+    document.getElementById('upiQrBody').innerHTML = '<div class="flex items-center justify-center h-40"><div class="animate-spin rounded-full h-10 w-10 border-2 border-violet-500 border-t-transparent"></div></div>';
+    fetch('/payment-links/invoices/' + invoiceId + '/upi-qr', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json()).then(data => {
+        if (data.error) {
+            document.getElementById('upiQrBody').innerHTML = '<div class="text-center py-8"><p class="text-red-500 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>' + data.error + '</p><p class="text-gray-400 text-sm mt-2">Go to <a href="/payment-links/config" class="underline text-violet-500">Payment Links Config</a> to set up UPI.</p></div>';
+            return;
+        }
+        document.getElementById('upiQrBody').innerHTML =
+            '<img src="' + data.qr_url + '" alt="UPI QR" class="w-56 h-56 mx-auto rounded-xl border border-gray-200 shadow">' +
+            '<p class="mt-4 text-lg font-black text-gray-800">₹' + parseFloat(data.amount).toLocaleString('en-IN', {minimumFractionDigits: 0}) + '</p>' +
+            '<p class="text-sm text-gray-500 mt-1">' + (data.upi_name || '') + '</p>' +
+            '<p class="text-xs text-gray-400 font-mono mt-0.5">' + data.upi_id + '</p>' +
+            '<p class="text-xs text-gray-400 mt-4">Works with GPay, PhonePe, Paytm, any UPI app</p>';
+    }).catch(() => {
+        document.getElementById('upiQrBody').innerHTML = '<p class="text-center text-red-500 py-8">Failed to load QR. Please try again.</p>';
+    });
+}
+
+function closeUpiModal() {
+    document.getElementById('upiQrModal').classList.add('hidden');
+}
+
+function createRazorpayLink(invoiceId) {
+    const existingUrl = '{{ $invoice->razorpay_payment_link_url }}';
+    if (existingUrl) {
+        showRzpLink(existingUrl);
+        return;
+    }
+    document.getElementById('rzpModal').classList.remove('hidden');
+    document.getElementById('rzpModalBody').innerHTML = '<div class="flex flex-col items-center justify-center py-8 gap-3"><div class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent"></div><p class="text-gray-500 text-sm">Creating payment link…</p></div>';
+    fetch('/payment-links/invoices/' + invoiceId + '/razorpay', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        }
+    }).then(r => r.json()).then(data => {
+        if (data.error) {
+            document.getElementById('rzpModalBody').innerHTML = '<div class="text-center py-6"><p class="text-red-500 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>' + data.error + '</p><p class="text-gray-400 text-sm mt-2">Go to <a href="/payment-links/config" class="underline text-blue-500">Payment Links Config</a> to set up Razorpay.</p></div>';
+            return;
+        }
+        document.getElementById('rzpBtnText').textContent = 'Razorpay Link';
+        showRzpLink(data.link);
+    }).catch(() => {
+        document.getElementById('rzpModalBody').innerHTML = '<p class="text-center text-red-500 py-6">Failed to create link. Please try again.</p>';
+    });
+}
+
+function showRzpLink(url) {
+    document.getElementById('rzpModal').classList.remove('hidden');
+    document.getElementById('rzpModalBody').innerHTML =
+        '<div class="space-y-4">' +
+        '<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center"><i class="fas fa-check-circle text-emerald-500 text-2xl mb-2"></i><p class="font-bold text-emerald-700">Payment Link Created!</p></div>' +
+        '<div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center gap-3">' +
+        '<input type="text" value="' + url + '" id="rzpLinkInput" readonly class="flex-1 bg-transparent text-sm font-mono text-gray-700 outline-none truncate">' +
+        '<button onclick="copyRzpLink()" class="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"><i class="fas fa-copy mr-1"></i>Copy</button>' +
+        '</div>' +
+        '<a href="https://wa.me/?text=' + encodeURIComponent('Pay for your booking: ' + url) + '" target="_blank" class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white w-full py-2.5 rounded-xl font-semibold text-sm transition-colors">' +
+        '<i class="fab fa-whatsapp text-lg"></i>Share via WhatsApp</a>' +
+        '<button onclick="closeRzpModal()" class="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">Close</button>' +
+        '</div>';
+}
+
+function copyRzpLink() {
+    const input = document.getElementById('rzpLinkInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = input.nextElementSibling;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        btn.classList.replace('bg-blue-500', 'bg-emerald-500');
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy mr-1"></i>Copy';
+            btn.classList.replace('bg-emerald-500', 'bg-blue-500');
+        }, 2000);
+    });
+}
+
+function closeRzpModal() {
+    document.getElementById('rzpModal').classList.add('hidden');
+}
+
+document.getElementById('upiQrModal').addEventListener('click', function(e) {
+    if (e.target === this) closeUpiModal();
+});
+document.getElementById('rzpModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRzpModal();
+});
+</script>
+@endif
 @endsection
