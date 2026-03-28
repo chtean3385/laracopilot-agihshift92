@@ -575,11 +575,6 @@
                 Guests
             </a>
 
-            <a href="{{ route('customers.index') }}" onclick="event.preventDefault(); window.location='{{ route('customers.index') }}'" class="nav-link {{ request()->routeIs('documents.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-file-alt"></i></span>
-                Documents
-            </a>
-
             <div class="nav-section">Operations</div>
 
             <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">

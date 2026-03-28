@@ -70,9 +70,6 @@
             <i class="fas fa-clipboard-list"></i> Fill Pathik Portal
         </button>
         @endif
-        <button onclick="openAddGuestModal()" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-left:auto;">
-            <i class="fas fa-user-plus"></i> Add Guest
-        </button>
     </div>
 
     {{-- ── Info cards grid ── --}}
@@ -508,26 +505,42 @@ var sigPads = {};
 function initCanvas(guestId) {
     var canvas = document.getElementById('canvas' + guestId);
     if (!canvas) return;
-    // Size canvas to its displayed width
-    canvas.width  = canvas.offsetWidth  || 400;
-    canvas.height = parseInt(canvas.getAttribute('height')) || 120;
-    var ctx = canvas.getContext('2d');
+
+    /* Resize to fill container every time the pad is opened */
+    var wrap = canvas.parentElement;
+    var w = (wrap ? wrap.clientWidth : 0) || canvas.offsetWidth || 350;
+    canvas.width  = w;
+    canvas.height = 130;
+
+    /* Add listeners only once */
+    if (canvas._ciReady) return;
+    canvas._ciReady = true;
+
     var drawing = false;
 
     function getPos(e) {
-        var rect  = canvas.getBoundingClientRect();
+        var rect   = canvas.getBoundingClientRect();
         var scaleX = canvas.width  / rect.width;
         var scaleY = canvas.height / rect.height;
-        var src = e.touches ? e.touches[0] : e;
+        var src    = e.touches ? e.touches[0] : e;
         return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
     }
-    function start(e) { e.preventDefault(); drawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
-    function move(e)  { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1e293b'; ctx.lineTo(p.x, p.y); ctx.stroke(); }
-    function stop(e)  { e.preventDefault(); drawing = false; }
+    function start(e) {
+        e.preventDefault(); drawing = true;
+        var ctx = canvas.getContext('2d'); var p = getPos(e);
+        ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    }
+    function move(e) {
+        e.preventDefault(); if (!drawing) return;
+        var ctx = canvas.getContext('2d'); var p = getPos(e);
+        ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#1e293b'; ctx.lineTo(p.x, p.y); ctx.stroke();
+    }
+    function stop() { drawing = false; }
 
-    canvas.addEventListener('mousedown', start);
-    canvas.addEventListener('mousemove', move);
-    canvas.addEventListener('mouseup',   stop);
+    canvas.addEventListener('mousedown',  start);
+    canvas.addEventListener('mousemove',  move);
+    canvas.addEventListener('mouseup',    stop);
     canvas.addEventListener('mouseleave', stop);
     canvas.addEventListener('touchstart', start, { passive: false });
     canvas.addEventListener('touchmove',  move,  { passive: false });
@@ -571,47 +584,74 @@ function saveSig(guestId) {
 /* ══════════════════════════════
    PRIMARY GUEST SIGNATURE
    ══════════════════════════════ */
-var primaryDrawing = false;
-var primaryCtx     = null;
 
 function togglePrimaryPad() {
     var pad = document.getElementById('primarySigPad');
     if (!pad) return;
-    var show = pad.style.display === 'none';
-    pad.style.display = show ? 'block' : 'none';
-    if (show) setTimeout(initPrimaryCanvas, 50);
+    var showing = pad.style.display !== 'none';
+    pad.style.display = showing ? 'none' : 'block';
+    if (!showing) {
+        setTimeout(initPrimaryCanvas, 80);
+    }
 }
 
 function initPrimaryCanvas() {
     var canvas = document.getElementById('primaryCanvas');
     if (!canvas) return;
-    canvas.width  = canvas.offsetWidth || 300;
-    canvas.height = parseInt(canvas.getAttribute('height')) || 120;
-    primaryCtx = canvas.getContext('2d');
-    primaryDrawing = false;
+
+    /* Resize to fill the container (must happen every time it becomes visible) */
+    var wrap = canvas.parentElement;
+    var w = (wrap ? wrap.clientWidth : 0) || canvas.offsetWidth || 300;
+    canvas.width  = w;
+    canvas.height = 130;
+
+    /* Add listeners only once, using a flag on the element */
+    if (canvas._ciReady) return;
+    canvas._ciReady = true;
+
+    var drawing = false;
 
     function getPos(e) {
         var rect   = canvas.getBoundingClientRect();
+        /* canvas internal px vs CSS-display px ratio */
         var scaleX = canvas.width  / rect.width;
         var scaleY = canvas.height / rect.height;
-        var src = e.touches ? e.touches[0] : e;
-        return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
+        var src    = e.touches ? e.touches[0] : e;
+        return {
+            x: (src.clientX - rect.left) * scaleX,
+            y: (src.clientY - rect.top)  * scaleY
+        };
     }
-    function start(e) { e.preventDefault(); primaryDrawing = true; var p = getPos(e); primaryCtx.beginPath(); primaryCtx.moveTo(p.x, p.y); }
-    function move(e)  { e.preventDefault(); if (!primaryDrawing) return; var p = getPos(e); primaryCtx.lineWidth = 2; primaryCtx.lineCap = 'round'; primaryCtx.strokeStyle = '#1e293b'; primaryCtx.lineTo(p.x, p.y); primaryCtx.stroke(); }
-    function stop(e)  { e.preventDefault(); primaryDrawing = false; }
 
-    // Remove old listeners by replacing node
-    var newCanvas = canvas.cloneNode(false);
-    canvas.parentNode.replaceChild(newCanvas, canvas);
-    primaryCtx = newCanvas.getContext('2d');
-    newCanvas.addEventListener('mousedown', start);
-    newCanvas.addEventListener('mousemove', move);
-    newCanvas.addEventListener('mouseup',   stop);
-    newCanvas.addEventListener('mouseleave', stop);
-    newCanvas.addEventListener('touchstart', start, { passive: false });
-    newCanvas.addEventListener('touchmove',  move,  { passive: false });
-    newCanvas.addEventListener('touchend',   stop,  { passive: false });
+    function start(e) {
+        e.preventDefault();
+        drawing = true;
+        var ctx = canvas.getContext('2d');
+        var p   = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+    }
+    function move(e) {
+        e.preventDefault();
+        if (!drawing) return;
+        var ctx = canvas.getContext('2d');
+        var p   = getPos(e);
+        ctx.lineWidth   = 2.5;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+    }
+    function stop() { drawing = false; }
+
+    canvas.addEventListener('mousedown',  start);
+    canvas.addEventListener('mousemove',  move);
+    canvas.addEventListener('mouseup',    stop);
+    canvas.addEventListener('mouseleave', stop);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove',  move,  { passive: false });
+    canvas.addEventListener('touchend',   stop,  { passive: false });
 }
 
 function clearPrimaryPad() {
