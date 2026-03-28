@@ -498,6 +498,18 @@
             #main-wrap { margin-left: 0; }
             #sidebar-overlay.show { display: block; }
         }
+
+        /* ── Mobile topbar fixes ── */
+        @media (max-width: 768px) {
+            .topbar-date, .topbar-time { display: none !important; }
+            .topbar-title h1 { font-size: 15px !important; }
+            .topbar-title p  { display: none !important; }
+            #main-wrap > header { padding: 0 12px !important; }
+            #main-wrap > main  { padding: 14px 12px !important; }
+        }
+        @media (max-width: 400px) {
+            .topbar-title h1 { font-size: 13px !important; }
+        }
     </style>
     @stack('styles')
 </head>
@@ -703,26 +715,26 @@
 
         <!-- Top Bar -->
         <header style="background:#fff;border-bottom:1px solid #f1f5f9;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.04);">
-            <div style="display:flex;align-items:center;gap:16px;">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
                 <!-- Mobile hamburger -->
-                <button onclick="openSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#64748b;" id="hamburger">
-                    <i class="fas fa-bars" style="font-size:18px;"></i>
+                <button onclick="openSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#64748b;flex-shrink:0;" id="hamburger">
+                    <i class="fas fa-bars" style="font-size:20px;"></i>
                 </button>
-                <div>
-                    <h1 style="font-size:18px;font-weight:800;color:#0f172a;margin:0;line-height:1.2;">@yield('page-title','Dashboard')</h1>
-                    <p style="font-size:12px;color:#94a3b8;margin:0;margin-top:1px;">@yield('page-subtitle','Azure Paradise Resort CRM')</p>
+                <div class="topbar-title" style="min-width:0;">
+                    <h1 style="font-size:18px;font-weight:800;color:#0f172a;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@yield('page-title','Dashboard')</h1>
+                    <p style="font-size:12px;color:#94a3b8;margin:0;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@yield('page-subtitle','Azure Paradise Resort CRM')</p>
                 </div>
             </div>
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 14px;">
-                    <i class="fas fa-calendar-day" style="color:#06b6d4;font-size:13px;"></i>
-                    <span style="font-size:13px;color:#475569;font-weight:500;">{{ now()->format('D, d M Y') }}</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <div class="topbar-date" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 12px;">
+                    <i class="fas fa-calendar-day" style="color:#06b6d4;font-size:12px;"></i>
+                    <span style="font-size:12px;color:#475569;font-weight:500;">{{ now()->format('D, d M Y') }}</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 14px;">
-                    <i class="fas fa-clock" style="color:#06b6d4;font-size:13px;"></i>
-                    <span style="font-size:13px;color:#475569;font-weight:500;" id="liveClock"></span>
+                <div class="topbar-time" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 12px;">
+                    <i class="fas fa-clock" style="color:#06b6d4;font-size:12px;"></i>
+                    <span style="font-size:12px;color:#475569;font-weight:500;" id="liveClock"></span>
                 </div>
-                <div style="width:38px;height:38px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(6,182,212,.3);cursor:pointer;">
+                <div style="width:36px;height:36px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(6,182,212,.3);cursor:pointer;flex-shrink:0;">
                     {{ session('crm_user_avatar','A') }}
                 </div>
             </div>

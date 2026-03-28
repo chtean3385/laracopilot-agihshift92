@@ -132,4 +132,14 @@ class CustomerController extends Controller
             ]);
         }
     }
+
+    public function saveSignature(Request $request, $customerId)
+    {
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
+        $request->validate(['signature' => 'required|string']);
+        $customer = \App\Models\Customer::findOrFail($customerId);
+        $customer->update(['signature' => $request->signature]);
+        \App\Services\ActivityLogger::log('Signature Saved', 'Guest', 'Primary guest signature saved for ' . $customer->name);
+        return response()->json(['success' => true]);
+    }
 }

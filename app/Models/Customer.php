@@ -9,7 +9,7 @@ class Customer extends Model
     protected $fillable = [
         'name', 'email', 'phone', 'address', 'city', 'state',
         'country', 'id_type', 'id_number', 'date_of_birth',
-        'nationality', 'notes',
+        'nationality', 'notes', 'signature',
     ];
 
     protected $casts = [
