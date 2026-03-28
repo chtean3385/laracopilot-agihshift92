@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\ActivityLogger;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -84,8 +85,9 @@ class PaymentController extends Controller
             ]);
         }
 
-        $booking->load('customer');
+        $booking->load(['customer', 'room', 'invoice', 'payments']);
         ActivityLogger::log('Created', 'Payment', 'Payment of ₹' . number_format($payment->amount, 2) . ' recorded for Booking #' . $booking->booking_number . ' (' . $booking->customer->name . ')');
+        WhatsAppService::sendForEvent('payment.received', $booking);
         return redirect()->route('payments.show', $payment->id)->with('success', 'Payment recorded!');
     }
 

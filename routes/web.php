@@ -105,8 +105,9 @@ Route::get('/invoices/{id}',       [InvoiceController::class, 'show'] )->name('i
 Route::middleware('permission:reports.view')->group(function () {
     Route::get('/reports',           [ReportController::class, 'index']    )->name('reports.index');
     Route::get('/reports/revenue',   [ReportController::class, 'revenue']  )->name('reports.revenue');
-    Route::get('/reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
-    Route::get('/reports/bookings',  [ReportController::class, 'bookings'] )->name('reports.bookings');
+    Route::get('/reports/occupancy',       [ReportController::class, 'occupancy']     )->name('reports.occupancy');
+    Route::get('/reports/bookings',        [ReportController::class, 'bookings']      )->name('reports.bookings');
+    Route::get('/reports/guest-register',  [ReportController::class, 'guestRegister'] )->name('reports.guest_register');
 });
 
 // ── Settings ───────────────────────────────────────────────────────────────
@@ -176,6 +177,13 @@ Route::get('/channel-manager/bookings',                   [\App\Http\Controllers
 Route::post('/channel-manager/bookings',                  [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingStore']     )->name('channel_manager.booking.store');
 Route::post('/channel-manager/bookings/{id}/convert',     [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingConvert']   )->name('channel_manager.booking.convert');
 Route::post('/channel-manager/bookings/{id}/cancel',      [\App\Http\Controllers\Admin\ChannelManagerController::class, 'bookingCancel']    )->name('channel_manager.booking.cancel');
+
+// ── Booking Guests (Police Register) ────────────────────────────────────────
+Route::post('/bookings/{bookingId}/guests',                        [\App\Http\Controllers\Admin\BookingGuestController::class, 'store']          )->name('booking.guests.store');
+Route::delete('/bookings/{bookingId}/guests/{guestId}',           [\App\Http\Controllers\Admin\BookingGuestController::class, 'destroy']        )->name('booking.guests.destroy');
+Route::post('/bookings/{bookingId}/guests/{guestId}/signature',   [\App\Http\Controllers\Admin\BookingGuestController::class, 'saveSignature']  )->name('booking.guests.signature');
+Route::post('/bookings/{bookingId}/guests/{guestId}/document',    [\App\Http\Controllers\Admin\BookingGuestController::class, 'uploadDoc']      )->name('booking.guests.document');
+Route::get('/bookings/{bookingId}/guests/{guestId}/document',     [\App\Http\Controllers\Admin\BookingGuestController::class, 'downloadDoc']    )->name('booking.guests.document.download');
 
 // ── Pathik Autofill ─────────────────────────────────────────────────────────
 Route::get( '/pathik',                 [\App\Http\Controllers\Admin\PathikController::class, 'index']           )->name('pathik.index');

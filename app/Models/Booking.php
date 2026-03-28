@@ -54,6 +54,11 @@ class Booking extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function bookingGuests()
+    {
+        return $this->hasMany(BookingGuest::class)->orderBy('id');
+    }
+
     public function getStatusColorAttribute()
     {
         return match($this->status) {

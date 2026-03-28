@@ -27,8 +27,11 @@ class WhatsAppTemplate extends Model
     {
         return [
             'booking.created'    => 'Booking Confirmed',
-            'checkin.tomorrow'   => 'Check-In Reminder (Tomorrow)',
-            'checkout.done'      => 'Check-Out / Invoice',
+            'checkin.tomorrow'   => 'Check-In Reminder (Day Before)',
+            'checkin.done'       => 'Arrival Welcome (On Check-In)',
+            'payment.received'   => 'Payment Received',
+            'checkout.done'      => 'Check-Out Thank You + Bill',
+            'feedback.request'   => 'Feedback Request (2 Days After Stay)',
         ];
     }
 }

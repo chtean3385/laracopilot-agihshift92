@@ -208,6 +208,207 @@
     </div>
 </div>
 
+{{-- ── Additional Guests Section ────────────────────────────────────────── --}}
+<div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:24px;" id="guestsSection">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div>
+            <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin:0;"><i class="fas fa-users" style="color:#7c3aed;margin-right:8px;"></i>Additional Guests</h3>
+            <p style="font-size:12px;color:#94a3b8;margin:4px 0 0;">All family / group members for police register compliance</p>
+        </div>
+        <button onclick="toggleAddGuestForm()" style="padding:8px 16px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;" id="btnAddGuestToggle">
+            <i class="fas fa-plus" style="margin-right:5px;"></i>Add Guest
+        </button>
+    </div>
+
+    {{-- Add Guest Form (hidden by default) --}}
+    <div id="addGuestForm" style="display:none;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;padding:18px;margin-bottom:18px;">
+        <h4 style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;"><i class="fas fa-user-plus" style="color:#7c3aed;margin-right:6px;"></i>New Guest Details</h4>
+        <form id="guestForm" onsubmit="submitGuest(event)">
+            @csrf
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">Full Name *</label>
+                    <input type="text" id="g_name" required placeholder="Guest name" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">Relation</label>
+                    <select id="g_relation" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                        @foreach(\App\Models\BookingGuest::relations() as $rel)
+                        <option value="{{ $rel }}">{{ $rel }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">Age</label>
+                    <input type="number" id="g_age" min="0" max="120" placeholder="Age" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">Gender</label>
+                    <select id="g_gender" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">Nationality</label>
+                    <input type="text" id="g_nationality" value="Indian" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">ID Type</label>
+                    <select id="g_id_type" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                        <option value="">Select</option>
+                        @foreach(\App\Models\BookingGuest::idTypes() as $key => $label)
+                        <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">ID Number</label>
+                    <input type="text" id="g_id_number" placeholder="ID number" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px;">Date of Birth</label>
+                    <input type="date" id="g_dob" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+                <button type="submit" style="padding:9px 18px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;" id="btnSubmitGuest">
+                    <i class="fas fa-save" style="margin-right:5px;"></i>Save Guest
+                </button>
+                <button type="button" onclick="toggleAddGuestForm()" style="padding:9px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Guests List --}}
+    <div id="guestsList">
+        @forelse($booking->bookingGuests as $guest)
+        <div class="guest-row" id="guestRow{{ $guest->id }}" style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
+            <div style="width:34px;height:34px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-user" style="color:#7c3aed;font-size:14px;"></i>
+            </div>
+            <div style="flex:1;min-width:120px;">
+                <div style="font-size:13px;font-weight:700;color:#1e293b;">{{ $guest->name }}</div>
+                <div style="font-size:11px;color:#64748b;">
+                    {{ $guest->relation ?? '' }}{{ ($guest->relation && $guest->age) ? ' · ' : '' }}{{ $guest->age ? $guest->age . ' yrs' : '' }}{{ $guest->gender ? ' · ' . ucfirst($guest->gender) : '' }}
+                </div>
+            </div>
+            <div style="flex:1;min-width:120px;">
+                <div style="font-size:11px;font-weight:700;color:#7c3aed;">{{ \App\Models\BookingGuest::idTypes()[$guest->id_type] ?? ($guest->id_type ?? 'No ID') }}</div>
+                <div style="font-size:12px;font-family:monospace;color:#1e293b;">{{ $guest->id_number ?? '-' }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                {{-- Document upload --}}
+                <label title="{{ $guest->id_document_name ?? 'Upload ID document' }}" style="padding:5px 10px;background:{{ $guest->id_document_path ? '#dcfce7' : '#f1f5f9' }};color:{{ $guest->id_document_path ? '#16a34a' : '#64748b' }};border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;">
+                    <i class="fas fa-{{ $guest->id_document_path ? 'check' : 'upload' }}"></i>
+                    {{ $guest->id_document_path ? 'Doc' : 'Upload ID' }}
+                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" style="display:none;" onchange="uploadDoc({{ $guest->id }}, this)">
+                </label>
+                {{-- Signature status --}}
+                @if($guest->signature)
+                <span style="padding:5px 10px;background:#dcfce7;color:#16a34a;border-radius:7px;font-size:11px;font-weight:700;">
+                    <i class="fas fa-check"></i> Signed
+                </span>
+                @endif
+                {{-- Remove --}}
+                <button onclick="removeGuest({{ $guest->id }})" style="padding:5px 9px;background:#fee2e2;color:#dc2626;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;" title="Remove guest">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+        @empty
+        <div id="noGuestsMsg" style="text-align:center;padding:24px;color:#94a3b8;">
+            <i class="fas fa-user-plus" style="font-size:28px;margin-bottom:8px;display:block;"></i>
+            No additional guests added yet. Click "Add Guest" to register family or group members.
+        </div>
+        @endforelse
+    </div>
+</div>
+
+<script>
+var bookingId = {{ $booking->id }};
+var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+function toggleAddGuestForm() {
+    var f = document.getElementById('addGuestForm');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitGuest(e) {
+    e.preventDefault();
+    var btn = document.getElementById('btnSubmitGuest');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Saving...';
+
+    var data = new FormData();
+    data.append('_token', csrfToken);
+    data.append('name', document.getElementById('g_name').value);
+    data.append('relation', document.getElementById('g_relation').value);
+    data.append('age', document.getElementById('g_age').value);
+    data.append('gender', document.getElementById('g_gender').value);
+    data.append('nationality', document.getElementById('g_nationality').value);
+    data.append('id_type', document.getElementById('g_id_type').value);
+    data.append('id_number', document.getElementById('g_id_number').value);
+    data.append('dob', document.getElementById('g_dob').value);
+
+    fetch('/bookings/' + bookingId + '/guests', { method: 'POST', headers: {'X-CSRF-TOKEN': csrfToken, 'X-Requested-With':'XMLHttpRequest'}, body: data })
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+        if (res.success) {
+            var g = res.guest;
+            var noMsg = document.getElementById('noGuestsMsg');
+            if (noMsg) noMsg.remove();
+            var html = '<div class="guest-row" id="guestRow' + g.id + '" style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">'
+                + '<div style="width:34px;height:34px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-user" style="color:#7c3aed;font-size:14px;"></i></div>'
+                + '<div style="flex:1;min-width:120px;"><div style="font-size:13px;font-weight:700;color:#1e293b;">' + g.name + '</div>'
+                + '<div style="font-size:11px;color:#64748b;">' + (g.relation || '') + (g.age ? ' · ' + g.age + ' yrs' : '') + '</div></div>'
+                + '<div style="flex:1;min-width:120px;"><div style="font-size:11px;font-weight:700;color:#7c3aed;">' + (g.id_type || 'No ID') + '</div>'
+                + '<div style="font-size:12px;font-family:monospace;color:#1e293b;">' + (g.id_number || '-') + '</div></div>'
+                + '<div style="display:flex;align-items:center;gap:6px;">'
+                + '<button onclick="removeGuest(' + g.id + ')" style="padding:5px 9px;background:#fee2e2;color:#dc2626;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;"><i class="fas fa-trash-alt"></i></button>'
+                + '</div></div>';
+            document.getElementById('guestsList').insertAdjacentHTML('beforeend', html);
+            document.getElementById('guestForm').reset();
+            document.getElementById('g_nationality').value = 'Indian';
+            toggleAddGuestForm();
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save" style="margin-right:5px;"></i>Save Guest';
+    }).catch(function(){ btn.disabled = false; btn.innerHTML = '<i class="fas fa-save" style="margin-right:5px;"></i>Save Guest'; });
+}
+
+function removeGuest(guestId) {
+    if (!confirm('Remove this guest from the booking?')) return;
+    fetch('/bookings/' + bookingId + '/guests/' + guestId, {
+        method: 'DELETE',
+        headers: {'X-CSRF-TOKEN': csrfToken, 'X-Requested-With':'XMLHttpRequest', 'Content-Type':'application/json'},
+        body: JSON.stringify({_token: csrfToken})
+    }).then(function(r){ return r.json(); }).then(function(res){
+        if (res.success) {
+            var row = document.getElementById('guestRow' + guestId);
+            if (row) row.remove();
+        }
+    });
+}
+
+function uploadDoc(guestId, input) {
+    if (!input.files[0]) return;
+    var data = new FormData();
+    data.append('document', input.files[0]);
+    data.append('_token', csrfToken);
+    fetch('/bookings/' + bookingId + '/guests/' + guestId + '/document', {
+        method: 'POST',
+        headers: {'X-CSRF-TOKEN': csrfToken, 'X-Requested-With':'XMLHttpRequest'},
+        body: data
+    }).then(function(r){ return r.json(); }).then(function(res){
+        if (res.success) { location.reload(); }
+        else alert('Upload failed.');
+    });
+}
+</script>
+
 <script>
 var pathikData = {
     booking_id:     '{{ $booking->id }}',

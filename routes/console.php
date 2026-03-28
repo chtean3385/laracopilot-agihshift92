@@ -8,3 +8,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('whatsapp:checkin-reminders')->dailyAt('09:00');
+Schedule::command('whatsapp:feedback-reminders')->dailyAt('10:00');

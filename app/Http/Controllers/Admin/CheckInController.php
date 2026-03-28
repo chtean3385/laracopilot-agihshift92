@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Services\ActivityLogger;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -33,7 +34,7 @@ class CheckInController extends Controller
     public function show($bookingId)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking = Booking::with(['customer', 'room', 'payments'])->findOrFail($bookingId);
+        $booking = Booking::with(['customer', 'room', 'payments', 'bookingGuests'])->findOrFail($bookingId);
         return view('admin.checkin.show', compact('booking'));
     }
 
@@ -72,6 +73,7 @@ class CheckInController extends Controller
         }
         $booking->load('customer');
         ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — Room ' . $booking->room->room_number . ' (Booking #' . $booking->booking_number . ')');
+        WhatsAppService::sendForEvent('checkin.done', $booking);
         return redirect()->route('checkin.index')->with('success', 'Check-in completed for ' . $booking->customer->name . '!');
     }
 }

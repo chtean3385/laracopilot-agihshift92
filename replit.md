@@ -1,7 +1,7 @@
 # Azure Paradise Resort CRM — Laravel 12
 
 ## Overview
-A full hotel/resort management CRM built with Laravel 12, SQLite, and Tailwind CSS. Features guest management, room management, bookings, check-in/check-out, payments, invoices, reports, activity logging, dynamic role-based access control, and WhatsApp messaging.
+A full hotel/resort management CRM built with Laravel 12, SQLite, and Tailwind CSS. Features guest management, room management, bookings, check-in/check-out, payments, invoices, reports, activity logging, dynamic role-based access control, WhatsApp messaging automation (6 trigger events), Guest Register (police compliance with signatures + ID docs), and modular feature flags.
 
 ## Architecture
 - **Framework**: Laravel 12

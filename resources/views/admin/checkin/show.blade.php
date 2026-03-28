@@ -68,7 +68,249 @@
             </div>
         </form>
     </div>
+
+    {{-- ── Additional Guests & Signatures ───────────────────────────────── --}}
+    <div style="background:#fff;border-radius:16px;border:1px solid #f1f5f9;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:22px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+            <h3 style="font-size:15px;font-weight:800;color:#1e293b;margin:0;"><i class="fas fa-users" style="color:#7c3aed;margin-right:7px;"></i>Additional Guests &amp; Signatures</h3>
+            <button onclick="toggleCheckinGuestForm()" style="padding:7px 14px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-plus" style="margin-right:4px;"></i>Add Guest
+            </button>
+        </div>
+
+        {{-- Quick Add Guest Form --}}
+        <div id="checkinGuestForm" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+                <div>
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Name *</label>
+                    <input type="text" id="ci_name" placeholder="Guest name" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Relation</label>
+                    <select id="ci_relation" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                        @foreach(\App\Models\BookingGuest::relations() as $r)
+                        <option value="{{ $r }}">{{ $r }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Age</label>
+                    <input type="number" id="ci_age" min="0" max="120" placeholder="Age" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Gender</label>
+                    <select id="ci_gender" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">ID Type</label>
+                    <select id="ci_id_type" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                        <option value="">None</option>
+                        @foreach(\App\Models\BookingGuest::idTypes() as $k => $v)
+                        <option value="{{ $k }}">{{ $v }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">ID Number</label>
+                    <input type="text" id="ci_id_number" placeholder="ID number" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="display:flex;gap:7px;margin-top:10px;">
+                <button onclick="submitCheckinGuest()" style="padding:7px 14px;background:#7c3aed;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;" id="btnCiSave">
+                    <i class="fas fa-save" style="margin-right:4px;"></i>Save
+                </button>
+                <button onclick="toggleCheckinGuestForm()" style="padding:7px 12px;background:#f1f5f9;color:#475569;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+
+        {{-- Existing guests with signature pads --}}
+        <div id="ciGuestsList">
+        @forelse($booking->bookingGuests as $guest)
+            <div id="ciRow{{ $guest->id }}" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;overflow:hidden;">
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 14px;background:#f8fafc;">
+                    <div style="width:30px;height:30px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-user" style="color:#7c3aed;font-size:12px;"></i>
+                    </div>
+                    <div style="flex:1;min-width:100px;">
+                        <div style="font-size:13px;font-weight:700;color:#1e293b;">{{ $guest->name }}</div>
+                        <div style="font-size:11px;color:#64748b;">{{ $guest->relation ?? '' }}{{ $guest->age ? ' · ' . $guest->age . ' yrs' : '' }}</div>
+                    </div>
+                    <button onclick="toggleSigPad({{ $guest->id }})" style="padding:5px 12px;background:{{ $guest->signature ? '#dcfce7' : '#fef3c7' }};color:{{ $guest->signature ? '#16a34a' : '#92400e' }};border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
+                        <i class="fas fa-{{ $guest->signature ? 'check' : 'signature' }}" style="margin-right:3px;"></i>
+                        {{ $guest->signature ? 'Signed' : 'Capture Signature' }}
+                    </button>
+                    <button onclick="ciRemoveGuest({{ $guest->id }})" style="padding:5px 9px;background:#fee2e2;color:#dc2626;border:none;border-radius:7px;font-size:11px;cursor:pointer;" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                {{-- Signature Pad --}}
+                <div id="sigPad{{ $guest->id }}" style="display:none;padding:14px;border-top:1px solid #f1f5f9;">
+                    <p style="font-size:11px;color:#64748b;margin:0 0 8px;">Sign in the box below (mouse or touch):</p>
+                    <canvas id="canvas{{ $guest->id }}" width="480" height="140"
+                        style="border:2px dashed #cbd5e1;border-radius:8px;cursor:crosshair;background:#fdfdfd;max-width:100%;touch-action:none;"></canvas>
+                    <div style="display:flex;gap:7px;margin-top:8px;">
+                        <button onclick="clearSig({{ $guest->id }})" style="padding:6px 12px;background:#f1f5f9;color:#475569;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-eraser" style="margin-right:4px;"></i>Clear
+                        </button>
+                        <button onclick="saveSig({{ $guest->id }})" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-save" style="margin-right:4px;"></i>Save Signature
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div id="ciNoGuests" style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">
+                <i class="fas fa-user-plus" style="font-size:24px;margin-bottom:7px;display:block;"></i>
+                No additional guests. Click "Add Guest" to register family or group members.
+            </div>
+        @endforelse
+        </div>
+    </div>
 </div>
+
+<script>
+var ciBookingId = {{ $booking->id }};
+var ciCsrf = document.querySelector('meta[name="csrf-token"]').content;
+
+function toggleCheckinGuestForm() {
+    var f = document.getElementById('checkinGuestForm');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitCheckinGuest() {
+    var name = document.getElementById('ci_name').value.trim();
+    if (!name) { alert('Guest name is required.'); return; }
+    var btn = document.getElementById('btnCiSave');
+    btn.disabled = true;
+    var data = new FormData();
+    data.append('_token', ciCsrf);
+    data.append('name', name);
+    data.append('relation', document.getElementById('ci_relation').value);
+    data.append('age', document.getElementById('ci_age').value);
+    data.append('gender', document.getElementById('ci_gender').value);
+    data.append('id_type', document.getElementById('ci_id_type').value);
+    data.append('id_number', document.getElementById('ci_id_number').value);
+    fetch('/bookings/' + ciBookingId + '/guests', {
+        method: 'POST',
+        headers: {'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest'},
+        body: data
+    }).then(function(r){ return r.json(); }).then(function(res){
+        if (res.success) {
+            var g = res.guest;
+            var noMsg = document.getElementById('ciNoGuests');
+            if (noMsg) noMsg.remove();
+            var html = '<div id="ciRow' + g.id + '" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;overflow:hidden;">'
+                + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 14px;background:#f8fafc;">'
+                + '<div style="width:30px;height:30px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-user" style="color:#7c3aed;font-size:12px;"></i></div>'
+                + '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#1e293b;">' + g.name + '</div><div style="font-size:11px;color:#64748b;">' + (g.relation || '') + '</div></div>'
+                + '<button onclick="toggleSigPad(' + g.id + ')" id="sigBtn' + g.id + '" style="padding:5px 12px;background:#fef3c7;color:#92400e;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;"><i class="fas fa-signature" style="margin-right:3px;"></i>Capture Signature</button>'
+                + '<button onclick="ciRemoveGuest(' + g.id + ')" style="padding:5px 9px;background:#fee2e2;color:#dc2626;border:none;border-radius:7px;font-size:11px;cursor:pointer;"><i class="fas fa-times"></i></button>'
+                + '</div>'
+                + '<div id="sigPad' + g.id + '" style="display:none;padding:14px;border-top:1px solid #f1f5f9;">'
+                + '<p style="font-size:11px;color:#64748b;margin:0 0 8px;">Sign in the box below:</p>'
+                + '<canvas id="canvas' + g.id + '" width="480" height="140" style="border:2px dashed #cbd5e1;border-radius:8px;cursor:crosshair;background:#fdfdfd;max-width:100%;touch-action:none;"></canvas>'
+                + '<div style="display:flex;gap:7px;margin-top:8px;">'
+                + '<button onclick="clearSig(' + g.id + ')" style="padding:6px 12px;background:#f1f5f9;color:#475569;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-eraser" style="margin-right:4px;"></i>Clear</button>'
+                + '<button onclick="saveSig(' + g.id + ')" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-save" style="margin-right:4px;"></i>Save Signature</button>'
+                + '</div></div></div>';
+            document.getElementById('ciGuestsList').insertAdjacentHTML('beforeend', html);
+            initCanvas(g.id);
+            document.getElementById('ci_name').value = '';
+            document.getElementById('ci_age').value = '';
+            document.getElementById('ci_id_number').value = '';
+            toggleCheckinGuestForm();
+        }
+        btn.disabled = false;
+    });
+}
+
+function ciRemoveGuest(guestId) {
+    if (!confirm('Remove this guest?')) return;
+    fetch('/bookings/' + ciBookingId + '/guests/' + guestId, {
+        method: 'DELETE',
+        headers: {'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
+        body: JSON.stringify({_token: ciCsrf})
+    }).then(function(r){ return r.json(); }).then(function(res){
+        if (res.success) {
+            var row = document.getElementById('ciRow' + guestId);
+            if (row) row.remove();
+        }
+    });
+}
+
+var sigPads = {};
+
+function initCanvas(guestId) {
+    var canvas = document.getElementById('canvas' + guestId);
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var drawing = false;
+
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        var src = e.touches ? e.touches[0] : e;
+        return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
+    }
+
+    function start(e) { e.preventDefault(); drawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+    function draw(e)  { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1e293b'; ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function stop(e)  { e.preventDefault(); drawing = false; }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stop);
+    canvas.addEventListener('mouseleave', stop);
+    canvas.addEventListener('touchstart', start, {passive:false});
+    canvas.addEventListener('touchmove', draw, {passive:false});
+    canvas.addEventListener('touchend', stop, {passive:false});
+
+    sigPads[guestId] = canvas;
+}
+
+function toggleSigPad(guestId) {
+    var pad = document.getElementById('sigPad' + guestId);
+    if (!pad) return;
+    var visible = pad.style.display !== 'none';
+    pad.style.display = visible ? 'none' : 'block';
+    if (!visible) initCanvas(guestId);
+}
+
+function clearSig(guestId) {
+    var canvas = document.getElementById('canvas' + guestId);
+    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function saveSig(guestId) {
+    var canvas = document.getElementById('canvas' + guestId);
+    if (!canvas) return;
+    var dataUrl = canvas.toDataURL('image/png');
+    fetch('/bookings/' + ciBookingId + '/guests/' + guestId + '/signature', {
+        method: 'POST',
+        headers: {'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'},
+        body: JSON.stringify({ signature: dataUrl })
+    }).then(function(r){ return r.json(); }).then(function(res){
+        if (res.success) {
+            document.getElementById('sigPad' + guestId).style.display = 'none';
+            var btn = document.getElementById('sigBtn' + guestId);
+            if (btn) { btn.style.background = '#dcfce7'; btn.style.color = '#16a34a'; btn.innerHTML = '<i class="fas fa-check" style="margin-right:3px;"></i>Signed'; }
+        }
+    });
+}
+
+// Init all existing signature pads
+document.addEventListener('DOMContentLoaded', function() {
+    @foreach($booking->bookingGuests as $guest)
+    initCanvas({{ $guest->id }});
+    @endforeach
+});
+</script>
 
 @if(\App\Models\Module::isEnabled('pathik'))
 <div id="pathikModalCheckin" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);">

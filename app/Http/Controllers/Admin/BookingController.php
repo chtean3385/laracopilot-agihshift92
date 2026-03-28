@@ -109,7 +109,7 @@ class BookingController extends Controller
     public function show($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking = Booking::with(['customer', 'room', 'payments', 'invoice'])->findOrFail($id);
+        $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests'])->findOrFail($id);
         return view('admin.bookings.show', compact('booking'));
     }
 
