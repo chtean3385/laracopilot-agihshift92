@@ -80,14 +80,15 @@
 
         {{-- Quick Add Guest Form --}}
         <div id="checkinGuestForm" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
-                <div>
-                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Name *</label>
-                    <input type="text" id="ci_name" placeholder="Guest name" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+            <form id="ciGuestForm" onsubmit="submitCheckinGuest(event)" enctype="multipart/form-data">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;max-width:100%;">
+                <div style="grid-column:1/-1;">
+                    <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Full Name *</label>
+                    <input type="text" id="ci_name" placeholder="Guest full name" required style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
                 </div>
                 <div>
                     <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Relation</label>
-                    <select id="ci_relation" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                    <select id="ci_relation" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
                         @foreach(\App\Models\BookingGuest::relations() as $r)
                         <option value="{{ $r }}">{{ $r }}</option>
                         @endforeach
@@ -95,11 +96,11 @@
                 </div>
                 <div>
                     <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Age</label>
-                    <input type="number" id="ci_age" min="0" max="120" placeholder="Age" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                    <input type="number" id="ci_age" min="0" max="120" placeholder="Age" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
                 </div>
                 <div>
                     <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">Gender</label>
-                    <select id="ci_gender" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                    <select id="ci_gender" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
                         <option value="">Select</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
@@ -108,7 +109,7 @@
                 </div>
                 <div>
                     <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">ID Type</label>
-                    <select id="ci_id_type" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                    <select id="ci_id_type" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
                         <option value="">None</option>
                         @foreach(\App\Models\BookingGuest::idTypes() as $k => $v)
                         <option value="{{ $k }}">{{ $v }}</option>
@@ -117,15 +118,21 @@
                 </div>
                 <div>
                     <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:3px;">ID Number</label>
-                    <input type="text" id="ci_id_number" placeholder="ID number" style="width:100%;padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                    <input type="text" id="ci_id_number" placeholder="ID (optional)" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;box-sizing:border-box;">
+                </div>
+                <div style="grid-column:1/-1;">
+                    <label style="font-size:10px;font-weight:700;color:#dc2626;text-transform:uppercase;display:block;margin-bottom:3px;">📸 ID Proof *</label>
+                    <input type="file" id="ci_document" accept=".jpg,.jpeg,.png,.pdf" placeholder="Upload ID proof" required style="width:100%;padding:8px 10px;border:1.5px solid #fecaca;border-radius:7px;font-size:12px;box-sizing:border-box;background:#fff7f7;">
+                    <small style="font-size:9px;color:#7f1d1d;margin-top:2px;display:block;">JPG/PNG/PDF, max 5MB</small>
                 </div>
             </div>
             <div style="display:flex;gap:7px;margin-top:10px;">
-                <button onclick="submitCheckinGuest()" style="padding:7px 14px;background:#7c3aed;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;" id="btnCiSave">
+                <button type="submit" style="flex:1;padding:8px 10px;background:#7c3aed;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;" id="btnCiSave">
                     <i class="fas fa-save" style="margin-right:4px;"></i>Save
                 </button>
-                <button onclick="toggleCheckinGuestForm()" style="padding:7px 12px;background:#f1f5f9;color:#475569;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+                <button type="button" onclick="toggleCheckinGuestForm()" style="padding:8px 10px;background:#f1f5f9;color:#475569;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
             </div>
+            </form>
         </div>
 
         {{-- Existing guests with signature pads --}}
@@ -182,11 +189,21 @@ function toggleCheckinGuestForm() {
     f.style.display = f.style.display === 'none' ? 'block' : 'none';
 }
 
-function submitCheckinGuest() {
+function submitCheckinGuest(e) {
+    e.preventDefault();
     var name = document.getElementById('ci_name').value.trim();
+    var docInput = document.getElementById('ci_document');
+    
     if (!name) { alert('Guest name is required.'); return; }
+    if (!docInput.files || docInput.files.length === 0) {
+        alert('ID Proof document is required. Please upload a JPG, PNG, or PDF file.');
+        return;
+    }
+    
     var btn = document.getElementById('btnCiSave');
     btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:4px;"></i>Saving...';
+    
     var data = new FormData();
     data.append('_token', ciCsrf);
     data.append('name', name);
@@ -195,6 +212,7 @@ function submitCheckinGuest() {
     data.append('gender', document.getElementById('ci_gender').value);
     data.append('id_type', document.getElementById('ci_id_type').value);
     data.append('id_number', document.getElementById('ci_id_number').value);
+    data.append('document', docInput.files[0]);
     fetch('/bookings/' + ciBookingId + '/guests', {
         method: 'POST',
         headers: {'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest'},
@@ -221,11 +239,22 @@ function submitCheckinGuest() {
             document.getElementById('ciGuestsList').insertAdjacentHTML('beforeend', html);
             initCanvas(g.id);
             document.getElementById('ci_name').value = '';
+            document.getElementById('ci_relation').value = 'Spouse';
             document.getElementById('ci_age').value = '';
+            document.getElementById('ci_gender').value = '';
+            document.getElementById('ci_id_type').value = '';
             document.getElementById('ci_id_number').value = '';
+            document.getElementById('ci_document').value = '';
             toggleCheckinGuestForm();
+        } else {
+            alert('Error adding guest. Please try again.');
         }
         btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save" style="margin-right:4px;"></i>Save';
+    }).catch(function(err) {
+        alert('Request failed: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save" style="margin-right:4px;"></i>Save';
     });
 }
 

@@ -26,9 +26,22 @@ class BookingGuestController extends Controller
             'dob'         => 'nullable|date',
             'relation'    => 'nullable|string|max:40',
             'notes'       => 'nullable|string|max:255',
+            'document'    => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
-        $guest = BookingGuest::create(array_merge($validated, ['booking_id' => $bookingId]));
+        $guestData = $validated;
+        unset($guestData['document']);
+        
+        $guest = BookingGuest::create(array_merge($guestData, ['booking_id' => $bookingId]));
+
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $path = $file->store('guest-docs/' . $bookingId, 'public');
+            $guest->update([
+                'id_document_path' => $path,
+                'id_document_name' => $file->getClientOriginalName(),
+            ]);
+        }
 
         ActivityLogger::log('Added Guest', 'Booking', 'Added guest ' . $validated['name'] . ' to Booking #' . $booking->booking_number);
 
