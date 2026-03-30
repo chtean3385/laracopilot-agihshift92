@@ -1,5 +1,14 @@
+Options -Indexes
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^$ public/ [L]
-    RewriteRule (.*) public/$1 [L]
+
+    # Don't rewrite requests that already target public/
+    RewriteCond %{REQUEST_URI} !^/[^/]+/public/
+    # Don't rewrite if it's a real file (like index.php itself)
+    RewriteCond %{REQUEST_FILENAME} !-f
+
+    # Capture the subfolder name dynamically so this works in any folder name
+    RewriteCond %{REQUEST_URI} ^(/[^/]+)(/?.*)$
+    RewriteRule ^ %1/public%2 [L,QSA]
 </IfModule>
