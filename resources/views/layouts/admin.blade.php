@@ -568,50 +568,76 @@
                 Dashboard
             </a>
 
+            @canDo('guests.view')
             <div class="nav-section">Guest Management</div>
-
             <a href="{{ route('customers.index') }}" class="nav-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-users"></i></span>
                 Guests
             </a>
+            @endCanDo
 
+            @php
+                $showOps = \App\Services\PermissionService::check('rooms.view')
+                    || \App\Services\PermissionService::check('bookings.view')
+                    || \App\Services\PermissionService::check('checkin.process')
+                    || \App\Services\PermissionService::check('checkout.process');
+            @endphp
+            @if($showOps)
             <div class="nav-section">Operations</div>
+            @endif
 
+            @canDo('rooms.view')
             <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-door-open"></i></span>
                 Rooms
             </a>
+            @endCanDo
 
+            @canDo('bookings.view')
             <a href="{{ route('bookings.index') }}" class="nav-link {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-calendar-check"></i></span>
                 Bookings
             </a>
+            @endCanDo
 
+            @canDo('checkin.process')
             <a href="{{ route('checkin.index') }}" class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
                 Check-In
             </a>
+            @endCanDo
 
+            @canDo('checkout.process')
             <a href="{{ route('checkout.index') }}" class="nav-link {{ request()->routeIs('checkout.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
                 Check-Out
             </a>
+            @endCanDo
 
+            @php
+                $showFinance = \App\Services\PermissionService::check('payments.view')
+                    || \App\Services\PermissionService::check('invoices.view');
+            @endphp
+            @if($showFinance)
             <div class="nav-section">Finance</div>
+            @endif
 
+            @canDo('payments.view')
             <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-credit-card"></i></span>
                 Payments
             </a>
+            @endCanDo
 
+            @canDo('invoices.view')
             <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
                 Invoices
             </a>
+            @endCanDo
 
             @canDo('reports.view')
             <div class="nav-section">Analytics</div>
-
             <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-bar"></i></span>
                 Reports
