@@ -48,6 +48,8 @@
     position:relative;width:100%;
 }
 .sig-canvas-wrap canvas { display:block;width:100%;touch-action:none;cursor:crosshair; }
+/* Prevent page scroll while signing on mobile */
+#primarySigPad, [id^="sigPad"] { touch-action:none; }
 
 /* Responsive grids */
 .ci-info-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
@@ -554,7 +556,8 @@ function toggleSigPad(guestId) {
     var visible = pad.style.display !== 'none';
     pad.style.display = visible ? 'none' : 'block';
     if (!visible) {
-        setTimeout(function() { initCanvas(guestId); }, 50);
+        pad.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(function() { initCanvas(guestId); }, 150);
     }
 }
 
@@ -566,6 +569,10 @@ function clearSig(guestId) {
 function saveSig(guestId) {
     var canvas = document.getElementById('canvas' + guestId);
     if (!canvas) return;
+    if (isCanvasBlank(canvas)) {
+        alert('Please draw the signature first before saving.');
+        return;
+    }
     fetch('/bookings/' + ciBookingId + '/guests/' + guestId + '/signature', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
@@ -591,7 +598,9 @@ function togglePrimaryPad() {
     var showing = pad.style.display !== 'none';
     pad.style.display = showing ? 'none' : 'block';
     if (!showing) {
-        setTimeout(initPrimaryCanvas, 80);
+        /* scroll the pad into view on mobile, then init */
+        pad.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(initPrimaryCanvas, 150);
     }
 }
 
@@ -659,9 +668,19 @@ function clearPrimaryPad() {
     if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 }
 
+function isCanvasBlank(canvas) {
+    var ctx = canvas.getContext('2d');
+    var buf = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+    return !buf.some(function(px) { return px !== 0; });
+}
+
 function savePrimarySig() {
     var canvas = document.getElementById('primaryCanvas');
     if (!canvas) return;
+    if (isCanvasBlank(canvas)) {
+        alert('Please draw your signature first before saving.');
+        return;
+    }
     var dataUrl = canvas.toDataURL('image/png');
     fetch('/guests/{{ $booking->customer->id }}/signature', {
         method: 'POST',
