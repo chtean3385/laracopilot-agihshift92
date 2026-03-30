@@ -1,129 +1,159 @@
-# Azure Paradise Resort CRM — Laravel 12
+# Hotel CRM — Laravel 12 (SaaS in Progress)
 
 ## Overview
-A full hotel/resort management CRM built with Laravel 12, SQLite, and Tailwind CSS. Features guest management, room management, bookings, check-in/check-out, payments, invoices, reports, activity logging, dynamic role-based access control, WhatsApp messaging automation (6 trigger events), Guest Register (police compliance with signatures + ID docs), and modular feature flags.
+Full hotel/resort management CRM built on Laravel 12, evolving into a multi-tenant SaaS platform. Features: guest management, rooms, bookings, check-in/out, payments, invoices, reports, RBAC, activity audit logging, WhatsApp messaging, Guest Register (signatures + ID docs), Pathik autofill, OTA Channel Manager, Payment Links, and a web-based self-hosting installer.
 
 ## Architecture
-- **Framework**: Laravel 12
-- **Language**: PHP 8.2
-- **Database**: SQLite (`database/database.sqlite`)
+- **Framework**: Laravel 12 (PHP 8.2)
+- **Database (dev)**: SQLite (`database/database.sqlite`)
+- **Database (production/self-hosted)**: MySQL 8.0+
 - **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome + Livewire 4
-- **Authentication**: Custom session-based auth (hardcoded users)
-- **RBAC**: Dynamic DB-driven roles & permissions system
+- **Authentication**: Custom session-based auth (users table + `is_super_admin` flag)
+- **RBAC**: Dynamic DB-driven roles & permissions
+- **Port**: 5000 (`php artisan serve --host=0.0.0.0 --port=5000`)
 
-## Setup
+## Critical Coding Rules
+1. **JS in Blade**: Use inline `<script>` inside `@section('content')`, NOT `@push('scripts')` for inline JS
+2. **Blade raw output in JS**: Always use `{!! json_encode($var) !!}` — NEVER `{{ json_encode($var) }}` (double-encoding breaks JS) and NEVER `'{{ addslashes($var) }}'` (newlines break JS strings)
+3. **Admin layout**: yields `@yield('content')`, stacks `@stack('styles')` + `@stack('scripts')`; NO `@yield('modals')`; CSRF meta in `<head>`
+4. **Module checks**: `Module::isEnabled('slug')` — slugs: `whatsapp`, `payment_links`, `pathik`, `channel_manager`
+5. **Session role**: `session('crm_user_role')` stores role from `hotel_users` pivot for active hotel
+6. **Route URLs in JS**: Always use `'{{ route('name') }}'` — never hardcode `/path` (breaks in subdirectory hosting)
+
+## Setup (Dev — Replit)
 1. `composer install`
-2. Copy `.env.example` to `.env` and run `php artisan key:generate`
+2. Copy `.env.example` to `.env` → `php artisan key:generate`
 3. `touch database/database.sqlite`
 4. `php artisan migrate --force`
 5. `php artisan db:seed --class=RolesAndPermissionsSeeder`
-6. `php artisan storage:link`
-7. `php artisan serve --host=0.0.0.0 --port=5000`
+6. `php artisan db:seed --class=ModuleSeeder`
+7. `php artisan db:seed --class=SettingSeeder`
+8. `php artisan storage:link`
+9. `php artisan serve --host=0.0.0.0 --port=5000`
 
-## Users (DB-driven)
-Users are now stored in the `users` table and can be managed via `/users`. Super Admin is still hardcoded as a bypass.
+## Setup (Self-Hosted — Web Installer)
+Visit `/install` in the browser. Three-step wizard:
+- Step 1: MySQL DB credentials → Test Connection AJAX
+- Step 2: App name, URL, admin email + password
+- Step 3: Runs migrations, seeds, creates superadmin, writes `storage/installed.lock`
+After install, `/install` is permanently locked (middleware redirects to `/login`).
+
+**Apache requirement**: `AllowOverride All` + `mod_rewrite` enabled. App must be served with document root at the `public/` folder, OR use the root `.htaccess` (project root) which redirects to `public/`.
+
+## Users
 | Email | Password | Role |
 |-------|----------|------|
-| superadmin@gmail.com | Super@#3385 | Super Admin (hardcoded bypass) |
+| superadmin@gmail.com | Super@#3385 | Super Admin (`is_super_admin=true`) |
 | admin@resort.com | admin123 | Admin |
-| manager@resort.com | manager123 | Manager |
-| receptionist@resort.com | recept123 | Receptionist |
 
-Seed users with: `php artisan db:seed --class=UsersTableSeeder`
-
-## Email Configuration
-Currently set to `MAIL_MAILER=log` — password reset emails are written to `storage/logs/laravel.log` instead of being sent.
-To enable real email sending, provide SMTP credentials and update `.env`:
-```
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.resend.com   # or smtp.gmail.com / smtp.mailtrap.io
-MAIL_PORT=465
-MAIL_ENCRYPTION=tls
-MAIL_USERNAME=resend        # or your SMTP username
-MAIL_PASSWORD=your_api_key  # store as Replit secret MAIL_PASSWORD
-MAIL_FROM_ADDRESS=noreply@yourdomain.com
-MAIL_FROM_NAME="Resort CRM"
-```
-Resend.com integration is available in Replit but was not connected. Re-connect it to get an API key automatically.
+Super Admin bypasses all permission checks. User roles from `hotel_users` pivot stored in `session('crm_user_role')`.
 
 ## Key Routes
-- `/login` — Login page (dynamic branding from settings)
+- `/install` — Web installer (locked after first run)
+- `/login`, `/logout` — Auth
 - `/dashboard` — Main dashboard
-- `/customers` — Guest management + WhatsApp messaging
+- `/customers` — Guest management
 - `/rooms` — Room management
-- `/bookings` — Booking management
+- `/bookings` — Bookings
 - `/checkin`, `/checkout` — Check-in/out
-- `/payments` — Payment management
-- `/invoices` — Invoice management
+- `/payments` — Payments
+- `/invoices` — Invoices
 - `/reports` — Reports (Manager+ only)
-- `/settings` — Settings (Admin+ only)
-- `/activity-log` — Activity audit log (permission-gated)
-- `/roles` — Roles & Permissions manager (Super Admin + permitted)
+- `/settings` — Settings (Admin+)
+- `/activity-log` — Audit trail
+- `/roles` — Roles & Permissions
+- `/modules` — Feature toggles
+- `/whatsapp` — WhatsApp config
+- `/pathik` — Pathik autofill module
+- `/channel-manager` — OTA Channel Manager
 
-## Meal Options Feature
-Each room can offer optional breakfast, lunch, and/or dinner, each with a price-per-night. When creating a booking, available meals are shown as checkboxes; selected meals are added to the booking total. Meal cost is stored in `bookings.meal_cost` (plus `meal_breakfast`, `meal_lunch`, `meal_dinner` booleans). Meals are displayed on booking show, invoice show, and invoice print as a separate line item.
-
-Room model fields: `has_breakfast`, `breakfast_price`, `has_lunch`, `lunch_price`, `has_dinner`, `dinner_price`, `has_extra_bed`, `extra_bed_price`
-Booking model fields: `meal_breakfast`, `meal_lunch`, `meal_dinner`, `meal_cost`, `extra_beds`, `extra_bed_cost`
-
-Extra Bed: Each room can optionally allow extra beds at a configured price per bed per night. On booking, staff enter the number of extra beds needed. Cost = extra_beds × extra_bed_price × nights, added to the total. Shown as a line item on booking show, invoice show, and invoice print.
+## Modules (feature flags)
+Stored in `modules` table. Check with `Module::isEnabled('slug')`:
+| Slug | Feature |
+|------|---------|
+| `whatsapp` | WhatsApp messaging |
+| `payment_links` | Payment link generation |
+| `pathik` | Pathik portal autofill |
+| `channel_manager` | OTA Channel Manager |
 
 ## Models
-- `Customer` — Hotel guests
+- `Customer` — Hotel guests (+ `signature` column, `id_document_path`)
 - `CustomerDocument` — Guest ID documents
-- `Room` — Hotel rooms (+ meal option fields)
-- `Booking` — Room reservations (+ meal plan fields)
+- `Room` — Rooms (+ meal options: `has_breakfast/lunch/dinner`, prices; `has_extra_bed`, `extra_bed_price`)
+- `Booking` — Reservations (+ meal plan, extra beds, `special_requests` for OTA ref)
+- `BookingGuest` — Additional guests on a booking (+ `signature`, `id_document_path`, `id_document_name`)
 - `Payment` — Payment records
-- `Invoice` — Generated invoices
-- `Setting` — App-wide settings (logo, tagline, GST, etc.)
-- `Role` — Roles (Admin, Manager, Receptionist + custom)
-- `Permission` — Permission slugs (25 permissions across 9 modules)
-- `ActivityLog` — Audit trail of all CRM actions
+- `Invoice` — Invoices
+- `Setting` — App-wide settings (logo, tagline, GST%, etc.)
+- `Role` / `Permission` — RBAC
+- `ActivityLog` — Audit trail
+- `Module` — Feature flags
+- `WhatsAppConfig` / `WhatsAppTemplate` — WA messaging
+- `PathikConfig` — Pathik autofill API token
+- `ChannelManagerConfig` / `ChannelRoomMapping` / `ChannelBooking` — OTA module
+
+## Signature Canvas Pattern
+- Container div: `touch-action: none` (prevents mobile scroll hijacking)
+- Canvas sized to container width on every open (resets drawing)
+- `_ciReady` flag on canvas element — listeners attached only once
+- Primary guest: 150ms init delay + `scrollIntoView` on toggle
+- Guest pads: same 150ms delay
+- Blank canvas check before save (`isCanvasBlank()` using ImageData buffer)
+- Primary save: `POST /guests/{id}/signature` → `CustomerController::saveSignature()`
+- Guest save: `POST /bookings/{bookingId}/guests/{guestId}/signature` → `BookingGuestController::saveSignature()`
 
 ## Services
-- `App\Services\PermissionService` — Static `check($slug)`: Super Admin bypasses all, others checked against `crm_permissions` session array
-- `App\Services\ActivityLogger` — Static `log($action, $module, $description)`: writes to `activity_logs` table; silently ignores failures
+- `App\Services\PermissionService` — `check($slug)`: Super Admin bypasses all; others checked against `crm_permissions` session array
+- `App\Services\ActivityLogger` — `log($action, $module, $description)`: writes to `activity_logs`; silently ignores failures
 
 ## RBAC
-- Permission middleware: `permission:slug` — blocks routes for unauthorized roles
-- Blade directive: `@canDo('slug') ... @endCanDo` — hides UI elements
-- Super Admin always returns `true` for all permission checks
-- Permissions loaded from DB on login, stored in `session('crm_permissions')`
-- Role permission changes take effect on the user's next login
+- Middleware: `permission:slug` — blocks unauthorized routes
+- Blade: `@canDo('slug') ... @endCanDo`
+- Super Admin always returns `true` for all checks
+- Permissions loaded on login → stored in `session('crm_permissions')`
 
-## WhatsApp Integration
-- Customer list: green WhatsApp icon next to phone number → opens `wa.me/{phone}` in new tab
-- Customer detail: "WhatsApp" button → modal with 4 message templates (Booking Reminder, Check-In Details, Payment Reminder, Check-Out Reminder) + custom → builds `wa.me` URL with encoded message
-- No API key needed — uses WhatsApp Web deep links
+## WhatsApp
+- Uses `wa.me` deep links (no API key needed)
+- 6 trigger templates: Booking Confirmation, Check-In Details, Payment Reminder, Check-Out Reminder, Welcome, Custom
+- Config stored in `whatsapp_configs` table
 
-## Branding / Settings
-- Resort logo stored at `storage/app/public/logos/`
-- Accessed via `asset('storage/' . $settings->logo)`
-- Settings globally shared via `AppServiceProvider::View::share('settings', ...)`
-- Logo + tagline appear: sidebar, login screen, invoice view, invoice print
-- `trustProxies(at: '*')` in `bootstrap/app.php` — trusts Replit's HTTPS proxy headers so generated URLs use correct scheme without forcing HTTPS globally
+## Pathik Module
+- API token: 32-char random, stored in `pathik_configs`
+- Data pushed to Cache (60 min TTL), fetched by Chrome Extension via API token
+- Chrome Extension in `public/pathik-extension/` (MV3)
+- Extension ZIP auto-generated at `public/pathik-extension.zip`
 
-## Pathik Autofill Module (slug: `pathik`)
-- Routes: `GET /pathik` (dashboard), `POST /pathik/pending` (store), `GET /pathik/pending` (fetch, no auth), `POST /pathik/clear`, `POST /pathik/token/regenerate`
-- Model: `PathikConfig` — table `pathik_configs` (api_token, is_active)
-- API token: 32-char random, stored in `pathik_configs` table, auto-created on first access
-- CRM pushes guest data to Cache with a short token (60 min TTL) — extension fetches via API token
-- "Fill Pathik Portal" button on booking show + checkin show pages (modal with Send + Open Portal)
-- Chrome Extension (MV3): `manifest.json`, `popup.html`, `popup.js`, `background.js`, `content.js` + icons in `public/pathik-extension/`
-- Extension ZIP: `public/pathik-extension.zip` (auto-generated by PHP ZipArchive, served as static file)
-- Content script maps 15 CRM fields to Pathik portal using label text, name attr, placeholder, and ID matching
-- Extension uses `chrome.storage.sync` for CRM URL + API token; `chrome.storage.local` for pending guest data
+## OTA Channel Manager
+- Providers: eZee Centrix (live API), STAAH (live API), SiteMinder, RateGain (manual)
+- OTA bookings create Customer + Booking with `OTA-XXXXXX` booking number
 
-## OTA Channel Manager Module (slug: `channel_manager`)
-- Routes: `/channel-manager` (dashboard, config, rooms, availability, bookings)
-- Models: `ChannelManagerConfig`, `ChannelRoomMapping`, `ChannelBooking`
-- Providers: eZee Centrix, STAAH, SiteMinder, RateGain (eZee + STAAH have real API push)
-- eZee: XML availability push to `https://live.ezeetechnosys.com/api_live/channelmanager`
-- STAAH: JSON availability push to `https://api.staah.com/api/v1/Availability`
-- Other providers: graceful manual-sync message (no live API yet)
-- OTA booking import → creates Customer + Booking with `OTA-XXXXXX` booking number
-- `special_requests` column stores OTA reference number
-- Sidebar nav item appears when module is enabled (uses `Module::isEnabled('channel_manager')`)
+## Branding
+- Logo stored at `storage/app/public/logos/`
+- Settings globally shared via `AppServiceProvider` → `View::share('settings', ...)`
+- `trustProxies(at: '*')` in `bootstrap/app.php` — handles Replit HTTPS proxy headers
 
-## Workflow
-"Start application" runs `php artisan serve --host=0.0.0.0 --port=5000`
+## DatabaseSeeder (production-safe)
+Only seeds essential data — NO demo data:
+- `ModuleSeeder` → default modules
+- `RolesAndPermissionsSeeder` → roles + 25 permissions
+- `SettingSeeder` → default settings
+- `WhatsAppTemplateSeeder` → default WA templates
+
+## Planned SaaS Tasks
+- **Task #1**: Multi-Hotel Core — multi-tenancy layer
+- **Task #2**: Platform Admin Dashboard — per-hotel feature control, subscriptions (depends on #1)
+- **Task #3**: AI Smart CRM — OpenAI-powered insights, plan-gated (depends on #1)
+
+## SaaS Admin Hierarchy (planned)
+- **SaaS Admin** (`is_platform_admin=true`, `/platform/` routes) — controls feature availability per hotel
+- **Hotel Super Admin** (`/admin/` full access) — manages staff + roles within enabled features
+- **Hotel Staff** (Manager/Receptionist/Accountant) — RBAC-limited
+
+## Email
+Currently `MAIL_MAILER=log` — password reset emails written to `storage/logs/laravel.log`. To enable: set SMTP credentials in `.env`.
+
+## Installer Files
+- `app/Http/Controllers/InstallerController.php` — test DB, write .env, run migrations/seeds
+- `app/Http/Middleware/CheckNotInstalled.php` — blocks `/install` if `storage/installed.lock` exists
+- `resources/views/installer/index.blade.php` — 3-step wizard UI
+- `.htaccess` (project root) — redirects to `public/` for subfolder Apache hosting

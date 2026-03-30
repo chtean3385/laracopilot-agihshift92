@@ -181,8 +181,10 @@
 </div>
 
 <script>
-var CSRF = document.querySelector('meta[name="csrf-token"]').content;
-var dbPassed = false;
+var CSRF       = document.querySelector('meta[name="csrf-token"]').content;
+var URL_TESTDB = '{{ route('install.testDb') }}';
+var URL_RUN    = '{{ route('install.run') }}';
+var dbPassed   = false;
 var currentStep = 1;
 
 function goStep(n) {
@@ -216,7 +218,7 @@ function testDb() {
   msg.textContent = 'Connecting...';
   msg.classList.remove('hidden');
 
-  fetch('/install/test-db', {
+  fetch(URL_TESTDB, {
     method: 'POST',
     headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({
@@ -310,7 +312,7 @@ function runInstall() {
   running.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:14px;"></i><span>Running installation, please wait...</span>';
   log.appendChild(running);
 
-  fetch('/install/run', {
+  fetch(URL_RUN, {
     method: 'POST',
     headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({
