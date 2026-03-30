@@ -9,6 +9,16 @@ use App\Models\User;
 
 class InstallerController extends Controller
 {
+    public function __construct()
+    {
+        // Force file-based sessions and cache for ALL installer requests.
+        // This allows the installer to work on a fresh server with no DB yet.
+        config([
+            'session.driver' => 'file',
+            'cache.default'  => 'file',
+        ]);
+    }
+
     public function index()
     {
         return view('installer.index');
@@ -161,16 +171,18 @@ class InstallerController extends Controller
             : (file_exists($template) ? file_get_contents($template) : '');
 
         $replacements = [
-            'DB_CONNECTION' => 'mysql',
-            'DB_HOST'       => $host,
-            'DB_PORT'       => $port,
-            'DB_DATABASE'   => $db,
-            'DB_USERNAME'   => $user,
-            'DB_PASSWORD'   => $pass,
-            'APP_NAME'      => '"' . addslashes($appName) . '"',
-            'APP_URL'       => $appUrl,
-            'APP_ENV'       => 'production',
-            'APP_DEBUG'     => 'false',
+            'DB_CONNECTION'  => 'mysql',
+            'DB_HOST'        => $host,
+            'DB_PORT'        => $port,
+            'DB_DATABASE'    => $db,
+            'DB_USERNAME'    => $user,
+            'DB_PASSWORD'    => $pass,
+            'APP_NAME'       => '"' . addslashes($appName) . '"',
+            'APP_URL'        => $appUrl,
+            'APP_ENV'        => 'production',
+            'APP_DEBUG'      => 'false',
+            'SESSION_DRIVER' => 'file',
+            'CACHE_STORE'    => 'file',
         ];
 
         foreach ($replacements as $key => $value) {
