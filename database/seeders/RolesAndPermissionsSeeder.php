@@ -58,7 +58,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $roleMatrix = [
             'Admin' => [
-                'description' => 'Full access except Roles & Permissions management',
+                'description' => 'Full access to all hotel management features',
                 'is_system'   => true,
                 'permissions' => [
                     'guests.view', 'guests.create', 'guests.edit', 'guests.delete',
@@ -70,6 +70,7 @@ class RolesAndPermissionsSeeder extends Seeder
                     'reports.view',
                     'settings.view', 'settings.edit',
                     'activity_log.view',
+                    'roles.view', 'roles.edit',
                     'users.view', 'users.create', 'users.edit', 'users.delete',
                 ],
             ],

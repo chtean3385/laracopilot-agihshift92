@@ -122,21 +122,21 @@ class InstallerController extends Controller
             return $this->fail($steps, 'Seed WhatsApp templates', $e->getMessage());
         }
 
-        // Step 8 — Create superadmin user
+        // Step 8 — Create admin user
         try {
             User::updateOrCreate(
                 ['email' => $adminEmail],
                 [
                     'name'           => $adminName,
                     'password'       => Hash::make($adminPass),
-                    'role'           => 'superadmin',
-                    'is_super_admin' => true,
+                    'role'           => 'Admin',
+                    'is_super_admin' => false,
                     'status'         => 'active',
                 ]
             );
-            $steps[] = ['label' => 'Create superadmin account', 'ok' => true];
+            $steps[] = ['label' => 'Create admin account', 'ok' => true];
         } catch (\Throwable $e) {
-            return $this->fail($steps, 'Create superadmin account', $e->getMessage());
+            return $this->fail($steps, 'Create admin account', $e->getMessage());
         }
 
         // Step 9 — Storage link
