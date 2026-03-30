@@ -182,9 +182,9 @@
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <script>
 var _coUpiBalance = {{ $gstBalanceDue }};
-var _coBookingNum = '{{ $booking->booking_number }}';
-var _coGuestName  = '{{ addslashes($booking->customer->name) }}';
-var _coGuestPhone = '{{ preg_replace('/[^0-9]/', '', $booking->customer->phone) }}';
+var _coBookingNum = {{ json_encode($booking->booking_number) }};
+var _coGuestName  = {{ json_encode($booking->customer->name) }};
+var _coGuestPhone = {{ json_encode(preg_replace('/[^0-9]/', '', $booking->customer->phone)) }};
 var _coUpiId      = '';
 
 function toggleCoUpiBtn(method) {
