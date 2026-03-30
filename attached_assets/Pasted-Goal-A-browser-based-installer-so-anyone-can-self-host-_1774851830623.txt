@@ -1,0 +1,55 @@
+Goal
+A browser-based installer so anyone can self-host this Laravel CRM on their own server without using the command line. Accessible at /install, locked forever after first run.
+
+Scope
+Route & Middleware
+Add installer routes at the TOP of routes/web.php BEFORE all auth middleware groups:
+GET /install → InstallerController@index
+POST /install/test-db → InstallerController@testDb
+POST /install/run → InstallerController@run
+New middleware CheckNotInstalled: if storage/installed.lock exists → redirect to /login
+Register middleware alias in bootstrap/app.php
+InstallerController
+testDb() — try raw PDO connection with submitted credentials, return JSON {ok, message}
+
+run() — full install sequence (return JSON with step-by-step results):
+
+Write .env file (overwrite DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD, APP_NAME, APP_URL)
+php artisan key:generate --force
+php artisan migrate --force
+php artisan db:seed --class=ModuleSeeder --force
+php artisan db:seed --class=RolesAndPermissionsSeeder --force
+php artisan db:seed --class=SettingSeeder --force
+php artisan db:seed --class=WhatsAppTemplateSeeder --force
+Create superadmin User record (check existing auth model for correct role field)
+php artisan storage:link
+Write storage/installed.lock with timestamp
+Return {ok: true} or {ok: false, error: "step N failed: ..."}
+View (standalone, no admin layout)
+Purple/slate theme, Tailwind CDN, no sidebar
+3-step wizard with step indicators
+Step 1 — Database:
+
+DB Host (default: 127.0.0.1), DB Port (default: 3306), Database Name, Username, Password
+"Test Connection" AJAX button — must pass before Next
+Step 2 — App & Admin:
+
+App Name, App URL (default: http://localhost)
+Admin Name, Admin Email, Password, Confirm Password
+Client-side validation (passwords match, email format)
+Step 3 — Install:
+
+"Install Now" button
+Scrollable log showing each step with ✓ (green) / ✗ (red) indicators
+On success: "Installation complete! Redirecting to login in 3s..."
+On failure: show which step failed with error message
+DatabaseSeeder cleanup
+Ensure DatabaseSeeder.php does NOT call demo seeders (BookingSeeder, CustomerSeeder, RoomSeeder)
+Keep only: ModuleSeeder, RolesAndPermissionsSeeder, SettingSeeder, WhatsAppTemplateSeeder
+Files
+app/Http/Controllers/InstallerController.php (NEW)
+app/Http/Middleware/CheckNotInstalled.php (NEW)
+resources/views/installer/index.blade.php (NEW)
+routes/web.php (add installer routes at top)
+bootstrap/app.php (register middleware alias)
+database/seeders/DatabaseSeeder.php (clean up demo seeders)

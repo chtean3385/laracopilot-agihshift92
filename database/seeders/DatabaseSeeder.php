@@ -6,13 +6,13 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
         $this->call([
+            ModuleSeeder::class,
+            RolesAndPermissionsSeeder::class,
             SettingSeeder::class,
-            RoomSeeder::class,
-            CustomerSeeder::class,
-            BookingSeeder::class,
+            WhatsAppTemplateSeeder::class,
         ]);
     }
 }

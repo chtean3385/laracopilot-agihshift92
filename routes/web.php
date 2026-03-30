@@ -21,6 +21,13 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\PaymentLinksController;
 
+// ── Installer (must be first, no auth middleware) ───────────────────────────
+Route::middleware(['not.installed'])->group(function () {
+    Route::get('/install',          [\App\Http\Controllers\InstallerController::class, 'index'])->name('install');
+    Route::post('/install/test-db', [\App\Http\Controllers\InstallerController::class, 'testDb'])->name('install.testDb');
+    Route::post('/install/run',     [\App\Http\Controllers\InstallerController::class, 'run'])->name('install.run');
+});
+
 // ── Healthcheck ────────────────────────────────────────────────────────────
 Route::get('/health', fn() => response('OK', 200));
 

@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PREFIX);
         $middleware->alias([
-            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            'permission'     => \App\Http\Middleware\PermissionMiddleware::class,
+            'not.installed'  => \App\Http\Middleware\CheckNotInstalled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
