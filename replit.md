@@ -17,8 +17,10 @@ Full hotel/resort management CRM built on Laravel 12, evolving into a multi-tena
 2. **Blade raw output in JS**: Always use `{!! json_encode($var) !!}` — NEVER `{{ json_encode($var) }}` (double-encoding breaks JS) and NEVER `'{{ addslashes($var) }}'` (newlines break JS strings)
 3. **Admin layout**: yields `@yield('content')`, stacks `@stack('styles')` + `@stack('scripts')`; NO `@yield('modals')`; CSRF meta in `<head>`
 4. **Module checks**: `Module::isEnabled('slug')` — slugs: `whatsapp`, `payment_links`, `pathik`, `channel_manager`
-5. **Session role**: `session('crm_user_role')` stores role from `hotel_users` pivot for active hotel
+5. **Session role**: `session('crm_user_role')` stores role name string (e.g. 'Admin', 'Manager') from DB login; 'Super Admin' only for hardcoded system account
 6. **Route URLs in JS**: Always use `'{{ route('name') }}'` — never hardcode `/path` (breaks in subdirectory hosting)
+7. **Roles table columns**: ONLY `id`, `name`, `description`, `is_system`, `created_at`, `updated_at` — NO `slug` column. Never query `roles` by `slug`.
+8. **Installer creates Admin user**: role='Admin', is_super_admin=false. Hardcoded superadmin@gmail.com is system-only, never in DB.
 
 ## Setup (Dev — Replit)
 1. `composer install`

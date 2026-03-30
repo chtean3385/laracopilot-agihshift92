@@ -30,11 +30,7 @@ class UserController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $roles = Role::orderBy('name');
-        if (!$this->isSuperAdmin()) {
-            $roles->where('slug', '!=', 'super_admin');
-        }
-        $roles = $roles->get();
+        $roles = Role::orderBy('name')->get();
         return view('admin.users.create', compact('roles'));
     }
 
@@ -74,11 +70,7 @@ class UserController extends Controller
         if (!$this->isSuperAdmin() && $user->is_super_admin) {
             return redirect()->route('users.index')->with('error', 'You are not allowed to edit the Super Admin account.');
         }
-        $roles = Role::orderBy('name');
-        if (!$this->isSuperAdmin()) {
-            $roles->where('slug', '!=', 'super_admin');
-        }
-        $roles = $roles->get();
+        $roles = Role::orderBy('name')->get();
         return view('admin.users.edit', compact('user', 'roles'));
     }
 
