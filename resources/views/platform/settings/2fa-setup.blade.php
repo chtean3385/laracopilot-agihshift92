@@ -14,10 +14,45 @@ Secure your platform admin account with TOTP-based two-factor authentication
 </div>
 @endif
 
+@if(session('info'))
+<div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:14px 18px;margin-bottom:20px;color:#1d4ed8;font-size:14px;display:flex;align-items:center;gap:10px;">
+    <i class="fas fa-info-circle"></i> {{ session('info') }}
+</div>
+@endif
+
+@if(session('warning'))
+<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:20px;color:#b45309;font-size:14px;display:flex;align-items:center;gap:10px;">
+    <i class="fas fa-exclamation-triangle"></i> {{ session('warning') }}
+</div>
+@endif
+
 <div style="max-width:680px;">
 
 @if($totpEnabled)
-{{-- ── 2FA IS ENABLED ────────────────────────────────────────────────────── --}}
+
+{{-- New recovery codes display (shown once after enabling, via flash) --}}
+@php $newCodes = session('platform_2fa_new_codes'); @endphp
+@if($newCodes)
+<div style="background:#fff;border:2px solid #f59e0b;border-radius:20px;padding:28px;margin-bottom:24px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-key" style="color:#fff;font-size:16px;"></i>
+        </div>
+        <div>
+            <div style="font-size:16px;font-weight:800;color:#1e293b;">Save Your Recovery Codes</div>
+            <div style="font-size:13px;color:#64748b;">These codes will not be shown again. Store them somewhere safe.</div>
+        </div>
+    </div>
+    <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            @foreach($newCodes as $code)
+            <code style="font-family:monospace;font-size:13px;font-weight:700;color:#92400e;background:#fff;border:1px solid #fde68a;border-radius:6px;padding:6px 12px;text-align:center;">{{ $code }}</code>
+            @endforeach
+        </div>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;margin:0;">Each code can only be used once. If you lose access to your authenticator app, enter one of these codes at the 2FA prompt to log in. Then re-enable 2FA to generate fresh codes.</p>
+</div>
+@endif
 <div style="background:#fff;border-radius:20px;padding:32px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:24px;">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
         <div style="width:48px;height:48px;background:linear-gradient(135deg,#10b981,#059669);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -32,9 +67,28 @@ Secure your platform admin account with TOTP-based two-factor authentication
         </span>
     </div>
 
-    <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:24px;font-size:13px;color:#475569;display:flex;gap:12px;align-items:flex-start;">
+    <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;font-size:13px;color:#475569;display:flex;gap:12px;align-items:flex-start;">
         <i class="fas fa-info-circle" style="color:#0284c7;margin-top:2px;flex-shrink:0;"></i>
         <span>Each time you log in you will be asked to enter the 6-digit code from your authenticator app (Microsoft Authenticator, Google Authenticator, or Authy) after entering your password.</span>
+    </div>
+
+    <div style="background:#f8fafc;border-radius:12px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:#475569;display:flex;gap:12px;align-items:center;">
+        <i class="fas fa-key" style="color:#7c3aed;flex-shrink:0;"></i>
+        @php
+            $remainingCodes = \Illuminate\Support\Facades\DB::table('platform_recovery_codes')
+                ->where('user_id', session('crm_user_id'))
+                ->where('used', false)
+                ->count();
+        @endphp
+        <span>
+            <strong>{{ $remainingCodes }}</strong> recovery code{{ $remainingCodes !== 1 ? 's' : '' }} remaining.
+            @if($remainingCodes === 0)
+            <span style="color:#b91c1c;font-weight:700;">You have no remaining recovery codes!</span>
+            Disable and re-enable 2FA to generate new ones.
+            @elseif($remainingCodes <= 2)
+            <span style="color:#d97706;">Running low.</span> Consider re-enabling 2FA to regenerate codes.
+            @endif
+        </span>
     </div>
 
     {{-- Disable 2FA --}}
