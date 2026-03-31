@@ -210,3 +210,26 @@ Route::post('/pathik/pending',         [\App\Http\Controllers\Admin\PathikContro
 Route::post('/pathik/clear',           [\App\Http\Controllers\Admin\PathikController::class, 'clearPending']    )->name('pathik.clear');
 // Extension endpoint — no session auth, validates api_token param instead
 Route::get( '/pathik/pending',         [\App\Http\Controllers\Admin\PathikController::class, 'pendingFetch']    )->name('pathik.pending.fetch')->withoutMiddleware(['web']);
+
+
+// ── Platform Admin (Super Admin only) ───────────────────────────────────────
+use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
+
+Route::prefix('platform')->middleware('platform.admin')->group(function () {
+    Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+
+    // Placeholder routes for Hotel and User management (implemented in Tasks #8 and #9)
+    Route::get('/hotels',           fn() => abort(503, 'Hotel management coming soon — Task #8'))->name('platform.hotels.index');
+    Route::get('/hotels/create',    fn() => abort(503, 'Coming soon'))->name('platform.hotels.create');
+    Route::post('/hotels',          fn() => abort(503, 'Coming soon'))->name('platform.hotels.store');
+    Route::get('/hotels/{id}/edit', fn() => abort(503, 'Coming soon'))->name('platform.hotels.edit');
+    Route::put('/hotels/{id}',      fn() => abort(503, 'Coming soon'))->name('platform.hotels.update');
+    Route::post('/hotels/{id}/suspend',   fn() => abort(503, 'Coming soon'))->name('platform.hotels.suspend');
+    Route::post('/hotels/{id}/activate',  fn() => abort(503, 'Coming soon'))->name('platform.hotels.activate');
+    Route::get('/hotels/{id}/view-in-crm', fn() => abort(503, 'Coming soon'))->name('platform.hotels.view-in-crm');
+
+    Route::get('/users',       fn() => abort(503, 'User management coming soon — Task #9'))->name('platform.users.index');
+    Route::get('/users/{id}',  fn() => abort(503, 'Coming soon'))->name('platform.users.show');
+    Route::post('/users/{id}/hotel/{hotelId}/suspend',  fn() => abort(503, 'Coming soon'))->name('platform.users.suspend');
+    Route::post('/users/{id}/hotel/{hotelId}/activate', fn() => abort(503, 'Coming soon'))->name('platform.users.activate');
+});

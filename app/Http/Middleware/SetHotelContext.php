@@ -10,8 +10,8 @@ class SetHotelContext
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        // Skip installer, health, and Pathik extension API routes
-        if ($request->is('install*') || $request->is('health') || $request->is('up')) {
+        // Skip installer, health, Pathik extension, and Platform Admin routes
+        if ($request->is('install*') || $request->is('health') || $request->is('up') || $request->is('platform*')) {
             return $next($request);
         }
 

@@ -716,6 +716,13 @@
             <div class="nav-section">System</div>
 
             @if(session('crm_user_role') === 'Super Admin')
+            <a href="{{ route('platform.dashboard') }}" class="nav-link {{ request()->routeIs('platform.*') ? 'active' : '' }}" style="{{ request()->routeIs('platform.*') ? '' : 'border:1px dashed rgba(139,92,246,.3);' }}">
+                <span class="icon" style="{{ request()->routeIs('platform.*') ? '' : 'background:rgba(139,92,246,.12);color:#7c3aed;' }}"><i class="fas fa-layer-group"></i></span>
+                Platform Admin
+            </a>
+            @endif
+
+            @if(session('crm_user_role') === 'Super Admin')
             <a href="{{ route('modules.index') }}" class="nav-link {{ request()->routeIs('modules.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-puzzle-piece"></i></span>
                 Modules

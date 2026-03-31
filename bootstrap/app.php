@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission'     => \App\Http\Middleware\PermissionMiddleware::class,
             'not.installed'  => \App\Http\Middleware\CheckNotInstalled::class,
+            'platform.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
