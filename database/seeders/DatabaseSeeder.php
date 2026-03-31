@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SettingSeeder::class,
             WhatsAppTemplateSeeder::class,
+            MultiHotelTestSeeder::class,
         ]);
     }
 }
