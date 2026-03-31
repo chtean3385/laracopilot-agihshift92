@@ -7,7 +7,7 @@
 @section('content')
 
 @php
-    $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569'];
+    $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569', 'monthly_price' => 0, 'yearly_price' => 0];
     $fmt     = fn($n) => $currencySymbol . ' ' . number_format($n, 0);
 @endphp
 
@@ -40,6 +40,7 @@
                 <tr style="background:#f8fafc;border-bottom:1px solid #f1f5f9;">
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 20px;">Hotel</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Plan</th>
+                    <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Subscription</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Status</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Rooms</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Bookings</th>
@@ -56,6 +57,10 @@
                     $isActive = $hotel->status === 'active';
                     $sBg      = $isActive ? '#dcfce7' : '#fee2e2';
                     $sTx      = $isActive ? '#15803d' : '#b91c1c';
+                    $cycle       = $hotel->billing_cycle ?? 'monthly';
+                    $effMonthly  = ($hotel->custom_monthly_price > 0) ? (float)$hotel->custom_monthly_price : ($plan['monthly_price'] ?? 0);
+                    $effYearly   = ($hotel->custom_yearly_price  > 0) ? (float)$hotel->custom_yearly_price  : ($plan['yearly_price']  ?? 0);
+                    $isCustom    = $hotel->custom_monthly_price > 0 || $hotel->custom_yearly_price > 0;
                 @endphp
                 <tr style="border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'" onclick="window.location='{{ route('platform.hotels.edit', $hotel->id) }}'" title="Click to edit {{ addslashes($hotel->name) }}">
 
@@ -75,6 +80,25 @@
                         <span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:{{ $plan['badge_bg'] }};color:{{ $plan['badge_text'] }};">
                             {{ $plan['label'] }}
                         </span>
+                    </td>
+
+                    {{-- Subscription pricing --}}
+                    <td style="padding:14px;">
+                        @if($effMonthly > 0 || $effYearly > 0)
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            @if($cycle === 'yearly')
+                            <span style="font-size:13px;font-weight:700;color:#1e293b;">{{ $currencySymbol }} {{ number_format($effYearly) }}<span style="font-size:10px;font-weight:400;color:#94a3b8;">/yr</span></span>
+                            @else
+                            <span style="font-size:13px;font-weight:700;color:#1e293b;">{{ $currencySymbol }} {{ number_format($effMonthly) }}<span style="font-size:10px;font-weight:400;color:#94a3b8;">/mo</span></span>
+                            @endif
+                            @if($isCustom)
+                            <span style="font-size:9px;font-weight:700;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;">CUSTOM</span>
+                            @endif
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;margin-top:2px;">{{ $cycle === 'yearly' ? 'Yearly · Rs '.number_format($effMonthly).'/mo equiv' : 'Monthly billing' }}</div>
+                        @else
+                        <span style="font-size:12px;color:#94a3b8;">—</span>
+                        @endif
                     </td>
 
                     <td style="padding:14px;">

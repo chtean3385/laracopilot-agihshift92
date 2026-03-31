@@ -18,17 +18,11 @@
     <div class="relative w-full max-w-md">
         <!-- Logo Card -->
         <div class="text-center mb-8">
-            @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
-            <div class="inline-flex w-24 h-24 bg-white/10 backdrop-blur rounded-3xl items-center justify-center shadow-2xl mb-4 p-2">
-                <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->resort_name }}" class="max-w-full max-h-full object-contain">
-            </div>
-            @else
             <div class="inline-flex w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-3xl items-center justify-center shadow-2xl mb-4">
-                <i class="fas fa-umbrella-beach text-white text-3xl"></i>
+                <i class="fas fa-hotel text-white text-3xl"></i>
             </div>
-            @endif
-            <h1 class="text-3xl font-bold text-white">{{ $settings->resort_name ?? 'Resort CRM' }}</h1>
-            <p class="text-cyan-300 text-sm mt-1">{{ $settings->tagline ?? 'Resort & Spa' }} • Staff Portal</p>
+            <h1 class="text-3xl font-bold text-white">Hotel CRM</h1>
+            <p class="text-cyan-300 text-sm mt-1">Staff Portal</p>
         </div>
 
         <!-- Login Form -->

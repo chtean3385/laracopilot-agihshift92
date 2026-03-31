@@ -20,6 +20,7 @@ class HotelController extends Controller
             ->select(
                 'hotels.id', 'hotels.name', 'hotels.slug', 'hotels.email',
                 'hotels.phone', 'hotels.plan', 'hotels.status',
+                'hotels.billing_cycle', 'hotels.custom_monthly_price', 'hotels.custom_yearly_price',
                 'hotels.max_rooms', 'hotels.max_users',
                 'hotels.created_at', 'hotels.trial_ends_at', 'hotels.plan_expires_at',
             )
