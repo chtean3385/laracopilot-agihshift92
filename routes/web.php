@@ -212,6 +212,10 @@ Route::post('/pathik/clear',           [\App\Http\Controllers\Admin\PathikContro
 Route::get( '/pathik/pending',         [\App\Http\Controllers\Admin\PathikController::class, 'pendingFetch']    )->name('pathik.pending.fetch')->withoutMiddleware(['web']);
 
 
+// ── Platform Admin Login (no auth required) ──────────────────────────────────
+Route::get('/platform/login',  [\App\Http\Controllers\Platform\AuthController::class, 'showLogin'])->name('platform.login');
+Route::post('/platform/login', [\App\Http\Controllers\Platform\AuthController::class, 'login'])->name('platform.login.post');
+
 // ── Platform Admin (Super Admin only) ───────────────────────────────────────
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\HotelController as PlatformHotelController;
@@ -219,6 +223,10 @@ use App\Http\Controllers\Platform\HotelController as PlatformHotelController;
 Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::get('/',          fn() => redirect()->route('platform.dashboard'))->name('platform.index');
     Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+    Route::post('/dismiss-reminder', function () {
+        session(['platform_reminder_dismissed' => true]);
+        return redirect()->back();
+    })->name('platform.dismiss-reminder');
 
     // Hotel management (Task #8)
     Route::get('/hotels',                [PlatformHotelController::class, 'index'])->name('platform.hotels.index');
@@ -232,6 +240,8 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
 
     // User management (Task #9)
     Route::get('/users',                                          [\App\Http\Controllers\Platform\UserController::class, 'index'])->name('platform.users.index');
+    Route::get('/users/{id}/reset-password',                      [\App\Http\Controllers\Platform\UserController::class, 'showResetPassword'])->name('platform.users.reset.show');
+    Route::post('/users/{id}/reset-password',                     [\App\Http\Controllers\Platform\UserController::class, 'resetPassword'])->name('platform.users.reset');
     Route::get('/users/{id}',                                     [\App\Http\Controllers\Platform\UserController::class, 'show'])->name('platform.users.show');
     Route::post('/users/{id}/hotel/{hotelId}/suspend',            [\App\Http\Controllers\Platform\UserController::class, 'suspend'])->name('platform.users.suspend');
     Route::post('/users/{id}/hotel/{hotelId}/activate',           [\App\Http\Controllers\Platform\UserController::class, 'activate'])->name('platform.users.activate');

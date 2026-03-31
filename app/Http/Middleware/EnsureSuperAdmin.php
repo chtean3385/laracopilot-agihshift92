@@ -10,7 +10,7 @@ class EnsureSuperAdmin
     public function handle(Request $request, Closure $next): mixed
     {
         if (!session('crm_logged_in')) {
-            return redirect()->route('login');
+            return redirect()->route('platform.login');
         }
 
         if (session('crm_user_role') !== 'Super Admin') {

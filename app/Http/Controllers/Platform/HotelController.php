@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class HotelController extends Controller
@@ -48,14 +49,17 @@ class HotelController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'email'       => 'nullable|email|max:255',
-            'phone'       => 'nullable|string|max:50',
-            'address'     => 'nullable|string|max:500',
-            'plan'        => 'required|in:basic,pro,enterprise',
-            'max_rooms'   => 'required|integer|min:1',
-            'max_users'   => 'required|integer|min:1',
-            'admin_notes' => 'nullable|string|max:1000',
+            'name'           => 'required|string|max:255',
+            'email'          => 'nullable|email|max:255',
+            'phone'          => 'nullable|string|max:50',
+            'address'        => 'nullable|string|max:500',
+            'plan'           => 'required|in:basic,pro,enterprise',
+            'max_rooms'      => 'required|integer|min:1',
+            'max_users'      => 'required|integer|min:1',
+            'admin_notes'    => 'nullable|string|max:1000',
+            'admin_name'     => 'required|string|max:255',
+            'admin_email'    => 'required|email|max:255|unique:users,email',
+            'admin_password' => 'required|string|min:6',
         ]);
 
         $slug = $this->generateUniqueSlug($data['name']);
@@ -110,10 +114,32 @@ class HotelController extends Controller
 
             // (d) 3 system roles with permissions
             $this->provisionRoles($hotelId);
+
+            // (e) Hotel admin user
+            $adminId = DB::table('users')->insertGetId([
+                'name'       => $data['admin_name'],
+                'email'      => $data['admin_email'],
+                'password'   => Hash::make($data['admin_password']),
+                'role'       => 'Admin',
+                'status'     => 'active',
+                'is_super_admin' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('hotel_users')->insert([
+                'hotel_id'       => $hotelId,
+                'user_id'        => $adminId,
+                'role'           => 'Admin',
+                'is_hotel_admin' => 1,
+                'status'         => 'active',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
         });
 
         return redirect()->route('platform.hotels.index')
-            ->with('success', "Hotel \"{$data['name']}\" created and fully provisioned.");
+            ->with('success', "Hotel \"{$data['name']}\" created and fully provisioned with admin user {$data['admin_email']}.");
     }
 
     // ── Edit ─────────────────────────────────────────────────────────────────

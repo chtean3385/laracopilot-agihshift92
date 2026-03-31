@@ -77,6 +77,10 @@
                     <div class="plan-card" data-plan="{{ $slug }}" style="border:2px solid {{ old('plan','basic') === $slug ? $plan['color'] : '#e2e8f0' }};border-radius:14px;padding:16px;transition:border-color .2s;background:{{ old('plan','basic') === $slug ? 'rgba(139,92,246,.04)' : '#fff' }};">
                         <div style="font-size:13px;font-weight:800;color:{{ $plan['color'] }};margin-bottom:4px;">{{ $plan['label'] }}</div>
                         <div style="font-size:11px;color:#64748b;">{{ $plan['limits_note'] }}</div>
+                        @if(isset($plan['monthly_price']))
+                        <div style="margin-top:8px;font-size:12px;font-weight:700;color:#1e293b;">Rs {{ number_format($plan['monthly_price']) }}<span style="font-size:10px;font-weight:500;color:#94a3b8;">/mo</span></div>
+                        <div style="font-size:10px;color:#94a3b8;">Rs {{ number_format($plan['yearly_price']) }}/yr</div>
+                        @endif
                     </div>
                 </label>
                 @endforeach
@@ -96,6 +100,43 @@
                     <input type="number" name="max_users" id="max_users" value="{{ old('max_users', 10) }}" min="1" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('max_users')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
                     @if(isset($errors) && $errors->has('max_users')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('max_users') }}</p> @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- Admin User --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
+            <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 20px;display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;background:linear-gradient(135deg,#10b981,#059669);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-user-shield" style="color:#fff;font-size:12px;"></i>
+                </span>
+                Hotel Admin Account
+            </h2>
+            <p style="font-size:12px;color:#64748b;margin:-12px 0 16px;">This user will be the hotel admin and can log in to the CRM immediately.</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div style="grid-column:1/-1;">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Admin Name <span style="color:#ef4444;">*</span></label>
+                    <input type="text" name="admin_name" value="{{ old('admin_name') }}" required
+                        style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('admin_name')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="e.g. Rajesh Kumar">
+                    @if(isset($errors) && $errors->has('admin_name')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('admin_name') }}</p> @endif
+                </div>
+
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Admin Email <span style="color:#ef4444;">*</span></label>
+                    <input type="email" name="admin_email" value="{{ old('admin_email') }}" required
+                        style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('admin_email')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="admin@hotelname.com">
+                    @if(isset($errors) && $errors->has('admin_email')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('admin_email') }}</p> @endif
+                </div>
+
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Admin Password <span style="color:#ef4444;">*</span></label>
+                    <input type="password" name="admin_password" required
+                        style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('admin_password')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="Min 6 characters" autocomplete="new-password">
+                    @if(isset($errors) && $errors->has('admin_password')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('admin_password') }}</p> @endif
                 </div>
             </div>
         </div>

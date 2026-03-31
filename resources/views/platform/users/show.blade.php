@@ -6,10 +6,17 @@
 
 @section('content')
 
-{{-- Back link --}}
-<a href="{{ route('platform.users.index') }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6d28d9;font-weight:600;text-decoration:none;margin-bottom:20px;">
-    <i class="fas fa-arrow-left"></i> Back to Users
-</a>
+{{-- Back link + Reset Password --}}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <a href="{{ route('platform.users.index') }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6d28d9;font-weight:600;text-decoration:none;">
+        <i class="fas fa-arrow-left"></i> Back to Users
+    </a>
+    <a href="{{ route('platform.users.reset.show', $user->id) }}"
+       style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;font-weight:700;color:#475569;text-decoration:none;transition:all .15s;"
+       onmouseover="this.style.borderColor='#8b5cf6';this.style.color='#6d28d9'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#475569'">
+        <i class="fas fa-key"></i> Reset Password
+    </a>
+</div>
 
 {{-- User info card --}}
 <div style="background:linear-gradient(135deg,#1e1b4b,#2d1b69);border-radius:20px;padding:28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;">

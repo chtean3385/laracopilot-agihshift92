@@ -92,6 +92,10 @@
                     <div class="plan-card" data-plan="{{ $slug }}" style="border:2px solid {{ $isCurrent ? $plan['color'] : '#e2e8f0' }};border-radius:14px;padding:16px;transition:border-color .2s;background:{{ $isCurrent ? 'rgba(139,92,246,.04)' : '#fff' }};">
                         <div style="font-size:13px;font-weight:800;color:{{ $plan['color'] }};margin-bottom:4px;">{{ $plan['label'] }}</div>
                         <div style="font-size:11px;color:#64748b;">{{ $plan['limits_note'] }}</div>
+                        @if(isset($plan['monthly_price']))
+                        <div style="margin-top:8px;font-size:12px;font-weight:700;color:#1e293b;">Rs {{ number_format($plan['monthly_price']) }}<span style="font-size:10px;font-weight:500;color:#94a3b8;">/mo</span></div>
+                        <div style="font-size:10px;color:#94a3b8;">Rs {{ number_format($plan['yearly_price']) }}/yr</div>
+                        @endif
                     </div>
                 </label>
                 @endforeach

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -144,5 +145,44 @@ class UserController extends Controller
 
         return redirect()->back()
             ->with('success', "{$user}'s access to {$hotel} has been reactivated.");
+    }
+
+    // ── Show Reset Password form ───────────────────────────────────────────────
+
+    public function showResetPassword(int $id)
+    {
+        $user = DB::table('users')->where('id', $id)->first();
+
+        if (!$user || $user->is_super_admin) {
+            return redirect()->route('platform.users.index')
+                ->with('error', 'User not found.');
+        }
+
+        return view('platform.users.reset-password', compact('user'));
+    }
+
+    // ── Reset Password ────────────────────────────────────────────────────────
+
+    public function resetPassword(Request $request, int $id)
+    {
+        $user = DB::table('users')->where('id', $id)->first();
+
+        if (!$user || $user->is_super_admin) {
+            return redirect()->route('platform.users.index')
+                ->with('error', 'User not found.');
+        }
+
+        $request->validate([
+            'password'              => 'required|string|min:6|confirmed',
+            'password_confirmation' => 'required|string',
+        ]);
+
+        DB::table('users')->where('id', $id)->update([
+            'password'   => Hash::make($request->input('password')),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('platform.users.show', $id)
+            ->with('success', "Password for {$user->name} has been reset successfully.");
     }
 }

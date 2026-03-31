@@ -10,7 +10,44 @@
     $plans   = config('plans', []);
     $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569'];
     $fmt     = fn($n) => $currencySymbol . ' ' . number_format($n, 0);
+
+    // Subscription reminder: monthly revenue potential per plan
+    $planCounts = $hotelStats->groupBy('plan');
+    $monthlyPotential = 0;
+    $planBreakdown = [];
+    foreach ($planCounts as $slug => $hotels) {
+        $price = $plans[$slug]['monthly_price'] ?? 0;
+        $count = $hotels->count();
+        $monthlyPotential += $price * $count;
+        $planBreakdown[] = $count . ' × ' . ($plans[$slug]['label'] ?? ucfirst($slug)) . ' (Rs ' . number_format($price) . ')';
+    }
 @endphp
+
+{{-- ── Subscription Reminder Banner ───────────────────────────────────────── --}}
+@if(!session('platform_reminder_dismissed') && $totalHotels > 0)
+<div style="background:linear-gradient(135deg,#1e1b4b,#2d1b69);border-radius:18px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-bell" style="color:#facc15;font-size:18px;"></i>
+        </div>
+        <div>
+            <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;">
+                Subscription Reminder — Rs {{ number_format($monthlyPotential) }}/month collectible
+            </div>
+            <div style="font-size:12px;color:#a78bfa;">
+                {{ implode(' &nbsp;·&nbsp; ', $planBreakdown) }}
+                &nbsp;·&nbsp; {{ $totalHotels }} hotel{{ $totalHotels !== 1 ? 's' : '' }} total
+            </div>
+        </div>
+    </div>
+    <form method="POST" action="{{ route('platform.dismiss-reminder') }}" style="margin:0;flex-shrink:0;">
+        @csrf
+        <button type="submit" style="padding:7px 16px;background:rgba(255,255,255,.1);color:#c4b5fd;border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            <i class="fas fa-times" style="margin-right:5px;"></i> Dismiss
+        </button>
+    </form>
+</div>
+@endif
 
 {{-- ── KPI Cards ──────────────────────────────────────────────────────────── --}}
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px;margin-bottom:28px;">

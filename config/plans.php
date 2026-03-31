@@ -10,6 +10,8 @@ return [
         'max_rooms'        => 50,
         'max_users'        => 10,
         'max_modules'      => 4,
+        'monthly_price'    => 999,
+        'yearly_price'     => 9999,
         'features'         => [
             'Guest management',
             'Room management',
@@ -30,6 +32,8 @@ return [
         'max_rooms'        => 150,
         'max_users'        => 25,
         'max_modules'      => PHP_INT_MAX,
+        'monthly_price'    => 2499,
+        'yearly_price'     => 24999,
         'features'         => [
             'Everything in Basic',
             'OTA Channel Manager',
@@ -49,6 +53,8 @@ return [
         'max_rooms'        => PHP_INT_MAX,
         'max_users'        => PHP_INT_MAX,
         'max_modules'      => PHP_INT_MAX,
+        'monthly_price'    => 7999,
+        'yearly_price'     => 79999,
         'features'         => [
             'Everything in Pro',
             'Unlimited rooms & users',
