@@ -31,7 +31,7 @@
                     <input type="text" name="name" value="{{ old('name') }}" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('name')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
                         placeholder="e.g. Grand Horizon Resort">
-                    @error('name') <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $message }}</p> @enderror
+                    @if(isset($errors) && $errors->has('name')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('name') }}</p> @endif
                 </div>
 
                 <div>
@@ -39,7 +39,7 @@
                     <input type="email" name="email" value="{{ old('email') }}"
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('email')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
                         placeholder="admin@hotel.com">
-                    @error('email') <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $message }}</p> @enderror
+                    @if(isset($errors) && $errors->has('email')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('email') }}</p> @endif
                 </div>
 
                 <div>
@@ -47,7 +47,7 @@
                     <input type="text" name="phone" value="{{ old('phone') }}"
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('phone')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
                         placeholder="+91 79 1234 5678">
-                    @error('phone') <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $message }}</p> @enderror
+                    @if(isset($errors) && $errors->has('phone')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('phone') }}</p> @endif
                 </div>
 
                 <div style="grid-column:1/-1;">
@@ -55,7 +55,7 @@
                     <textarea name="address" rows="2"
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('address')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;resize:vertical;"
                         placeholder="123 Main Street, City, State 380001">{{ old('address') }}</textarea>
-                    @error('address') <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $message }}</p> @enderror
+                    @if(isset($errors) && $errors->has('address')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('address') }}</p> @endif
                 </div>
             </div>
         </div>
@@ -81,21 +81,21 @@
                 </label>
                 @endforeach
             </div>
-            @error('plan') <p style="color:#ef4444;font-size:11px;margin:-12px 0 12px;">{{ $message }}</p> @enderror
+            @if(isset($errors) && $errors->has('plan')) <p style="color:#ef4444;font-size:11px;margin:-12px 0 12px;">{{ $errors->first('plan') }}</p> @endif
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div>
                     <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Max Rooms <span style="color:#ef4444;">*</span></label>
                     <input type="number" name="max_rooms" id="max_rooms" value="{{ old('max_rooms', 50) }}" min="1" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('max_rooms')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
-                    @error('max_rooms') <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $message }}</p> @enderror
+                    @if(isset($errors) && $errors->has('max_rooms')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('max_rooms') }}</p> @endif
                 </div>
 
                 <div>
                     <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Max Users <span style="color:#ef4444;">*</span></label>
                     <input type="number" name="max_users" id="max_users" value="{{ old('max_users', 10) }}" min="1" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('max_users')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
-                    @error('max_users') <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $message }}</p> @enderror
+                    @if(isset($errors) && $errors->has('max_users')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('max_users') }}</p> @endif
                 </div>
             </div>
         </div>

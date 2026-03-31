@@ -57,7 +57,7 @@
                     $sBg      = $isActive ? '#dcfce7' : '#fee2e2';
                     $sTx      = $isActive ? '#15803d' : '#b91c1c';
                 @endphp
-                <tr style="border-bottom:1px solid #f8fafc;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'">
+                <tr style="border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'" onclick="window.location='{{ route('platform.hotels.edit', $hotel->id) }}'" title="Click to edit {{ addslashes($hotel->name) }}">
 
                     <td style="padding:14px 20px;">
                         <div style="display:flex;align-items:center;gap:10px;">
@@ -110,7 +110,7 @@
                         <span style="font-size:12px;color:#64748b;">{{ \Carbon\Carbon::parse($hotel->created_at)->format('d M Y') }}</span>
                     </td>
 
-                    <td style="padding:14px 20px;">
+                    <td style="padding:14px 20px;" onclick="event.stopPropagation()">
                         <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;">
 
                             {{-- View CRM --}}
