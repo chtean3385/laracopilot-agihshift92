@@ -41,14 +41,14 @@ class PlanController extends Controller
 
         $data = $request->validate([
             'label'         => 'required|string|max:100',
-            'color'         => 'required|string|max:20',
+            'color'         => ['required', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{3,8}$/'],
             'monthly_price' => 'required|integer|min:0',
             'yearly_price'  => 'required|integer|min:0',
             'max_rooms'     => 'required|integer|min:1',
             'max_users'     => 'required|integer|min:1',
             'is_active'     => 'nullable|boolean',
             'features'      => 'nullable|string',
-            'sort_order'    => 'nullable|integer|min:0',
+            'sort_order'    => 'nullable|integer|min:0|max:255',
         ]);
 
         $featuresRaw = $request->input('features', '');
