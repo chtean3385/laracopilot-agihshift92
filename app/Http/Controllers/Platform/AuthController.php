@@ -36,13 +36,16 @@ class AuthController extends Controller
                 ->withInput(['email' => $data['email']]);
         }
 
+        $request->session()->regenerate();
+
         session([
-            'crm_logged_in'      => true,
-            'crm_user_id'        => $user->id,
-            'crm_user_name'      => $user->name,
-            'crm_user_email'     => $user->email,
-            'crm_user_role'      => 'Super Admin',
-            'crm_is_super_admin' => true,
+            'crm_logged_in'                => true,
+            'crm_user_id'                  => $user->id,
+            'crm_user_name'                => $user->name,
+            'crm_user_email'               => $user->email,
+            'crm_user_role'                => 'Super Admin',
+            'crm_is_super_admin'           => true,
+            'platform_reminder_dismissed'  => false,
         ]);
 
         return redirect()->route('platform.dashboard');
