@@ -837,8 +837,25 @@
                     <i class="fas fa-clock" style="color:#06b6d4;font-size:12px;"></i>
                     <span style="font-size:12px;color:#475569;font-weight:500;" id="liveClock"></span>
                 </div>
-                <div style="width:36px;height:36px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(6,182,212,.3);cursor:pointer;flex-shrink:0;">
-                    {{ session('crm_user_avatar','A') }}
+                <div style="position:relative;">
+                    <button onclick="toggleUserMenu()" style="width:36px;height:36px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(6,182,212,.3);cursor:pointer;border:none;flex-shrink:0;">
+                        {{ session('crm_user_avatar','A') }}
+                    </button>
+                    <div id="user-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);border:1px solid #f1f5f9;min-width:200px;z-index:100;overflow:hidden;">
+                        <div style="padding:12px 0;border-bottom:1px solid #f1f5f9;">
+                            <div style="padding:0 14px;font-size:13px;font-weight:700;color:#0f172a;">{{ session('crm_user_name','Admin') }}</div>
+                            <div style="padding:2px 14px;font-size:11px;color:#94a3b8;">{{ session('crm_user_role','Admin') }}</div>
+                        </div>
+                        <a href="{{ route('password.change.form') }}" style="display:block;padding:10px 14px;font-size:13px;color:#475569;text-decoration:none;transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+                            <i class="fas fa-lock" style="color:#64748b;font-size:12px;margin-right:8px;"></i>Change Password
+                        </a>
+                        <form action="{{ route('logout') }}" method="POST" style="margin:0;">
+                            @csrf
+                            <button type="submit" style="display:block;width:100%;padding:10px 14px;font-size:13px;color:#dc2626;text-align:left;text-decoration:none;border:none;background:none;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background=''">
+                                <i class="fas fa-power-off" style="color:#dc2626;font-size:12px;margin-right:8px;"></i>Sign Out
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </header>
@@ -938,6 +955,19 @@
     }
     checkMobile();
     window.addEventListener('resize', checkMobile);
+
+    // User menu dropdown
+    function toggleUserMenu() {
+        const menu = document.getElementById('user-menu');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('user-menu');
+        const button = event.target.closest('button[onclick="toggleUserMenu()"]');
+        if (!button && !menu.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    });
 
     // Auto-dismiss flash messages
     setTimeout(() => {
