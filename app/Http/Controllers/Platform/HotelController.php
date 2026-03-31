@@ -162,9 +162,19 @@ class HotelController extends Controller
             ->select('users.id', 'users.name', 'users.email', 'users.status', 'hotel_users.status as hu_status')
             ->first();
 
+        // All active hotel users eligible to become admin (for reassignment dropdown)
+        $hotelUsers = DB::table('hotel_users')
+            ->join('users', 'users.id', '=', 'hotel_users.user_id')
+            ->where('hotel_users.hotel_id', $id)
+            ->where('hotel_users.status', 'active')
+            ->where('users.status', 'active')
+            ->select('users.id', 'users.name', 'users.email')
+            ->orderBy('users.name')
+            ->get();
+
         // Active plans for new selection + always include hotel's current plan (even if inactive)
         $plans = $this->getActivePlansForSelection($hotel->plan ?? null);
-        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin'));
+        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin', 'hotelUsers'));
     }
 
     // ── Update ───────────────────────────────────────────────────────────────
@@ -187,20 +197,57 @@ class HotelController extends Controller
         }
 
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'email'       => 'nullable|email|max:255',
-            'phone'       => 'nullable|string|max:50',
-            'address'     => 'nullable|string|max:500',
-            'plan'        => 'required|in:' . implode(',', $validSlugs),
-            'max_rooms'   => 'required|integer|min:1',
-            'max_users'   => 'required|integer|min:1',
-            'status'      => 'required|in:active,suspended',
-            'admin_notes' => 'nullable|string|max:1000',
+            'name'              => 'required|string|max:255',
+            'email'             => 'nullable|email|max:255',
+            'phone'             => 'nullable|string|max:50',
+            'address'           => 'nullable|string|max:500',
+            'plan'              => 'required|in:' . implode(',', $validSlugs),
+            'max_rooms'         => 'required|integer|min:1',
+            'max_users'         => 'required|integer|min:1',
+            'status'            => 'required|in:active,suspended',
+            'admin_notes'       => 'nullable|string|max:1000',
+            'new_admin_user_id' => 'nullable|integer',
         ]);
 
-        DB::table('hotels')->where('id', $id)->update(array_merge($data, [
-            'updated_at' => now(),
-        ]));
+        DB::table('hotels')->where('id', $id)->update([
+            'name'        => $data['name'],
+            'email'       => $data['email'] ?? null,
+            'phone'       => $data['phone'] ?? null,
+            'address'     => $data['address'] ?? null,
+            'plan'        => $data['plan'],
+            'max_rooms'   => $data['max_rooms'],
+            'max_users'   => $data['max_users'],
+            'status'      => $data['status'],
+            'admin_notes' => $data['admin_notes'] ?? null,
+            'updated_at'  => now(),
+        ]);
+
+        // Handle hotel admin reassignment
+        if (!empty($data['new_admin_user_id'])) {
+            $newAdminUserId = (int) $data['new_admin_user_id'];
+
+            // Confirm the selected user actually belongs to this hotel and is active
+            $eligible = DB::table('hotel_users')
+                ->join('users', 'users.id', '=', 'hotel_users.user_id')
+                ->where('hotel_users.hotel_id', $id)
+                ->where('hotel_users.user_id', $newAdminUserId)
+                ->where('hotel_users.status', 'active')
+                ->where('users.status', 'active')
+                ->exists();
+
+            if ($eligible) {
+                // Strip is_hotel_admin from all hotel users for this hotel
+                DB::table('hotel_users')
+                    ->where('hotel_id', $id)
+                    ->update(['is_hotel_admin' => 0]);
+
+                // Set the selected user as hotel admin
+                DB::table('hotel_users')
+                    ->where('hotel_id', $id)
+                    ->where('user_id', $newAdminUserId)
+                    ->update(['is_hotel_admin' => 1]);
+            }
+        }
 
         return redirect()->route('platform.hotels.edit', $id)
             ->with('success', "Hotel \"{$hotel->name}\" updated successfully.");

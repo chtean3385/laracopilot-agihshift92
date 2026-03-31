@@ -128,8 +128,9 @@
                 Hotel Admin Account
             </h2>
 
+            {{-- Current Admin Card --}}
             @if($hotelAdmin)
-            <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;margin-bottom:16px;">
                 <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">{{ strtoupper(substr($hotelAdmin->name, 0, 1)) }}</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-size:14px;font-weight:800;color:#1e293b;">{{ $hotelAdmin->name }}</div>
@@ -146,17 +147,37 @@
                     </div>
                 </div>
                 <a href="{{ route('platform.users.reset.show', $hotelAdmin->id) }}"
-                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#ede9fe;color:#7c3aed;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .15s;"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#ede9fe;color:#7c3aed;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;"
                     onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#ede9fe'">
                     <i class="fas fa-key"></i> Reset Password
                 </a>
             </div>
-            <p style="font-size:11px;color:#94a3b8;margin:8px 0 0;">The hotel admin can log in to the CRM and has full access. To change the admin, update via the Users section.</p>
             @else
-            <div style="padding:18px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;display:flex;align-items:center;gap:10px;">
+            <div style="padding:14px 16px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
                 <i class="fas fa-exclamation-triangle" style="color:#d97706;font-size:14px;flex-shrink:0;"></i>
-                <span style="font-size:13px;color:#92400e;">No hotel admin found for this hotel. Assign one via the Users section.</span>
+                <span style="font-size:13px;color:#92400e;">No hotel admin currently assigned.</span>
             </div>
+            @endif
+
+            {{-- Reassign Admin --}}
+            @if($hotelUsers->count() > 0)
+            <div style="border-top:1px solid #f1f5f9;padding-top:16px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">
+                    <i class="fas fa-user-pen" style="color:#7c3aed;margin-right:4px;"></i>
+                    Reassign Admin
+                </label>
+                <select name="new_admin_user_id" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;">
+                    <option value="">— Keep current admin —</option>
+                    @foreach($hotelUsers as $u)
+                    <option value="{{ $u->id }}" {{ ($hotelAdmin && $hotelAdmin->id === $u->id) ? 'disabled style=color:#94a3b8' : '' }}>
+                        {{ $u->name }} ({{ $u->email }}){{ ($hotelAdmin && $hotelAdmin->id === $u->id) ? ' — current' : '' }}
+                    </option>
+                    @endforeach
+                </select>
+                <p style="font-size:11px;color:#94a3b8;margin:6px 0 0;">Select a user from this hotel's active staff to promote to Hotel Admin. Save the form to apply.</p>
+            </div>
+            @else
+            <p style="font-size:11px;color:#94a3b8;margin:0;">No other active hotel users available for reassignment. Add users via the CRM Users section first.</p>
             @endif
         </div>
 
