@@ -28,11 +28,13 @@ class MultiHotelTestSeeder extends Seeder
     public function run(): void
     {
         // 1. Hotels
-        $hotel1Id = DB::table('hotels')->where('id', 1)->value('id') ?? DB::table('hotels')->insertGetId([
-            'name' => 'Default Hotel', 'slug' => 'default-hotel',
-            'status' => 'active', 'plan' => 'basic',
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
+        $hotel1Id = DB::table('hotels')->where('slug', 'default-hotel')->value('id')
+            ?? DB::table('hotels')->where('id', 1)->value('id')
+            ?? DB::table('hotels')->insertGetId([
+                'name' => 'Default Hotel', 'slug' => 'default-hotel',
+                'status' => 'active', 'plan' => 'basic',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
 
         $hotel2Id = DB::table('hotels')->where('name', 'Beach Resort')->value('id') ?? DB::table('hotels')->insertGetId([
             'name' => 'Beach Resort', 'slug' => 'beach-resort',
