@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -26,6 +28,14 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
+        $throttleKey = 'platform-login:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            throw ValidationException::withMessages([
+                'email' => "Too many login attempts. Please wait {$seconds} seconds before trying again.",
+            ]);
+        }
+
         $user = DB::table('users')
             ->where('email', $data['email'])
             ->where('is_super_admin', 1)
@@ -33,10 +43,13 @@ class AuthController extends Controller
             ->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
+            RateLimiter::hit($throttleKey, 60);
             return back()
                 ->withErrors(['email' => 'Invalid credentials or this account does not have platform access.'])
                 ->withInput(['email' => $data['email']]);
         }
+
+        RateLimiter::clear($throttleKey);
 
         if ($user->totp_enabled) {
             $request->session()->put('platform_2fa_pending_user_id', $user->id);
@@ -48,7 +61,6 @@ class AuthController extends Controller
 
         return redirect()->route('platform.settings.2fa')
             ->with('info', 'Your account is not yet protected with two-factor authentication. Set it up now to secure your platform access.');
-
     }
 
     public function show2faVerify(Request $request)
@@ -69,6 +81,14 @@ class AuthController extends Controller
 
         $request->validate(['one_time_password' => 'required|string']);
 
+        $throttleKey = 'platform-2fa:' . $request->ip() . ':' . $userId;
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors([
+                'one_time_password' => "Too many failed attempts. Please wait {$seconds} seconds.",
+            ]);
+        }
+
         $user = DB::table('users')->where('id', $userId)->first();
         if (!$user || !$user->totp_enabled || !$user->totp_secret) {
             $request->session()->forget('platform_2fa_pending_user_id');
@@ -76,25 +96,29 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'Invalid 2FA state. Please log in again.']);
         }
 
-        $secret = Crypt::decryptString($user->totp_secret);
+        $secret    = Crypt::decryptString($user->totp_secret);
         $google2fa = app('pragmarx.google2fa');
 
-        // Check regular TOTP code
         if ($google2fa->verifyKey($secret, $request->one_time_password)) {
+            RateLimiter::clear($throttleKey);
             $request->session()->forget('platform_2fa_pending_user_id');
             $this->completeLogin($request, $user);
             return redirect()->route('platform.dashboard');
         }
 
-        // Check recovery codes
+        // Recovery code fallback — allows login when authenticator device is lost
         if ($this->verifyRecoveryCode($user->id, $request->one_time_password)) {
+            RateLimiter::clear($throttleKey);
             $request->session()->forget('platform_2fa_pending_user_id');
             $this->completeLogin($request, $user);
+            // Flag that the session used a recovery code — enables TOTP-free 2FA reset
+            session(['platform_2fa_recovery_login' => true]);
             return redirect()->route('platform.settings.2fa')
-                ->with('warning', 'You logged in using a recovery code. That code has been used up — please generate new ones.');
+                ->with('warning', 'You logged in using a recovery code. Your authenticator app may need to be reconfigured — reset 2FA below to generate a fresh setup.');
         }
 
-        return back()->withErrors(['one_time_password' => 'Invalid code. Please try again, or use one of your recovery codes.']);
+        RateLimiter::hit($throttleKey, 60);
+        return back()->withErrors(['one_time_password' => 'Invalid code. Please try again, or enter a recovery code.']);
     }
 
     private function completeLogin(Request $request, object $user): void
@@ -138,10 +162,11 @@ class AuthController extends Controller
         $qrCodeSvg = $this->generateQrCodeSvg($qrCodeUrl);
 
         return view('platform.settings.2fa-setup', [
-            'user'        => $user,
-            'secretKey'   => $secretKey,
-            'qrCodeSvg'   => $qrCodeSvg,
-            'totpEnabled' => (bool) $user->totp_enabled,
+            'user'             => $user,
+            'secretKey'        => $secretKey,
+            'qrCodeSvg'        => $qrCodeSvg,
+            'totpEnabled'      => (bool) $user->totp_enabled,
+            'recoveryLogin'    => session('platform_2fa_recovery_login', false),
         ]);
     }
 
@@ -159,9 +184,7 @@ class AuthController extends Controller
             return back()->withErrors(['one_time_password' => 'Invalid code. Make sure your authenticator app is synced and try again.']);
         }
 
-        $userId = session('crm_user_id');
-
-        // Generate 8 one-time recovery codes
+        $userId        = session('crm_user_id');
         $recoveryCodes = $this->generateRecoveryCodes($userId);
 
         DB::table('users')->where('id', $userId)->update([
@@ -170,9 +193,7 @@ class AuthController extends Controller
             'updated_at'   => now(),
         ]);
 
-        $request->session()->forget('platform_2fa_setup_secret');
-
-        // Flash recovery codes once — they will not be stored in plaintext after this
+        $request->session()->forget(['platform_2fa_setup_secret', 'platform_2fa_recovery_login']);
         $request->session()->flash('platform_2fa_new_codes', $recoveryCodes);
 
         return redirect()->route('platform.settings.2fa')
@@ -190,11 +211,17 @@ class AuthController extends Controller
             return back()->withErrors(['one_time_password' => '2FA is not currently enabled.']);
         }
 
-        $secret    = Crypt::decryptString($user->totp_secret);
-        $google2fa = app('pragmarx.google2fa');
-
-        if (!$google2fa->verifyKey($secret, $request->one_time_password)) {
-            return back()->withErrors(['one_time_password' => 'Invalid code. 2FA was not disabled.']);
+        // If this session was established via a recovery code, allow reset without TOTP
+        if (session('platform_2fa_recovery_login')) {
+            if (!$this->verifyRecoveryCode($userId, $request->one_time_password)) {
+                return back()->withErrors(['one_time_password' => 'Invalid recovery code.']);
+            }
+        } else {
+            $secret    = Crypt::decryptString($user->totp_secret);
+            $google2fa = app('pragmarx.google2fa');
+            if (!$google2fa->verifyKey($secret, $request->one_time_password)) {
+                return back()->withErrors(['one_time_password' => 'Invalid authenticator code. 2FA was not disabled.']);
+            }
         }
 
         DB::table('users')->where('id', $userId)->update([
@@ -203,14 +230,12 @@ class AuthController extends Controller
             'updated_at'   => now(),
         ]);
 
-        // Delete all recovery codes
         DB::table('platform_recovery_codes')->where('user_id', $userId)->delete();
+        $request->session()->forget('platform_2fa_recovery_login');
 
         return redirect()->route('platform.settings.2fa')
-            ->with('success', '2FA has been disabled.');
+            ->with('success', '2FA has been disabled. You can set it up again at any time.');
     }
-
-    // Recovery code helpers
 
     private function generateRecoveryCodes(int $userId): array
     {
@@ -218,7 +243,7 @@ class AuthController extends Controller
 
         $codes = [];
         for ($i = 0; $i < 8; $i++) {
-            $code = strtoupper(bin2hex(random_bytes(4))) . '-' . strtoupper(bin2hex(random_bytes(4)));
+            $code    = strtoupper(bin2hex(random_bytes(4))) . '-' . strtoupper(bin2hex(random_bytes(4)));
             $codes[] = $code;
             DB::table('platform_recovery_codes')->insert([
                 'user_id'    => $userId,

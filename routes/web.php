@@ -215,8 +215,8 @@ Route::get( '/pathik/pending',         [\App\Http\Controllers\Admin\PathikContro
 // ── Platform Admin Login (no auth required) ──────────────────────────────────
 Route::get('/platform/login',         [\App\Http\Controllers\Platform\AuthController::class, 'showLogin'])->name('platform.login');
 Route::post('/platform/login',        [\App\Http\Controllers\Platform\AuthController::class, 'login'])->name('platform.login.post');
-Route::get('/platform/login/2fa',     [\App\Http\Controllers\Platform\AuthController::class, 'show2faVerify'])->name('platform.login.2fa');
-Route::post('/platform/login/2fa',    [\App\Http\Controllers\Platform\AuthController::class, 'verify2fa'])->name('platform.login.2fa.post');
+Route::get('/platform/login/verify-2fa',  [\App\Http\Controllers\Platform\AuthController::class, 'show2faVerify'])->name('platform.login.2fa');
+Route::post('/platform/login/verify-2fa', [\App\Http\Controllers\Platform\AuthController::class, 'verify2fa'])->name('platform.login.2fa.post');
 
 // ── Platform Admin (Super Admin only) ───────────────────────────────────────
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;

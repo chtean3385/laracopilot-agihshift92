@@ -93,8 +93,16 @@ Secure your platform admin account with TOTP-based two-factor authentication
 
     {{-- Disable 2FA --}}
     <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
-        <h3 style="font-size:14px;font-weight:700;color:#1e293b;margin:0 0 10px;">Disable 2FA</h3>
-        <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Enter your current authenticator code to confirm you want to remove two-factor authentication from this account.</p>
+        <h3 style="font-size:14px;font-weight:700;color:#1e293b;margin:0 0 6px;">
+            @if($recoveryLogin) Reset 2FA (Recovery Mode) @else Disable 2FA @endif
+        </h3>
+        <p style="font-size:13px;color:#64748b;margin:0 0 14px;">
+            @if($recoveryLogin)
+            You are in <strong>recovery mode</strong> (logged in via a recovery code). Enter another unused recovery code below to reset 2FA and reconfigure your authenticator app.
+            @else
+            Enter your current authenticator code to confirm you want to remove two-factor authentication from this account.
+            @endif
+        </p>
 
         @if($errors->any())
         <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#b91c1c;">
@@ -105,21 +113,22 @@ Secure your platform admin account with TOTP-based two-factor authentication
         <form method="POST" action="{{ route('platform.settings.2fa.disable') }}" style="display:flex;gap:10px;align-items:flex-end;">
             @csrf
             <div style="flex:1;">
-                <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Authenticator Code</label>
+                <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">
+                    @if($recoveryLogin) Recovery Code @else Authenticator Code @endif
+                </label>
                 <input type="text"
                        name="one_time_password"
-                       placeholder="000000"
-                       maxlength="6"
-                       inputmode="numeric"
-                       pattern="[0-9]{6}"
+                       placeholder="{{ $recoveryLogin ? 'XXXXXXXX-XXXXXXXX' : '000000' }}"
+                       maxlength="{{ $recoveryLogin ? 17 : 6 }}"
                        autocomplete="one-time-code"
-                       style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:.25em;text-align:center;outline:none;color:#1e293b;"
+                       style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:{{ $recoveryLogin ? '13' : '16' }}px;font-weight:700;letter-spacing:.15em;text-align:center;outline:none;color:#1e293b;"
                        required>
             </div>
             <button type="submit"
-                    onclick="return confirm('Are you sure you want to disable 2FA? Your account will be less secure.')"
+                    onclick="return confirm('Are you sure? This will remove 2FA from your account.')"
                     style="padding:10px 20px;background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-                <i class="fas fa-lock-open" style="margin-right:6px;"></i>Disable 2FA
+                <i class="fas fa-lock-open" style="margin-right:6px;"></i>
+                @if($recoveryLogin) Reset 2FA @else Disable 2FA @endif
             </button>
         </form>
     </div>
