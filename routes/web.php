@@ -230,8 +230,9 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/hotels/{id}/activate', [PlatformHotelController::class, 'activate'])->name('platform.hotels.activate');
     Route::get('/hotels/{id}/view-in-crm', [PlatformDashboardController::class, 'viewInCrm'])->name('platform.hotels.view-in-crm');
 
-    Route::get('/users',       fn() => abort(503, 'User management coming soon — Task #9'))->name('platform.users.index');
-    Route::get('/users/{id}',  fn() => abort(503, 'Coming soon'))->name('platform.users.show');
-    Route::post('/users/{id}/hotel/{hotelId}/suspend',  fn() => abort(503, 'Coming soon'))->name('platform.users.suspend');
-    Route::post('/users/{id}/hotel/{hotelId}/activate', fn() => abort(503, 'Coming soon'))->name('platform.users.activate');
+    // User management (Task #9)
+    Route::get('/users',                                          [\App\Http\Controllers\Platform\UserController::class, 'index'])->name('platform.users.index');
+    Route::get('/users/{id}',                                     [\App\Http\Controllers\Platform\UserController::class, 'show'])->name('platform.users.show');
+    Route::post('/users/{id}/hotel/{hotelId}/suspend',            [\App\Http\Controllers\Platform\UserController::class, 'suspend'])->name('platform.users.suspend');
+    Route::post('/users/{id}/hotel/{hotelId}/activate',           [\App\Http\Controllers\Platform\UserController::class, 'activate'])->name('platform.users.activate');
 });
