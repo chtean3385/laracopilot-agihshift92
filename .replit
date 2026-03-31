@@ -11,6 +11,13 @@ channel = "stable-25_05"
 APP_URL = "http://0.0.0.0:5000"
 APP_ENV = "local"
 APP_DEBUG = "true"
+MAIL_MAILER = "smtp"
+MAIL_SCHEME = "ssl"
+MAIL_HOST = "mail.dreamstechnology.in"
+MAIL_PORT = "465"
+MAIL_USERNAME = "support@dreamstechnology.in"
+MAIL_FROM_ADDRESS = "support@dreamstechnology.in"
+MAIL_FROM_NAME = "Hotel CRM"
 
 [workflows]
 runButton = "Project"
