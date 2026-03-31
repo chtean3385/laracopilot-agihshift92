@@ -75,6 +75,24 @@ return new class extends Migration
             }
         }
 
+        // roles table: drop single-column unique on name, add composite (hotel_id, name)
+        if (Schema::hasTable('roles') && Schema::hasColumn('roles', 'hotel_id')) {
+            try {
+                Schema::table('roles', function (Blueprint $table) {
+                    $table->dropUnique(['name']);
+                });
+            } catch (\Throwable $e) {
+                // index may not exist by this name
+            }
+            try {
+                Schema::table('roles', function (Blueprint $table) {
+                    $table->unique(['hotel_id', 'name']);
+                });
+            } catch (\Throwable $e) {
+                // composite unique may already exist
+            }
+        }
+
         // ── Step 3: Back-fill all existing rows with hotel_id ──
         if ($hotelId) {
             $allTables = array_merge($tables, ['modules']);
