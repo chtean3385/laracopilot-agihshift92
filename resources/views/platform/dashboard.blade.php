@@ -9,10 +9,10 @@
 @php
     $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'color' => '#6d28d9', 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569', 'monthly_price' => 0, 'yearly_price' => 0];
 
-    // MRR breakdown per plan for the banner
-    $planCounts   = $hotelStats->groupBy('plan');
+    // MRR breakdown per plan for the banner — ACTIVE tenants only (consistent with $mrr)
+    $activePlanCounts = $hotelStats->where('status', 'active')->groupBy('plan');
     $planBreakdown = [];
-    foreach ($planCounts as $slug => $hotels) {
+    foreach ($activePlanCounts as $slug => $hotels) {
         $price = $plans[$slug]['monthly_price'] ?? 0;
         $count = $hotels->count();
         $planBreakdown[] = $count . ' × ' . ($plans[$slug]['label'] ?? ucfirst($slug)) . ' (Rs&nbsp;' . number_format($price) . ')';
@@ -45,29 +45,10 @@
 </div>
 @endif
 
-{{-- ── SaaS KPI Cards ───────────────────────────────────────────────────────── --}}
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;margin-bottom:28px;">
+{{-- ── SaaS KPI Cards (4 cards: MRR, Active Subscriptions, Suspended/Inactive, Next Month) ──────── --}}
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px;">
 
-    {{-- Total Tenants --}}
-    <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(139,92,246,.08);"></div>
-        <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-            <i class="fas fa-building" style="color:#fff;font-size:17px;"></i>
-        </div>
-        <div style="font-size:28px;font-weight:800;color:#1e293b;line-height:1;">{{ $totalHotels }}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Total Tenants</div>
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            <span style="font-size:10px;font-weight:700;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:20px;">{{ $activeHotels }} active</span>
-            @if($suspendedHotels > 0)
-            <span style="font-size:10px;font-weight:700;background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:20px;">{{ $suspendedHotels }} suspended</span>
-            @endif
-            @if($trialHotels > 0)
-            <span style="font-size:10px;font-weight:700;background:#ffedd5;color:#c2410c;padding:2px 8px;border-radius:20px;">{{ $trialHotels }} trial</span>
-            @endif
-        </div>
-    </div>
-
-    {{-- MRR --}}
+    {{-- Monthly Recurring Revenue --}}
     <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
         <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(16,185,129,.08);"></div>
         <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
@@ -80,46 +61,46 @@
         </div>
     </div>
 
-    {{-- Next Month Revenue --}}
-    <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(6,182,212,.08);"></div>
-        <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#0891b2);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-            <i class="fas fa-calendar-arrow-up" style="color:#fff;font-size:17px;"></i>
-        </div>
-        <div style="font-size:22px;font-weight:800;color:#1e293b;line-height:1;">Rs {{ number_format($nextMonthRevenue) }}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Next Month Expected</div>
-        <div style="margin-top:8px;">
-            <span style="font-size:10px;color:#94a3b8;">Based on active subscriptions</span>
-        </div>
-    </div>
-
     {{-- Active Subscriptions --}}
     <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(245,158,11,.08);"></div>
-        <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(139,92,246,.08);"></div>
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
             <i class="fas fa-crown" style="color:#fff;font-size:17px;"></i>
         </div>
         <div style="font-size:28px;font-weight:800;color:#1e293b;line-height:1;">{{ $activeSubscriptions }}</div>
         <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Active Subscriptions</div>
         <div style="margin-top:8px;">
-            @if($suspendedHotels > 0)
-            <span style="font-size:10px;font-weight:700;background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:20px;">{{ $suspendedHotels }} suspended</span>
+            <span style="font-size:10px;color:#94a3b8;">{{ $totalHotels }} tenant{{ $totalHotels !== 1 ? 's' : '' }} total</span>
+        </div>
+    </div>
+
+    {{-- Suspended / Inactive --}}
+    <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(239,68,68,.06);"></div>
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <i class="fas fa-ban" style="color:#fff;font-size:17px;"></i>
+        </div>
+        <div style="font-size:28px;font-weight:800;color:#1e293b;line-height:1;">{{ $suspendedHotels }}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Suspended / Inactive</div>
+        <div style="margin-top:8px;">
+            @if($trialHotels > 0)
+            <span style="font-size:10px;font-weight:700;background:#ffedd5;color:#c2410c;padding:2px 8px;border-radius:20px;">{{ $trialHotels }} on trial</span>
             @else
-            <span style="font-size:10px;color:#94a3b8;">All subscriptions active</span>
+            <span style="font-size:10px;color:#94a3b8;">{{ $suspendedHotels === 0 ? 'All tenants healthy' : 'Needs attention' }}</span>
             @endif
         </div>
     </div>
 
-    {{-- Platform Users --}}
+    {{-- Next Month Expected --}}
     <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(99,102,241,.08);"></div>
-        <div style="width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#4338ca);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-            <i class="fas fa-users" style="color:#fff;font-size:17px;"></i>
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(6,182,212,.08);"></div>
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#0891b2);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <i class="fas fa-calendar-check" style="color:#fff;font-size:17px;"></i>
         </div>
-        <div style="font-size:28px;font-weight:800;color:#1e293b;line-height:1;">{{ number_format($totalUsers) }}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Total Staff Users</div>
+        <div style="font-size:22px;font-weight:800;color:#1e293b;line-height:1;">Rs {{ number_format($nextMonthRevenue) }}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Next Month Expected</div>
         <div style="margin-top:8px;">
-            <span style="font-size:10px;color:#94a3b8;">Across {{ $totalHotels }} tenant{{ $totalHotels !== 1 ? 's' : '' }}</span>
+            <span style="font-size:10px;color:#94a3b8;">Based on active subscriptions</span>
         </div>
     </div>
 
