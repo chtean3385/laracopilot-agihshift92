@@ -255,7 +255,7 @@
         @if(session('error'))
         <div class="alert-error"><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
         @endif
-        @if($errors->any())
+        @if(isset($errors) && $errors->any())
         <div class="alert-error">
             <i class="fas fa-exclamation-circle"></i>
             <div>

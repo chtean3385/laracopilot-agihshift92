@@ -227,7 +227,7 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::put('/hotels/{id}',      fn() => abort(503, 'Coming soon'))->name('platform.hotels.update');
     Route::post('/hotels/{id}/suspend',   fn() => abort(503, 'Coming soon'))->name('platform.hotels.suspend');
     Route::post('/hotels/{id}/activate',  fn() => abort(503, 'Coming soon'))->name('platform.hotels.activate');
-    Route::get('/hotels/{id}/view-in-crm', fn() => abort(503, 'Coming soon'))->name('platform.hotels.view-in-crm');
+    Route::get('/hotels/{id}/view-in-crm', [PlatformDashboardController::class, 'viewInCrm'])->name('platform.hotels.view-in-crm');
 
     Route::get('/users',       fn() => abort(503, 'User management coming soon — Task #9'))->name('platform.users.index');
     Route::get('/users/{id}',  fn() => abort(503, 'Coming soon'))->name('platform.users.show');
