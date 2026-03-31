@@ -87,6 +87,12 @@ class UserController extends Controller
             ->orderBy('hotels.name')
             ->get();
 
+        // Guard: only users with at least one hotel assignment are manageable here
+        if ($assignments->isEmpty()) {
+            return redirect()->route('platform.users.index')
+                ->with('error', 'This user has no hotel assignments to manage.');
+        }
+
         return view('platform.users.show', compact('user', 'assignments'));
     }
 
