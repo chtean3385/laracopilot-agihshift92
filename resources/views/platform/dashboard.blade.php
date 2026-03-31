@@ -81,7 +81,7 @@
             <i class="fas fa-ban" style="color:#fff;font-size:17px;"></i>
         </div>
         <div style="font-size:28px;font-weight:800;color:#1e293b;line-height:1;">{{ $suspendedHotels }}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Suspended / Inactive</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:600;">Suspended Tenants</div>
         <div style="margin-top:8px;">
             @if($trialHotels > 0)
             <span style="font-size:10px;font-weight:700;background:#ffedd5;color:#c2410c;padding:2px 8px;border-radius:20px;">{{ $trialHotels }} on trial</span>
