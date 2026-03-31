@@ -236,16 +236,18 @@ class HotelController extends Controller
                 ->exists();
 
             if ($eligible) {
-                // Strip is_hotel_admin from all hotel users for this hotel
-                DB::table('hotel_users')
-                    ->where('hotel_id', $id)
-                    ->update(['is_hotel_admin' => 0]);
+                DB::transaction(function () use ($id, $newAdminUserId) {
+                    // Strip is_hotel_admin from all hotel users for this hotel
+                    DB::table('hotel_users')
+                        ->where('hotel_id', $id)
+                        ->update(['is_hotel_admin' => 0]);
 
-                // Set the selected user as hotel admin
-                DB::table('hotel_users')
-                    ->where('hotel_id', $id)
-                    ->where('user_id', $newAdminUserId)
-                    ->update(['is_hotel_admin' => 1]);
+                    // Set the selected user as hotel admin
+                    DB::table('hotel_users')
+                        ->where('hotel_id', $id)
+                        ->where('user_id', $newAdminUserId)
+                        ->update(['is_hotel_admin' => 1]);
+                });
             }
         }
 

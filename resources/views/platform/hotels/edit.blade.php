@@ -169,8 +169,9 @@
                 <select name="new_admin_user_id" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;">
                     <option value="">— Keep current admin —</option>
                     @foreach($hotelUsers as $u)
-                    <option value="{{ $u->id }}" {{ ($hotelAdmin && $hotelAdmin->id === $u->id) ? 'disabled style=color:#94a3b8' : '' }}>
-                        {{ $u->name }} ({{ $u->email }}){{ ($hotelAdmin && $hotelAdmin->id === $u->id) ? ' — current' : '' }}
+                    @php $isCurrent = $hotelAdmin && $hotelAdmin->id === $u->id; @endphp
+                    <option value="{{ $u->id }}" {{ $isCurrent ? 'disabled' : '' }} style="{{ $isCurrent ? 'color:#94a3b8' : '' }}">
+                        {{ $u->name }} ({{ $u->email }}){{ $isCurrent ? ' — current admin' : '' }}
                     </option>
                     @endforeach
                 </select>

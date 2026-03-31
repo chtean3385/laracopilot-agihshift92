@@ -547,7 +547,6 @@
         @php
             $saHotels = \Illuminate\Support\Facades\DB::table('hotels')->orderBy('name')->get();
             $saFilterId = session('crm_sa_hotel_filter');
-            $saSelected = $saHotels->firstWhere('id', $saFilterId);
         @endphp
         <div style="padding:8px 16px 4px;">
             <form method="POST" action="{{ route('sa.hotel.filter') }}" id="sa-hotel-form">
