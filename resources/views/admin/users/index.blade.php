@@ -7,7 +7,7 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
     <div>
         <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">Staff Users</h2>
-        <p style="font-size:13px;color:#64748b;margin:4px 0 0;">{{ $users->total() }} user{{ $users->total() !== 1 ? 's' : '' }} in the system</p>
+        <p style="font-size:13px;color:#64748b;margin:4px 0 0;">{{ $users->count() }} user{{ $users->count() !== 1 ? 's' : '' }} in the system</p>
     </div>
     @canDo('users.create')
     <a href="{{ route('users.create') }}" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#06b6d4,#3b82f6);color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 4px 12px rgba(6,182,212,.3);">
