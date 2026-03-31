@@ -95,6 +95,8 @@ class DashboardController extends Controller
             $merged[$slug] = [
                 'label'         => $dbPlan->label,
                 'color'         => $dbPlan->color,
+                'badge_bg'      => '#f1f5f9',
+                'badge_text'    => '#475569',
                 'monthly_price' => $dbPlan->monthly_price,
                 'yearly_price'  => $dbPlan->yearly_price,
                 'max_rooms'     => $isUnlimited ? PHP_INT_MAX : $dbPlan->max_rooms,

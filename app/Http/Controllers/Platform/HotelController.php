@@ -251,6 +251,8 @@ class HotelController extends Controller
             $plans[$row->slug] = [
                 'label'         => $row->label,
                 'color'         => $row->color,
+                'badge_bg'      => '#f1f5f9',
+                'badge_text'    => '#475569',
                 'monthly_price' => $row->monthly_price,
                 'yearly_price'  => $row->yearly_price,
                 'max_rooms'     => $isUnlimited ? PHP_INT_MAX : (int) $row->max_rooms,
