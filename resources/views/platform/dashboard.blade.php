@@ -32,10 +32,10 @@
         </div>
         <div>
             <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;">
-                Subscription Reminder — Rs {{ number_format($monthlyPotential) }}/month collectible
+                Subscription Overview — Rs {{ number_format($monthlyPotential) }}/month across all plans
             </div>
             <div style="font-size:12px;color:#a78bfa;">
-                {{ implode(' &nbsp;·&nbsp; ', $planBreakdown) }}
+                {!! implode(' &nbsp;·&nbsp; ', $planBreakdown) !!}
                 &nbsp;·&nbsp; {{ $totalHotels }} hotel{{ $totalHotels !== 1 ? 's' : '' }} total
             </div>
         </div>
