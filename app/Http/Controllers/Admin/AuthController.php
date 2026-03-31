@@ -123,7 +123,11 @@ class AuthController extends Controller
     public function logout()
     {
         ActivityLogger::log('Logged Out', 'Auth', session('crm_user_name', 'Unknown') . ' logged out');
+        $isSuperAdmin = session('crm_is_super_admin', false);
         session()->flush();
+        if ($isSuperAdmin) {
+            return redirect()->route('platform.login')->with('success', 'Logged out of Platform Admin.');
+        }
         return redirect()->route('login')->with('success', 'Logged out successfully.');
     }
 }
