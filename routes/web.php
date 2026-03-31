@@ -61,7 +61,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 // ── Customers ──────────────────────────────────────────────────────────────
 Route::get('/customers',           [CustomerController::class, 'index'])->name('customers.index');
 Route::get('/customers/create',    [CustomerController::class, 'create'])->middleware('permission:guests.create')->name('customers.create');
-Route::post('/customers',          [CustomerController::class, 'store'] )->middleware('permission:guests.create')->name('customers.store');
+Route::post('/customers',            [CustomerController::class, 'store']      )->middleware('permission:guests.create')->name('customers.store');
+Route::post('/customers/quick-store',[CustomerController::class, 'quickStore'])->middleware('permission:guests.create')->name('customers.quickStore');
 Route::get('/customers/{id}/edit', [CustomerController::class, 'edit']  )->middleware('permission:guests.edit')->name('customers.edit');
 Route::put('/customers/{id}',      [CustomerController::class, 'update'])->middleware('permission:guests.edit')->name('customers.update');
 Route::delete('/customers/{id}',   [CustomerController::class, 'destroy'])->middleware('permission:guests.delete')->name('customers.destroy');

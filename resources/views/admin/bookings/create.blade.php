@@ -104,7 +104,14 @@
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="form-label">Guest <span class="text-red-500">*</span></label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="form-label mb-0">Guest <span class="text-red-500">*</span></label>
+                        <button type="button" onclick="openQuickGuestModal()"
+                            class="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 hover:text-cyan-800 transition-colors"
+                            title="Add new guest">
+                            <i class="fas fa-user-plus text-xs"></i> + Add Guest
+                        </button>
+                    </div>
                     <select name="customer_id" id="guestSelect" class="@error('customer_id') border-red-400 @enderror" required>
                         <option value="">Search guest by name or phone...</option>
                         @foreach($customers as $customer)
@@ -253,10 +260,70 @@
         </form>
     </div>
 </div>
+{{-- Quick Add Guest Modal --}}
+<div id="quickGuestModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.45);" onclick="if(event.target===this)closeQuickGuestModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-2xl">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user-plus text-white text-xs"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 text-sm">Quick Add Guest</h3>
+                    <p class="text-xs text-gray-400">Guest will be saved to this hotel</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeQuickGuestModal()" class="text-gray-400 hover:text-gray-600 transition-colors w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+        <form id="quickGuestForm" class="p-6" novalidate>
+            @csrf
+            <div id="qgError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
+                <i class="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
+                <span id="qgErrorMsg"></span>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="form-label">Full Name <span class="text-red-500">*</span></label>
+                    <input type="text" id="qg_name" name="name" class="form-input" placeholder="Guest full name" required>
+                </div>
+                <div>
+                    <label class="form-label">Phone Number <span class="text-red-500">*</span></label>
+                    <input type="text" id="qg_phone" name="phone" class="form-input" placeholder="+91 XXXXX XXXXX" required>
+                </div>
+                <div>
+                    <label class="form-label">Email <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
+                    <input type="email" id="qg_email" name="email" class="form-input" placeholder="guest@email.com">
+                </div>
+                <div>
+                    <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
+                    <select id="qg_id_type" name="id_type" class="form-input" required>
+                        <option value="">Select document type</option>
+                        <option value="aadhaar">Aadhaar Card</option>
+                        <option value="passport">Passport</option>
+                        <option value="driving_license">Driving License</option>
+                        <option value="voter_id">Voter ID</option>
+                        <option value="pan_card">PAN Card</option>
+                        <option value="visa">Visa</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="closeQuickGuestModal()" class="btn-secondary flex-1">Cancel</button>
+                <button type="submit" id="qgSubmitBtn" class="btn-primary flex-1 justify-center">
+                    <i class="fas fa-save mr-2"></i>Save Guest
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-    new TomSelect('#guestSelect', {
+    const guestTomSelect = new TomSelect('#guestSelect', {
         allowEmptyOption: false,
         placeholder: 'Search guest by name or phone...',
         maxOptions: 300,
@@ -343,6 +410,67 @@
 
     document.getElementById('checkIn').addEventListener('change', calculateTotal);
     document.getElementById('checkOut').addEventListener('change', calculateTotal);
+
+    // ── Quick Add Guest Modal ─────────────────────────────────────────────
+    function openQuickGuestModal() {
+        document.getElementById('quickGuestModal').classList.remove('hidden');
+        document.getElementById('qg_name').focus();
+    }
+
+    function closeQuickGuestModal() {
+        document.getElementById('quickGuestModal').classList.add('hidden');
+        document.getElementById('quickGuestForm').reset();
+        document.getElementById('qgError').classList.add('hidden');
+        document.getElementById('qgErrorMsg').textContent = '';
+        const btn = document.getElementById('qgSubmitBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Guest';
+    }
+
+    // Close with ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeQuickGuestModal();
+    });
+
+    document.getElementById('quickGuestForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('qgSubmitBtn');
+        const errDiv = document.getElementById('qgError');
+        const errMsg = document.getElementById('qgErrorMsg');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        errDiv.classList.add('hidden');
+        try {
+            const fd = new FormData(this);
+            const res = await fetch('{{ route("customers.quickStore") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: fd,
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                const msgs = data.errors
+                    ? Object.values(data.errors).flat().join(' ')
+                    : (data.message || 'Error saving guest.');
+                errMsg.textContent = msgs;
+                errDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Guest';
+            } else {
+                guestTomSelect.addOption({ value: data.id, text: data.label });
+                guestTomSelect.setValue(data.id);
+                closeQuickGuestModal();
+            }
+        } catch (err) {
+            errMsg.textContent = 'Network error. Please try again.';
+            errDiv.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Guest';
+        }
+    });
 </script>
 @endpush
 @endsection

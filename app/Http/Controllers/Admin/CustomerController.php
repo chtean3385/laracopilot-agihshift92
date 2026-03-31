@@ -8,6 +8,7 @@ use App\Models\CustomerDocument;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -37,7 +38,7 @@ class CustomerController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => 'nullable|email|unique:customers,email',
+            'email'         => 'nullable|email',
             'phone'         => 'required|string|max:20',
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
@@ -76,7 +77,7 @@ class CustomerController extends Controller
         $customer  = Customer::findOrFail($id);
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => 'nullable|email|unique:customers,email,' . $id,
+            'email'         => 'nullable|email',
             'phone'         => 'required|string|max:20',
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
@@ -103,6 +104,30 @@ class CustomerController extends Controller
         $customer->delete();
         ActivityLogger::log('Deleted', 'Guest', 'Deleted guest profile: ' . $name);
         return redirect()->route('customers.index')->with('success', 'Guest deleted.');
+    }
+
+    public function quickStore(Request $request)
+    {
+        if (!session('crm_logged_in')) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+        $validated = $request->validate([
+            'name'    => 'required|string|max:255',
+            'phone'   => 'required|string|max:20',
+            'email'   => 'nullable|email',
+            'id_type' => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
+        ]);
+        $validated['id_number']   = '';
+        $validated['country']     = 'India';
+        $validated['nationality'] = 'Indian';
+        $customer = Customer::create($validated);
+        ActivityLogger::log('Created', 'Guest', 'Quick-created guest: ' . $customer->name . ' (' . $customer->phone . ')');
+        return response()->json([
+            'id'    => $customer->id,
+            'name'  => $customer->name,
+            'phone' => $customer->phone,
+            'label' => $customer->name . ' — ' . $customer->phone,
+        ]);
     }
 
     private function saveDocuments(Request $request, int $customerId, string $idType): void
