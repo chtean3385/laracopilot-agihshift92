@@ -36,9 +36,10 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+        $hotelId = $this->currentHotelId();
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => 'nullable|email',
+            'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)],
             'phone'         => 'required|string|max:20',
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
@@ -74,10 +75,11 @@ class CustomerController extends Controller
     public function update(Request $request, $id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+        $hotelId  = $this->currentHotelId();
         $customer  = Customer::findOrFail($id);
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => 'nullable|email',
+            'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->ignore($id)],
             'phone'         => 'required|string|max:20',
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
@@ -111,10 +113,11 @@ class CustomerController extends Controller
         if (!session('crm_logged_in')) {
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
+        $hotelId = $this->currentHotelId();
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
             'phone'   => 'required|string|max:20',
-            'email'   => 'nullable|email',
+            'email'   => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)],
             'id_type' => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
         ]);
         $validated['id_number']   = '';
@@ -166,5 +169,12 @@ class CustomerController extends Controller
         $customer->update(['signature' => $request->signature]);
         \App\Services\ActivityLogger::log('Signature Saved', 'Guest', 'Primary guest signature saved for ' . $customer->name);
         return response()->json(['success' => true]);
+    }
+
+    private function currentHotelId(): ?int
+    {
+        $id = session('crm_hotel_id');
+        if (!$id) $id = session('crm_sa_hotel_filter');
+        return $id ? (int) $id : null;
     }
 }
