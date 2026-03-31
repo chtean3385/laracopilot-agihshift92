@@ -25,6 +25,9 @@ class DashboardController extends Controller
         $totalUsers      = DB::table('hotel_users')->where('status', 'active')->count();
         $totalRooms      = DB::table('rooms')->count();
 
+        // Currency symbol — use the first hotel's setting; fall back to "Rs"
+        $currencySymbol  = DB::table('settings')->value('currency_symbol') ?? 'Rs';
+
         // ── Per-hotel summary (single efficient query with correlated sub-selects) ──
         $hotelStats = DB::table('hotels')
             ->select(
@@ -53,6 +56,7 @@ class DashboardController extends Controller
             'totalBookings', 'activeBookings',
             'totalGuests', 'totalRevenue',
             'totalUsers', 'totalRooms',
+            'currencySymbol',
             'hotelStats'
         ));
     }
