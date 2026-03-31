@@ -19,7 +19,6 @@
         /* ── Sidebar ── */
         #platform-sidebar {
             width: 260px;
-            min-width: 260px;
             height: 100vh;
             background: linear-gradient(180deg, #1e1b4b 0%, #2d1b69 50%, #1e1b4b 100%);
             display: flex;
@@ -31,16 +30,68 @@
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,.1) transparent;
+            transition: transform 0.3s ease;
         }
 
         #platform-sidebar::-webkit-scrollbar { width: 4px; }
         #platform-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+
+        /* Mobile: sidebar off-screen by default */
+        @media (max-width: 1024px) {
+            #platform-sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+            #platform-sidebar.active {
+                transform: translateX(0);
+            }
+        }
 
         #main-wrap {
             margin-left: 260px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (max-width: 1024px) {
+            #main-wrap {
+                margin-left: 0;
+            }
+        }
+
+        /* Overlay when sidebar is open on mobile */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.5);
+            z-index: 40;
+        }
+        #sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Hamburger menu button */
+        #sidebar-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #475569;
+            font-size: 16px;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        @media (max-width: 1024px) {
+            #sidebar-toggle {
+                display: flex;
+            }
         }
 
         /* ── Nav link ── */
@@ -104,7 +155,7 @@
         #topbar {
             background: #fff;
             border-bottom: 1px solid #e2e8f0;
-            padding: 0 28px;
+            padding: 0 16px;
             height: 60px;
             display: flex;
             align-items: center;
@@ -112,12 +163,49 @@
             position: sticky;
             top: 0;
             z-index: 40;
+            gap: 12px;
+        }
+        @media (min-width: 768px) {
+            #topbar {
+                padding: 0 28px;
+            }
+        }
+
+        #topbar > div:first-child {
+            min-width: 0;
+            flex: 1;
+        }
+
+        #topbar h1 {
+            font-size: 17px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #topbar p {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            #topbar p {
+                display: block;
+            }
+            #topbar h1 {
+                font-size: 17px;
+                white-space: normal;
+            }
         }
 
         /* ── Page content ── */
         .page-content {
-            padding: 28px;
+            padding: 16px;
             flex: 1;
+        }
+        @media (min-width: 768px) {
+            .page-content {
+                padding: 28px;
+            }
         }
 
         /* ── Badges ── */
@@ -148,9 +236,20 @@
         /* ── Alert ── */
         .alert-success { background:#dcfce7;border:1px solid #86efac;color:#15803d;padding:12px 18px;border-radius:12px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600; }
         .alert-error   { background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:12px 18px;border-radius:12px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600; }
+
+        /* ── Responsive tables ── */
+        table th, table td { padding: 10px 8px; }
+        @media (min-width: 768px) {
+            table th, table td { padding: 12px 14px; }
+        }
+        table th:first-child, table td:first-child { padding-left: 12px; }
+        table th:last-child, table td:last-child { padding-right: 12px; }
     </style>
 </head>
 <body>
+
+<!-- ── Sidebar overlay (mobile) ─────────────────────────────────────────── -->
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
 <aside id="platform-sidebar">
@@ -245,20 +344,23 @@
 
     <!-- Top bar -->
     <header id="topbar">
+        <button id="sidebar-toggle" onclick="toggleSidebar()" style="margin-right:auto;">
+            <i class="fas fa-bars"></i>
+        </button>
         <div>
             <h1 style="font-size:17px;font-weight:800;color:#1e293b;margin:0;">@yield('page-title', 'Platform Admin')</h1>
             <p style="font-size:12px;color:#94a3b8;margin:2px 0 0;">@yield('page-subtitle', '')</p>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:11px;color:#94a3b8;background:#f1f5f9;padding:4px 12px;border-radius:20px;border:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+            <span style="font-size:11px;color:#94a3b8;background:#f1f5f9;padding:4px 12px;border-radius:20px;border:1px solid #e2e8f0;white-space:nowrap;">
                 <i class="fas fa-shield-halved" style="color:#8b5cf6;margin-right:4px;"></i>
-                Platform Admin Console
+                <span style="display:none;" class="console-text">Platform Admin Console</span>
             </span>
         </div>
     </header>
 
     <!-- Flash messages -->
-    <div style="padding:16px 28px 0;">
+    <div style="padding:16px;">
         @if(session('success'))
         <div class="alert-success"><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
         @endif
@@ -285,5 +387,45 @@
 </div>
 
 @stack('scripts')
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('platform-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+}
+
+// Close sidebar when clicking a nav link on mobile
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth <= 1024) {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('platform-sidebar').classList.remove('active');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            });
+        });
+    }
+});
+
+// Show console text on larger screens
+window.addEventListener('resize', function() {
+    const consoleText = document.querySelector('.console-text');
+    if (window.innerWidth >= 1024) {
+        consoleText.style.display = 'inline';
+    } else {
+        consoleText.style.display = 'none';
+    }
+});
+
+// Initial check
+document.addEventListener('DOMContentLoaded', function() {
+    const consoleText = document.querySelector('.console-text');
+    if (window.innerWidth >= 1024) {
+        consoleText.style.display = 'inline';
+    }
+});
+</script>
+
 </body>
 </html>

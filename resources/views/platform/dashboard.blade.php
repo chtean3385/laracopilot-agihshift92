@@ -58,7 +58,15 @@
 @endif
 
 {{-- ── SaaS KPI Cards (4 cards: MRR, Active Subscriptions, Suspended/Inactive, Next Month) ──────── --}}
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px;">
+<div style="display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:28px;" class="kpi-grid">
+<style>
+    @media (min-width: 640px) {
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1200px) {
+        .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+</style>
 
     {{-- Monthly Recurring Revenue --}}
     <div style="background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;position:relative;overflow:hidden;">
