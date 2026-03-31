@@ -9,13 +9,22 @@
 @php
     $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'color' => '#6d28d9', 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569', 'monthly_price' => 0, 'yearly_price' => 0];
 
-    // MRR breakdown per plan for the banner — ACTIVE tenants only (consistent with $mrr)
+    // MRR breakdown per plan for the banner — ACTIVE tenants only, using effective prices
     $activePlanCounts = $hotelStats->where('status', 'active')->groupBy('plan');
     $planBreakdown = [];
+    $hasCustomPricing = false;
     foreach ($activePlanCounts as $slug => $hotels) {
-        $price = $plans[$slug]['monthly_price'] ?? 0;
         $count = $hotels->count();
-        $planBreakdown[] = $count . ' × ' . ($plans[$slug]['label'] ?? ucfirst($slug)) . ' (Rs&nbsp;' . number_format($price) . ')';
+        $planMrr = 0;
+        foreach ($hotels as $h) {
+            $defMonthly = (int)($plans[$slug]['monthly_price'] ?? 0);
+            $defYearly  = (int)($plans[$slug]['yearly_price']  ?? 0);
+            $effMonthly = ($h->custom_monthly_price > 0) ? (int)$h->custom_monthly_price : $defMonthly;
+            $effYearly  = ($h->custom_yearly_price  > 0) ? (int)$h->custom_yearly_price  : $defYearly;
+            if ($h->custom_monthly_price > 0 || $h->custom_yearly_price > 0) $hasCustomPricing = true;
+            $planMrr += ($h->billing_cycle === 'yearly') ? round($effYearly / 12) : $effMonthly;
+        }
+        $planBreakdown[] = $count . ' × ' . ($plans[$slug]['label'] ?? ucfirst($slug)) . ' (Rs&nbsp;' . number_format($planMrr) . '/mo)';
     }
 @endphp
 
@@ -33,6 +42,9 @@
             <div style="font-size:12px;color:#a78bfa;">
                 {!! implode(' &nbsp;·&nbsp; ', $planBreakdown) !!}
                 &nbsp;·&nbsp; {{ $activeHotels }} active tenant{{ $activeHotels !== 1 ? 's' : '' }}
+                @if($hasCustomPricing)
+                &nbsp;<span style="font-size:10px;font-weight:700;background:rgba(250,204,21,.2);color:#fbbf24;padding:1px 7px;border-radius:4px;vertical-align:middle;">custom pricing applied</span>
+                @endif
             </div>
         </div>
     </div>
@@ -146,8 +158,11 @@
                     $statusBg   = $isActive ? '#dcfce7' : '#fee2e2';
                     $statusText = $isActive ? '#15803d' : '#b91c1c';
                     $statusLabel = ucfirst($hotel->status);
-                    $monthlyPrice = $plan['monthly_price'] ?? 0;
-                    $yearlyPrice  = $plan['yearly_price']  ?? 0;
+                    // Effective price: custom override if set, else plan default
+                    $monthlyPrice = $hotel->custom_monthly_price > 0 ? (float)$hotel->custom_monthly_price : ($plan['monthly_price'] ?? 0);
+                    $yearlyPrice  = $hotel->custom_yearly_price  > 0 ? (float)$hotel->custom_yearly_price  : ($plan['yearly_price']  ?? 0);
+                    $isCustom     = $hotel->custom_monthly_price > 0 || $hotel->custom_yearly_price > 0;
+                    $cycle        = $hotel->billing_cycle ?? 'monthly';
                 @endphp
                 <tr style="border-bottom:1px solid #f8fafc;transition:background .15s;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'">
 
@@ -181,9 +196,20 @@
 
                     {{-- Pricing --}}
                     <td style="padding:14px;">
-                        @if($monthlyPrice > 0)
-                        <div style="font-size:13px;font-weight:700;color:#1e293b;">Rs {{ number_format($monthlyPrice) }}<span style="font-size:10px;font-weight:500;color:#94a3b8;">/mo</span></div>
-                        <div style="font-size:10px;color:#94a3b8;margin-top:1px;">Rs {{ number_format($yearlyPrice) }}/yr</div>
+                        @if($monthlyPrice > 0 || $yearlyPrice > 0)
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            @if($cycle === 'yearly')
+                            <div style="font-size:13px;font-weight:700;color:#1e293b;">Rs {{ number_format($yearlyPrice) }}<span style="font-size:10px;font-weight:500;color:#94a3b8;">/yr</span></div>
+                            @else
+                            <div style="font-size:13px;font-weight:700;color:#1e293b;">Rs {{ number_format($monthlyPrice) }}<span style="font-size:10px;font-weight:500;color:#94a3b8;">/mo</span></div>
+                            @endif
+                            @if($isCustom)
+                            <span style="font-size:9px;font-weight:700;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;">CUSTOM</span>
+                            @endif
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;margin-top:2px;">
+                            {{ $cycle === 'yearly' ? 'Yearly billing · Rs '.number_format($monthlyPrice).'/mo equiv' : 'Monthly billing' }}
+                        </div>
                         @else
                         <span style="font-size:12px;color:#94a3b8;">—</span>
                         @endif

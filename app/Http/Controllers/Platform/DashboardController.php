@@ -38,8 +38,8 @@ class DashboardController extends Controller
                 ? (int) $dbPlansAll[$h->plan]->yearly_price
                 : (int) ($configPlans[$h->plan]['yearly_price'] ?? 0);
 
-            $effectiveMonthly = (int) ($h->custom_monthly_price ?? $planMonthly);
-            $effectiveYearly  = (int) ($h->custom_yearly_price  ?? $planYearly);
+            $effectiveMonthly = ($h->custom_monthly_price > 0) ? (int) $h->custom_monthly_price : $planMonthly;
+            $effectiveYearly  = ($h->custom_yearly_price  > 0) ? (int) $h->custom_yearly_price  : $planYearly;
 
             if ($h->billing_cycle === 'yearly') {
                 $arr += $effectiveYearly;
@@ -61,6 +61,9 @@ class DashboardController extends Controller
                 'hotels.slug',
                 'hotels.plan',
                 'hotels.status',
+                'hotels.billing_cycle',
+                'hotels.custom_monthly_price',
+                'hotels.custom_yearly_price',
                 'hotels.max_rooms',
                 'hotels.max_users',
                 'hotels.created_at',
