@@ -211,6 +211,11 @@
             Users
         </a>
 
+        <a href="{{ route('platform.plans.index') }}" class="nav-link {{ request()->routeIs('platform.plans.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-layer-group"></i></span>
+            Plans
+        </a>
+
         <div class="nav-section">System</div>
 
         <a href="{{ route('activity_log.index') }}" class="nav-link">

@@ -9,16 +9,19 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $plans = config('plans', []);
+        $dbPlans = DB::table('platform_plans')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->keyBy('slug');
 
-        // ── Tenant counts ─────────────────────────────────────────────────────
+        $configPlans = config('plans', []);
+
         $totalHotels     = DB::table('hotels')->count();
         $activeHotels    = DB::table('hotels')->where('status', 'active')->count();
         $suspendedHotels = DB::table('hotels')->where('status', 'suspended')->count();
         $trialHotels     = DB::table('hotels')->whereNotNull('trial_ends_at')->where('trial_ends_at', '>=', now())->count();
 
-        // ── SaaS Revenue Metrics (subscription-based, not hotel booking revenue) ──
-        // MRR: sum of monthly plan prices for all ACTIVE hotels
         $activeHotelPlans = DB::table('hotels')
             ->where('status', 'active')
             ->select('plan', DB::raw('COUNT(*) as cnt'))
@@ -27,24 +30,19 @@ class DashboardController extends Controller
 
         $mrr = 0;
         foreach ($activeHotelPlans as $row) {
-            $monthlyPrice = $plans[$row->plan]['monthly_price'] ?? 0;
+            if (isset($dbPlans[$row->plan])) {
+                $monthlyPrice = $dbPlans[$row->plan]->monthly_price;
+            } else {
+                $monthlyPrice = $configPlans[$row->plan]['monthly_price'] ?? 0;
+            }
             $mrr += $monthlyPrice * $row->cnt;
         }
 
-        // ARR (Annual Run Rate)
-        $arr = $mrr * 12;
-
-        // Next-month expected revenue: same as MRR (subscription renews monthly)
-        // Could differ if some plans have trial_ends_at expiring — keep simple for now
+        $arr              = $mrr * 12;
         $nextMonthRevenue = $mrr;
-
-        // Active subscriptions = active hotels on a paid plan
         $activeSubscriptions = $activeHotels;
+        $totalUsers       = DB::table('hotel_users')->where('status', 'active')->count();
 
-        // Users count (platform-level — how many people use the SaaS)
-        $totalUsers = DB::table('hotel_users')->where('status', 'active')->count();
-
-        // ── Per-hotel summary (lean query — no booking/payment data) ─────────
         $hotelStats = DB::table('hotels')
             ->select(
                 'hotels.id',
@@ -61,6 +59,8 @@ class DashboardController extends Controller
             ->selectRaw('(SELECT COUNT(*) FROM hotel_users WHERE hotel_users.hotel_id = hotels.id AND hotel_users.status = "active") as user_count')
             ->orderByDesc('hotels.created_at')
             ->get();
+
+        $plans = $this->mergePlans($dbPlans, $configPlans);
 
         return view('platform.dashboard', compact(
             'totalHotels', 'activeHotels', 'suspendedHotels', 'trialHotels',
@@ -83,5 +83,34 @@ class DashboardController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Now viewing ' . $hotel->name . ' — hotel filter applied.');
+    }
+
+    private function mergePlans($dbPlans, array $configPlans): array
+    {
+        $merged = [];
+
+        foreach ($dbPlans as $slug => $dbPlan) {
+            $features = is_string($dbPlan->features) ? json_decode($dbPlan->features, true) : ($dbPlan->features ?? []);
+            $isUnlimited = $dbPlan->max_rooms >= 9999;
+            $merged[$slug] = [
+                'label'         => $dbPlan->label,
+                'color'         => $dbPlan->color,
+                'monthly_price' => $dbPlan->monthly_price,
+                'yearly_price'  => $dbPlan->yearly_price,
+                'max_rooms'     => $isUnlimited ? PHP_INT_MAX : $dbPlan->max_rooms,
+                'max_users'     => ($dbPlan->max_users >= 9999) ? PHP_INT_MAX : $dbPlan->max_users,
+                'features'      => $features,
+                'limits_note'   => ($isUnlimited ? 'Unlimited' : 'Up to ' . number_format($dbPlan->max_rooms)) . ' rooms, ' . (($dbPlan->max_users >= 9999) ? 'Unlimited' : number_format($dbPlan->max_users)) . ' users',
+                'is_active'     => (bool) $dbPlan->is_active,
+            ];
+        }
+
+        foreach ($configPlans as $slug => $cfg) {
+            if (!isset($merged[$slug])) {
+                $merged[$slug] = $cfg;
+            }
+        }
+
+        return $merged;
     }
 }

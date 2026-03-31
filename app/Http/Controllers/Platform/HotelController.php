@@ -31,7 +31,7 @@ class HotelController extends Controller
             ->get();
 
         $currencySymbol = DB::table('settings')->value('currency_symbol') ?? 'Rs';
-        $plans          = config('plans', []);
+        $plans          = $this->getPlansForUI();
 
         return view('platform.hotels.index', compact('hotels', 'currencySymbol', 'plans'));
     }
@@ -40,7 +40,7 @@ class HotelController extends Controller
 
     public function create()
     {
-        $plans = config('plans', []);
+        $plans = $this->getPlansForUI();
         return view('platform.hotels.create', compact('plans'));
     }
 
@@ -48,12 +48,18 @@ class HotelController extends Controller
 
     public function store(Request $request)
     {
+        $validSlugs = DB::table('platform_plans')->where('is_active', true)->pluck('slug')->toArray();
+        if (empty($validSlugs)) {
+            $validSlugs = array_keys(config('plans', []));
+        }
+        $slugRule = 'required|in:' . implode(',', $validSlugs);
+
         $data = $request->validate([
             'name'           => 'required|string|max:255',
             'email'          => 'nullable|email|max:255',
             'phone'          => 'nullable|string|max:50',
             'address'        => 'nullable|string|max:500',
-            'plan'           => 'required|in:basic,pro,enterprise',
+            'plan'           => $slugRule,
             'max_rooms'      => 'required|integer|min:1',
             'max_users'      => 'required|integer|min:1',
             'admin_notes'    => 'nullable|string|max:1000',
@@ -65,7 +71,6 @@ class HotelController extends Controller
         $slug = $this->generateUniqueSlug($data['name']);
 
         DB::transaction(function () use ($data, $slug) {
-            // (a) Hotel row
             $hotelId = DB::table('hotels')->insertGetId([
                 'name'        => $data['name'],
                 'slug'        => $slug,
@@ -81,7 +86,6 @@ class HotelController extends Controller
                 'updated_at'  => now(),
             ]);
 
-            // (b) Settings row
             DB::table('settings')->insert([
                 'hotel_id'        => $hotelId,
                 'resort_name'     => $data['name'],
@@ -97,7 +101,6 @@ class HotelController extends Controller
                 'updated_at'      => now(),
             ]);
 
-            // (c) 4 default modules (all disabled by default — SA enables per-plan)
             $modules = [
                 ['slug' => 'whatsapp',        'name' => 'WhatsApp Automation', 'description' => 'Automated WhatsApp messages.',            'is_enabled' => false],
                 ['slug' => 'payment_links',   'name' => 'Payment Links',       'description' => 'Generate UPI QR codes and payment links.', 'is_enabled' => false],
@@ -112,19 +115,17 @@ class HotelController extends Controller
                 ]));
             }
 
-            // (d) 3 system roles with permissions
             $this->provisionRoles($hotelId);
 
-            // (e) Hotel admin user
             $adminId = DB::table('users')->insertGetId([
-                'name'       => $data['admin_name'],
-                'email'      => $data['admin_email'],
-                'password'   => Hash::make($data['admin_password']),
-                'role'       => 'Admin',
-                'status'     => 'active',
+                'name'           => $data['admin_name'],
+                'email'          => $data['admin_email'],
+                'password'       => Hash::make($data['admin_password']),
+                'role'           => 'Admin',
+                'status'         => 'active',
                 'is_super_admin' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at'     => now(),
+                'updated_at'     => now(),
             ]);
 
             DB::table('hotel_users')->insert([
@@ -152,7 +153,7 @@ class HotelController extends Controller
             return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
         }
 
-        $plans = config('plans', []);
+        $plans = $this->getPlansForUI();
         return view('platform.hotels.edit', compact('hotel', 'plans'));
     }
 
@@ -166,12 +167,21 @@ class HotelController extends Controller
             return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
         }
 
+        $validSlugs = DB::table('platform_plans')->where('is_active', true)->pluck('slug')->toArray();
+        if (empty($validSlugs)) {
+            $validSlugs = array_keys(config('plans', []));
+        }
+        if ($hotel->plan && !in_array($hotel->plan, $validSlugs)) {
+            $validSlugs[] = $hotel->plan;
+        }
+        $slugRule = 'required|in:' . implode(',', $validSlugs);
+
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'email'       => 'nullable|email|max:255',
             'phone'       => 'nullable|string|max:50',
             'address'     => 'nullable|string|max:500',
-            'plan'        => 'required|in:basic,pro,enterprise',
+            'plan'        => $slugRule,
             'max_rooms'   => 'required|integer|min:1',
             'max_users'   => 'required|integer|min:1',
             'status'      => 'required|in:active,suspended',
@@ -225,6 +235,39 @@ class HotelController extends Controller
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function getPlansForUI(): array
+    {
+        $dbRows = DB::table('platform_plans')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $plans = [];
+        foreach ($dbRows as $row) {
+            $features    = is_string($row->features) ? json_decode($row->features, true) : ($row->features ?? []);
+            $isUnlimited = $row->max_rooms >= 9999;
+            $plans[$row->slug] = [
+                'label'         => $row->label,
+                'color'         => $row->color,
+                'monthly_price' => $row->monthly_price,
+                'yearly_price'  => $row->yearly_price,
+                'max_rooms'     => $isUnlimited ? PHP_INT_MAX : (int) $row->max_rooms,
+                'max_users'     => ($row->max_users >= 9999) ? PHP_INT_MAX : (int) $row->max_users,
+                'features'      => $features,
+                'limits_note'   => ($isUnlimited ? 'Unlimited' : 'Up to ' . number_format($row->max_rooms)) . ' rooms, '
+                                 . (($row->max_users >= 9999) ? 'Unlimited' : number_format($row->max_users)) . ' users',
+                'is_active'     => (bool) $row->is_active,
+            ];
+        }
+
+        if (empty($plans)) {
+            $plans = config('plans', []);
+        }
+
+        return $plans;
+    }
 
     private function generateUniqueSlug(string $name): string
     {

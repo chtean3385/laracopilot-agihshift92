@@ -238,6 +238,11 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/hotels/{id}/activate', [PlatformHotelController::class, 'activate'])->name('platform.hotels.activate');
     Route::get('/hotels/{id}/view-in-crm', [PlatformDashboardController::class, 'viewInCrm'])->name('platform.hotels.view-in-crm');
 
+    // Plans management (Task #13)
+    Route::get('/plans',          [\App\Http\Controllers\Platform\PlanController::class, 'index'])->name('platform.plans.index');
+    Route::get('/plans/{id}/edit',[\App\Http\Controllers\Platform\PlanController::class, 'edit'])->name('platform.plans.edit');
+    Route::put('/plans/{id}',     [\App\Http\Controllers\Platform\PlanController::class, 'update'])->name('platform.plans.update');
+
     // User management (Task #9)
     Route::get('/users',                                          [\App\Http\Controllers\Platform\UserController::class, 'index'])->name('platform.users.index');
     Route::get('/users/{id}/reset-password',                      [\App\Http\Controllers\Platform\UserController::class, 'showResetPassword'])->name('platform.users.reset.show');
