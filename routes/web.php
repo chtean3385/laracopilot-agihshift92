@@ -216,6 +216,7 @@ Route::get( '/pathik/pending',         [\App\Http\Controllers\Admin\PathikContro
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 
 Route::prefix('platform')->middleware('platform.admin')->group(function () {
+    Route::get('/',          fn() => redirect()->route('platform.dashboard'))->name('platform.index');
     Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
 
     // Placeholder routes for Hotel and User management (implemented in Tasks #8 and #9)
