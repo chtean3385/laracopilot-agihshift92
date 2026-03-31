@@ -9,8 +9,8 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $dbPlans = DB::table('platform_plans')
-            ->where('is_active', true)
+        // Load ALL DB plans (active + inactive) for display/pricing lookups
+        $dbPlansAll = DB::table('platform_plans')
             ->orderBy('sort_order')
             ->get()
             ->keyBy('slug');
@@ -30,8 +30,9 @@ class DashboardController extends Controller
 
         $mrr = 0;
         foreach ($activeHotelPlans as $row) {
-            if (isset($dbPlans[$row->plan])) {
-                $monthlyPrice = $dbPlans[$row->plan]->monthly_price;
+            // DB lookup first (all plans including inactive for historical accuracy)
+            if (isset($dbPlansAll[$row->plan])) {
+                $monthlyPrice = $dbPlansAll[$row->plan]->monthly_price;
             } else {
                 $monthlyPrice = $configPlans[$row->plan]['monthly_price'] ?? 0;
             }
@@ -60,7 +61,8 @@ class DashboardController extends Controller
             ->orderByDesc('hotels.created_at')
             ->get();
 
-        $plans = $this->mergePlans($dbPlans, $configPlans);
+        // Merged plans (all DB plans + config fallback) for display/badge rendering
+        $plans = $this->mergePlans($dbPlansAll, $configPlans);
 
         return view('platform.dashboard', compact(
             'totalHotels', 'activeHotels', 'suspendedHotels', 'trialHotels',
@@ -85,12 +87,12 @@ class DashboardController extends Controller
             ->with('success', 'Now viewing ' . $hotel->name . ' — hotel filter applied.');
     }
 
-    private function mergePlans($dbPlans, array $configPlans): array
+    private function mergePlans($dbPlansAll, array $configPlans): array
     {
         $merged = [];
 
-        foreach ($dbPlans as $slug => $dbPlan) {
-            $features = is_string($dbPlan->features) ? json_decode($dbPlan->features, true) : ($dbPlan->features ?? []);
+        foreach ($dbPlansAll as $slug => $dbPlan) {
+            $features    = is_string($dbPlan->features) ? json_decode($dbPlan->features, true) : ($dbPlan->features ?? []);
             $isUnlimited = $dbPlan->max_rooms >= 9999;
             $merged[$slug] = [
                 'label'         => $dbPlan->label,
@@ -99,10 +101,11 @@ class DashboardController extends Controller
                 'badge_text'    => '#475569',
                 'monthly_price' => $dbPlan->monthly_price,
                 'yearly_price'  => $dbPlan->yearly_price,
-                'max_rooms'     => $isUnlimited ? PHP_INT_MAX : $dbPlan->max_rooms,
-                'max_users'     => ($dbPlan->max_users >= 9999) ? PHP_INT_MAX : $dbPlan->max_users,
+                'max_rooms'     => $isUnlimited ? PHP_INT_MAX : (int) $dbPlan->max_rooms,
+                'max_users'     => ($dbPlan->max_users >= 9999) ? PHP_INT_MAX : (int) $dbPlan->max_users,
                 'features'      => $features,
-                'limits_note'   => ($isUnlimited ? 'Unlimited' : 'Up to ' . number_format($dbPlan->max_rooms)) . ' rooms, ' . (($dbPlan->max_users >= 9999) ? 'Unlimited' : number_format($dbPlan->max_users)) . ' users',
+                'limits_note'   => ($isUnlimited ? 'Unlimited' : 'Up to ' . number_format($dbPlan->max_rooms)) . ' rooms, '
+                                 . (($dbPlan->max_users >= 9999) ? 'Unlimited' : number_format($dbPlan->max_users)) . ' users',
                 'is_active'     => (bool) $dbPlan->is_active,
             ];
         }

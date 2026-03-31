@@ -31,7 +31,8 @@ class HotelController extends Controller
             ->get();
 
         $currencySymbol = DB::table('settings')->value('currency_symbol') ?? 'Rs';
-        $plans          = $this->getPlansForUI();
+        // Use ALL plans for display/badge rendering (including inactive)
+        $plans = $this->getAllPlansForDisplay();
 
         return view('platform.hotels.index', compact('hotels', 'currencySymbol', 'plans'));
     }
@@ -40,7 +41,8 @@ class HotelController extends Controller
 
     public function create()
     {
-        $plans = $this->getPlansForUI();
+        // Only active plans for new hotel creation
+        $plans = $this->getActivePlansForSelection();
         return view('platform.hotels.create', compact('plans'));
     }
 
@@ -52,14 +54,13 @@ class HotelController extends Controller
         if (empty($validSlugs)) {
             $validSlugs = array_keys(config('plans', []));
         }
-        $slugRule = 'required|in:' . implode(',', $validSlugs);
 
         $data = $request->validate([
             'name'           => 'required|string|max:255',
             'email'          => 'nullable|email|max:255',
             'phone'          => 'nullable|string|max:50',
             'address'        => 'nullable|string|max:500',
-            'plan'           => $slugRule,
+            'plan'           => 'required|in:' . implode(',', $validSlugs),
             'max_rooms'      => 'required|integer|min:1',
             'max_users'      => 'required|integer|min:1',
             'admin_notes'    => 'nullable|string|max:1000',
@@ -153,7 +154,8 @@ class HotelController extends Controller
             return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
         }
 
-        $plans = $this->getPlansForUI();
+        // Active plans for new selection + always include hotel's current plan (even if inactive)
+        $plans = $this->getActivePlansForSelection($hotel->plan ?? null);
         return view('platform.hotels.edit', compact('hotel', 'plans'));
     }
 
@@ -171,17 +173,17 @@ class HotelController extends Controller
         if (empty($validSlugs)) {
             $validSlugs = array_keys(config('plans', []));
         }
+        // Always allow hotel's existing plan slug even if now inactive
         if ($hotel->plan && !in_array($hotel->plan, $validSlugs)) {
             $validSlugs[] = $hotel->plan;
         }
-        $slugRule = 'required|in:' . implode(',', $validSlugs);
 
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'email'       => 'nullable|email|max:255',
             'phone'       => 'nullable|string|max:50',
             'address'     => 'nullable|string|max:500',
-            'plan'        => $slugRule,
+            'plan'        => 'required|in:' . implode(',', $validSlugs),
             'max_rooms'   => 'required|integer|min:1',
             'max_users'   => 'required|integer|min:1',
             'status'      => 'required|in:active,suspended',
@@ -234,18 +236,63 @@ class HotelController extends Controller
             ->with('success', "Hotel \"{$hotel->name}\" has been reactivated.");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Plan Helpers ──────────────────────────────────────────────────────────
 
-    private function getPlansForUI(): array
+    /**
+     * Active plans for new assignment (hotel create form, new selection cards).
+     * Optionally includes an extra slug (current hotel plan) even if inactive.
+     */
+    private function getActivePlansForSelection(?string $includeSlug = null): array
+    {
+        $query = DB::table('platform_plans')->where('is_active', true);
+
+        if ($includeSlug) {
+            $query = DB::table('platform_plans')
+                ->where('is_active', true)
+                ->orWhere('slug', $includeSlug);
+        }
+
+        $dbRows = $query->orderBy('sort_order')->orderBy('id')->get();
+
+        $plans = $this->rowsToPlanArray($dbRows);
+
+        if (empty($plans)) {
+            $plans = config('plans', []);
+        }
+
+        return $plans;
+    }
+
+    /**
+     * ALL plans (active + inactive) for display/badge rendering in hotel directory
+     * and dashboard — preserves historical assignment labels and prices.
+     */
+    private function getAllPlansForDisplay(): array
     {
         $dbRows = DB::table('platform_plans')
-            ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
 
+        $plans = $this->rowsToPlanArray($dbRows);
+
+        // Merge config-only plans (slugs not present in DB) as fallback
+        foreach (config('plans', []) as $slug => $cfg) {
+            if (!isset($plans[$slug])) {
+                $plans[$slug] = $cfg;
+            }
+        }
+
+        return $plans;
+    }
+
+    /**
+     * Convert DB result rows to the canonical plan array format used by views.
+     */
+    private function rowsToPlanArray($rows): array
+    {
         $plans = [];
-        foreach ($dbRows as $row) {
+        foreach ($rows as $row) {
             $features    = is_string($row->features) ? json_decode($row->features, true) : ($row->features ?? []);
             $isUnlimited = $row->max_rooms >= 9999;
             $plans[$row->slug] = [
@@ -253,8 +300,8 @@ class HotelController extends Controller
                 'color'         => $row->color,
                 'badge_bg'      => '#f1f5f9',
                 'badge_text'    => '#475569',
-                'monthly_price' => $row->monthly_price,
-                'yearly_price'  => $row->yearly_price,
+                'monthly_price' => (int) $row->monthly_price,
+                'yearly_price'  => (int) $row->yearly_price,
                 'max_rooms'     => $isUnlimited ? PHP_INT_MAX : (int) $row->max_rooms,
                 'max_users'     => ($row->max_users >= 9999) ? PHP_INT_MAX : (int) $row->max_users,
                 'features'      => $features,
@@ -263,13 +310,10 @@ class HotelController extends Controller
                 'is_active'     => (bool) $row->is_active,
             ];
         }
-
-        if (empty($plans)) {
-            $plans = config('plans', []);
-        }
-
         return $plans;
     }
+
+    // ── Other Helpers ─────────────────────────────────────────────────────────
 
     private function generateUniqueSlug(string $name): string
     {
