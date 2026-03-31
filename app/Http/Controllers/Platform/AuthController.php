@@ -28,6 +28,7 @@ class AuthController extends Controller
         $user = DB::table('users')
             ->where('email', $data['email'])
             ->where('is_super_admin', 1)
+            ->where('status', 'active')
             ->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
@@ -46,6 +47,11 @@ class AuthController extends Controller
             'crm_user_role'                => 'Super Admin',
             'crm_is_super_admin'           => true,
             'platform_reminder_dismissed'  => false,
+            // Clear any stale hotel-scoped keys from a previous CRM session
+            'crm_hotel_id'                 => null,
+            'crm_hotel_name'               => null,
+            'crm_permissions'              => ['*'],
+            'crm_user_avatar'              => null,
         ]);
 
         return redirect()->route('platform.dashboard');
