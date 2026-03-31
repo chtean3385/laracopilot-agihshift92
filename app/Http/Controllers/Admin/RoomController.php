@@ -12,6 +12,7 @@ class RoomController extends Controller
     public function index(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+
         $query = Room::query();
         if ($request->status) $query->where('status', $request->status);
         if ($request->type)   $query->where('type', $request->type);

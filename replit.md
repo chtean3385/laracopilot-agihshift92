@@ -115,6 +115,7 @@ Stored in `modules` table. Check with `Module::isEnabled('slug')`:
 - **Super Admin** has no `crm_hotel_id` — sees all data (scope inactive)
 - **Hotel scope disabled** for: installer routes, health check, Pathik extension fetch API
 - **Seeders**: All 4 seeders (Modules, Roles, Settings, WhatsApp) auto-detect or create hotel_id=1
+- **CRITICAL BUG FIXED**: `SetHotelContext` was registered with `$middleware->append()` (global stack = runs BEFORE `StartSession`). Fixed to `$middleware->web(append: [...])` so it runs inside the web group AFTER session is started. Root cause: `session('crm_hotel_id')` returned null in middleware because session wasn't started yet, so HotelContext was never set, causing unfiltered queries.
 
 ## Services
 - `App\Services\HotelContext` — Singleton; `setHotel(int)` / `getHotel()` / `isSet()` / `clear()`
