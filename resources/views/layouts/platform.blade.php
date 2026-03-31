@@ -223,6 +223,11 @@
             Activity Log
         </a>
 
+        <a href="{{ route('platform.settings.2fa') }}" class="nav-link {{ request()->routeIs('platform.settings.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-shield-halved"></i></span>
+            Security (2FA)
+        </a>
+
     </nav>
 
     <!-- Footer -->
