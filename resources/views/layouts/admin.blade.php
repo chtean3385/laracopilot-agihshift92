@@ -768,8 +768,27 @@
 
         </nav>
 
+        <!-- WhatsApp Support -->
+        @php
+            $waHotel = $settings->resort_name ?? session('crm_hotel_name', 'Hotel CRM');
+        @endphp
+        <div style="padding:8px 10px 4px;">
+            <a href="#" id="sidebar-wa-btn"
+               style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(37,211,102,.18),rgba(18,140,67,.12));border:1px solid rgba(37,211,102,.3);text-decoration:none;transition:all .18s;"
+               onmouseover="this.style.background='linear-gradient(135deg,rgba(37,211,102,.28),rgba(18,140,67,.2))'"
+               onmouseout="this.style.background='linear-gradient(135deg,rgba(37,211,102,.18),rgba(18,140,67,.12))'">
+                <span style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#25d366,#128c43);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 8px rgba(37,211,102,.4);">
+                    <i class="fab fa-whatsapp" style="color:#fff;font-size:16px;"></i>
+                </span>
+                <div style="min-width:0;">
+                    <div style="color:#4ade80;font-size:12px;font-weight:700;line-height:1.2;">Get Support</div>
+                    <div style="color:rgba(74,222,128,.55);font-size:10px;">Chat on WhatsApp</div>
+                </div>
+            </a>
+        </div>
+
         <!-- Logout -->
-        <div style="padding:10px 10px 16px;border-top:1px solid rgba(255,255,255,.06);margin-top:10px;">
+        <div style="padding:6px 10px 16px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px;">
             <a href="{{ route('password.change.form') }}" class="logout-btn" style="text-decoration:none;margin-bottom:4px;">
                 <span class="icon"><i class="fas fa-lock"></i></span>
                 Change Password
@@ -782,6 +801,16 @@
                 </button>
             </form>
         </div>
+
+        <script>
+        (function() {
+            var hotel = @json($waHotel);
+            var page  = document.title.split('—')[0].trim();
+            var msg   = 'Hello! I need support with the *' + page + '* page.\nHotel: *' + hotel + '*\n\nPlease help me!';
+            document.getElementById('sidebar-wa-btn').href = 'https://wa.me/919725225519?text=' + encodeURIComponent(msg);
+            document.getElementById('sidebar-wa-btn').target = '_blank';
+        })();
+        </script>
 
     </aside>
     <!-- ═══════════════ END SIDEBAR ═══════════════ -->
@@ -842,16 +871,38 @@
         </main>
 
         <!-- Footer -->
-        <footer style="background:#fff;border-top:1px solid #f1f5f9;padding:14px 24px;text-align:center;">
-            <p style="font-size:12px;color:#94a3b8;margin:0;">
-                © {{ date('Y') }} {{ $settings->resort_name ?? 'Resort CRM' }}. All rights reserved.
-                <span style="margin:0 8px;">•</span>
-                Support: <a href="tel:+918460765785" style="color:#06b6d4;font-weight:600;text-decoration:none;">+91 84607 65785</a>
-                <span style="margin:0 8px;">•</span>
-                Made with <span style="color:#ef4444;">♥</span> by
-                <a href="https://www.dreams-technology.com" target="_blank" style="color:#06b6d4;font-weight:600;text-decoration:none;">Dreams Technology</a>
-            </p>
+        <footer style="background:#fff;border-top:1px solid #f1f5f9;padding:12px 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                <p style="font-size:12px;color:#94a3b8;margin:0;">
+                    © {{ date('Y') }} {{ $settings->resort_name ?? 'Resort CRM' }}. All rights reserved.
+                    <span style="margin:0 6px;">•</span>
+                    Made with <span style="color:#ef4444;">♥</span> by
+                    <a href="https://www.dreams-technology.com" target="_blank" style="color:#06b6d4;font-weight:600;text-decoration:none;">Dreams Technology</a>
+                </p>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:12px;color:#94a3b8;">Need help?</span>
+                    <a href="tel:+919725225519" style="font-size:12px;color:#06b6d4;font-weight:600;text-decoration:none;">+91 97252 25519</a>
+                    <a href="#" id="footer-wa-btn"
+                       style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;text-decoration:none;box-shadow:0 3px 10px rgba(37,211,102,.35);transition:all .2s;"
+                       onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 5px 16px rgba(37,211,102,.45)'"
+                       onmouseout="this.style.transform='';this.style.boxShadow='0 3px 10px rgba(37,211,102,.35)'"
+                       target="_blank">
+                        <i class="fab fa-whatsapp" style="font-size:14px;"></i> WhatsApp Support
+                    </a>
+                </div>
+            </div>
         </footer>
+
+        <script>
+        (function() {
+            var hotel = @json($settings->resort_name ?? session('crm_hotel_name', 'Hotel CRM'));
+            var page  = document.title.split('—')[0].trim();
+            var msg   = 'Hello! I need support with the *' + page + '* page.\nHotel: *' + hotel + '*\n\nPlease help me!';
+            var url   = 'https://wa.me/919725225519?text=' + encodeURIComponent(msg);
+            var fb = document.getElementById('footer-wa-btn');
+            if (fb) fb.href = url;
+        })();
+        </script>
 
     </div>
     <!-- END Main Wrapper -->
