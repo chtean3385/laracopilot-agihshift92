@@ -293,6 +293,94 @@ class HotelController extends Controller
             ->with('success', "Hotel \"{$hotel->name}\" has been reactivated.");
     }
 
+    // ── Destroy (hard delete) ─────────────────────────────────────────────────
+
+    public function destroy(int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
+        }
+
+        if ($hotel->status !== 'suspended') {
+            return redirect()->route('platform.hotels.index')
+                ->with('error', "Cannot delete \"{$hotel->name}\" — hotel must be suspended first before deletion.");
+        }
+
+        DB::transaction(function () use ($id) {
+            // 1. Channel sub-tables (depend on bookings / rooms)
+            DB::table('channel_bookings')->where('hotel_id', $id)->delete();
+            DB::table('channel_room_mappings')->where('hotel_id', $id)->delete();
+
+            // 2. Booking guest links (pivot on booking_id)
+            $bookingIds = DB::table('bookings')->where('hotel_id', $id)->pluck('id');
+            if ($bookingIds->isNotEmpty()) {
+                DB::table('booking_guests')->whereIn('booking_id', $bookingIds)->delete();
+            }
+
+            // 3. Financial records
+            DB::table('invoices')->where('hotel_id', $id)->delete();
+            DB::table('payments')->where('hotel_id', $id)->delete();
+            DB::table('bookings')->where('hotel_id', $id)->delete();
+
+            // 4. Customer documents (pivot on customer_id)
+            $customerIds = DB::table('customers')->where('hotel_id', $id)->pluck('id');
+            if ($customerIds->isNotEmpty()) {
+                DB::table('customer_documents')->whereIn('customer_id', $customerIds)->delete();
+            }
+            DB::table('customers')->where('hotel_id', $id)->delete();
+
+            // 5. Operational tables
+            DB::table('rooms')->where('hotel_id', $id)->delete();
+            DB::table('activity_logs')->where('hotel_id', $id)->delete();
+
+            // 6. Config / module tables
+            DB::table('whatsapp_templates')->where('hotel_id', $id)->delete();
+            DB::table('whatsapp_configs')->where('hotel_id', $id)->delete();
+            DB::table('pathik_configs')->where('hotel_id', $id)->delete();
+            DB::table('channel_manager_configs')->where('hotel_id', $id)->delete();
+            DB::table('payment_link_configs')->where('hotel_id', $id)->delete();
+            DB::table('modules')->where('hotel_id', $id)->delete();
+
+            // 7. Roles + permissions pivot
+            $roleIds = DB::table('roles')->where('hotel_id', $id)->pluck('id');
+            if ($roleIds->isNotEmpty()) {
+                DB::table('role_permissions')->whereIn('role_id', $roleIds)->delete();
+            }
+            DB::table('roles')->where('hotel_id', $id)->delete();
+
+            // 8. Settings
+            DB::table('settings')->where('hotel_id', $id)->delete();
+
+            // 9. Users — delete hotel_users pivot, then orphaned users (no remaining hotels)
+            $userIds = DB::table('hotel_users')->where('hotel_id', $id)->pluck('user_id');
+            DB::table('hotel_users')->where('hotel_id', $id)->delete();
+
+            if ($userIds->isNotEmpty()) {
+                // Only delete users who no longer belong to any other hotel
+                $stillLinked = DB::table('hotel_users')
+                    ->whereIn('user_id', $userIds)
+                    ->pluck('user_id')
+                    ->unique();
+
+                $orphanedUserIds = $userIds->diff($stillLinked);
+
+                if ($orphanedUserIds->isNotEmpty()) {
+                    // Clean up recovery codes before deleting users
+                    DB::table('platform_recovery_codes')->whereIn('user_id', $orphanedUserIds)->delete();
+                    DB::table('users')->whereIn('id', $orphanedUserIds)->delete();
+                }
+            }
+
+            // 10. Delete the hotel itself
+            DB::table('hotels')->where('id', $id)->delete();
+        });
+
+        return redirect()->route('platform.hotels.index')
+            ->with('success', "Hotel \"{$hotel->name}\" and all associated data have been permanently deleted.");
+    }
+
     // ── Plan Helpers ──────────────────────────────────────────────────────────
 
     /**

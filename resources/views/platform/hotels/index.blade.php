@@ -144,6 +144,18 @@
                                     <i class="fas fa-check-circle"></i> Activate
                                 </button>
                             </form>
+
+                            {{-- Delete — only available when suspended --}}
+                            <form method="POST" action="{{ route('platform.hotels.destroy', $hotel->id) }}" style="margin:0;"
+                                  onsubmit="return confirm('⚠️ PERMANENT DELETE\n\nThis will hard-delete \"{{ addslashes($hotel->name) }}\" and ALL associated data:\nrooms, bookings, payments, invoices, guests, users, settings.\n\nThis CANNOT be undone. Type the hotel name to confirm.\n\nAre you absolutely sure?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                    style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#7f1d1d;color:#fca5a5;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;"
+                                    title="Permanently delete this hotel and all its data">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </form>
                             @endif
 
                         </div>
