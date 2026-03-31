@@ -114,6 +114,9 @@ class CustomerController extends Controller
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
         $hotelId = $this->currentHotelId();
+        if (!$hotelId) {
+            return response()->json(['error' => 'No hotel context is active. Please select a hotel first.'], 422);
+        }
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
             'phone'   => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)],
