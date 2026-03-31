@@ -542,15 +542,37 @@
             </div>
         </div>
 
-        <!-- Hotel Badge -->
-        @if(session('crm_hotel_name'))
+        <!-- Hotel Badge / SA Hotel Switcher -->
+        @if(session('crm_user_role') === 'Super Admin')
+        @php
+            $saHotels = \Illuminate\Support\Facades\DB::table('hotels')->orderBy('name')->get();
+            $saFilterId = session('crm_sa_hotel_filter');
+        @endphp
+        <div style="padding:8px 16px 4px;">
+            <form method="POST" action="{{ route('sa.hotel.filter') }}" id="sa-hotel-form">
+                @csrf
+                <div style="background:rgba(124,58,237,.10);border:1px solid rgba(124,58,237,.25);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;">
+                    <i class="fas fa-building" style="color:#a78bfa;font-size:11px;flex-shrink:0;"></i>
+                    <select name="hotel_id"
+                            onchange="document.getElementById('sa-hotel-form').submit()"
+                            style="background:transparent;border:none;color:#c4b5fd;font-size:11px;font-weight:700;flex:1;min-width:0;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
+                        <option value="" {{ !$saFilterId ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">All Hotels</option>
+                        @foreach($saHotels as $h)
+                        <option value="{{ $h->id }}" {{ $saFilterId == $h->id ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">{{ $h->name }}</option>
+                        @endforeach
+                    </select>
+                    <i class="fas fa-chevron-down" style="color:#7c3aed;font-size:9px;flex-shrink:0;pointer-events:none;"></i>
+                </div>
+            </form>
+        </div>
+        @elseif(session('crm_hotel_name'))
         <div style="padding:8px 16px 4px;">
             <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:8px;padding:7px 10px;">
                 <div style="display:flex;align-items:center;gap:7px;min-width:0;">
                     <i class="fas fa-hotel" style="color:#06b6d4;font-size:11px;flex-shrink:0;"></i>
                     <span style="color:#67e8f9;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_hotel_name') }}</span>
                 </div>
-                @if(session('crm_hotel_count', 1) > 1 || session('crm_user_role') === 'Super Admin')
+                @if(session('crm_hotel_count', 1) > 1)
                 <a href="{{ route('select.hotel') }}" style="color:#475569;font-size:10px;text-decoration:none;white-space:nowrap;margin-left:6px;flex-shrink:0;" title="Switch Hotel">
                     <i class="fas fa-exchange-alt"></i>
                 </a>

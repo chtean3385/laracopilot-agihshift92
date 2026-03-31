@@ -27,6 +27,15 @@ class SetHotelContext
             return $next($request);
         }
 
+        // Super Admin hotel-scoped view (optional filter stored in session)
+        if (session('crm_user_role') === 'Super Admin') {
+            $saFilter = session('crm_sa_hotel_filter');
+            if ($saFilter) {
+                app(HotelContext::class)->setHotel((int) $saFilter);
+            }
+            return $next($request);
+        }
+
         // Logged-in regular user with no hotel selected → force hotel picker
         if (session('crm_logged_in') && session('crm_user_role') !== 'Super Admin') {
             if (!$request->routeIs(['select.hotel', 'select.hotel.post', 'login', 'login.post', 'logout', 'password.*', 'register'])) {

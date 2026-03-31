@@ -79,7 +79,7 @@ class CheckOutController extends Controller
                 'payment_type'   => 'final',
                 'status'         => 'completed',
                 'notes'          => 'Final payment at check-out',
-                'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
+                'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
         }
 
@@ -104,7 +104,7 @@ class CheckOutController extends Controller
         $booking->room->update(['status' => 'available']);
 
         $invoice = Invoice::create([
-            'invoice_number' => 'INV' . strtoupper(substr(uniqid(), -6)),
+            'invoice_number' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-INV-' . strtoupper(substr(uniqid(), -6)),
             'booking_id'     => $booking->id,
             'customer_id'    => $booking->customer_id,
             'total_amount'   => $booking->total_amount,

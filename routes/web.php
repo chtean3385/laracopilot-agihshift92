@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ForgotPasswordController;
 use App\Http\Controllers\Admin\HotelSwitchController;
+use App\Http\Controllers\Admin\SaHotelFilterController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\PaymentLinksController;
@@ -50,6 +51,9 @@ Route::post('/reset-password',        [ForgotPasswordController::class, 'resetPa
 // ── Hotel Picker ────────────────────────────────────────────────────────────
 Route::get('/select-hotel',  [HotelSwitchController::class, 'index'] )->name('select.hotel');
 Route::post('/select-hotel', [HotelSwitchController::class, 'select'])->name('select.hotel.post');
+
+// ── Super Admin Hotel Filter ─────────────────────────────────────────────────
+Route::post('/super-admin/hotel-filter', [SaHotelFilterController::class, 'filter'])->name('sa.hotel.filter');
 
 // ── Dashboard (all logged-in users) ────────────────────────────────────────
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

@@ -66,7 +66,7 @@ class BookingController extends Controller
         $totalAmount    = $nights * $room->price_per_night + $mealCost + $extraBedCost;
         $advancePayment = $validated['advance_payment'] ?? 0;
         $booking = Booking::create([
-            'booking_number'  => 'BK' . strtoupper(substr(uniqid(), -6)),
+            'booking_number'  => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-BK-' . strtoupper(substr(uniqid(), -6)),
             'customer_id'     => $validated['customer_id'],
             'room_id'         => $validated['room_id'],
             'check_in_date'   => $validated['check_in_date'],
@@ -96,7 +96,7 @@ class BookingController extends Controller
                 'payment_type'   => 'advance',
                 'status'         => 'completed',
                 'notes'          => 'Advance at booking',
-                'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
+                'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
         }
         $room->update(['status' => 'occupied']);
