@@ -96,7 +96,13 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'Invalid 2FA state. Please log in again.']);
         }
 
-        $secret    = Crypt::decryptString($user->totp_secret);
+        try {
+            $secret = Crypt::decryptString($user->totp_secret);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            $request->session()->forget('platform_2fa_pending_user_id');
+            return redirect()->route('platform.login')
+                ->withErrors(['email' => '2FA configuration error. Please contact your administrator.']);
+        }
         $google2fa = app('pragmarx.google2fa');
 
         if ($google2fa->verifyKey($secret, $request->one_time_password)) {
@@ -217,7 +223,11 @@ class AuthController extends Controller
                 return back()->withErrors(['one_time_password' => 'Invalid recovery code.']);
             }
         } else {
-            $secret    = Crypt::decryptString($user->totp_secret);
+            try {
+                $secret = Crypt::decryptString($user->totp_secret);
+            } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                return back()->withErrors(['one_time_password' => '2FA configuration error: stored secret is invalid. Please contact your administrator.']);
+            }
             $google2fa = app('pragmarx.google2fa');
             if (!$google2fa->verifyKey($secret, $request->one_time_password)) {
                 return back()->withErrors(['one_time_password' => 'Invalid authenticator code. 2FA was not disabled.']);
