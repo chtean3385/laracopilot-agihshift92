@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Mail\HotelWelcomeMail;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class HotelController extends Controller
@@ -26,7 +28,6 @@ class HotelController extends Controller
             )
             ->selectRaw('(SELECT COUNT(*) FROM rooms WHERE rooms.hotel_id = hotels.id) as room_count')
             ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.hotel_id = hotels.id) as booking_count')
-            ->selectRaw('(SELECT COALESCE(SUM(amount),0) FROM payments WHERE payments.hotel_id = hotels.id AND payments.status = "completed") as revenue')
             ->selectRaw('(SELECT COUNT(*) FROM hotel_users WHERE hotel_users.hotel_id = hotels.id AND hotel_users.status = "active") as user_count')
             ->orderByDesc('hotels.created_at')
             ->get();
@@ -74,6 +75,8 @@ class HotelController extends Controller
         ]);
 
         $slug = $this->generateUniqueSlug($data['name']);
+
+        $plainPassword = $data['admin_password'];
 
         DB::transaction(function () use ($data, $slug) {
             $hotelId = DB::table('hotels')->insertGetId([
@@ -147,8 +150,22 @@ class HotelController extends Controller
             ]);
         });
 
+        // Send welcome / onboarding email to the hotel admin
+        try {
+            Mail::to($data['admin_email'])->send(new HotelWelcomeMail(
+                hotelName:     $data['name'],
+                adminName:     $data['admin_name'],
+                adminEmail:    $data['admin_email'],
+                adminPassword: $plainPassword,
+                plan:          $data['plan'],
+            ));
+            $emailNote = ' Welcome email sent to ' . $data['admin_email'] . '.';
+        } catch (\Throwable $e) {
+            $emailNote = ' (Welcome email could not be sent — check SMTP settings.)';
+        }
+
         return redirect()->route('platform.hotels.index')
-            ->with('success', "Hotel \"{$data['name']}\" created and fully provisioned with admin user {$data['admin_email']}.");
+            ->with('success', "Hotel \"{$data['name']}\" created and fully provisioned with admin user {$data['admin_email']}." . $emailNote);
     }
 
     // ── Edit ─────────────────────────────────────────────────────────────────
@@ -304,6 +321,37 @@ class HotelController extends Controller
 
         return redirect()->back()
             ->with('success', "Hotel \"{$hotel->name}\" has been reactivated.");
+    }
+
+    // ── Send Welcome Email ────────────────────────────────────────────────────
+
+    public function sendWelcomeEmail(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
+        }
+
+        $data = $request->validate([
+            'admin_email'    => 'required|email',
+            'admin_name'     => 'required|string|max:255',
+            'admin_password' => 'required|string|min:4',
+        ]);
+
+        try {
+            Mail::to($data['admin_email'])->send(new HotelWelcomeMail(
+                hotelName:     $hotel->name,
+                adminName:     $data['admin_name'],
+                adminEmail:    $data['admin_email'],
+                adminPassword: $data['admin_password'],
+                plan:          $hotel->plan ?? 'Basic',
+            ));
+            return redirect()->back()
+                ->with('success', "Welcome email sent to {$data['admin_email']} for \"{$hotel->name}\".");
+        } catch (\Throwable $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to send email: ' . $e->getMessage() . '. Please check your SMTP settings.');
+        }
     }
 
     // ── Create User for Hotel ─────────────────────────────────────────────────

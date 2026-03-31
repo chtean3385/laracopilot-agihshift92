@@ -44,7 +44,6 @@
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Status</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Rooms</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Bookings</th>
-                    <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Revenue</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Users</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Created</th>
                     <th style="text-align:center;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 20px;">Actions</th>
@@ -120,10 +119,6 @@
                     </td>
 
                     <td style="padding:14px;text-align:right;">
-                        <span style="font-size:14px;font-weight:700;color:#059669;">{{ $fmt($hotel->revenue) }}</span>
-                    </td>
-
-                    <td style="padding:14px;text-align:right;">
                         <span style="font-size:14px;font-weight:700;color:#1e293b;">{{ number_format($hotel->user_count) }}</span>
                         @if($hotel->max_users && $hotel->max_users < PHP_INT_MAX)
                         <span style="font-size:10px;color:#94a3b8;display:block;">/ {{ $hotel->max_users }}</span>
@@ -136,6 +131,14 @@
 
                     <td style="padding:14px 20px;" onclick="event.stopPropagation()">
                         <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;">
+
+                            {{-- Send Welcome Email --}}
+                            <button type="button"
+                                onclick="openWelcomeModal({{ $hotel->id }}, '{{ addslashes($hotel->name) }}')"
+                                style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#ecfdf5;color:#065f46;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;"
+                                title="Send welcome / onboarding email to hotel admin">
+                                <i class="fas fa-envelope"></i> Send Email
+                            </button>
 
                             {{-- View CRM --}}
                             <a href="{{ route('platform.hotels.view-in-crm', $hotel->id) }}"
@@ -193,5 +196,76 @@
     @endif
 
 </div>
+
+{{-- ── Welcome Email Modal ──────────────────────────────────────────────── --}}
+<div id="welcomeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;padding:32px;width:100%;max-width:460px;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div>
+                <h3 style="font-size:17px;font-weight:800;color:#1e293b;margin:0 0 3px;">Send Welcome Email</h3>
+                <p id="welcomeModalSubtitle" style="font-size:12px;color:#94a3b8;margin:0;"></p>
+            </div>
+            <button onclick="closeWelcomeModal()" style="width:30px;height:30px;background:#f1f5f9;border:none;border-radius:8px;font-size:16px;cursor:pointer;color:#64748b;display:flex;align-items:center;justify-content:center;">&times;</button>
+        </div>
+
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;margin-bottom:20px;">
+            <p style="font-size:12px;color:#15803d;margin:0;line-height:1.6;">
+                <strong>🎉 Onboarding Email</strong> — This will send a welcome email with login credentials and the portal link to the hotel admin.
+            </p>
+        </div>
+
+        <form id="welcomeForm" method="POST" action="">
+            @csrf
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px;">Admin Name</label>
+                <input type="text" name="admin_name" id="modalAdminName" required
+                    style="width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;"
+                    placeholder="Admin full name">
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px;">Admin Email</label>
+                <input type="email" name="admin_email" id="modalAdminEmail" required
+                    style="width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:14px;color:#1e293b;outline:none;box-sizing:border-box;"
+                    placeholder="admin@hotel.com">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px;">Password to Include in Email</label>
+                <input type="text" name="admin_password" required
+                    style="width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:14px;color:#1e293b;outline:none;font-family:monospace;box-sizing:border-box;"
+                    placeholder="Enter the admin's current password">
+                <p style="font-size:11px;color:#94a3b8;margin:5px 0 0;">This password will be shown in the email body so the admin can log in.</p>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button type="button" onclick="closeWelcomeModal()"
+                    style="flex:1;padding:11px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+                    Cancel
+                </button>
+                <button type="submit"
+                    style="flex:2;padding:11px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <i class="fas fa-paper-plane"></i> Send Welcome Email
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function openWelcomeModal(hotelId, hotelName) {
+    document.getElementById('welcomeModalSubtitle').textContent = hotelName;
+    document.getElementById('welcomeForm').action = '/platform/hotels/' + hotelId + '/send-welcome';
+    document.getElementById('modalAdminName').value = '';
+    document.getElementById('modalAdminEmail').value = '';
+    document.getElementById('welcomeModal').style.display = 'flex';
+}
+function closeWelcomeModal() {
+    document.getElementById('welcomeModal').style.display = 'none';
+}
+document.getElementById('welcomeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeWelcomeModal();
+});
+</script>
+@endpush
 
 @endsection

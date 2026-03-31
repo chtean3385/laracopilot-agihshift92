@@ -239,8 +239,9 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/hotels/{id}/suspend',  [PlatformHotelController::class, 'suspend'])->name('platform.hotels.suspend');
     Route::post('/hotels/{id}/activate', [PlatformHotelController::class, 'activate'])->name('platform.hotels.activate');
     Route::delete('/hotels/{id}',        [PlatformHotelController::class, 'destroy'])->name('platform.hotels.destroy');
-    Route::post('/hotels/{id}/users',    [PlatformHotelController::class, 'storeUser'])->name('platform.hotels.users.store');
-    Route::get('/hotels/{id}/view-in-crm', [PlatformDashboardController::class, 'viewInCrm'])->name('platform.hotels.view-in-crm');
+    Route::post('/hotels/{id}/users',         [PlatformHotelController::class, 'storeUser'])->name('platform.hotels.users.store');
+    Route::post('/hotels/{id}/send-welcome',  [PlatformHotelController::class, 'sendWelcomeEmail'])->name('platform.hotels.send-welcome');
+    Route::get('/hotels/{id}/view-in-crm',    [PlatformDashboardController::class, 'viewInCrm'])->name('platform.hotels.view-in-crm');
 
     // Plans management (Task #13)
     Route::get('/plans',          [\App\Http\Controllers\Platform\PlanController::class, 'index'])->name('platform.plans.index');
