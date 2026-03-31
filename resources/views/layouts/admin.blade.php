@@ -28,10 +28,8 @@
             top: 0;
             left: 0;
             z-index: 50;
-            overflow-y: auto;
+            overflow: hidden;
             transition: transform .3s ease;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,.1) transparent;
         }
 
         #sidebar::-webkit-scrollbar { width: 4px; }
@@ -608,7 +606,7 @@
         </div>
 
         <!-- Navigation -->
-        <nav style="flex:1;padding:10px 10px 0;">
+        <nav style="flex:1;padding:10px 10px 0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent;">
 
             <!-- Dashboard -->
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
