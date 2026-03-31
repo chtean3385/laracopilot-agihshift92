@@ -3,12 +3,30 @@
 namespace Database\Seeders;
 
 use App\Models\WhatsAppTemplate;
+use App\Services\HotelContext;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class WhatsAppTemplateSeeder extends Seeder
 {
     public function run(): void
     {
+        // Resolve hotel — for installer it's already created; for dev seeding create default
+        $hotelId = DB::table('hotels')->value('id');
+
+        if (!$hotelId) {
+            $hotelId = DB::table('hotels')->insertGetId([
+                'name'       => 'Default Hotel',
+                'slug'       => 'default-hotel',
+                'status'     => 'active',
+                'plan'       => 'basic',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        app(HotelContext::class)->setHotel($hotelId);
+
         $templates = [
             [
                 'trigger_event' => 'booking.created',
@@ -34,7 +52,10 @@ class WhatsAppTemplateSeeder extends Seeder
         ];
 
         foreach ($templates as $t) {
-            WhatsAppTemplate::firstOrCreate(['trigger_event' => $t['trigger_event']], $t);
+            WhatsAppTemplate::firstOrCreate(
+                ['hotel_id' => $hotelId, 'trigger_event' => $t['trigger_event']],
+                array_merge($t, ['hotel_id' => $hotelId])
+            );
         }
     }
 }

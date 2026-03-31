@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
+        'hotel_id',
         'invoice_number', 'booking_id', 'customer_id',
         'total_amount', 'paid_amount', 'balance', 'status', 'issued_at',
     ];

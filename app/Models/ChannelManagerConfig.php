@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class ChannelManagerConfig extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
+        'hotel_id',
         'provider', 'api_key', 'api_secret', 'hotel_code',
         'property_id', 'is_active', 'last_synced_at', 'extra_config',
     ];
@@ -24,7 +28,7 @@ class ChannelManagerConfig extends Model
 
     public static function current(): self
     {
-        return static::firstOrNew(['id' => 1]);
+        return static::firstOrNew([]);
     }
 
     public function providerLabel(): string

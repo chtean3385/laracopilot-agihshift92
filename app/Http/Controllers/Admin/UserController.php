@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\HotelUser;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -16,9 +17,36 @@ class UserController extends Controller
         return session('crm_user_role') === 'Super Admin';
     }
 
+    private function currentHotelId(): ?int
+    {
+        return session('crm_hotel_id') ? (int) session('crm_hotel_id') : null;
+    }
+
     public function index()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+
+        $hotelId = $this->currentHotelId();
+
+        if ($hotelId) {
+            // Show users of the current hotel
+            $hotelUsers = HotelUser::where('hotel_id', $hotelId)
+                ->with('user')
+                ->get()
+                ->filter(fn($hu) => $hu->user !== null);
+
+            // Build a unified collection: user + hotel-specific role/status
+            $users = $hotelUsers->map(function ($hu) {
+                $user = $hu->user;
+                $user->hotel_role   = $hu->role;
+                $user->hotel_status = $hu->status;
+                return $user;
+            });
+
+            return view('admin.users.index', compact('users', 'hotelId'));
+        }
+
+        // Super Admin with no hotel context — show all users
         $query = User::orderBy('name');
         if (!$this->isSuperAdmin()) {
             $query->where('is_super_admin', false);
@@ -38,9 +66,7 @@ class UserController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
 
-        if (!$this->isSuperAdmin() && $request->role === 'super_admin') {
-            return back()->with('error', 'You are not allowed to assign the Super Admin role.');
-        }
+        $hotelId = $this->currentHotelId();
 
         $request->validate([
             'name'                  => 'required|string|max:100',
@@ -58,7 +84,18 @@ class UserController extends Controller
             'status'   => $request->status,
         ]);
 
-        ActivityLogger::log('Created', 'Users', 'Created user: ' . $user->name . ' (' . $user->email . ') with role ' . $user->role);
+        // Assign user to current hotel
+        if ($hotelId) {
+            HotelUser::create([
+                'hotel_id'       => $hotelId,
+                'user_id'        => $user->id,
+                'role'           => $request->role,
+                'is_hotel_admin' => $request->role === 'Admin',
+                'status'         => $request->status,
+            ]);
+        }
+
+        ActivityLogger::log('Created', 'Users', 'Created user: ' . $user->name . ' (' . $user->email . ') with role ' . $request->role);
 
         return redirect()->route('users.index')->with('success', 'User "' . $user->name . '" created successfully.');
     }
@@ -66,11 +103,23 @@ class UserController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+
         $user = User::findOrFail($id);
+
         if (!$this->isSuperAdmin() && $user->is_super_admin) {
-            return redirect()->route('users.index')->with('error', 'You are not allowed to edit the Super Admin account.');
+            return redirect()->route('users.index')->with('error', 'You are not allowed to edit this account.');
         }
-        $roles = Role::orderBy('name')->get();
+
+        $hotelId = $this->currentHotelId();
+        $roles   = Role::orderBy('name')->get();
+
+        // Get the hotel-specific role for this user
+        if ($hotelId) {
+            $hotelUser = HotelUser::where('hotel_id', $hotelId)->where('user_id', $id)->first();
+            $user->hotel_role   = $hotelUser?->role ?? $user->role;
+            $user->hotel_status = $hotelUser?->status ?? $user->status;
+        }
+
         return view('admin.users.edit', compact('user', 'roles'));
     }
 
@@ -79,11 +128,9 @@ class UserController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
 
         $user = User::findOrFail($id);
+
         if (!$this->isSuperAdmin() && $user->is_super_admin) {
-            return redirect()->route('users.index')->with('error', 'You are not allowed to edit the Super Admin account.');
-        }
-        if (!$this->isSuperAdmin() && $request->role === 'super_admin') {
-            return back()->with('error', 'You are not allowed to assign the Super Admin role.');
+            return redirect()->route('users.index')->with('error', 'You are not allowed to edit this account.');
         }
 
         $request->validate([
@@ -105,6 +152,18 @@ class UserController extends Controller
 
         $user->save();
 
+        // Update hotel-specific role in hotel_users pivot
+        $hotelId = $this->currentHotelId();
+        if ($hotelId) {
+            HotelUser::where('hotel_id', $hotelId)
+                ->where('user_id', $id)
+                ->update([
+                    'role'           => $request->role,
+                    'is_hotel_admin' => $request->role === 'Admin',
+                    'status'         => $request->status,
+                ]);
+        }
+
         ActivityLogger::log('Updated', 'Users', 'Updated user: ' . $user->name . ' (' . $user->email . ')');
 
         return redirect()->route('users.index')->with('success', 'User "' . $user->name . '" updated successfully.');
@@ -121,15 +180,28 @@ class UserController extends Controller
         }
 
         if ($user->id === session('crm_user_id')) {
-            return back()->with('error', 'You cannot delete your own account.');
+            return back()->with('error', 'You cannot remove your own account.');
         }
 
-        $name = $user->name;
-        $user->delete();
+        $hotelId = $this->currentHotelId();
+        $name    = $user->name;
 
-        ActivityLogger::log('Deleted', 'Users', 'Deleted user: ' . $name);
+        if ($hotelId) {
+            // Remove from current hotel only
+            HotelUser::where('hotel_id', $hotelId)->where('user_id', $id)->delete();
 
-        return redirect()->route('users.index')->with('success', 'User "' . $name . '" deleted successfully.');
+            // If user has no other hotel assignments, delete the user entirely
+            $otherHotels = HotelUser::where('user_id', $id)->count();
+            if ($otherHotels === 0) {
+                $user->delete();
+            }
+        } else {
+            $user->delete();
+        }
+
+        ActivityLogger::log('Deleted', 'Users', 'Removed user from hotel: ' . $name);
+
+        return redirect()->route('users.index')->with('success', 'User "' . $name . '" removed successfully.');
     }
 
     public function changePasswordForm()
@@ -143,8 +215,8 @@ class UserController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
 
         $request->validate([
-            'current_password'      => 'required',
-            'password'              => 'required|min:8|confirmed',
+            'current_password' => 'required',
+            'password'         => 'required|min:8|confirmed',
         ]);
 
         $email = session('crm_user_email');

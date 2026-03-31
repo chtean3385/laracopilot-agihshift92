@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class PathikConfig extends Model
 {
+    use BelongsToHotel;
+
     protected $table = 'pathik_configs';
 
-    protected $fillable = ['api_token', 'is_active'];
+    protected $fillable = ['hotel_id', 'api_token', 'is_active'];
 
     protected $casts = ['is_active' => 'boolean'];
 

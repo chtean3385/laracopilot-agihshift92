@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppTemplate extends Model
 {
+    use BelongsToHotel;
+
     protected $table = 'whatsapp_templates';
 
     protected $fillable = [
+        'hotel_id',
         'trigger_event',
         'template_name',
         'message_body',

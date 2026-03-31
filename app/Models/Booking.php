@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Booking extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
+        'hotel_id',
         'booking_number', 'customer_id', 'room_id',
         'check_in_date', 'check_out_date',
         'actual_checkin_at', 'actual_checkout_at',

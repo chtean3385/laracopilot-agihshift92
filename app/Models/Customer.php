@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
+        'hotel_id',
         'name', 'email', 'phone', 'address', 'city', 'state',
         'country', 'id_type', 'id_number', 'date_of_birth',
         'nationality', 'notes', 'signature',

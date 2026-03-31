@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
-    protected $fillable = ['name', 'description', 'is_system'];
+    use BelongsToHotel;
+
+    protected $fillable = ['hotel_id', 'name', 'description', 'is_system'];
 
     protected $casts = ['is_system' => 'boolean'];
 

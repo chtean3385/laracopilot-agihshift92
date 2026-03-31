@@ -90,6 +90,22 @@ class InstallerController extends Controller
             return $this->fail($steps, 'Run database migrations', $e->getMessage());
         }
 
+        // Step 3.5 — Create hotel record (must happen BEFORE seeds)
+        try {
+            $slug    = \Illuminate\Support\Str::slug($appName, '-') ?: 'hotel';
+            $hotelId = \DB::table('hotels')->insertGetId([
+                'name'       => $appName,
+                'slug'       => $slug,
+                'status'     => 'active',
+                'plan'       => 'basic',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $steps[] = ['label' => 'Create hotel record', 'ok' => true];
+        } catch (\Throwable $e) {
+            return $this->fail($steps, 'Create hotel record', $e->getMessage());
+        }
+
         // Step 4 — Seed modules
         try {
             Artisan::call('db:seed', ['--class' => 'ModuleSeeder', '--force' => true]);
@@ -124,7 +140,7 @@ class InstallerController extends Controller
 
         // Step 8 — Create admin user
         try {
-            User::updateOrCreate(
+            $adminUser = User::updateOrCreate(
                 ['email' => $adminEmail],
                 [
                     'name'           => $adminName,
@@ -137,6 +153,23 @@ class InstallerController extends Controller
             $steps[] = ['label' => 'Create admin account', 'ok' => true];
         } catch (\Throwable $e) {
             return $this->fail($steps, 'Create admin account', $e->getMessage());
+        }
+
+        // Step 8.5 — Assign admin to hotel
+        try {
+            \App\Models\HotelUser::firstOrCreate(
+                ['hotel_id' => $hotelId, 'user_id' => $adminUser->id],
+                [
+                    'hotel_id'       => $hotelId,
+                    'user_id'        => $adminUser->id,
+                    'role'           => 'Admin',
+                    'is_hotel_admin' => true,
+                    'status'         => 'active',
+                ]
+            );
+            $steps[] = ['label' => 'Assign admin to hotel', 'ok' => true];
+        } catch (\Throwable $e) {
+            return $this->fail($steps, 'Assign admin to hotel', $e->getMessage());
         }
 
         // Step 9 — Storage link

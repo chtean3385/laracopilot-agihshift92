@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class ChannelBooking extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
+        'hotel_id',
         'channel', 'ota_booking_id', 'guest_name', 'guest_phone', 'guest_email',
         'room_id', 'check_in_date', 'check_out_date', 'nights',
         'rate_per_night', 'total_amount', 'commission_pct', 'net_amount',

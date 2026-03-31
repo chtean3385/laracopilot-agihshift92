@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
@@ -27,12 +28,18 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
+        $hotelId = session('crm_hotel_id');
+
         $request->validate([
-            'name'        => 'required|string|max:100|unique:roles,name',
+            'name' => [
+                'required', 'string', 'max:100',
+                Rule::unique('roles', 'name')->where('hotel_id', $hotelId),
+            ],
             'description' => 'nullable|string|max:255',
         ]);
 
         $role = Role::create([
+            'hotel_id'    => $hotelId,
             'name'        => $request->name,
             'description' => $request->description,
             'is_system'   => false,
@@ -61,7 +68,13 @@ class RoleController extends Controller
         ]);
 
         if (!$role->is_system) {
-            $request->validate(['name' => 'required|string|max:100|unique:roles,name,' . $role->id]);
+            $hotelId = session('crm_hotel_id');
+            $request->validate([
+                'name' => [
+                    'required', 'string', 'max:100',
+                    Rule::unique('roles', 'name')->where('hotel_id', $hotelId)->ignore($role->id),
+                ],
+            ]);
             $role->name = $request->name;
         }
 

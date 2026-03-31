@@ -10,6 +10,7 @@ class ActivityLogger
     {
         try {
             ActivityLog::create([
+                'hotel_id'    => session('crm_hotel_id'),
                 'user_name'   => session('crm_user_name', 'System'),
                 'user_email'  => session('crm_user_email', ''),
                 'user_role'   => session('crm_user_role', ''),

@@ -542,8 +542,25 @@
             </div>
         </div>
 
+        <!-- Hotel Badge -->
+        @if(session('crm_hotel_name'))
+        <div style="padding:8px 16px 4px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:8px;padding:7px 10px;">
+                <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+                    <i class="fas fa-hotel" style="color:#06b6d4;font-size:11px;flex-shrink:0;"></i>
+                    <span style="color:#67e8f9;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_hotel_name') }}</span>
+                </div>
+                @if(session('crm_hotel_count', 1) > 1 || session('crm_user_role') === 'Super Admin')
+                <a href="{{ route('select.hotel') }}" style="color:#475569;font-size:10px;text-decoration:none;white-space:nowrap;margin-left:6px;flex-shrink:0;" title="Switch Hotel">
+                    <i class="fas fa-exchange-alt"></i>
+                </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
         <!-- User -->
-        <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
+        <div style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
             <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;">
                 @php
                     $roleColors = ['Super Admin'=>'#7c3aed','Admin'=>'#dc2626','Manager'=>'#2563eb','Receptionist'=>'#16a34a'];

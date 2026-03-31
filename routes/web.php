@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ForgotPasswordController;
+use App\Http\Controllers\Admin\HotelSwitchController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\PaymentLinksController;
@@ -45,6 +46,10 @@ Route::get('/forgot-password',        [ForgotPasswordController::class, 'showFor
 Route::post('/forgot-password',       [ForgotPasswordController::class, 'sendLink'])->name('password.email');
 Route::get('/reset-password/{token}', [ForgotPasswordController::class, 'showReset'])->name('password.reset');
 Route::post('/reset-password',        [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
+
+// ── Hotel Picker ────────────────────────────────────────────────────────────
+Route::get('/select-hotel',  [HotelSwitchController::class, 'index'] )->name('select.hotel');
+Route::post('/select-hotel', [HotelSwitchController::class, 'select'])->name('select.hotel.post');
 
 // ── Dashboard (all logged-in users) ────────────────────────────────────────
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

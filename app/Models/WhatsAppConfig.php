@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppConfig extends Model
 {
+    use BelongsToHotel;
+
     protected $table = 'whatsapp_configs';
 
     protected $fillable = [
+        'hotel_id',
         'provider',
         'api_key',
         'phone_number_id',

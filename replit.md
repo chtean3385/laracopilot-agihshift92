@@ -19,8 +19,10 @@ Full hotel/resort management CRM built on Laravel 12, evolving into a multi-tena
 4. **Module checks**: `Module::isEnabled('slug')` — slugs: `whatsapp`, `payment_links`, `pathik`, `channel_manager`
 5. **Session role**: `session('crm_user_role')` stores role name string (e.g. 'Admin', 'Manager') from DB login; 'Super Admin' only for hardcoded system account
 6. **Route URLs in JS**: Always use `'{{ route('name') }}'` — never hardcode `/path` (breaks in subdirectory hosting)
-7. **Roles table columns**: ONLY `id`, `name`, `description`, `is_system`, `created_at`, `updated_at` — NO `slug` column. Never query `roles` by `slug`.
-8. **Installer creates Admin user**: role='Admin', is_super_admin=false. Hardcoded superadmin@gmail.com is system-only, never in DB.
+7. **Roles table columns**: `id`, `name`, `description`, `is_system`, `hotel_id`, `created_at`, `updated_at` — NO `slug` column
+8. **Installer creates Admin user**: role='Admin', is_super_admin=false + creates hotel record + hotel_users entry. Hardcoded superadmin@gmail.com is system-only, never in DB.
+9. **Multi-tenant scoping**: All 16 data models use `BelongsToHotel` trait — queries auto-scope to `HotelContext::getHotel()`. When context is null (Super Admin / installer), no scope is applied. Always use `withoutGlobalScopes()` for cross-hotel queries.
+10. **Hotel session keys**: `crm_hotel_id`, `crm_hotel_name`, `crm_hotel_count`, `crm_hotel_options` (picker array)
 
 ## Setup (Dev — Replit)
 1. `composer install`
@@ -104,9 +106,20 @@ Stored in `modules` table. Check with `Module::isEnabled('slug')`:
 - Primary save: `POST /guests/{id}/signature` → `CustomerController::saveSignature()`
 - Guest save: `POST /bookings/{bookingId}/guests/{guestId}/signature` → `BookingGuestController::saveSignature()`
 
+## Multi-Hotel (SaaS) Architecture — Task #1 COMPLETE
+- **`hotels`** table: id, name, slug, status, plan (+ address/phone/email)
+- **`hotel_users`** pivot: links users to hotels with a per-hotel role
+- **`HotelContext`** singleton (`app(HotelContext::class)`): set by `SetHotelContext` middleware from `session('crm_hotel_id')`
+- **`BelongsToHotel`** trait: applied to all 16 data models — auto-adds `HotelScope` + auto-fills `hotel_id` on `creating`
+- **Login flow**: After auth → look up `hotel_users` → 1 hotel = auto-select; multiple = `/select-hotel` picker; 0 = error
+- **Super Admin** has no `crm_hotel_id` — sees all data (scope inactive)
+- **Hotel scope disabled** for: installer routes, health check, Pathik extension fetch API
+- **Seeders**: All 4 seeders (Modules, Roles, Settings, WhatsApp) auto-detect or create hotel_id=1
+
 ## Services
+- `App\Services\HotelContext` — Singleton; `setHotel(int)` / `getHotel()` / `isSet()` / `clear()`
 - `App\Services\PermissionService` — `check($slug)`: Super Admin bypasses all; others checked against `crm_permissions` session array
-- `App\Services\ActivityLogger` — `log($action, $module, $description)`: writes to `activity_logs`; silently ignores failures
+- `App\Services\ActivityLogger` — `log($action, $module, $description)`: writes to `activity_logs` with `hotel_id`; silently ignores failures
 
 ## RBAC
 - Middleware: `permission:slug` — blocks unauthorized routes
@@ -131,7 +144,7 @@ Stored in `modules` table. Check with `Module::isEnabled('slug')`:
 
 ## Branding
 - Logo stored at `storage/app/public/logos/`
-- Settings globally shared via `AppServiceProvider` → `View::share('settings', ...)`
+- Settings shared via `AppServiceProvider` → `View::composer('*', ...)` (lazy, hotel-scoped at render time)
 - `trustProxies(at: '*')` in `bootstrap/app.php` — handles Replit HTTPS proxy headers
 
 ## DatabaseSeeder (production-safe)
@@ -141,10 +154,10 @@ Only seeds essential data — NO demo data:
 - `SettingSeeder` → default settings
 - `WhatsAppTemplateSeeder` → default WA templates
 
-## Planned SaaS Tasks
-- **Task #1**: Multi-Hotel Core — multi-tenancy layer
-- **Task #2**: Platform Admin Dashboard — per-hotel feature control, subscriptions (depends on #1)
-- **Task #3**: AI Smart CRM — OpenAI-powered insights, plan-gated (depends on #1)
+## SaaS Task Status
+- **Task #1** ✅ COMPLETE: Multi-Hotel Core — BelongsToHotel trait on 16 models, hotel_users pivot, hotel picker
+- **Task #2** PENDING: Platform Admin Dashboard — per-hotel feature control, subscriptions (depends on #1)
+- **Task #3** PENDING: AI Smart CRM — OpenAI-powered insights, plan-gated (depends on #1)
 
 ## SaaS Admin Hierarchy (planned)
 - **SaaS Admin** (`is_platform_admin=true`, `/platform/` routes) — controls feature availability per hotel

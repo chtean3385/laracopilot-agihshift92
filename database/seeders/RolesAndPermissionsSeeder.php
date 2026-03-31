@@ -3,53 +3,72 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Services\HotelContext;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
+        // Resolve hotel — for installer it's already created; for dev seeding create default
+        $hotelId = DB::table('hotels')->value('id');
+
+        if (!$hotelId) {
+            $hotelId = DB::table('hotels')->insertGetId([
+                'name'       => 'Default Hotel',
+                'slug'       => 'default-hotel',
+                'status'     => 'active',
+                'plan'       => 'basic',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // Set hotel context so BelongsToHotel scoping works in this seeder
+        app(HotelContext::class)->setHotel($hotelId);
+
         $permissions = [
-            ['slug' => 'guests.view',       'label' => 'View Guests',           'module' => 'Guests',     'sort_order' => 1],
-            ['slug' => 'guests.create',     'label' => 'Add Guests',            'module' => 'Guests',     'sort_order' => 2],
-            ['slug' => 'guests.edit',       'label' => 'Edit Guests',           'module' => 'Guests',     'sort_order' => 3],
-            ['slug' => 'guests.delete',     'label' => 'Delete Guests',         'module' => 'Guests',     'sort_order' => 4],
+            ['slug' => 'guests.view',       'label' => 'View Guests',              'module' => 'Guests',     'sort_order' => 1],
+            ['slug' => 'guests.create',     'label' => 'Add Guests',               'module' => 'Guests',     'sort_order' => 2],
+            ['slug' => 'guests.edit',       'label' => 'Edit Guests',              'module' => 'Guests',     'sort_order' => 3],
+            ['slug' => 'guests.delete',     'label' => 'Delete Guests',            'module' => 'Guests',     'sort_order' => 4],
 
-            ['slug' => 'rooms.view',        'label' => 'View Rooms',            'module' => 'Rooms',      'sort_order' => 5],
-            ['slug' => 'rooms.create',      'label' => 'Add Rooms',             'module' => 'Rooms',      'sort_order' => 6],
-            ['slug' => 'rooms.edit',        'label' => 'Edit Rooms',            'module' => 'Rooms',      'sort_order' => 7],
-            ['slug' => 'rooms.delete',      'label' => 'Delete Rooms',          'module' => 'Rooms',      'sort_order' => 8],
+            ['slug' => 'rooms.view',        'label' => 'View Rooms',               'module' => 'Rooms',      'sort_order' => 5],
+            ['slug' => 'rooms.create',      'label' => 'Add Rooms',                'module' => 'Rooms',      'sort_order' => 6],
+            ['slug' => 'rooms.edit',        'label' => 'Edit Rooms',               'module' => 'Rooms',      'sort_order' => 7],
+            ['slug' => 'rooms.delete',      'label' => 'Delete Rooms',             'module' => 'Rooms',      'sort_order' => 8],
 
-            ['slug' => 'bookings.view',     'label' => 'View Bookings',         'module' => 'Bookings',   'sort_order' => 9],
-            ['slug' => 'bookings.create',   'label' => 'Create Bookings',       'module' => 'Bookings',   'sort_order' => 10],
-            ['slug' => 'bookings.edit',     'label' => 'Edit Bookings',         'module' => 'Bookings',   'sort_order' => 11],
-            ['slug' => 'bookings.delete',   'label' => 'Delete Bookings',       'module' => 'Bookings',   'sort_order' => 12],
+            ['slug' => 'bookings.view',     'label' => 'View Bookings',            'module' => 'Bookings',   'sort_order' => 9],
+            ['slug' => 'bookings.create',   'label' => 'Create Bookings',          'module' => 'Bookings',   'sort_order' => 10],
+            ['slug' => 'bookings.edit',     'label' => 'Edit Bookings',            'module' => 'Bookings',   'sort_order' => 11],
+            ['slug' => 'bookings.delete',   'label' => 'Delete Bookings',          'module' => 'Bookings',   'sort_order' => 12],
 
-            ['slug' => 'checkin.process',   'label' => 'Process Check-In',      'module' => 'Operations', 'sort_order' => 13],
-            ['slug' => 'checkout.process',  'label' => 'Process Check-Out',     'module' => 'Operations', 'sort_order' => 14],
+            ['slug' => 'checkin.process',   'label' => 'Process Check-In',         'module' => 'Operations', 'sort_order' => 13],
+            ['slug' => 'checkout.process',  'label' => 'Process Check-Out',        'module' => 'Operations', 'sort_order' => 14],
 
-            ['slug' => 'payments.view',     'label' => 'View Payments',         'module' => 'Payments',   'sort_order' => 15],
-            ['slug' => 'payments.create',   'label' => 'Record Payments',       'module' => 'Payments',   'sort_order' => 16],
-            ['slug' => 'payments.delete',   'label' => 'Delete Payments',       'module' => 'Payments',   'sort_order' => 17],
+            ['slug' => 'payments.view',     'label' => 'View Payments',            'module' => 'Payments',   'sort_order' => 15],
+            ['slug' => 'payments.create',   'label' => 'Record Payments',          'module' => 'Payments',   'sort_order' => 16],
+            ['slug' => 'payments.delete',   'label' => 'Delete Payments',          'module' => 'Payments',   'sort_order' => 17],
 
-            ['slug' => 'invoices.view',     'label' => 'View Invoices',         'module' => 'Invoices',   'sort_order' => 18],
-            ['slug' => 'invoices.delete',   'label' => 'Delete Invoices',       'module' => 'Invoices',   'sort_order' => 19],
+            ['slug' => 'invoices.view',     'label' => 'View Invoices',            'module' => 'Invoices',   'sort_order' => 18],
+            ['slug' => 'invoices.delete',   'label' => 'Delete Invoices',          'module' => 'Invoices',   'sort_order' => 19],
 
-            ['slug' => 'reports.view',      'label' => 'View Reports',          'module' => 'Reports',    'sort_order' => 20],
+            ['slug' => 'reports.view',      'label' => 'View Reports',             'module' => 'Reports',    'sort_order' => 20],
 
-            ['slug' => 'settings.view',     'label' => 'View Settings',         'module' => 'Settings',   'sort_order' => 21],
-            ['slug' => 'settings.edit',     'label' => 'Edit Settings',         'module' => 'Settings',   'sort_order' => 22],
+            ['slug' => 'settings.view',     'label' => 'View Settings',            'module' => 'Settings',   'sort_order' => 21],
+            ['slug' => 'settings.edit',     'label' => 'Edit Settings',            'module' => 'Settings',   'sort_order' => 22],
 
-            ['slug' => 'activity_log.view', 'label' => 'View Activity Log',     'module' => 'System',     'sort_order' => 23],
+            ['slug' => 'activity_log.view', 'label' => 'View Activity Log',        'module' => 'System',     'sort_order' => 23],
 
-            ['slug' => 'roles.view',        'label' => 'View Roles & Permissions', 'module' => 'System',  'sort_order' => 24],
-            ['slug' => 'roles.edit',        'label' => 'Edit Roles & Permissions', 'module' => 'System',  'sort_order' => 25],
+            ['slug' => 'roles.view',        'label' => 'View Roles & Permissions', 'module' => 'System',     'sort_order' => 24],
+            ['slug' => 'roles.edit',        'label' => 'Edit Roles & Permissions', 'module' => 'System',     'sort_order' => 25],
 
-            ['slug' => 'users.view',        'label' => 'View Users',             'module' => 'System',   'sort_order' => 26],
-            ['slug' => 'users.create',      'label' => 'Create Users',           'module' => 'System',   'sort_order' => 27],
-            ['slug' => 'users.edit',        'label' => 'Edit Users',             'module' => 'System',   'sort_order' => 28],
-            ['slug' => 'users.delete',      'label' => 'Delete Users',           'module' => 'System',   'sort_order' => 29],
+            ['slug' => 'users.view',        'label' => 'View Users',               'module' => 'System',     'sort_order' => 26],
+            ['slug' => 'users.create',      'label' => 'Create Users',             'module' => 'System',     'sort_order' => 27],
+            ['slug' => 'users.edit',        'label' => 'Edit Users',               'module' => 'System',     'sort_order' => 28],
+            ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'System',     'sort_order' => 29],
         ];
 
         foreach ($permissions as $p) {
@@ -104,8 +123,8 @@ class RolesAndPermissionsSeeder extends Seeder
 
         foreach ($roleMatrix as $name => $config) {
             $role = Role::firstOrCreate(
-                ['name' => $name],
-                ['description' => $config['description'], 'is_system' => $config['is_system']]
+                ['hotel_id' => $hotelId, 'name' => $name],
+                ['hotel_id' => $hotelId, 'name' => $name, 'description' => $config['description'], 'is_system' => $config['is_system']]
             );
 
             $permIds = Permission::whereIn('slug', $config['permissions'])->pluck('id');

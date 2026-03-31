@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Services\HotelContext;
+use Closure;
+use Illuminate\Http\Request;
+
+class SetHotelContext
+{
+    public function handle(Request $request, Closure $next): mixed
+    {
+        // Skip installer, health, and Pathik extension API routes
+        if ($request->is('install*') || $request->is('health') || $request->is('up')) {
+            return $next($request);
+        }
+
+        // Skip the Pathik extension fetch endpoint (api_token auth, no session)
+        if ($request->is('pathik/pending') && $request->isMethod('GET')) {
+            return $next($request);
+        }
+
+        $hotelId = session('crm_hotel_id');
+
+        if ($hotelId) {
+            app(HotelContext::class)->setHotel((int) $hotelId);
+            return $next($request);
+        }
+
+        // Logged-in regular user with no hotel selected → force hotel picker
+        if (session('crm_logged_in') && session('crm_user_role') !== 'Super Admin') {
+            if (!$request->routeIs(['select.hotel', 'select.hotel.post', 'login', 'login.post', 'logout', 'password.*', 'register'])) {
+                return redirect()->route('select.hotel');
+            }
+        }
+
+        return $next($request);
+    }
+}

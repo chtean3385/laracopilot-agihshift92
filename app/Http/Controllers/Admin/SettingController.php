@@ -17,21 +17,22 @@ class SettingController extends Controller
         $settings = Setting::first();
 
         if (!$settings) {
-            $settings = new Setting();
-            $settings->resort_name         = 'Azure Paradise Resort and Spa';
-            $settings->tagline             = 'Resort & Spa CRM';
-            $settings->address             = '45 Beachside Boulevard, Calangute, Goa 403516 India';
-            $settings->phone               = '+91 832 267 8900';
-            $settings->email               = 'reservations@azureparadise.com';
-            $settings->website             = 'www.azureparadise.com';
-            $settings->gst_number          = '30AABCU9603R1ZX';
-            $settings->tax_rate            = '12';
-            $settings->currency            = 'INR';
-            $settings->currency_symbol     = 'Rs';
-            $settings->check_in_time       = '14:00';
-            $settings->check_out_time      = '11:00';
-            $settings->cancellation_policy = 'Free cancellation up to 48 hours before check-in.';
-            $settings->save();
+            $settings = Setting::create([
+                'hotel_id'            => session('crm_hotel_id'),
+                'resort_name'         => 'Azure Paradise Resort and Spa',
+                'tagline'             => 'Resort & Spa CRM',
+                'address'             => '45 Beachside Boulevard, Calangute, Goa 403516 India',
+                'phone'               => '+91 832 267 8900',
+                'email'               => 'reservations@azureparadise.com',
+                'website'             => 'www.azureparadise.com',
+                'gst_number'          => '30AABCU9603R1ZX',
+                'tax_rate'            => '12',
+                'currency'            => 'INR',
+                'currency_symbol'     => 'Rs',
+                'check_in_time'       => '14:00',
+                'check_out_time'      => '11:00',
+                'cancellation_policy' => 'Free cancellation up to 48 hours before check-in.',
+            ]);
         }
 
         return view('admin.settings.index', compact('settings'));
@@ -54,7 +55,7 @@ class SettingController extends Controller
             'logo'            => 'nullable|file|max:2048|mimes:jpg,jpeg,png,gif,svg,webp',
         ]);
 
-        $settings = Setting::first() ?? new Setting();
+        $settings = Setting::first() ?? new Setting(['hotel_id' => session('crm_hotel_id')]);
 
         $data = $request->except(['_token', '_method', 'logo']);
 
