@@ -56,35 +56,41 @@ class HotelController extends Controller
         }
 
         $data = $request->validate([
-            'name'           => 'required|string|max:255',
-            'email'          => 'nullable|email|max:255',
-            'phone'          => 'nullable|string|max:50',
-            'address'        => 'nullable|string|max:500',
-            'plan'           => 'required|in:' . implode(',', $validSlugs),
-            'max_rooms'      => 'required|integer|min:1',
-            'max_users'      => 'required|integer|min:1',
-            'admin_notes'    => 'nullable|string|max:1000',
-            'admin_name'     => 'required|string|max:255',
-            'admin_email'    => 'required|email|max:255|unique:users,email',
-            'admin_password' => 'required|string|min:6',
+            'name'                 => 'required|string|max:255',
+            'email'                => 'nullable|email|max:255',
+            'phone'                => 'nullable|string|max:50',
+            'address'              => 'nullable|string|max:500',
+            'plan'                 => 'required|in:' . implode(',', $validSlugs),
+            'billing_cycle'        => 'required|in:monthly,yearly',
+            'custom_monthly_price' => 'nullable|integer|min:0',
+            'custom_yearly_price'  => 'nullable|integer|min:0',
+            'max_rooms'            => 'required|integer|min:1',
+            'max_users'            => 'required|integer|min:1',
+            'admin_notes'          => 'nullable|string|max:1000',
+            'admin_name'           => 'required|string|max:255',
+            'admin_email'          => 'required|email|max:255|unique:users,email',
+            'admin_password'       => 'required|string|min:6',
         ]);
 
         $slug = $this->generateUniqueSlug($data['name']);
 
         DB::transaction(function () use ($data, $slug) {
             $hotelId = DB::table('hotels')->insertGetId([
-                'name'        => $data['name'],
-                'slug'        => $slug,
-                'email'       => $data['email'] ?? null,
-                'phone'       => $data['phone'] ?? null,
-                'address'     => $data['address'] ?? null,
-                'plan'        => $data['plan'],
-                'status'      => 'active',
-                'max_rooms'   => $data['max_rooms'],
-                'max_users'   => $data['max_users'],
-                'admin_notes' => $data['admin_notes'] ?? null,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'name'                 => $data['name'],
+                'slug'                 => $slug,
+                'email'                => $data['email'] ?? null,
+                'phone'                => $data['phone'] ?? null,
+                'address'              => $data['address'] ?? null,
+                'plan'                 => $data['plan'],
+                'billing_cycle'        => $data['billing_cycle'],
+                'custom_monthly_price' => $data['custom_monthly_price'] ?: null,
+                'custom_yearly_price'  => $data['custom_yearly_price'] ?: null,
+                'status'               => 'active',
+                'max_rooms'            => $data['max_rooms'],
+                'max_users'            => $data['max_users'],
+                'admin_notes'          => $data['admin_notes'] ?? null,
+                'created_at'           => now(),
+                'updated_at'           => now(),
             ]);
 
             DB::table('settings')->insert([
@@ -197,29 +203,35 @@ class HotelController extends Controller
         }
 
         $data = $request->validate([
-            'name'              => 'required|string|max:255',
-            'email'             => 'nullable|email|max:255',
-            'phone'             => 'nullable|string|max:50',
-            'address'           => 'nullable|string|max:500',
-            'plan'              => 'required|in:' . implode(',', $validSlugs),
-            'max_rooms'         => 'required|integer|min:1',
-            'max_users'         => 'required|integer|min:1',
-            'status'            => 'required|in:active,suspended',
-            'admin_notes'       => 'nullable|string|max:1000',
-            'new_admin_user_id' => 'nullable|integer',
+            'name'                 => 'required|string|max:255',
+            'email'                => 'nullable|email|max:255',
+            'phone'                => 'nullable|string|max:50',
+            'address'              => 'nullable|string|max:500',
+            'plan'                 => 'required|in:' . implode(',', $validSlugs),
+            'billing_cycle'        => 'required|in:monthly,yearly',
+            'custom_monthly_price' => 'nullable|integer|min:0',
+            'custom_yearly_price'  => 'nullable|integer|min:0',
+            'max_rooms'            => 'required|integer|min:1',
+            'max_users'            => 'required|integer|min:1',
+            'status'               => 'required|in:active,suspended',
+            'admin_notes'          => 'nullable|string|max:1000',
+            'new_admin_user_id'    => 'nullable|integer',
         ]);
 
         DB::table('hotels')->where('id', $id)->update([
-            'name'        => $data['name'],
-            'email'       => $data['email'] ?? null,
-            'phone'       => $data['phone'] ?? null,
-            'address'     => $data['address'] ?? null,
-            'plan'        => $data['plan'],
-            'max_rooms'   => $data['max_rooms'],
-            'max_users'   => $data['max_users'],
-            'status'      => $data['status'],
-            'admin_notes' => $data['admin_notes'] ?? null,
-            'updated_at'  => now(),
+            'name'                 => $data['name'],
+            'email'                => $data['email'] ?? null,
+            'phone'                => $data['phone'] ?? null,
+            'address'              => $data['address'] ?? null,
+            'plan'                 => $data['plan'],
+            'billing_cycle'        => $data['billing_cycle'],
+            'custom_monthly_price' => $data['custom_monthly_price'] ?: null,
+            'custom_yearly_price'  => $data['custom_yearly_price'] ?: null,
+            'max_rooms'            => $data['max_rooms'],
+            'max_users'            => $data['max_users'],
+            'status'               => $data['status'],
+            'admin_notes'          => $data['admin_notes'] ?? null,
+            'updated_at'           => now(),
         ]);
 
         // Handle hotel admin reassignment
@@ -291,6 +303,60 @@ class HotelController extends Controller
 
         return redirect()->back()
             ->with('success', "Hotel \"{$hotel->name}\" has been reactivated.");
+    }
+
+    // ── Create User for Hotel ─────────────────────────────────────────────────
+
+    public function storeUser(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
+        }
+
+        $data = $request->validate([
+            'user_name'      => 'required|string|max:255',
+            'user_email'     => 'required|email|max:255|unique:users,email',
+            'user_password'  => 'required|string|min:6',
+            'user_role'      => 'required|in:Admin,Manager,Receptionist',
+            'make_admin'     => 'nullable|boolean',
+        ]);
+
+        $makeAdmin = $request->boolean('make_admin');
+
+        DB::transaction(function () use ($data, $id, $makeAdmin) {
+            $userId = DB::table('users')->insertGetId([
+                'name'           => $data['user_name'],
+                'email'          => $data['user_email'],
+                'password'       => Hash::make($data['user_password']),
+                'role'           => $data['user_role'],
+                'status'         => 'active',
+                'is_super_admin' => 0,
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+
+            // If making admin, strip existing admin flag first
+            if ($makeAdmin) {
+                DB::table('hotel_users')
+                    ->where('hotel_id', $id)
+                    ->update(['is_hotel_admin' => 0]);
+            }
+
+            DB::table('hotel_users')->insert([
+                'hotel_id'       => $id,
+                'user_id'        => $userId,
+                'role'           => $data['user_role'],
+                'is_hotel_admin' => $makeAdmin ? 1 : 0,
+                'status'         => 'active',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+        });
+
+        return redirect()->route('platform.hotels.edit', $id)
+            ->with('success', "User \"{$data['user_name']}\" created and added to {$hotel->name}." . ($makeAdmin ? ' They are now the Hotel Admin.' : ''));
     }
 
     // ── Destroy (hard delete) ─────────────────────────────────────────────────

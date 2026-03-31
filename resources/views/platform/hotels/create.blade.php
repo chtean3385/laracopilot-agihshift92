@@ -87,7 +87,7 @@
             </div>
             @if(isset($errors) && $errors->has('plan')) <p style="color:#ef4444;font-size:11px;margin:-12px 0 12px;">{{ $errors->first('plan') }}</p> @endif
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
                 <div>
                     <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Max Rooms <span style="color:#ef4444;">*</span></label>
                     <input type="number" name="max_rooms" id="max_rooms" value="{{ old('max_rooms', 50) }}" min="1" required
@@ -100,6 +100,51 @@
                     <input type="number" name="max_users" id="max_users" value="{{ old('max_users', 10) }}" min="1" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('max_users')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
                     @if(isset($errors) && $errors->has('max_users')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('max_users') }}</p> @endif
+                </div>
+            </div>
+
+            {{-- Billing Cycle --}}
+            <div style="border-top:1px solid #f1f5f9;padding-top:20px;margin-bottom:16px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">Billing Cycle <span style="color:#ef4444;">*</span></label>
+                <div style="display:flex;gap:12px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 18px;border:2px solid {{ old('billing_cycle','monthly') === 'monthly' ? '#7c3aed' : '#e2e8f0' }};border-radius:10px;flex:1;" id="cycle-monthly-label">
+                        <input type="radio" name="billing_cycle" value="monthly" {{ old('billing_cycle','monthly') === 'monthly' ? 'checked' : '' }} onchange="updateCycleBorder()" style="accent-color:#7c3aed;">
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:#1e293b;">Monthly</div>
+                            <div style="font-size:11px;color:#64748b;">Billed each month</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 18px;border:2px solid {{ old('billing_cycle','monthly') === 'yearly' ? '#7c3aed' : '#e2e8f0' }};border-radius:10px;flex:1;" id="cycle-yearly-label">
+                        <input type="radio" name="billing_cycle" value="yearly" {{ old('billing_cycle','monthly') === 'yearly' ? 'checked' : '' }} onchange="updateCycleBorder()" style="accent-color:#7c3aed;">
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:#1e293b;">Yearly</div>
+                            <div style="font-size:11px;color:#64748b;">Billed once per year</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Custom Pricing Override --}}
+            <div style="background:#f8fafc;border:1.5px dashed #c7d2fe;border-radius:12px;padding:16px;">
+                <div style="font-size:12px;font-weight:700;color:#4338ca;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-tag"></i> Custom Pricing Override <span style="font-size:10px;font-weight:500;color:#94a3b8;">(optional — leave blank to use plan default)</span>
+                </div>
+                <div style="font-size:11px;color:#64748b;margin-bottom:14px;">Override the plan price for this specific hotel. Useful for special deals or promotions.</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Custom Monthly Price (Rs)</label>
+                        <input type="number" name="custom_monthly_price" id="custom_monthly_price" value="{{ old('custom_monthly_price') }}" min="0"
+                            placeholder="e.g. 499"
+                            style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;outline:none;">
+                        <div id="plan_monthly_hint" style="font-size:10px;color:#94a3b8;margin-top:4px;"></div>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Custom Yearly Price (Rs)</label>
+                        <input type="number" name="custom_yearly_price" id="custom_yearly_price" value="{{ old('custom_yearly_price') }}" min="0"
+                            placeholder="e.g. 4999"
+                            style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;outline:none;">
+                        <div id="plan_yearly_hint" style="font-size:10px;color:#94a3b8;margin-top:4px;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -179,9 +224,25 @@
 
 @push('scripts')
 <script>
+var planPrices = {!! json_encode(collect($plans)->map(fn($p) => ['monthly' => $p['monthly_price'] ?? 0, 'yearly' => $p['yearly_price'] ?? 0])) !!};
+
+function updatePriceHints(slug) {
+    var prices = planPrices[slug];
+    if (!prices) return;
+    var mHint = document.getElementById('plan_monthly_hint');
+    var yHint = document.getElementById('plan_yearly_hint');
+    if (mHint) mHint.textContent = 'Plan default: Rs ' + prices.monthly.toLocaleString('en-IN') + '/mo';
+    if (yHint) yHint.textContent = 'Plan default: Rs ' + prices.yearly.toLocaleString('en-IN') + '/yr';
+}
+
+function updateCycleBorder() {
+    var monthly = document.querySelector('input[name="billing_cycle"][value="monthly"]').checked;
+    document.getElementById('cycle-monthly-label').style.borderColor = monthly ? '#7c3aed' : '#e2e8f0';
+    document.getElementById('cycle-yearly-label').style.borderColor  = monthly ? '#e2e8f0' : '#7c3aed';
+}
+
 document.querySelectorAll('.plan-radio').forEach(function(radio) {
     radio.addEventListener('change', function() {
-        // Update card borders
         document.querySelectorAll('.plan-card').forEach(function(card) {
             card.style.borderColor = '#e2e8f0';
             card.style.background = '#fff';
@@ -191,13 +252,17 @@ document.querySelectorAll('.plan-radio').forEach(function(radio) {
             card.style.borderColor = '#7c3aed';
             card.style.background = 'rgba(139,92,246,.04)';
         }
-        // Pre-fill limits if default hasn't been changed
         var maxRooms = parseInt(this.dataset.maxRooms);
         var maxUsers = parseInt(this.dataset.maxUsers);
         if (maxRooms && maxRooms < 999) document.getElementById('max_rooms').value = maxRooms;
         if (maxUsers && maxUsers < 999) document.getElementById('max_users').value = maxUsers;
+        updatePriceHints(this.value);
     });
 });
+
+// Init hint for default selected plan
+var defaultPlan = document.querySelector('.plan-radio:checked');
+if (defaultPlan) updatePriceHints(defaultPlan.value);
 </script>
 @endpush
 

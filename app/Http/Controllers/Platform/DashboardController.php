@@ -22,24 +22,34 @@ class DashboardController extends Controller
         $suspendedHotels = DB::table('hotels')->where('status', 'suspended')->count();
         $trialHotels     = DB::table('hotels')->whereNotNull('trial_ends_at')->where('trial_ends_at', '>=', now())->count();
 
-        $activeHotelPlans = DB::table('hotels')
+        // Per-hotel revenue using custom pricing where set, otherwise plan default
+        $activeHotels2 = DB::table('hotels')
             ->where('status', 'active')
-            ->select('plan', DB::raw('COUNT(*) as cnt'))
-            ->groupBy('plan')
+            ->select('plan', 'billing_cycle', 'custom_monthly_price', 'custom_yearly_price')
             ->get();
 
         $mrr = 0;
-        foreach ($activeHotelPlans as $row) {
-            // DB lookup first (all plans including inactive for historical accuracy)
-            if (isset($dbPlansAll[$row->plan])) {
-                $monthlyPrice = $dbPlansAll[$row->plan]->monthly_price;
+        $arr = 0;
+        foreach ($activeHotels2 as $h) {
+            $planMonthly = isset($dbPlansAll[$h->plan])
+                ? (int) $dbPlansAll[$h->plan]->monthly_price
+                : (int) ($configPlans[$h->plan]['monthly_price'] ?? 0);
+            $planYearly  = isset($dbPlansAll[$h->plan])
+                ? (int) $dbPlansAll[$h->plan]->yearly_price
+                : (int) ($configPlans[$h->plan]['yearly_price'] ?? 0);
+
+            $effectiveMonthly = (int) ($h->custom_monthly_price ?? $planMonthly);
+            $effectiveYearly  = (int) ($h->custom_yearly_price  ?? $planYearly);
+
+            if ($h->billing_cycle === 'yearly') {
+                $arr += $effectiveYearly;
+                $mrr += round($effectiveYearly / 12);
             } else {
-                $monthlyPrice = $configPlans[$row->plan]['monthly_price'] ?? 0;
+                $mrr += $effectiveMonthly;
+                $arr += $effectiveMonthly * 12;
             }
-            $mrr += $monthlyPrice * $row->cnt;
         }
 
-        $arr              = $mrr * 12;
         $nextMonthRevenue = $mrr;
         $activeSubscriptions = $activeHotels;
         $totalUsers       = DB::table('hotel_users')->where('status', 'active')->count();
