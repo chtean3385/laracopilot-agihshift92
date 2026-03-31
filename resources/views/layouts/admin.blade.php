@@ -547,36 +547,46 @@
         @php
             $saHotels = \Illuminate\Support\Facades\DB::table('hotels')->orderBy('name')->get();
             $saFilterId = session('crm_sa_hotel_filter');
+            $saSelected = $saHotels->firstWhere('id', $saFilterId);
         @endphp
         <div style="padding:8px 16px 4px;">
             <form method="POST" action="{{ route('sa.hotel.filter') }}" id="sa-hotel-form">
                 @csrf
-                <div style="background:rgba(124,58,237,.10);border:1px solid rgba(124,58,237,.25);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:7px;">
-                    <i class="fas fa-building" style="color:#a78bfa;font-size:11px;flex-shrink:0;"></i>
-                    <select name="hotel_id"
-                            onchange="document.getElementById('sa-hotel-form').submit()"
-                            style="background:transparent;border:none;color:#c4b5fd;font-size:11px;font-weight:700;flex:1;min-width:0;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
-                        <option value="" {{ !$saFilterId ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">All Hotels</option>
-                        @foreach($saHotels as $h)
-                        <option value="{{ $h->id }}" {{ $saFilterId == $h->id ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">{{ $h->name }}</option>
-                        @endforeach
-                    </select>
-                    <i class="fas fa-chevron-down" style="color:#7c3aed;font-size:9px;flex-shrink:0;pointer-events:none;"></i>
+                <div style="background:rgba(124,58,237,.10);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:8px 12px;">
+                    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(196,181,253,.5);margin-bottom:5px;">Hotel Filter</div>
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <div style="width:24px;height:24px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-building" style="color:#fff;font-size:10px;"></i>
+                        </div>
+                        <select name="hotel_id"
+                                onchange="document.getElementById('sa-hotel-form').submit()"
+                                style="background:transparent;border:none;color:#c4b5fd;font-size:12px;font-weight:700;flex:1;min-width:0;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
+                            <option value="" {{ !$saFilterId ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">All Hotels</option>
+                            @foreach($saHotels as $h)
+                            <option value="{{ $h->id }}" {{ $saFilterId == $h->id ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">{{ $h->name }}</option>
+                            @endforeach
+                        </select>
+                        <i class="fas fa-chevron-down" style="color:#7c3aed;font-size:9px;flex-shrink:0;pointer-events:none;"></i>
+                    </div>
                 </div>
             </form>
         </div>
         @elseif(session('crm_hotel_name'))
+        @php
+            $hotelInitial = strtoupper(substr(session('crm_hotel_name', 'H'), 0, 1));
+        @endphp
         <div style="padding:8px 16px 4px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:8px;padding:7px 10px;">
-                <div style="display:flex;align-items:center;gap:7px;min-width:0;">
-                    <i class="fas fa-hotel" style="color:#06b6d4;font-size:11px;flex-shrink:0;"></i>
-                    <span style="color:#67e8f9;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_hotel_name') }}</span>
+            <div style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:10px;padding:8px 12px;">
+                <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(103,232,249,.5);margin-bottom:5px;">Current Hotel</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:28px;height:28px;background:linear-gradient(135deg,#06b6d4,#0284c7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;">{{ $hotelInitial }}</div>
+                    <span style="color:#67e8f9;font-size:12px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_hotel_name') }}</span>
+                    @if(session('crm_hotel_count', 1) > 1)
+                    <a href="{{ route('select.hotel') }}" style="width:24px;height:24px;background:rgba(6,182,212,.15);border:1px solid rgba(6,182,212,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#67e8f9;font-size:10px;text-decoration:none;flex-shrink:0;transition:background .15s;" title="Switch Hotel" onmouseover="this.style.background='rgba(6,182,212,.3)'" onmouseout="this.style.background='rgba(6,182,212,.15)'">
+                        <i class="fas fa-exchange-alt"></i>
+                    </a>
+                    @endif
                 </div>
-                @if(session('crm_hotel_count', 1) > 1)
-                <a href="{{ route('select.hotel') }}" style="color:#475569;font-size:10px;text-decoration:none;white-space:nowrap;margin-left:6px;flex-shrink:0;" title="Switch Hotel">
-                    <i class="fas fa-exchange-alt"></i>
-                </a>
-                @endif
             </div>
         </div>
         @endif

@@ -119,10 +119,51 @@
             </div>
         </div>
 
+        {{-- Hotel Admin Account --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
+            <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 18px;display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;background:linear-gradient(135deg,#10b981,#059669);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-user-shield" style="color:#fff;font-size:12px;"></i>
+                </span>
+                Hotel Admin Account
+            </h2>
+
+            @if($hotelAdmin)
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">{{ strtoupper(substr($hotelAdmin->name, 0, 1)) }}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:14px;font-weight:800;color:#1e293b;">{{ $hotelAdmin->name }}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ $hotelAdmin->email }}</div>
+                    <div style="margin-top:5px;display:flex;align-items:center;gap:6px;">
+                        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#15803d;">
+                            <i class="fas fa-shield-halved" style="font-size:9px;"></i> Hotel Admin
+                        </span>
+                        @if($hotelAdmin->status === 'active')
+                        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#15803d;">Active</span>
+                        @else
+                        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#b91c1c;">{{ ucfirst($hotelAdmin->status) }}</span>
+                        @endif
+                    </div>
+                </div>
+                <a href="{{ route('platform.users.reset.show', $hotelAdmin->id) }}"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#ede9fe;color:#7c3aed;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .15s;"
+                    onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#ede9fe'">
+                    <i class="fas fa-key"></i> Reset Password
+                </a>
+            </div>
+            <p style="font-size:11px;color:#94a3b8;margin:8px 0 0;">The hotel admin can log in to the CRM and has full access. To change the admin, update via the Users section.</p>
+            @else
+            <div style="padding:18px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-exclamation-triangle" style="color:#d97706;font-size:14px;flex-shrink:0;"></i>
+                <span style="font-size:13px;color:#92400e;">No hotel admin found for this hotel. Assign one via the Users section.</span>
+            </div>
+            @endif
+        </div>
+
         {{-- Status --}}
         <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
             <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
-                <span style="width:28px;height:28px;background:linear-gradient(135deg,#10b981,#059669);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="width:28px;height:28px;background:linear-gradient(135deg,#0891b2,#0e7490);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <i class="fas fa-toggle-on" style="color:#fff;font-size:12px;"></i>
                 </span>
                 Operational Status

@@ -50,9 +50,9 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center">
                             <i class="fas fa-envelope text-slate-400 text-sm"></i>
                         </div>
-                        <input type="email" name="email" value="{{ old('email', 'admin@resort.com') }}"
+                        <input type="email" name="email" value="{{ old('email') }}"
                             class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none transition-all"
-                            placeholder="Enter your email" required>
+                            placeholder="Enter your email" required autocomplete="email">
                     </div>
                 </div>
 
@@ -62,7 +62,7 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center">
                             <i class="fas fa-lock text-slate-400 text-sm"></i>
                         </div>
-                        <input type="password" name="password" value="admin123"
+                        <input type="password" name="password" value=""
                             class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none transition-all"
                             placeholder="Enter password" required>
                     </div>
@@ -81,33 +81,6 @@
             </form>
         </div>
 
-        <!-- Demo Credentials -->
-        <div class="mt-6 bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-5">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Demo Credentials</p>
-            <div class="space-y-2">
-                <div class="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                    <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-500/30 text-purple-300 mr-2">Admin</span>
-                        <span class="text-slate-300 text-xs">admin@resort.com</span>
-                    </div>
-                    <span class="text-slate-400 text-xs font-mono">admin123</span>
-                </div>
-                <div class="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                    <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/30 text-blue-300 mr-2">Manager</span>
-                        <span class="text-slate-300 text-xs">manager@resort.com</span>
-                    </div>
-                    <span class="text-slate-400 text-xs font-mono">manager123</span>
-                </div>
-                <div class="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                    <div>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-500/30 text-cyan-300 mr-2">Receptionist</span>
-                        <span class="text-slate-300 text-xs">receptionist@resort.com</span>
-                    </div>
-                    <span class="text-slate-400 text-xs font-mono">recept123</span>
-                </div>
-            </div>
-        </div>
     </div>
 </body>
 </html>

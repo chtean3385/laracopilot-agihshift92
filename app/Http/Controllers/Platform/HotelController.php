@@ -154,9 +154,17 @@ class HotelController extends Controller
             return redirect()->route('platform.hotels.index')->with('error', 'Hotel not found.');
         }
 
+        // Fetch the current hotel admin (is_hotel_admin=1)
+        $hotelAdmin = DB::table('hotel_users')
+            ->join('users', 'users.id', '=', 'hotel_users.user_id')
+            ->where('hotel_users.hotel_id', $id)
+            ->where('hotel_users.is_hotel_admin', 1)
+            ->select('users.id', 'users.name', 'users.email', 'users.status', 'hotel_users.status as hu_status')
+            ->first();
+
         // Active plans for new selection + always include hotel's current plan (even if inactive)
         $plans = $this->getActivePlansForSelection($hotel->plan ?? null);
-        return view('platform.hotels.edit', compact('hotel', 'plans'));
+        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin'));
     }
 
     // ── Update ───────────────────────────────────────────────────────────────

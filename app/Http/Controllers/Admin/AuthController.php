@@ -13,10 +13,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    private const SUPER_ADMIN_EMAIL    = 'superadmin@gmail.com';
-    private const SUPER_ADMIN_PASSWORD = 'Super@#3385';
-    private const SUPER_ADMIN_NAME     = 'Super Admin';
-
     public function showLogin()
     {
         if (session('crm_logged_in')) {
@@ -34,22 +30,6 @@ class AuthController extends Controller
 
         $email    = strtolower(trim($request->email));
         $password = $request->password;
-
-        // ── Hardcoded Super Admin ────────────────────────────────────────────
-        if ($email === self::SUPER_ADMIN_EMAIL && $password === self::SUPER_ADMIN_PASSWORD) {
-            session([
-                'crm_logged_in'   => true,
-                'crm_user_id'     => 0,
-                'crm_user_name'   => self::SUPER_ADMIN_NAME,
-                'crm_user_email'  => self::SUPER_ADMIN_EMAIL,
-                'crm_user_role'   => 'Super Admin',
-                'crm_user_avatar' => 'S',
-                'crm_permissions' => ['*'],
-            ]);
-
-            ActivityLogger::log('Logged In', 'Auth', self::SUPER_ADMIN_NAME . ' logged in from ' . $request->ip());
-            return redirect()->route('dashboard')->with('success', 'Welcome back, ' . self::SUPER_ADMIN_NAME . '!');
-        }
 
         // ── DB User ──────────────────────────────────────────────────────────
         $user = User::where('email', $email)->first();
