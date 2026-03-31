@@ -40,7 +40,7 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)],
-            'phone'         => 'required|string|max:20',
+            'phone'         => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)],
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
             'state'         => 'nullable|string|max:100',
@@ -80,7 +80,7 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->ignore($id)],
-            'phone'         => 'required|string|max:20',
+            'phone'         => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->ignore($id)],
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
             'state'         => 'nullable|string|max:100',
@@ -116,7 +116,7 @@ class CustomerController extends Controller
         $hotelId = $this->currentHotelId();
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
-            'phone'   => 'required|string|max:20',
+            'phone'   => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)],
             'email'   => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)],
             'id_type' => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
         ]);
