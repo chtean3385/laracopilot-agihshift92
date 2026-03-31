@@ -58,15 +58,15 @@
             background: rgba(255,255,255,.07);
             border: 1.5px solid rgba(255,255,255,.12);
             border-radius: 12px;
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 20px;
+            font-weight: 700;
             color: #fff;
-            letter-spacing: .35em;
+            letter-spacing: .12em;
             text-align: center;
             outline: none;
             transition: border-color .2s, box-shadow .2s;
         }
-        .otp-input::placeholder { color: rgba(255,255,255,.2); font-size: 18px; letter-spacing: .1em; }
+        .otp-input::placeholder { color: rgba(255,255,255,.2); font-size: 13px; letter-spacing: .02em; }
         .otp-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,.25); }
         .form-error { font-size: 12px; color: #fca5a5; margin-top: 6px; }
         .btn {
@@ -113,21 +113,19 @@
 
     <div class="info-box">
         <i class="fas fa-mobile-alt"></i>
-        <span>Open Microsoft Authenticator (or any TOTP app) and enter the 6-digit code for your Platform Admin account.</span>
+        <span>Enter your 6-digit authenticator code, or a recovery code (format: XXXXXXXX-XXXXXXXX) if you have lost access to your authenticator.</span>
     </div>
 
     <form method="POST" action="{{ route('platform.login.2fa.post') }}">
         @csrf
 
         <div class="form-group">
-            <label>6-Digit Code</label>
+            <label>Authenticator Code or Recovery Code</label>
             <input type="text"
                    name="one_time_password"
                    class="otp-input"
-                   placeholder="000000"
-                   maxlength="6"
-                   inputmode="numeric"
-                   pattern="[0-9]{6}"
+                   placeholder="000000 or XXXXXXXX-XXXXXXXX"
+                   maxlength="19"
                    autocomplete="one-time-code"
                    autofocus
                    required>

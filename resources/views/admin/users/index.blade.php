@@ -95,9 +95,4 @@
     </table>
 </div>
 
-@if($users->hasPages())
-<div style="margin-top:20px;display:flex;justify-content:center;">
-    {{ $users->links() }}
-</div>
-@endif
 @endsection
