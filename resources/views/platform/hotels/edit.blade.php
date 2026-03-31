@@ -2,7 +2,7 @@
 
 @section('title', 'Edit Hotel — Platform Admin')
 @section('page-title', 'Edit Hotel')
-@section('page-subtitle', '{{ $hotel->name }} — change settings, plan or status')
+@section('page-subtitle'){{ $hotel->name }} — change settings, plan or status@endsection
 
 @section('content')
 

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Services\ActivityLogger;
+use App\Services\HotelContext;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RoomController extends Controller
 {
@@ -45,7 +47,7 @@ class RoomController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $validated = $request->validate([
-            'room_number'    => 'required|string|unique:rooms,room_number',
+            'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())],
             'type'           => 'required|in:standard,deluxe,suite,villa,penthouse',
             'capacity'       => 'required|integer|min:1|max:20',
             'price_per_night'=> 'required|numeric|min:0',
@@ -91,7 +93,7 @@ class RoomController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $room      = Room::findOrFail($id);
         $validated = $request->validate([
-            'room_number'    => 'required|string|unique:rooms,room_number,' . $id,
+            'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())->ignore($id)],
             'type'           => 'required|in:standard,deluxe,suite,villa,penthouse',
             'capacity'       => 'required|integer|min:1|max:20',
             'price_per_night'=> 'required|numeric|min:0',
