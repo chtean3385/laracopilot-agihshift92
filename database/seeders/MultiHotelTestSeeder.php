@@ -176,7 +176,6 @@ class MultiHotelTestSeeder extends Seeder
             'phone' => '+91 79 1234 5678', 'email' => $email,
             'tax_rate' => '12', 'currency' => 'INR', 'currency_symbol' => 'Rs',
             'check_in_time' => '12:00', 'check_out_time' => '11:00',
-            'invoice_prefix' => 'INV', 'booking_prefix' => 'BK',
             'created_at' => now(), 'updated_at' => now(),
         ]);
     }
