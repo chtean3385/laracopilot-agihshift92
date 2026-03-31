@@ -19,7 +19,8 @@ class UserController extends Controller
 
     private function currentHotelId(): ?int
     {
-        return session('crm_hotel_id') ? (int) session('crm_hotel_id') : null;
+        $id = session('crm_hotel_id') ?: session('crm_sa_hotel_filter');
+        return $id ? (int) $id : null;
     }
 
     public function index()
