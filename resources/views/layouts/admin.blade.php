@@ -500,6 +500,7 @@
         /* ── Mobile topbar fixes ── */
         @media (max-width: 768px) {
             .topbar-date, .topbar-time { display: none !important; }
+            .topbar-wa-label { display: none !important; }
             .topbar-title h1 { font-size: 15px !important; }
             .topbar-title p  { display: none !important; }
             #main-wrap > header { padding: 0 12px !important; }
@@ -734,7 +735,7 @@
         </div>
 
         <!-- Navigation -->
-        <nav style="flex:1;padding:10px 10px 0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent;">
+        <nav style="flex:1;padding:10px 10px 10px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent;min-height:0;">
 
             <!-- Dashboard -->
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -894,25 +895,6 @@
 
         </nav>
 
-        <!-- WhatsApp Support -->
-        @php
-            $waHotel = $settings->resort_name ?? session('crm_hotel_name', 'Hotel CRM');
-        @endphp
-        <div style="padding:8px 10px 4px;">
-            <a href="#" id="sidebar-wa-btn"
-               style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(37,211,102,.18),rgba(18,140,67,.12));border:1px solid rgba(37,211,102,.3);text-decoration:none;transition:all .18s;"
-               onmouseover="this.style.background='linear-gradient(135deg,rgba(37,211,102,.28),rgba(18,140,67,.2))'"
-               onmouseout="this.style.background='linear-gradient(135deg,rgba(37,211,102,.18),rgba(18,140,67,.12))'">
-                <span style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#25d366,#128c43);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 8px rgba(37,211,102,.4);">
-                    <i class="fab fa-whatsapp" style="color:#fff;font-size:16px;"></i>
-                </span>
-                <div style="min-width:0;">
-                    <div style="color:#4ade80;font-size:12px;font-weight:700;line-height:1.2;">Get Support</div>
-                    <div style="color:rgba(74,222,128,.55);font-size:10px;">Chat on WhatsApp</div>
-                </div>
-            </a>
-        </div>
-
         <!-- Logout -->
         <div style="padding:6px 10px 16px;border-top:1px solid rgba(255,255,255,.06);margin-top:8px;">
             <a href="{{ route('password.change.form') }}" class="logout-btn" style="text-decoration:none;margin-bottom:4px;">
@@ -927,16 +909,6 @@
                 </button>
             </form>
         </div>
-
-        <script>
-        (function() {
-            var hotel = @json($waHotel);
-            var page  = document.title.split('—')[0].trim();
-            var msg   = 'Hello! I need support with the *' + page + '* page.\nHotel: *' + hotel + '*\n\nPlease help me!';
-            document.getElementById('sidebar-wa-btn').href = 'https://wa.me/919725225519?text=' + encodeURIComponent(msg);
-            document.getElementById('sidebar-wa-btn').target = '_blank';
-        })();
-        </script>
 
     </aside>
     <!-- ═══════════════ END SIDEBAR ═══════════════ -->
@@ -965,6 +937,14 @@
                     <i class="fas fa-clock" style="color:#06b6d4;font-size:12px;"></i>
                     <span style="font-size:12px;color:#475569;font-weight:500;" id="liveClock"></span>
                 </div>
+                <!-- WhatsApp Support — header -->
+                <a href="#" id="header-wa-btn" title="Get Support on WhatsApp"
+                   style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 3px 10px rgba(37,211,102,.3);transition:all .18s;flex-shrink:0;"
+                   onmouseover="this.style.boxShadow='0 5px 16px rgba(37,211,102,.45)';this.style.transform='translateY(-1px)'"
+                   onmouseout="this.style.boxShadow='0 3px 10px rgba(37,211,102,.3)';this.style.transform=''">
+                    <i class="fab fa-whatsapp" style="font-size:15px;"></i>
+                    <span class="topbar-wa-label">Support</span>
+                </a>
                 <div style="position:relative;">
                     <button onclick="toggleUserMenu()" style="width:36px;height:36px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(6,182,212,.3);cursor:pointer;border:none;flex-shrink:0;">
                         {{ session('crm_user_avatar','A') }}
@@ -1082,7 +1062,9 @@
             var msg   = 'Hello! I need support with the *' + page + '* page.\nHotel: *' + hotel + '*\n\nPlease help me!';
             var url   = 'https://wa.me/919725225519?text=' + encodeURIComponent(msg);
             var fb = document.getElementById('footer-wa-btn');
-            if (fb) fb.href = url;
+            if (fb) { fb.href = url; }
+            var hb = document.getElementById('header-wa-btn');
+            if (hb) { hb.href = url; hb.target = '_blank'; }
         })();
         </script>
 
@@ -1214,11 +1196,11 @@
             desc: 'होटल का नाम, लोगो, GST नंबर, ईमेल और अन्य जानकारी यहाँ से अपडेट करें।'
         },
         {
-            sel: '#sidebar-wa-btn',
+            sel: '#header-wa-btn',
             icon: 'fa-whatsapp',
             iconLib: 'fab',
             title: 'WhatsApp सपोर्ट',
-            desc: 'कोई भी समस्या हो? इस बटन से सीधे हमारी सपोर्ट टीम से WhatsApp पर बात करें।'
+            desc: 'कोई भी समस्या हो? ऊपर हेडर में यह हरा बटन दबाएँ — सीधे हमारी सपोर्ट टीम से WhatsApp पर बात करें।'
         }
     ];
 
