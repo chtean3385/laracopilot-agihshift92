@@ -186,6 +186,9 @@ class UserController extends Controller
 
         $hotelId = $this->currentHotelId();
         $name    = $user->name;
+        $email   = $user->email;
+
+        ActivityLogger::log('Deleted', 'Users', 'Removed user: ' . $name . ' (' . $email . ')');
 
         if ($hotelId) {
             // Remove from current hotel only
@@ -199,8 +202,6 @@ class UserController extends Controller
         } else {
             $user->delete();
         }
-
-        ActivityLogger::log('Deleted', 'Users', 'Removed user from hotel: ' . $name);
 
         return redirect()->route('users.index')->with('success', 'User "' . $name . '" removed successfully.');
     }
