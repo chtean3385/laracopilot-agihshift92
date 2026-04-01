@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,12 @@ class CheckTrialStatus
         }
 
         // Skip auth/logout/upgrade/password routes
-        if ($request->routeIs(['login', 'login.post', 'logout', 'password.*', 'register', 'select.hotel', 'select.hotel.post', 'upgrade', 'upgrade.request'])) {
+        if ($request->routeIs([
+            'login', 'login.post', 'logout',
+            'password.*', 'register',
+            'select.hotel', 'select.hotel.post',
+            'upgrade', 'upgrade.request',
+        ])) {
             return $next($request);
         }
 
@@ -35,25 +41,24 @@ class CheckTrialStatus
             return $next($request);
         }
 
-        $now = now();
+        $now = Carbon::now();
 
         // ── Trial plan enforcement ──────────────────────────────────────────
         if ($hotel->plan === 'trial') {
-            $trialEnds = $hotel->trial_ends_at ? \Carbon\Carbon::parse($hotel->trial_ends_at) : null;
+            $trialEnds = $hotel->trial_ends_at ? Carbon::parse($hotel->trial_ends_at) : null;
 
             if ($trialEnds) {
+                // Use isPast() — timestamp comparison, no float-cast rounding bug
+                if ($trialEnds->isPast()) {
+                    return redirect()->route('upgrade')->with('trial_expired', true);
+                }
+
+                // Days remaining for warning display (integer, always >= 0 here)
                 $daysLeft = (int) $now->diffInDays($trialEnds, false);
 
-                if ($daysLeft < 0) {
-                    // Trial expired → redirect to upgrade (locked)
-                    if (!$request->routeIs(['upgrade', 'upgrade.request', 'logout'])) {
-                        return redirect()->route('upgrade')->with('trial_expired', true);
-                    }
-                } elseif ($daysLeft <= 1) {
-                    // Last 2 days of trial → banner warning
-                    session(['trial_warning' => 'urgent', 'trial_days_left' => max(0, $daysLeft)]);
+                if ($daysLeft <= 1) {
+                    session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
                 } elseif ($daysLeft <= 3) {
-                    // 3 days or less → warning banner
                     session(['trial_warning' => 'warning', 'trial_days_left' => $daysLeft]);
                 } else {
                     session()->forget(['trial_warning', 'trial_days_left']);
@@ -65,16 +70,19 @@ class CheckTrialStatus
 
         // ── Paid plan expiry enforcement ───────────────────────────────────
         if ($hotel->plan_expires_at) {
-            $planExpires = \Carbon\Carbon::parse($hotel->plan_expires_at);
-            $daysLeft    = (int) $now->diffInDays($planExpires, false);
+            $planExpires = Carbon::parse($hotel->plan_expires_at);
 
-            if ($daysLeft < 0) {
-                // Plan expired
-                if (!$request->routeIs(['upgrade', 'upgrade.request', 'logout'])) {
-                    return redirect()->route('upgrade')->with('plan_expired', true);
-                }
+            // Use isPast() — same fix
+            if ($planExpires->isPast()) {
+                return redirect()->route('upgrade')->with('plan_expired', true);
+            }
+
+            $daysLeft = (int) $now->diffInDays($planExpires, false);
+
+            if ($daysLeft <= 1) {
+                session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
             } elseif ($daysLeft <= 3) {
-                session(['trial_warning' => $daysLeft <= 1 ? 'urgent' : 'warning', 'trial_days_left' => max(0, $daysLeft)]);
+                session(['trial_warning' => 'warning', 'trial_days_left' => $daysLeft]);
             } else {
                 session()->forget(['trial_warning', 'trial_days_left']);
             }
