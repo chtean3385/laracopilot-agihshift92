@@ -92,7 +92,7 @@
                         $sMap = ['paid' => 'lv-badge-green', 'partial' => 'lv-badge-amber', 'unpaid' => 'lv-badge-red'];
                         $sCls = $sMap[$invoice->status] ?? 'lv-badge-gray';
                         $gradients = ['linear-gradient(135deg,#22d3ee,#3b82f6)','linear-gradient(135deg,#a78bfa,#7c3aed)','linear-gradient(135deg,#34d399,#0d9488)','linear-gradient(135deg,#fb7185,#ec4899)','linear-gradient(135deg,#fbbf24,#f97316)'];
-                        $ci = crc32($invoice->customer->name) % 5;
+                        $ci = crc32($invoice->customer?->name ?? 'G') % 5;
                         if ($ci < 0) { $ci += 5; }
                     @endphp
                     <tr class="lv-row">
@@ -104,9 +104,13 @@
                         <td class="lv-td">
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div class="lv-avatar" style="width:36px;height:36px;font-size:14px;background:{{ $gradients[$ci] }};">
-                                    {{ strtoupper(substr($invoice->customer->name, 0, 1)) }}
+                                    {{ strtoupper(substr($invoice->customer?->name ?? 'G', 0, 1)) }}
                                 </div>
+                                @if($invoice->customer)
                                 <a href="{{ route('customers.show', $invoice->customer->id) }}" class="lv-name-link">{{ $invoice->customer->name }}</a>
+                                @else
+                                <span class="lv-name-link" style="color:#94a3b8;">(Deleted Guest)</span>
+                                @endif
                             </div>
                         </td>
                         <td class="lv-td">

@@ -42,10 +42,10 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 card-hover">
             <div class="flex items-start justify-between mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">{{ substr($booking->customer->name, 0, 1) }}</div>
+                    <div class="w-11 h-11 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">{{ substr($booking->customer?->name ?? 'G', 0, 1) }}</div>
                     <div>
-                        <div class="font-bold text-gray-800">{{ $booking->customer->name }}</div>
-                        <div class="text-xs text-gray-400">{{ $booking->customer->phone }}</div>
+                        <div class="font-bold text-gray-800">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
+                        <div class="text-xs text-gray-400">{{ $booking->customer?->phone ?? '' }}</div>
                     </div>
                 </div>
                 <span class="badge-blue">{{ $booking->booking_number }}</span>

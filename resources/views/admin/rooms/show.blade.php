@@ -107,7 +107,7 @@
                     <tbody class="divide-y divide-gray-50">
                         @foreach($room->bookings as $booking)
                         <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-3 text-sm font-medium text-gray-800">{{ $booking->customer->name }}</td>
+                            <td class="px-6 py-3 text-sm font-medium text-gray-800">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</td>
                             <td class="px-6 py-3 text-xs text-gray-500">{{ $booking->check_in_date->format('d M') }} → {{ $booking->check_out_date->format('d M Y') }}</td>
                             <td class="px-6 py-3 text-sm font-semibold text-gray-700">₹{{ number_format($booking->total_amount) }}</td>
                             <td class="px-6 py-3"><span class="badge-{{ $booking->status_color }}">{{ ucfirst(str_replace('_',' ', $booking->status)) }}</span></td>

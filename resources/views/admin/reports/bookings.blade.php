@@ -35,7 +35,7 @@
                     @forelse($bookings as $b)
                     <tr class="hover:bg-slate-50">
                         <td class="px-6 py-3 text-xs font-mono text-cyan-600">{{ $b->booking_number }}</td>
-                        <td class="px-6 py-3 text-sm font-medium">{{ $b->customer->name }}</td>
+                        <td class="px-6 py-3 text-sm font-medium">{{ $b->customer?->name ?? '(Deleted Guest)' }}</td>
                         <td class="px-6 py-3 text-sm">{{ $b->room->room_number }}</td>
                         <td class="px-6 py-3 text-sm">{{ $b->check_in_date->format('d M Y') }}</td>
                         <td class="px-6 py-3 text-sm">{{ $b->nights }}</td>

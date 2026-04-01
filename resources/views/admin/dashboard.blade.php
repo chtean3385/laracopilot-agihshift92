@@ -451,7 +451,7 @@
                 @foreach($todayCheckins as $booking)
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border-radius:12px;">
                     <div>
-                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer->name }}</div>
+                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
                         <div style="font-size:12px;color:#64748b;">Room {{ $booking->room->room_number }} &bull; {{ $booking->nights }} night(s)</div>
                     </div>
                     @canDo('checkin.process')
@@ -475,7 +475,7 @@
                 @foreach($todayCheckouts as $booking)
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:12px;">
                     <div>
-                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer->name }}</div>
+                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
                         <div style="font-size:12px;color:#64748b;">Room {{ $booking->room->room_number }}
                             @canDo('reports.view') &bull; Due: ₹{{ number_format($booking->balance_due) }} @endCanDo
                         </div>

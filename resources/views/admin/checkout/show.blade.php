@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 @section('title','Process Check-Out')
 @section('page-title','Process Check-Out')
-@section('page-subtitle','Settle bill for ' . $booking->customer->name)
+@section('page-subtitle','Settle bill for ' . $booking->customer?->name ?? '(Deleted Guest)')
 @section('content')
 <div style="max-width:720px;" class="space-y-5">
     <a href="{{ route('checkout.index') }}" class="btn-secondary text-sm inline-flex"><i class="fas fa-arrow-left mr-2"></i>Back</a>
@@ -14,11 +14,11 @@
             <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Name</span>
-                    <span style="font-weight:700;color:#1e293b;">{{ $booking->customer->name }}</span>
+                    <span style="font-weight:700;color:#1e293b;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Phone</span>
-                    <span style="font-weight:600;">{{ $booking->customer->phone }}</span>
+                    <span style="font-weight:600;">{{ $booking->customer?->phone ?? '' }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Room</span>
@@ -183,8 +183,8 @@
 <script>
 var _coUpiBalance = {{ $gstBalanceDue }};
 var _coBookingNum = {!! json_encode($booking->booking_number) !!};
-var _coGuestName  = {!! json_encode($booking->customer->name) !!};
-var _coGuestPhone = {!! json_encode(preg_replace('/[^0-9]/', '', $booking->customer->phone)) !!};
+var _coGuestName  = {!! json_encode($booking->customer?->name ?? '(Deleted Guest)') !!};
+var _coGuestPhone = {!! json_encode(preg_replace('/[^0-9]/', '', $booking->customer?->phone ?? '')) !!};
 var _coUpiId      = '';
 
 function toggleCoUpiBtn(method) {

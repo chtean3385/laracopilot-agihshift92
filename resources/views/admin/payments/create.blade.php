@@ -107,7 +107,7 @@
                     <option value="">Search by booking number or guest name...</option>
                     @foreach($bookings as $booking)
                     <option value="{{ $booking->id }}" {{ (old('booking_id', $prefillBookingId) == $booking->id) ? 'selected' : '' }}>
-                        {{ $booking->booking_number }} — {{ $booking->customer->name }} — Room {{ $booking->room->room_number ?? 'N/A' }} ({{ ucfirst($booking->status) }})
+                        {{ $booking->booking_number }} — {{ $booking->customer?->name ?? '(Deleted Guest)' }} — Room {{ $booking->room->room_number ?? 'N/A' }} ({{ ucfirst($booking->status) }})
                     </option>
                     @endforeach
                 </select>

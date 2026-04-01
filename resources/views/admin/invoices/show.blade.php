@@ -48,7 +48,7 @@
             <div class="grid grid-cols-2 gap-8 mb-8">
                 <div>
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Bill To</p>
-                    <p class="font-bold text-gray-800 text-lg">{{ $invoice->customer->name }}</p>
+                    <p class="font-bold text-gray-800 text-lg">{{ $invoice->customer?->name ?? '(Deleted Guest)' }}</p>
                     <p class="text-gray-500 text-sm">{{ $invoice->customer->phone }}</p>
                     <p class="text-gray-500 text-sm">{{ $invoice->customer->email }}</p>
                     <p class="text-gray-500 text-sm">{{ $invoice->customer->city }}, {{ $invoice->customer->country }}</p>

@@ -63,10 +63,10 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 class="font-bold text-gray-800 mb-4">Guest</h3>
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">{{ substr($booking->customer->name, 0, 1) }}</div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">{{ substr($booking->customer?->name ?? '(Deleted Guest)', 0, 1) }}</div>
                     <div>
-                        <div class="font-semibold text-gray-800">{{ $booking->customer->name }}</div>
-                        <div class="text-sm text-gray-400">{{ $booking->customer->phone }}</div>
+                        <div class="font-semibold text-gray-800">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
+                        <div class="text-sm text-gray-400">{{ $booking->customer?->phone ?? '—' }}</div>
                     </div>
                 </div>
                 <a href="{{ route('customers.show', $booking->customer_id) }}" class="text-cyan-600 hover:underline text-sm"><i class="fas fa-external-link-alt mr-1"></i>View Guest Profile</a>
@@ -187,8 +187,8 @@
                 <div style="background:#f8fafc;border-radius:12px;padding:14px;border:1px solid #e2e8f0;">
                     <p style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;">Guest Data to Send</p>
                     <div style="display:grid;gap:5px;font-size:12px;">
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Name</span><span style="font-weight:700;color:#1e293b;">{{ $booking->customer->name }}</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Phone</span><span style="font-weight:600;color:#1e293b;">{{ $booking->customer->phone }}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Name</span><span style="font-weight:700;color:#1e293b;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Phone</span><span style="font-weight:600;color:#1e293b;">{{ $booking->customer?->phone ?? '—' }}</span></div>
                         <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Check-In</span><span style="font-weight:600;color:#1e293b;">{{ $booking->check_in_date->format('d M Y') }}</span></div>
                         <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Check-Out</span><span style="font-weight:600;color:#1e293b;">{{ $booking->check_out_date->format('d M Y') }}</span></div>
                         <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Room</span><span style="font-weight:600;color:#1e293b;">{{ $booking->room->room_number }} ({{ ucfirst($booking->room->type) }})</span></div>
@@ -433,16 +433,16 @@ function uploadDoc(guestId, input) {
 var pathikData = {
     booking_id:     {{ $booking->id }},
     booking_number: {!! json_encode($booking->booking_number) !!},
-    name:           {!! json_encode($booking->customer->name) !!},
-    email:          {!! json_encode($booking->customer->email ?? '') !!},
-    phone:          {!! json_encode($booking->customer->phone) !!},
+    name:           {!! json_encode($booking->customer?->name ?? '(Deleted Guest)') !!},
+    email:          {!! json_encode($booking->customer?->email ?? '') !!},
+    phone:          {!! json_encode($booking->customer?->phone ?? '—') !!},
     address:        {!! json_encode($booking->customer->address ?? '') !!},
     city:           {!! json_encode($booking->customer->city ?? '') !!},
     state:          {!! json_encode($booking->customer->state ?? '') !!},
     country:        {!! json_encode($booking->customer->country ?? 'India') !!},
     nationality:    {!! json_encode($booking->customer->nationality ?? 'Indian') !!},
-    id_type:        {!! json_encode($booking->customer->id_type ?? '') !!},
-    id_number:      {!! json_encode($booking->customer->id_number ?? '') !!},
+    id_type:        {!! json_encode($booking->customer?->id_type ?? '') !!},
+    id_number:      {!! json_encode($booking->customer?->id_number ?? '') !!},
     date_of_birth:  {!! json_encode($booking->customer->date_of_birth ? $booking->customer->date_of_birth->format('Y-m-d') : '') !!},
     check_in_date:  {!! json_encode($booking->check_in_date->format('Y-m-d')) !!},
     check_out_date: {!! json_encode($booking->check_out_date->format('Y-m-d')) !!},

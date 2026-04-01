@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 @section('title','Process Check-In')
 @section('page-title','Process Check-In')
-@section('page-subtitle','Confirm arrival · ' . $booking->customer->name)
+@section('page-subtitle','Confirm arrival · ' . $booking->customer?->name ?? '(Deleted Guest)')
 @section('content')
 
 {{-- ── Global modal styles ── --}}
@@ -83,15 +83,15 @@
             <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Name</span>
-                    <span style="font-weight:700;color:#1e293b;text-align:right;">{{ $booking->customer->name }}</span>
+                    <span style="font-weight:700;color:#1e293b;text-align:right;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Phone</span>
-                    <span style="font-weight:600;text-align:right;">{{ $booking->customer->phone }}</span>
+                    <span style="font-weight:600;text-align:right;">{{ $booking->customer?->phone ?? '—' }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">ID</span>
-                    <span style="font-weight:600;text-align:right;">{{ $booking->customer->id_number ?? '—' }}</span>
+                    <span style="font-weight:600;text-align:right;">{{ $booking->customer?->id_number ?? '—' }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Guests</span>
@@ -360,7 +360,7 @@
                 <span style="font-size:20px;">&#128203;</span>
                 <div>
                     <h3 style="font-size:14px;font-weight:800;margin:0;">Pathik Portal Autofill</h3>
-                    <p style="font-size:11px;opacity:.8;margin:2px 0 0;">{{ $booking->customer->name }}</p>
+                    <p style="font-size:11px;opacity:.8;margin:2px 0 0;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</p>
                 </div>
             </div>
             <button onclick="document.getElementById('pathikModalCheckin').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;">&#10005;</button>
@@ -682,7 +682,7 @@ function savePrimarySig() {
         return;
     }
     var dataUrl = canvas.toDataURL('image/png');
-    fetch('/guests/{{ $booking->customer->id }}/signature', {
+    fetch('/guests/{{ $booking->customer?->id ?? 0 }}/signature', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
         body: JSON.stringify({ signature: dataUrl })
@@ -716,16 +716,16 @@ function sendToPathikCheckin() {
     var d = {
         booking_id:   {{ $booking->id }},
         booking_number: {!! json_encode($booking->booking_number) !!},
-        name:         {!! json_encode($booking->customer->name) !!},
-        phone:        {!! json_encode($booking->customer->phone) !!},
-        email:        {!! json_encode($booking->customer->email ?? '') !!},
+        name:         {!! json_encode($booking->customer?->name ?? '(Deleted Guest)') !!},
+        phone:        {!! json_encode($booking->customer?->phone ?? '—') !!},
+        email:        {!! json_encode($booking->customer?->email ?? '') !!},
         address:      {!! json_encode($booking->customer->address ?? '') !!},
         city:         {!! json_encode($booking->customer->city ?? '') !!},
         state:        {!! json_encode($booking->customer->state ?? '') !!},
         country:      {!! json_encode($booking->customer->country ?? 'India') !!},
         nationality:  {!! json_encode($booking->customer->nationality ?? 'Indian') !!},
-        id_type:      {!! json_encode($booking->customer->id_type ?? '') !!},
-        id_number:    {!! json_encode($booking->customer->id_number ?? '') !!},
+        id_type:      {!! json_encode($booking->customer?->id_type ?? '') !!},
+        id_number:    {!! json_encode($booking->customer?->id_number ?? '') !!},
         date_of_birth: {!! json_encode($booking->customer->date_of_birth ? $booking->customer->date_of_birth->format('Y-m-d') : '') !!},
         check_in_date:  {!! json_encode($booking->check_in_date->format('Y-m-d')) !!},
         check_out_date: {!! json_encode($booking->check_out_date->format('Y-m-d')) !!},
