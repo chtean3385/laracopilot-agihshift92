@@ -5,6 +5,17 @@
 
 @section('content')
 <div class="max-w-4xl">
+
+    @if(session('warning_deleted_guest'))
+    <div style="background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:16px 20px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start;">
+        <i class="fas fa-exclamation-triangle" style="color:#f97316;font-size:18px;flex-shrink:0;margin-top:2px;"></i>
+        <div>
+            <div style="font-weight:700;color:#9a3412;font-size:14px;margin-bottom:4px;">Previously Deleted Guest Detected</div>
+            <div style="font-size:13px;color:#7c2d12;">{{ session('warning_deleted_guest')['message'] }}</div>
+        </div>
+    </div>
+    @endif
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
             <h3 class="font-bold text-gray-800"><i class="fas fa-user-plus text-cyan-500 mr-2"></i>Guest Information</h3>

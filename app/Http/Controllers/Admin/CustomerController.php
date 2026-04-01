@@ -37,6 +37,7 @@ class CustomerController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $hotelId = $this->currentHotelId();
+
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
@@ -51,6 +52,25 @@ class CustomerController extends Controller
             'notes'         => 'nullable|string',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
+
+        // Check if a soft-deleted guest exists with the same phone or email in this hotel
+        $deletedGuest = $this->findDeletedGuestByPhoneOrEmail(
+            $hotelId,
+            $validated['phone'],
+            $validated['email'] ?? null
+        );
+
+        if ($deletedGuest) {
+            $field = ($deletedGuest->phone === $validated['phone']) ? 'phone number' : 'email address';
+            return redirect()->back()
+                ->withInput()
+                ->with('warning_deleted_guest', [
+                    'message' => "A previously deleted guest \"{$deletedGuest->name}\" with the same {$field} ({$deletedGuest->phone}) exists in this hotel. Please contact Platform Admin to restore this guest instead of creating a duplicate.",
+                    'name'    => $deletedGuest->name,
+                    'phone'   => $deletedGuest->phone,
+                ]);
+        }
+
         $validated['id_number'] = '';
         $customer = Customer::create($validated);
         $this->saveDocuments($request, $customer->id, $validated['id_type']);
@@ -124,6 +144,26 @@ class CustomerController extends Controller
             'email'   => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
             'id_type' => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
         ]);
+
+        // Check if a soft-deleted guest exists with the same phone or email in this hotel
+        $deletedGuest = $this->findDeletedGuestByPhoneOrEmail(
+            $hotelId,
+            $validated['phone'],
+            $validated['email'] ?? null
+        );
+
+        if ($deletedGuest) {
+            $field = ($deletedGuest->phone === $validated['phone']) ? 'phone number' : 'email address';
+            return response()->json([
+                'error'          => "A previously deleted guest \"{$deletedGuest->name}\" with the same {$field} exists. Please ask the Platform Admin to restore this guest instead of creating a duplicate.",
+                'deleted_guest'  => [
+                    'id'    => $deletedGuest->id,
+                    'name'  => $deletedGuest->name,
+                    'phone' => $deletedGuest->phone,
+                ],
+            ], 422);
+        }
+
         $validated['id_number']   = '';
         $validated['country']     = 'India';
         $validated['nationality'] = 'Indian';
@@ -135,6 +175,24 @@ class CustomerController extends Controller
             'phone' => $customer->phone,
             'label' => $customer->name . ' — ' . $customer->phone,
         ]);
+    }
+
+    /**
+     * Find a soft-deleted guest in this hotel matching the given phone or email.
+     */
+    private function findDeletedGuestByPhoneOrEmail(int $hotelId, string $phone, ?string $email): ?Customer
+    {
+        $query = Customer::withTrashed()
+            ->whereNotNull('deleted_at')
+            ->where('hotel_id', $hotelId)
+            ->where(function ($q) use ($phone, $email) {
+                $q->where('phone', $phone);
+                if ($email) {
+                    $q->orWhere('email', $email);
+                }
+            });
+
+        return $query->first();
     }
 
     private function saveDocuments(Request $request, int $customerId, string $idType): void
