@@ -240,12 +240,13 @@ class HotelController extends Controller
         // Active plans for new selection + always include hotel's current plan (even if inactive)
         $plans = $this->getActivePlansForSelection($hotel->plan ?? null);
 
-        // Fetch all other hotels this admin also manages (for the right-side panel)
+        // Fetch other hotels where this same user is also the hotel admin (is_hotel_admin=1 only)
         $relatedHotels = collect();
         if ($hotelAdmin) {
             $relatedHotels = DB::table('hotel_users')
                 ->join('hotels', 'hotels.id', '=', 'hotel_users.hotel_id')
                 ->where('hotel_users.user_id', $hotelAdmin->id)
+                ->where('hotel_users.is_hotel_admin', 1)
                 ->where('hotel_users.hotel_id', '!=', $id)
                 ->select('hotels.id', 'hotels.name', 'hotels.plan', 'hotels.status')
                 ->orderBy('hotels.name')
