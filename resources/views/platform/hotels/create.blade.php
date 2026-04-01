@@ -205,14 +205,15 @@
                     <input type="email" name="admin_email" value="{{ old('admin_email') }}" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('admin_email')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
                         placeholder="admin@hotelname.com">
+                    <p style="font-size:11px;color:#6d28d9;margin:4px 0 0;"><i class="fas fa-info-circle"></i> If this email already belongs to an existing user, they will be linked to this hotel automatically — no new account is created.</p>
                     @if(isset($errors) && $errors->has('admin_email')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('admin_email') }}</p> @endif
                 </div>
 
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Admin Password <span style="color:#ef4444;">*</span></label>
-                    <input type="password" name="admin_password" required
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Admin Password <span style="font-size:10px;font-weight:500;color:#94a3b8;">(leave blank if user already exists)</span></label>
+                    <input type="password" name="admin_password"
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('admin_password')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
-                        placeholder="Min 6 characters" autocomplete="new-password">
+                        placeholder="Min 6 characters — required for new users" autocomplete="new-password">
                     @if(isset($errors) && $errors->has('admin_password')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('admin_password') }}</p> @endif
                 </div>
             </div>

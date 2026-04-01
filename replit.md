@@ -13,6 +13,111 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 - **Port**: 5000 (`php artisan serve --host=0.0.0.0 --port=5000`)
 - **Mail**: SMTP via `mail.dreamstechnology.in:465` (smtps), from `support@dreamstechnology.in`
 
+---
+
+## How to Use the System
+
+### Test Credentials
+| Email | Password | Role |
+|-------|----------|------|
+| superadmin@gmail.com | Super@#3385 | Platform Super Admin |
+| admin@resort.com | admin123 | Hotel Admin (Default Hotel) |
+| admin2@hotel.com | admin123 | Hotel Admin (Beach Resort) |
+
+---
+
+### 1. Platform Admin — Add a New Hotel
+
+**Login:** Go to `/platform/login` → use `superadmin@gmail.com` / `Super@#3385`
+
+**Steps:**
+1. Click **Hotels** in the left sidebar
+2. Click **+ New Hotel** (top right)
+3. Fill in **Hotel Details**: Name (required), Email, Phone, Address
+4. Choose a **Plan** (Basic / Pro / Enterprise), **Billing Cycle** (Monthly/Yearly), and optionally set **Custom Pricing**
+5. Optionally set **Trial Days** (e.g. 7 → hotel starts on trial plan, locked after 7 days) or **Plan Valid For Days** (sets expiry date)
+6. Fill in **Hotel Admin Account**:
+   - **Admin Email**: If this email already exists in the system (user from another hotel), they are automatically linked to the new hotel — **no new account is created, leave password blank**
+   - **Admin Password**: Required only for brand-new users; leave blank if the person already has an account
+7. Click **Create & Provision Hotel**
+
+One click creates: hotel + settings + 4 modules (WhatsApp, Payment Links, Pathik, Channel Manager) + 3 roles (Admin, Manager, Receptionist) + admin user — all in one database transaction.
+
+---
+
+### 2. Hotel CRM — Staff Login & Multi-Hotel Picker
+
+**Login URL:** `/login`
+
+- Enter email + password
+- If account is linked to **1 hotel** → goes directly to that hotel's dashboard
+- If account is linked to **2+ hotels** → shows a **hotel picker screen** to choose which hotel to enter
+- After entering, the user can switch hotels by logging out and selecting a different one at `/select-hotel`
+
+---
+
+### 3. Add an Existing User to Another Hotel
+
+**Option A — From Create Hotel form:**
+- Go to Platform Admin → Hotels → New Hotel
+- Enter the existing user's email in the "Admin Email" field
+- Leave password blank
+- Submit — the user is linked to the new hotel and will see the hotel picker on next login
+
+**Option B — From Edit Hotel page:**
+- Go to Platform Admin → Hotels → Edit (any hotel)
+- Scroll to **"Add New User to This Hotel"**
+- Enter name, email, password (creates new user if email doesn't exist, links if it does), select role
+- Click Add User
+
+---
+
+### 4. Trial & Plan Expiry Management (Edit Hotel page)
+
+Go to Platform Admin → Hotels → Edit → scroll past Save Changes button to **Trial & Plan Expiry** card.
+
+| Button | What it does |
+|--------|-------------|
+| **Activate Trial** | Sets plan to `trial`, sets trial_ends_at = today + N days. Overrides any previous trial. |
+| **Cancel Trial** | Clears trial_ends_at, reverts plan to selected plan (e.g. Basic). Only shown when trial is active. |
+| **Extend Plan** | Adds N days to plan_expires_at (from today if already expired). |
+| **Cancel Plan Expiry** | Clears plan_expires_at (no expiry limit). Only shown when a date is set. |
+
+---
+
+### 5. Enter a Hotel's CRM as Platform Admin
+
+- Go to Platform Admin → Hotels (or Dashboard → Tenant Directory)
+- Click **View CRM** next to any hotel
+- You are now inside that hotel's CRM with full super-admin access
+- The session stores `crm_sa_hotel_filter` (not `crm_hotel_id`) to track which hotel you're viewing
+- To exit: click **Back to Platform Admin** in the top-right of the CRM
+
+---
+
+### 6. Suspend / Reactivate / Delete a Hotel
+
+From Platform Admin → Hotels list:
+- **Suspend** (red button): Blocks all staff logins immediately; hotel data preserved
+- **Activate** (green button): Restores access for suspended hotels
+- **Delete** (dark red button): Only available when hotel is suspended; permanently deletes all data — hotel, rooms, bookings, payments, guests, users. **Cannot be undone.**
+
+From Edit Hotel page: same Suspend/Reactivate button is at the bottom right.
+
+---
+
+### 7. Platform Dashboard
+
+URL: `/platform/dashboard`
+
+- **MRR card** — Monthly Recurring Revenue from all active subscriptions (custom pricing applied per hotel)
+- **Active Subscriptions** — Count of active hotels
+- **Suspended Tenants** — Count + "on trial" badge if any trials are running
+- **Next Month Expected** — Projected next-month revenue from active subscriptions
+- **Tenant Directory** — Full table of all hotels with plan, status, pricing, expiry, rooms, users, and actions
+
+---
+
 ## Critical Coding Rules
 1. **JS in Blade**: Use inline `<script>` inside `@section('content')`, NOT `@push('scripts')` for inline JS (platform layout supports `@stack('scripts')` and `@stack('styles')`)
 2. **Blade raw output in JS**: Always use `{!! json_encode($var) !!}` — NEVER `{{ json_encode($var) }}` (double-encoding breaks JS)
@@ -26,6 +131,10 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 10. **Hotel session keys**: `crm_hotel_id`, `crm_hotel_name`, `crm_hotel_count`, `crm_hotel_options`
 11. **Platform controllers**: Use `DB::table()` throughout — no HotelContext/Eloquent global scopes
 12. **currentHotelId() in UserController**: Falls back to `session('crm_sa_hotel_filter')` when `crm_hotel_id` is null — fixes SA-created user linking
+13. **Nested forms are invalid HTML**: Sub-forms (trial/suspend/etc) must be placed OUTSIDE the main `<form>` tag or they silently submit the outer form instead
+14. **CSS responsive grids**: Never put `grid-template-columns` in inline `style=""` — inline styles override media queries. Use a class + `<style>` block instead.
+
+---
 
 ## Platform Admin (SaaS Console) — `/platform/` routes
 
@@ -57,15 +166,21 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 - `POST /platform/hotels/{id}/users` — Add user to hotel
 - `POST /platform/hotels/{id}/send-welcome` — Send onboarding email manually
 - `GET /platform/hotels/{id}/view-in-crm` — Enter hotel's CRM as SA
+- `POST /platform/hotels/{id}/activate-trial` — Set hotel to trial plan (N days)
+- `POST /platform/hotels/{id}/cancel-trial` — Clear trial, revert to selected plan
+- `POST /platform/hotels/{id}/extend-plan` — Add N days to plan_expires_at
+- `POST /platform/hotels/{id}/cancel-plan-expiry` — Clear plan_expires_at (no expiry)
 - `GET /platform/users` — All users across tenants
 - `GET /platform/plans` — Manage subscription plans
 - `GET /platform/activity-log` — Platform-wide activity log
 - `GET /platform/settings/2fa` — Platform admin 2FA setup (TOTP)
 
 ### Platform Features Implemented
-- **SaaS Dashboard** — MRR/ARR cards (per-hotel effective pricing), Active/Suspended counts, Tenant Directory table with Plan + Subscription + Status + Rooms + Bookings + Users columns
+- **SaaS Dashboard** — MRR/ARR cards (per-hotel effective pricing), Active/Suspended counts, Tenant Directory table with Plan + Subscription + Status + Expiry + Rooms + Bookings + Users columns
 - **Hotel Management** — Create/edit/suspend/activate/delete hotels; custom billing cycle (monthly/yearly); custom per-hotel pricing with CUSTOM badge; falls back to plan defaults when custom price is 0/null
+- **Multi-hotel user linking** — Creating a hotel with an existing user's email links them (no duplicate account); password is optional in that case
 - **Subscription Pricing** — `billing_cycle`, `custom_monthly_price`, `custom_yearly_price` on hotels table; dashboard and hotels index both show effective price
+- **Trial Management** — Activate trial (N days), cancel trial (revert plan), extend plan expiry, cancel plan expiry — all as standalone forms outside the main edit form
 - **MRR Calculation** — Per-hotel: `custom_monthly_price > 0 ? custom : plan_default`; yearly hotels contribute `yearly/12` to MRR; banner breakdown shows actual per-plan MRR contribution
 - **Platform 2FA (TOTP)** — Microsoft Authenticator / Google Authenticator; QR setup at `/platform/settings/2fa`; TOTP secret encrypted with `Crypt::encryptString`; recovery codes (hashed); login gated to 2FA verify step; `Crypt::decryptString` wrapped in try/catch for resilience
 - **Hotel Delete** — Requires `suspended` status; hard deletes all related data in dependency order
@@ -73,15 +188,9 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 - **Onboarding Email** — Auto-sent on hotel creation + manual "Send Email" button on hotels list; beautiful HTML template with login credentials, login URL (`https://resort.dreamstechnology.in/login`), quick-start guide, Dreams Technology branding
 
 ### Hotel Index — columns
-HOTEL | PLAN | SUBSCRIPTION | STATUS | ROOMS | BOOKINGS | USERS | CREATED | ACTIONS
-(Revenue column intentionally removed)
+HOTEL | PLAN | SUBSCRIPTION | STATUS | EXPIRY | ROOMS | BOOKINGS | USERS | CREATED | ACTIONS
 
-## Test Credentials
-| Email | Password | Role |
-|-------|----------|------|
-| superadmin@gmail.com | Super@#3385 | Platform Super Admin |
-| admin@resort.com | admin123 | Hotel Admin (Default Hotel) |
-| admin2@hotel.com | admin123 | Hotel Admin (Beach Resort) |
+---
 
 ## Hotel CRM Login
 - URL: `/login` — Generic "Hotel CRM / Staff Portal" heading (not hotel-specific)
@@ -108,7 +217,7 @@ HOTEL | PLAN | SUBSCRIPTION | STATUS | ROOMS | BOOKINGS | USERS | CREATED | ACTI
 - `/install` — Web installer (locked after first run)
 
 ## Multi-Hotel (SaaS) Architecture
-- **`hotels`** table: id, name, slug, status, plan, billing_cycle, custom_monthly_price, custom_yearly_price, max_rooms, max_users, address, phone, email, admin_notes
+- **`hotels`** table: id, name, slug, status, plan, billing_cycle, custom_monthly_price, custom_yearly_price, max_rooms, max_users, trial_ends_at, plan_expires_at, address, phone, email, admin_notes
 - **`hotel_users`** pivot: links users to hotels with per-hotel role + is_hotel_admin flag
 - **`HotelContext`** singleton (`app(HotelContext::class)`): set by `SetHotelContext` middleware
 - **`BelongsToHotel`** trait: applied to all 16 data models — auto-adds `HotelScope` + fills `hotel_id` on `creating`
@@ -140,7 +249,7 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 ## Services
 - `App\Services\HotelContext` — Singleton; `setHotel(int)` / `getHotel()` / `isSet()` / `clear()`
 - `App\Services\PermissionService` — Super Admin bypasses all; others checked against `crm_permissions` session
-- `App\Services\ActivityLogger` — Writes to `activity_logs` with `hotel_id`; silently ignores failures
+- `App\Services\ActivityLogger` — Writes to `activity_logs` with `hotel_id`; silently ignores failures; signature: `log(action, module, description)`
 
 ## Mail / Email
 - **Driver**: SMTP via `mail.dreamstechnology.in:465` (smtps / SSL)
@@ -220,6 +329,11 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | #12 SMTP Configuration | ✅ COMPLETE | mail.dreamstechnology.in:465 (smtps), support@dreamstechnology.in |
 | #13 Subscription Column | ✅ COMPLETE | Hotels index shows effective subscription price with billing cycle + CUSTOM badge |
 | #14 Revenue Column Removed | ✅ COMPLETE | Revenue column removed from platform hotels index (not relevant at SaaS level) |
+| #17 Activity Logging | ✅ COMPLETE | ActivityLogger 3-arg signature, all CRM actions logged with hotel_id |
+| #18 Guest Soft Delete | ✅ COMPLETE | Guest soft-delete + platform restore; null-safe guards on all booking/invoice/payment views |
+| #19 Trial Enforcement | ✅ COMPLETE | 7-day trial, plan lock overlay, upgrade request page; CheckTrialStatus middleware |
+| #20 Hindi Onboarding Tour | ✅ COMPLETE | 11-step JS/CSS tour, per-user localStorage, resolveVisible() for permission-gated steps |
+| #21 replit.md How-To Guide | ✅ COMPLETE | Comprehensive usage guide added to this file |
 | #15 AI Smart CRM | PENDING | OpenAI-powered insights, plan-gated (depends on stable platform) |
 
 ## Known Bugs Fixed
@@ -228,3 +342,7 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 - `Crypt::decryptString` could throw 500 on corrupted TOTP secret — wrapped in try/catch
 - MRR used `??` null coalescing which failed when custom price = 0 (not null) — fixed to `> 0` check
 - `MAIL_SCHEME=ssl` not valid in Laravel 12 for port 465 — changed to `smtps`
+- Soft-deleted guest null crash on Booking/Invoice/Payment — `->withTrashed()` on `customer()` relationship + `?->` guards in all views
+- Platform dashboard KPI grid not responsive — inline `style` overrode media queries; moved to class-based `<style>` block; breakpoints 600px (2-col) / 960px (4-col)
+- "Activate Trial" / "Extend Plan" buttons did nothing — trial forms were nested inside main edit `<form>` (HTML ignores nested forms); moved outside as standalone card
+- Create Hotel blocked existing user emails — changed from `unique:users,email` to smart link: if email exists, user is linked to new hotel without creating duplicate account

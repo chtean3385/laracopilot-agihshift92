@@ -70,20 +70,30 @@ class HotelController extends Controller
             'max_users'            => 'required|integer|min:1',
             'admin_notes'          => 'nullable|string|max:1000',
             'admin_name'           => 'required|string|max:255',
-            'admin_email'          => 'required|email|max:255|unique:users,email',
-            'admin_password'       => 'required|string|min:6',
+            'admin_email'          => 'required|email|max:255',
+            'admin_password'       => 'nullable|string|min:6',
             'trial_days'           => 'nullable|integer|min:1|max:90',
             'plan_expires_days'    => 'nullable|integer|min:1|max:730',
         ]);
 
+        // Check if admin email already exists in users table
+        $existingUser = DB::table('users')->where('email', $data['admin_email'])->first();
+
+        // If no existing user and no password provided, reject with validation error
+        if (!$existingUser && empty($data['admin_password'])) {
+            return back()->withInput()->withErrors([
+                'admin_password' => 'Password is required when creating a new admin account.',
+            ]);
+        }
+
         $slug = $this->generateUniqueSlug($data['name']);
 
-        $plainPassword = $data['admin_password'];
+        $plainPassword = $data['admin_password'] ?? null;
 
         $trialDays       = !empty($data['trial_days'])        ? (int)$data['trial_days']        : null;
         $planExpiresDays = !empty($data['plan_expires_days']) ? (int)$data['plan_expires_days'] : null;
 
-        DB::transaction(function () use ($data, $slug, $trialDays, $planExpiresDays) {
+        DB::transaction(function () use ($data, $slug, $trialDays, $planExpiresDays, $existingUser) {
             $hotelId = DB::table('hotels')->insertGetId([
                 'name'                 => $data['name'],
                 'slug'                 => $slug,
@@ -135,35 +145,59 @@ class HotelController extends Controller
 
             $this->provisionRoles($hotelId);
 
-            $adminId = DB::table('users')->insertGetId([
-                'name'           => $data['admin_name'],
-                'email'          => $data['admin_email'],
-                'password'       => Hash::make($data['admin_password']),
-                'role'           => 'Admin',
-                'status'         => 'active',
-                'is_super_admin' => 0,
-                'created_at'     => now(),
-                'updated_at'     => now(),
-            ]);
+            if ($existingUser) {
+                // User already exists — link them to the new hotel as admin
+                $adminId = $existingUser->id;
+                // If they're not already linked to this hotel, add the pivot row
+                $alreadyLinked = DB::table('hotel_users')
+                    ->where('hotel_id', $hotelId)
+                    ->where('user_id', $adminId)
+                    ->exists();
+                if (!$alreadyLinked) {
+                    DB::table('hotel_users')->insert([
+                        'hotel_id'       => $hotelId,
+                        'user_id'        => $adminId,
+                        'role'           => 'Admin',
+                        'is_hotel_admin' => 1,
+                        'status'         => 'active',
+                        'created_at'     => now(),
+                        'updated_at'     => now(),
+                    ]);
+                }
+            } else {
+                // New user — create and link
+                $adminId = DB::table('users')->insertGetId([
+                    'name'           => $data['admin_name'],
+                    'email'          => $data['admin_email'],
+                    'password'       => Hash::make($data['admin_password']),
+                    'role'           => 'Admin',
+                    'status'         => 'active',
+                    'is_super_admin' => 0,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
 
-            DB::table('hotel_users')->insert([
-                'hotel_id'       => $hotelId,
-                'user_id'        => $adminId,
-                'role'           => 'Admin',
-                'is_hotel_admin' => 1,
-                'status'         => 'active',
-                'created_at'     => now(),
-                'updated_at'     => now(),
-            ]);
+                DB::table('hotel_users')->insert([
+                    'hotel_id'       => $hotelId,
+                    'user_id'        => $adminId,
+                    'role'           => 'Admin',
+                    'is_hotel_admin' => 1,
+                    'status'         => 'active',
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
         });
+
+        $userVerb = $existingUser ? 'linked existing user' : 'created new admin user';
 
         // Send welcome / onboarding email to the hotel admin
         try {
             Mail::to($data['admin_email'])->send(new HotelWelcomeMail(
                 hotelName:     $data['name'],
-                adminName:     $data['admin_name'],
+                adminName:     $existingUser ? $existingUser->name : $data['admin_name'],
                 adminEmail:    $data['admin_email'],
-                adminPassword: $plainPassword,
+                adminPassword: $plainPassword ?? '(use your existing password)',
                 plan:          $data['plan'],
             ));
             $emailNote = ' Welcome email sent to ' . $data['admin_email'] . '.';
@@ -172,7 +206,7 @@ class HotelController extends Controller
         }
 
         return redirect()->route('platform.hotels.index')
-            ->with('success', "Hotel \"{$data['name']}\" created and fully provisioned with admin user {$data['admin_email']}." . $emailNote);
+            ->with('success', "Hotel \"{$data['name']}\" created and provisioned. {$userVerb} {$data['admin_email']}." . $emailNote);
     }
 
     // ── Edit ─────────────────────────────────────────────────────────────────
