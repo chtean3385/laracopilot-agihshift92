@@ -239,7 +239,120 @@ class HotelController extends Controller
 
         // Active plans for new selection + always include hotel's current plan (even if inactive)
         $plans = $this->getActivePlansForSelection($hotel->plan ?? null);
-        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin', 'hotelUsers'));
+
+        // Fetch all other hotels this admin also manages (for the right-side panel)
+        $relatedHotels = collect();
+        if ($hotelAdmin) {
+            $relatedHotels = DB::table('hotel_users')
+                ->join('hotels', 'hotels.id', '=', 'hotel_users.hotel_id')
+                ->where('hotel_users.user_id', $hotelAdmin->id)
+                ->where('hotel_users.hotel_id', '!=', $id)
+                ->select('hotels.id', 'hotels.name', 'hotels.plan', 'hotels.status')
+                ->orderBy('hotels.name')
+                ->get();
+        }
+
+        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin', 'hotelUsers', 'relatedHotels'));
+    }
+
+    // ── Add Related Hotel (same admin, no new credentials needed) ────────────
+
+    public function addRelatedHotel(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.edit', $id)->with('error', 'Hotel not found.');
+        }
+
+        // Find the current hotel's admin
+        $hotelAdmin = DB::table('hotel_users')
+            ->join('users', 'users.id', '=', 'hotel_users.user_id')
+            ->where('hotel_users.hotel_id', $id)
+            ->where('hotel_users.is_hotel_admin', 1)
+            ->select('users.id', 'users.name', 'users.email')
+            ->first();
+
+        if (!$hotelAdmin) {
+            return back()->with('error', 'No admin user found for this hotel. Please assign a hotel admin first.');
+        }
+
+        $validSlugs = DB::table('platform_plans')->where('is_active', true)->pluck('slug')->toArray();
+        if (empty($validSlugs)) {
+            $validSlugs = array_keys(config('plans', []));
+        }
+
+        $data = $request->validate([
+            'new_hotel_name'          => 'required|string|max:255',
+            'new_hotel_plan'          => 'required|in:' . implode(',', $validSlugs),
+            'new_hotel_billing_cycle' => 'required|in:monthly,yearly',
+            'new_hotel_trial_days'    => 'nullable|integer|min:1|max:90',
+            'new_hotel_expires_days'  => 'nullable|integer|min:1|max:730',
+        ]);
+
+        // Determine max_rooms / max_users from the chosen plan
+        $planRow  = DB::table('platform_plans')->where('slug', $data['new_hotel_plan'])->first();
+        $maxRooms = min($planRow->max_rooms ?? 10, 999);
+        $maxUsers = min($planRow->max_users ?? 5,  999);
+
+        $trialDays   = !empty($data['new_hotel_trial_days'])   ? (int)$data['new_hotel_trial_days']   : null;
+        $expiresDays = !empty($data['new_hotel_expires_days']) ? (int)$data['new_hotel_expires_days'] : null;
+
+        $slug = $this->generateUniqueSlug($data['new_hotel_name']);
+
+        DB::transaction(function () use ($data, $slug, $hotelAdmin, $trialDays, $expiresDays, $maxRooms, $maxUsers) {
+            $newHotelId = DB::table('hotels')->insertGetId([
+                'name'            => $data['new_hotel_name'],
+                'slug'            => $slug,
+                'plan'            => $trialDays ? 'trial' : $data['new_hotel_plan'],
+                'billing_cycle'   => $data['new_hotel_billing_cycle'],
+                'status'          => 'active',
+                'max_rooms'       => $maxRooms,
+                'max_users'       => $maxUsers,
+                'trial_ends_at'   => $trialDays   ? now()->addDays($trialDays)   : null,
+                'plan_expires_at' => $expiresDays ? now()->addDays($expiresDays) : null,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+
+            DB::table('settings')->insert([
+                'hotel_id'        => $newHotelId,
+                'resort_name'     => $data['new_hotel_name'],
+                'address'         => '',
+                'phone'           => '',
+                'email'           => '',
+                'tax_rate'        => '12',
+                'currency'        => 'INR',
+                'currency_symbol' => 'Rs',
+                'check_in_time'   => '12:00',
+                'check_out_time'  => '11:00',
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+
+            foreach ([
+                ['slug' => 'whatsapp',        'name' => 'WhatsApp Automation', 'description' => 'Automated WhatsApp messages.',            'is_enabled' => false],
+                ['slug' => 'payment_links',   'name' => 'Payment Links',       'description' => 'Generate UPI QR codes and payment links.', 'is_enabled' => false],
+                ['slug' => 'pathik',          'name' => 'Pathik Autofill',     'description' => 'Gujarat Pathik portal autofill.',          'is_enabled' => false],
+                ['slug' => 'channel_manager', 'name' => 'OTA Channel Manager', 'description' => 'Sync with OTA platforms.',                 'is_enabled' => false],
+            ] as $m) {
+                DB::table('modules')->insert(array_merge($m, ['hotel_id' => $newHotelId, 'created_at' => now(), 'updated_at' => now()]));
+            }
+
+            $this->provisionRoles($newHotelId);
+
+            DB::table('hotel_users')->insert([
+                'hotel_id'       => $newHotelId,
+                'user_id'        => $hotelAdmin->id,
+                'role'           => 'Admin',
+                'is_hotel_admin' => 1,
+                'status'         => 'active',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+        });
+
+        return redirect()->route('platform.hotels.edit', $id)
+            ->with('success', "Hotel \"{$data['new_hotel_name']}\" created and fully provisioned. Admin {$hotelAdmin->name} ({$hotelAdmin->email}) linked automatically.");
     }
 
     // ── Update ───────────────────────────────────────────────────────────────

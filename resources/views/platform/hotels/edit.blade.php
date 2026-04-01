@@ -8,7 +8,10 @@
 
 @section('content')
 
-<div style="max-width:720px;">
+<div style="display:flex;gap:28px;align-items:flex-start;">
+
+{{-- ═══ LEFT COLUMN ═══ --}}
+<div style="flex:1;min-width:0;max-width:720px;">
 
     {{-- Back link --}}
     <a href="{{ route('platform.hotels.index') }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6d28d9;font-weight:600;text-decoration:none;margin-bottom:20px;">
@@ -491,7 +494,155 @@
         </form>
     </div>
 
-</div>
+</div>{{-- end left column --}}
+
+{{-- ═══ RIGHT COLUMN ═══ --}}
+<div style="width:360px;flex-shrink:0;position:sticky;top:80px;">
+
+    {{-- Other Hotels with Same Admin --}}
+    <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
+        <h2 style="font-size:14px;font-weight:800;color:#1e293b;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+            <span style="width:26px;height:26px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-hotel" style="color:#fff;font-size:11px;"></i>
+            </span>
+            Hotels with Same Admin
+        </h2>
+        @if($hotelAdmin)
+        <p style="font-size:11px;color:#64748b;margin:0 0 14px;">Other hotels managed by <strong>{{ $hotelAdmin->name }}</strong></p>
+        @else
+        <p style="font-size:11px;color:#94a3b8;margin:0 0 14px;">No admin assigned to this hotel yet.</p>
+        @endif
+
+        @if($relatedHotels->isNotEmpty())
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            @foreach($relatedHotels as $rh)
+            @php
+                $rhBg   = $rh->status === 'active' ? '#f0fdf4' : '#fef2f2';
+                $rhBdr  = $rh->status === 'active' ? '#bbf7d0' : '#fecaca';
+                $rhDot  = $rh->status === 'active' ? '#16a34a' : '#dc2626';
+            @endphp
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:{{ $rhBg }};border:1px solid {{ $rhBdr }};border-radius:10px;">
+                <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $rh->name }}</div>
+                    <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:{{ $rhDot }};display:inline-block;flex-shrink:0;"></span>
+                        <span style="font-size:10px;color:#64748b;text-transform:capitalize;">{{ $rh->status }}</span>
+                        <span style="font-size:10px;color:#94a3b8;">· {{ strtoupper($rh->plan) }}</span>
+                    </div>
+                </div>
+                <a href="{{ route('platform.hotels.edit', $rh->id) }}"
+                   style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#ede9fe;color:#7c3aed;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;"
+                   onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#ede9fe'">
+                    <i class="fas fa-pen-to-square" style="font-size:10px;"></i> Edit
+                </a>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <div style="text-align:center;padding:16px 0;color:#94a3b8;font-size:12px;">
+            <i class="fas fa-building" style="font-size:20px;margin-bottom:6px;display:block;opacity:.4;"></i>
+            No other hotels linked to this admin yet.
+        </div>
+        @endif
+    </div>
+
+    {{-- Add Another Hotel (same admin) --}}
+    @if($hotelAdmin)
+    <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1.5px solid #ede9fe;">
+        <h2 style="font-size:14px;font-weight:800;color:#1e293b;margin:0 0 4px;display:flex;align-items:center;gap:8px;">
+            <span style="width:26px;height:26px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-plus" style="color:#fff;font-size:11px;"></i>
+            </span>
+            Add Another Hotel
+        </h2>
+        <p style="font-size:11px;color:#6d28d9;margin:0 0 16px;padding:8px 10px;background:#f5f3ff;border-radius:8px;border-left:3px solid #7c3aed;">
+            <i class="fas fa-link" style="margin-right:4px;"></i>
+            <strong>{{ $hotelAdmin->name }}</strong> will be automatically linked as Admin — no password needed.
+        </p>
+
+        @if(session('success') && str_contains(session('success'), 'created and fully provisioned'))
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#15803d;display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-check-circle" style="margin-top:1px;flex-shrink:0;"></i> {{ session('success') }}
+        </div>
+        @endif
+
+        @if($errors->has('new_hotel_name') || $errors->has('new_hotel_plan') || $errors->has('new_hotel_billing_cycle'))
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#b91c1c;">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ $errors->first('new_hotel_name') ?: ($errors->first('new_hotel_plan') ?: $errors->first('new_hotel_billing_cycle')) }}
+        </div>
+        @endif
+
+        <form method="POST" action="{{ route('platform.hotels.add-related', $hotel->id) }}" style="margin:0;">
+            @csrf
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Hotel Name <span style="color:#ef4444;">*</span></label>
+                <input type="text" name="new_hotel_name" value="{{ old('new_hotel_name') }}" required
+                    style="width:100%;padding:9px 12px;border:1.5px solid {{ $errors->has('new_hotel_name') ? '#ef4444' : '#e2e8f0' }};border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;outline:none;"
+                    placeholder="e.g. Grand Resort Surat">
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Plan <span style="color:#ef4444;">*</span></label>
+                <select name="new_hotel_plan" required
+                    style="width:100%;padding:9px 12px;border:1.5px solid {{ $errors->has('new_hotel_plan') ? '#ef4444' : '#e2e8f0' }};border-radius:9px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;">
+                    @foreach($plans as $slug => $plan)
+                    @if($slug !== 'trial')
+                    <option value="{{ $slug }}" {{ old('new_hotel_plan', 'basic') === $slug ? 'selected' : '' }}>
+                        {{ $plan['label'] }}@if(isset($plan['monthly_price'])) — Rs {{ number_format($plan['monthly_price']) }}/mo @endif
+                    </option>
+                    @endif
+                    @endforeach
+                </select>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Billing Cycle <span style="color:#ef4444;">*</span></label>
+                <div style="display:flex;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;border:1.5px solid {{ old('new_hotel_billing_cycle','monthly')==='monthly' ? '#7c3aed' : '#e2e8f0' }};border-radius:8px;flex:1;font-size:12px;font-weight:600;color:#1e293b;">
+                        <input type="radio" name="new_hotel_billing_cycle" value="monthly" {{ old('new_hotel_billing_cycle','monthly')==='monthly' ? 'checked' : '' }} style="accent-color:#7c3aed;"> Monthly
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 12px;border:1.5px solid {{ old('new_hotel_billing_cycle','monthly')==='yearly' ? '#7c3aed' : '#e2e8f0' }};border-radius:8px;flex:1;font-size:12px;font-weight:600;color:#1e293b;">
+                        <input type="radio" name="new_hotel_billing_cycle" value="yearly" {{ old('new_hotel_billing_cycle','monthly')==='yearly' ? 'checked' : '' }} style="accent-color:#7c3aed;"> Yearly
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:700;color:#64748b;margin-bottom:4px;">Trial Days <span style="font-weight:400;">(opt)</span></label>
+                    <input type="number" name="new_hotel_trial_days" value="{{ old('new_hotel_trial_days') }}" min="1" max="90"
+                        style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="e.g. 7">
+                </div>
+                <div>
+                    <label style="display:block;font-size:10px;font-weight:700;color:#64748b;margin-bottom:4px;">Expires In Days <span style="font-weight:400;">(opt)</span></label>
+                    <input type="number" name="new_hotel_expires_days" value="{{ old('new_hotel_expires_days') }}" min="1" max="730"
+                        style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="e.g. 365">
+                </div>
+            </div>
+
+            <button type="submit"
+                style="width:100%;padding:10px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
+                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                <i class="fas fa-plus-circle"></i> Create Hotel & Link Admin
+            </button>
+        </form>
+    </div>
+    @else
+    <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:20px;padding:20px;">
+        <p style="font-size:12px;color:#92400e;margin:0;text-align:center;">
+            <i class="fas fa-exclamation-triangle" style="display:block;font-size:20px;margin-bottom:8px;"></i>
+            Assign a Hotel Admin first before adding another hotel with the same admin.
+        </p>
+    </div>
+    @endif
+
+</div>{{-- end right column --}}
+
+</div>{{-- end flex wrapper --}}
 
 @push('scripts')
 <script>
