@@ -310,6 +310,11 @@
             Users
         </a>
 
+        <a href="{{ route('platform.guests.deleted') }}" class="nav-link {{ request()->routeIs('platform.guests.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-user-slash"></i></span>
+            Deleted Guests
+        </a>
+
         <a href="{{ route('platform.plans.index') }}" class="nav-link {{ request()->routeIs('platform.plans.*') ? 'active' : '' }}">
             <span class="icon"><i class="fas fa-layer-group"></i></span>
             Plans

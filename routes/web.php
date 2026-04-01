@@ -257,6 +257,10 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/users/{id}/hotel/{hotelId}/suspend',            [\App\Http\Controllers\Platform\UserController::class, 'suspend'])->name('platform.users.suspend');
     Route::post('/users/{id}/hotel/{hotelId}/activate',           [\App\Http\Controllers\Platform\UserController::class, 'activate'])->name('platform.users.activate');
 
+    // Deleted Guests (Task #18)
+    Route::get('/guests/deleted',        [\App\Http\Controllers\Platform\GuestController::class, 'deleted'])->name('platform.guests.deleted');
+    Route::post('/guests/{id}/restore',  [\App\Http\Controllers\Platform\GuestController::class, 'restore'])->name('platform.guests.restore');
+
     // 2FA settings
     Route::get('/settings/2fa',          [\App\Http\Controllers\Platform\AuthController::class, 'show2faSetup'])->name('platform.settings.2fa');
     Route::post('/settings/2fa/enable',  [\App\Http\Controllers\Platform\AuthController::class, 'enable2fa'])->name('platform.settings.2fa.enable');

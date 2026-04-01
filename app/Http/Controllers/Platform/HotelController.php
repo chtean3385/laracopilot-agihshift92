@@ -439,7 +439,7 @@ class HotelController extends Controller
             DB::table('payments')->where('hotel_id', $id)->delete();
             DB::table('bookings')->where('hotel_id', $id)->delete();
 
-            // 4. Customer documents (pivot on customer_id)
+            // 4. Customer documents (pivot on customer_id) — include soft-deleted customers
             $customerIds = DB::table('customers')->where('hotel_id', $id)->pluck('id');
             if ($customerIds->isNotEmpty()) {
                 DB::table('customer_documents')->whereIn('customer_id', $customerIds)->delete();

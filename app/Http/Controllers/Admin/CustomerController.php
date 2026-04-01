@@ -39,8 +39,8 @@ class CustomerController extends Controller
         $hotelId = $this->currentHotelId();
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)],
-            'phone'         => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)],
+            'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
+            'phone'         => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
             'state'         => 'nullable|string|max:100',
@@ -79,8 +79,8 @@ class CustomerController extends Controller
         $customer  = Customer::findOrFail($id);
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->ignore($id)],
-            'phone'         => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->ignore($id)],
+            'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')->ignore($id)],
+            'phone'         => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')->ignore($id)],
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:100',
             'state'         => 'nullable|string|max:100',
@@ -104,7 +104,7 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
         $name  = $customer->name;
         $phone = $customer->phone;
-        ActivityLogger::log('Deleted', 'Guest', 'Deleted guest profile: ' . $name . ' (' . $phone . ')');
+        ActivityLogger::log('Deleted', 'Guest', 'Soft-deleted guest profile: ' . $name . ' (' . $phone . ')');
         $customer->delete();
         return redirect()->route('customers.index')->with('success', 'Guest deleted.');
     }
@@ -120,8 +120,8 @@ class CustomerController extends Controller
         }
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
-            'phone'   => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)],
-            'email'   => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)],
+            'phone'   => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
+            'email'   => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
             'id_type' => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
         ]);
         $validated['id_number']   = '';

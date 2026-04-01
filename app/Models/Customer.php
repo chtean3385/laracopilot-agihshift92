@@ -4,10 +4,11 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use BelongsToHotel;
+    use BelongsToHotel, SoftDeletes;
 
     protected $fillable = [
         'hotel_id',
