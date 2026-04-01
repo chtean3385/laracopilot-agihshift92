@@ -5,8 +5,8 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 
 ## Architecture
 - **Framework**: Laravel 12 (PHP 8.2)
-- **Database (dev)**: SQLite (`database/database.sqlite`)
-- **Database (production/self-hosted)**: MySQL 8.0+
+- **Database (dev)**: SQLite (`database/database.sqlite`) — local file, excluded from deployments via `.gitignore`
+- **Database (production)**: PostgreSQL (Replit managed, `heliumdb`) — completely separate from dev; production env var `DB_CONNECTION=pgsql` activates it
 - **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome + Livewire 4
 - **Authentication**: Custom session-based auth — two separate auth flows (Hotel CRM + Platform Admin)
 - **RBAC**: Dynamic DB-driven roles & permissions per hotel
