@@ -61,11 +61,13 @@ class CustomerController extends Controller
         );
 
         if ($deletedGuest) {
-            $field = ($deletedGuest->phone === $validated['phone']) ? 'phone number' : 'email address';
+            $matchedByPhone = ($deletedGuest->phone === $validated['phone']);
+            $field          = $matchedByPhone ? 'phone number' : 'email address';
+            $matchedValue   = $matchedByPhone ? $deletedGuest->phone : $deletedGuest->email;
             return redirect()->back()
                 ->withInput()
                 ->with('warning_deleted_guest', [
-                    'message' => "A previously deleted guest \"{$deletedGuest->name}\" with the same {$field} ({$deletedGuest->phone}) exists in this hotel. Please contact Platform Admin to restore this guest instead of creating a duplicate.",
+                    'message' => "A previously deleted guest \"{$deletedGuest->name}\" with the same {$field} ({$matchedValue}) exists in this hotel. Please contact Platform Admin to restore this guest instead of creating a duplicate.",
                     'name'    => $deletedGuest->name,
                     'phone'   => $deletedGuest->phone,
                 ]);
