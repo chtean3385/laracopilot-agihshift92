@@ -174,6 +174,10 @@ URL: `/platform/dashboard`
 - `GET /platform/plans` — Manage subscription plans
 - `GET /platform/activity-log` — Platform-wide activity log
 - `GET /platform/settings/2fa` — Platform admin 2FA setup (TOTP)
+- `POST /platform/hotels/{id}/start-trial` — Start a trial period for a hotel
+- `POST /platform/hotels/{id}/extend-expiry` — Extend plan expiry date for a hotel
+- `POST /platform/hotels/{id}/cancel-trial` — Cancel an active trial (reverts to no trial)
+- `POST /platform/hotels/{id}/cancel-expiry` — Remove plan expiry date from a hotel
 
 ### Platform Features Implemented
 - **SaaS Dashboard** — MRR/ARR cards (per-hotel effective pricing), Active/Suspended counts, Tenant Directory table with Plan + Subscription + Status + Expiry + Rooms + Bookings + Users columns
@@ -189,8 +193,73 @@ URL: `/platform/dashboard`
 
 ### Hotel Index — columns
 HOTEL | PLAN | SUBSCRIPTION | STATUS | EXPIRY | ROOMS | BOOKINGS | USERS | CREATED | ACTIONS
+(Revenue column intentionally removed; Expiry column shows trial end date or plan expiry date when set)
 
 ---
+
+## How to Use the System
+
+### Adding a New Hotel (from Platform Admin)
+1. Log in at `/platform/login` with Super Admin credentials.
+2. Complete TOTP verification at `/platform/2fa` if 2FA is enabled.
+3. Go to **Hotels** in the sidebar → click **"Add Hotel"** (top-right).
+4. Fill in: Hotel Name, Slug (auto-generated), Plan, Billing Cycle, custom pricing (optional), Max Rooms, Max Users, contact details, and admin notes.
+5. Click **"Create Hotel"**. The system provisions all required database rows and automatically sends a welcome email to the hotel's email address with login credentials and the login URL.
+6. The new hotel now appears in the Hotels index with its plan, subscription price, and status (active).
+
+### Logging In as Hotel Staff (Hotel CRM Login)
+1. Visit `/login`.
+2. Enter your email and password.
+3. If your account belongs to **one hotel**, you are taken directly to the hotel dashboard.
+4. If your account belongs to **multiple hotels**, you are redirected to `/select-hotel` — the multi-hotel picker.
+
+### Multi-Hotel User Picker (`/select-hotel`)
+- Shown automatically when a user is linked to more than one hotel.
+- Lists all hotels the user has access to with their role in each.
+- Click a hotel card to select it — sets `crm_hotel_id` and `crm_hotel_name` in session.
+- To switch hotels later, click **"Switch Hotel"** (available in the sidebar/nav) which clears the hotel session and redirects back to the picker.
+
+### Switching Hotels (Hotel Staff)
+- Click **"Switch Hotel"** in the navigation bar.
+- This clears the active hotel session (`crm_hotel_id`) and returns you to `/select-hotel`.
+- Select the desired hotel to resume working in it.
+
+### Trial Management (Platform Admin)
+1. From **Hotels** index, click **"Edit"** on the target hotel.
+2. Scroll to the **"Trial Management"** card (outside the main form).
+3. To **start a trial**: Enter the number of trial days → click **"Start Trial"**. This sets `trial_ends_at` on the hotel and shows a trial badge in the index.
+4. To **cancel an active trial**: Click **"Cancel Trial"** — clears `trial_ends_at`.
+
+### Extending / Cancelling Plan Expiry (Platform Admin)
+1. From **Hotels** index, click **"Edit"** on the target hotel.
+2. Scroll to the **"Plan Expiry"** card (outside the main form).
+3. To **set/extend expiry**: Pick a date in the date picker → click **"Set Expiry"**. This sets `plan_expires_at` on the hotel, shown in the EXPIRY column of the index.
+4. To **remove expiry**: Click **"Cancel Expiry"** — clears `plan_expires_at` so the plan never expires.
+
+### Entering a Hotel CRM as Platform Admin (View-in-CRM)
+1. Go to **Hotels** index (`/platform/hotels`).
+2. Find the hotel and click **"Enter CRM"** (or use the action menu → "View in CRM").
+3. This calls `GET /platform/hotels/{id}/view-in-crm` which sets `crm_sa_hotel_filter` in session (not `crm_hotel_id`) and redirects to `/dashboard`.
+4. You now operate inside that hotel's CRM with Super Admin privileges — all data is scoped to that hotel via `SetHotelContext` middleware reading `crm_sa_hotel_filter`.
+5. To exit, click **"Exit Hotel View"** in the CRM nav — clears `crm_sa_hotel_filter` and returns to the platform dashboard.
+
+### Platform Dashboard (`/platform/dashboard`)
+- Shows **MRR** (Monthly Recurring Revenue) and **ARR** (Annual Recurring Revenue) computed from all active hotels.
+- Shows **Active** and **Suspended** hotel counts.
+- Lists all tenants with Plan, Subscription price, Status, Rooms, Bookings, and Users counts.
+- MRR calculation: monthly hotels contribute their effective monthly price; yearly hotels contribute `yearly_price / 12`.
+
+### Adding a User to a Hotel (Platform Admin)
+1. Go to **Hotels** index → click **"Edit"** on the hotel.
+2. Scroll to the **"Add User to Hotel"** section.
+3. Enter the user's email, name, and password (or select an existing user by email).
+4. Optionally check **"Set as Hotel Admin"**.
+5. Click **"Add User"** — creates the user (if new) and links them to the hotel via `hotel_users`.
+
+### Suspend / Activate / Delete a Hotel
+- **Suspend**: Hotels index → Actions → **"Suspend"**. Hotel status becomes `suspended`; staff cannot log in.
+- **Activate**: Hotels index → Actions → **"Activate"**. Restores access for hotel staff.
+- **Delete**: Hotel must be **suspended first**. Then Hotels index → Actions → **"Delete"**. This hard-deletes the hotel and all related data in dependency order (bookings, guests, payments, invoices, rooms, users, settings, etc.). This is **irreversible**.
 
 ## Hotel CRM Login
 - URL: `/login` — Generic "Hotel CRM / Staff Portal" heading (not hotel-specific)
@@ -335,6 +404,11 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | #20 Hindi Onboarding Tour | ✅ COMPLETE | 11-step JS/CSS tour, per-user localStorage, resolveVisible() for permission-gated steps |
 | #21 replit.md How-To Guide | ✅ COMPLETE | Comprehensive usage guide added to this file |
 | #15 AI Smart CRM | PENDING | OpenAI-powered insights, plan-gated (depends on stable platform) |
+| #16 View-in-CRM (SA) | ✅ COMPLETE | SA can enter any hotel CRM via `/platform/hotels/{id}/view-in-crm`; sets `crm_sa_hotel_filter` |
+| #17 Trial Management | ✅ COMPLETE | Start trial, cancel trial routes; trial_ends_at column on hotels; trial badge on hotel list |
+| #18 Plan Expiry Management | ✅ COMPLETE | Extend expiry, cancel expiry routes; plan_expires_at column; expiry badge on hotel list |
+| #19 Expiry Column in Hotel Index | ✅ COMPLETE | New EXPIRY column in hotels index showing trial or plan expiry dates with badges |
+| #20 Trial/Expiry Forms (nested fix) | ✅ COMPLETE | Fixed nested `<form>` issue in hotel edit page; trial and expiry forms outside main form |
 
 ## Known Bugs Fixed
 - `hasPages()`/`links()` called on Collection (not paginator) in users index — removed
@@ -342,7 +416,12 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 - `Crypt::decryptString` could throw 500 on corrupted TOTP secret — wrapped in try/catch
 - MRR used `??` null coalescing which failed when custom price = 0 (not null) — fixed to `> 0` check
 - `MAIL_SCHEME=ssl` not valid in Laravel 12 for port 465 — changed to `smtps`
+<<<<<<< HEAD
 - Soft-deleted guest null crash on Booking/Invoice/Payment — `->withTrashed()` on `customer()` relationship + `?->` guards in all views
 - Platform dashboard KPI grid not responsive — inline `style` overrode media queries; moved to class-based `<style>` block; breakpoints 600px (2-col) / 960px (4-col)
 - "Activate Trial" / "Extend Plan" buttons did nothing — trial forms were nested inside main edit `<form>` (HTML ignores nested forms); moved outside as standalone card
 - Create Hotel blocked existing user emails — changed from `unique:users,email` to smart link: if email exists, user is linked to new hotel without creating duplicate account
+=======
+- Nested `<form>` in hotel edit page caused trial/expiry forms to submit incorrectly — moved trial and expiry forms outside the main hotel edit `<form>` tag
+- Cancel trial and cancel expiry buttons were missing routes — added `POST /platform/hotels/{id}/cancel-trial` and `POST /platform/hotels/{id}/cancel-expiry` routes and controller methods
+>>>>>>> 525bdb2 (docs: Update replit.md with complete how-to guide and task status (Task #21))
