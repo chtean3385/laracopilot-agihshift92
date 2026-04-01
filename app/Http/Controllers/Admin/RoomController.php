@@ -155,8 +155,8 @@ class RoomController extends Controller
         }
 
         $number = $room->room_number;
-        $room->delete();
         ActivityLogger::log('Deleted', 'Room', 'Deleted room: ' . $number);
+        $room->delete();
         return redirect()->route('rooms.index')->with('success', 'Room ' . $number . ' has been permanently deleted.');
     }
 

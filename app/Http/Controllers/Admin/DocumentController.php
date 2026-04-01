@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -73,6 +74,8 @@ class DocumentController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $document   = CustomerDocument::findOrFail($id);
         $customerId = $document->customer_id;
+        $docName    = $document->file_name;
+        ActivityLogger::log('Deleted', 'Document', 'Deleted document: ' . $docName . ' (Customer ID: ' . $customerId . ')');
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
         return redirect()->route('documents.index', $customerId)

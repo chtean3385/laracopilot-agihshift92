@@ -51,8 +51,8 @@ class InvoiceController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $invoice = Invoice::findOrFail($id);
         $number  = $invoice->invoice_number;
-        $invoice->delete();
         ActivityLogger::log('Deleted', 'Invoice', 'Deleted invoice: ' . $number);
+        $invoice->delete();
         return redirect()->route('invoices.index')->with('success', 'Invoice deleted.');
     }
 }

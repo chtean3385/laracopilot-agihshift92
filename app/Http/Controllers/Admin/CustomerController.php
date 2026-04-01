@@ -102,9 +102,10 @@ class CustomerController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $customer = Customer::findOrFail($id);
-        $name = $customer->name;
+        $name  = $customer->name;
+        $phone = $customer->phone;
+        ActivityLogger::log('Deleted', 'Guest', 'Deleted guest profile: ' . $name . ' (' . $phone . ')');
         $customer->delete();
-        ActivityLogger::log('Deleted', 'Guest', 'Deleted guest profile: ' . $name);
         return redirect()->route('customers.index')->with('success', 'Guest deleted.');
     }
 

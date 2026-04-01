@@ -102,9 +102,9 @@ class PaymentController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $payment = Payment::with('booking')->findOrFail($id);
-        $txn     = $payment->transaction_id;
-        $payment->delete();
+        $txn = $payment->transaction_id;
         ActivityLogger::log('Deleted', 'Payment', 'Deleted payment transaction: ' . $txn);
+        $payment->delete();
         return redirect()->route('payments.index')->with('success', 'Payment deleted.');
     }
 }
