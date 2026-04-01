@@ -59,9 +59,9 @@ externalPort = 80
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
+run = ["bash", "-c", "DB_CONNECTION=pgsql php artisan serve --host=0.0.0.0 --port=5000"]
 publicDir = "public"
-build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan app:safe-migrate"]
+build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && DB_CONNECTION=pgsql php artisan app:safe-migrate"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
