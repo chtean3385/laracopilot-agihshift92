@@ -72,20 +72,25 @@ class HotelController extends Controller
             'admin_name'           => 'required|string|max:255',
             'admin_email'          => 'required|email|max:255|unique:users,email',
             'admin_password'       => 'required|string|min:6',
+            'trial_days'           => 'nullable|integer|min:1|max:90',
+            'plan_expires_days'    => 'nullable|integer|min:1|max:730',
         ]);
 
         $slug = $this->generateUniqueSlug($data['name']);
 
         $plainPassword = $data['admin_password'];
 
-        DB::transaction(function () use ($data, $slug) {
+        $trialDays       = !empty($data['trial_days'])        ? (int)$data['trial_days']        : null;
+        $planExpiresDays = !empty($data['plan_expires_days']) ? (int)$data['plan_expires_days'] : null;
+
+        DB::transaction(function () use ($data, $slug, $trialDays, $planExpiresDays) {
             $hotelId = DB::table('hotels')->insertGetId([
                 'name'                 => $data['name'],
                 'slug'                 => $slug,
                 'email'                => $data['email'] ?? null,
                 'phone'                => $data['phone'] ?? null,
                 'address'              => $data['address'] ?? null,
-                'plan'                 => $data['plan'],
+                'plan'                 => $trialDays ? 'trial' : $data['plan'],
                 'billing_cycle'        => $data['billing_cycle'],
                 'custom_monthly_price' => $data['custom_monthly_price'] ?: null,
                 'custom_yearly_price'  => $data['custom_yearly_price'] ?: null,
@@ -93,6 +98,8 @@ class HotelController extends Controller
                 'max_rooms'            => $data['max_rooms'],
                 'max_users'            => $data['max_users'],
                 'admin_notes'          => $data['admin_notes'] ?? null,
+                'trial_ends_at'        => $trialDays ? now()->addDays($trialDays) : null,
+                'plan_expires_at'      => $planExpiresDays ? now()->addDays($planExpiresDays) : null,
                 'created_at'           => now(),
                 'updated_at'           => now(),
             ]);

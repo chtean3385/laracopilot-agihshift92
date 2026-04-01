@@ -149,6 +149,38 @@
             </div>
         </div>
 
+        {{-- Trial / Plan Expiry Setup --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
+            <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 6px;display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-hourglass-half" style="color:#fff;font-size:12px;"></i>
+                </span>
+                Trial & Plan Expiry <span style="font-size:11px;font-weight:500;color:#94a3b8;margin-left:6px;">(optional)</span>
+            </h2>
+            <p style="font-size:12px;color:#64748b;margin:0 0 18px;">Set a free trial period or a plan expiry date at creation time. Leave both blank to create with no expiry.</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">
+                        Free Trial Duration (Days)
+                    </label>
+                    <input type="number" name="trial_days" value="{{ old('trial_days') }}" min="1" max="90"
+                        style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="e.g. 7 — sets plan to trial">
+                    <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">If set, plan is forced to <strong>trial</strong> and trial_ends_at is set to today + N days.</p>
+                </div>
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">
+                        Plan Valid For (Days)
+                    </label>
+                    <input type="number" name="plan_expires_days" value="{{ old('plan_expires_days') }}" min="1" max="730"
+                        style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;"
+                        placeholder="e.g. 30 — plan expiry from today">
+                    <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Sets plan_expires_at to today + N days.</p>
+                </div>
+            </div>
+        </div>
+
         {{-- Admin User --}}
         <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
             <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 20px;display:flex;align-items:center;gap:8px;">

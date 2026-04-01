@@ -42,6 +42,7 @@
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Plan</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Subscription</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Status</th>
+                    <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Expiry</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Rooms</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Bookings</th>
                     <th style="text-align:right;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Users</th>
@@ -60,6 +61,10 @@
                     $effMonthly  = ($hotel->custom_monthly_price > 0) ? (float)$hotel->custom_monthly_price : ($plan['monthly_price'] ?? 0);
                     $effYearly   = ($hotel->custom_yearly_price  > 0) ? (float)$hotel->custom_yearly_price  : ($plan['yearly_price']  ?? 0);
                     $isCustom    = $hotel->custom_monthly_price > 0 || $hotel->custom_yearly_price > 0;
+                    $trialEnd    = $hotel->trial_ends_at  ? \Carbon\Carbon::parse($hotel->trial_ends_at)  : null;
+                    $planExp     = $hotel->plan_expires_at ? \Carbon\Carbon::parse($hotel->plan_expires_at) : null;
+                    $trialExp    = $trialEnd && $trialEnd->isPast();
+                    $planExpired = $planExp  && $planExp->isPast();
                 @endphp
                 <tr style="border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'" onclick="window.location='{{ route('platform.hotels.edit', $hotel->id) }}'" title="Click to edit {{ addslashes($hotel->name) }}">
 
@@ -105,6 +110,25 @@
                             <span style="width:5px;height:5px;border-radius:50%;background:{{ $sTx }};display:inline-block;"></span>
                             {{ ucfirst($hotel->status) }}
                         </span>
+                    </td>
+
+                    {{-- Expiry column --}}
+                    <td style="padding:14px;">
+                        @if($trialEnd)
+                            <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:2px;">Trial</div>
+                            <div style="font-size:12px;font-weight:700;color:{{ $trialExp ? '#b91c1c' : '#d97706' }};">
+                                {{ $trialEnd->format('d M Y') }}
+                            </div>
+                            <div style="font-size:10px;color:#94a3b8;">{{ $trialExp ? 'Expired' : $trialEnd->diffForHumans() }}</div>
+                        @elseif($planExp)
+                            <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:2px;">Plan</div>
+                            <div style="font-size:12px;font-weight:700;color:{{ $planExpired ? '#b91c1c' : '#15803d' }};">
+                                {{ $planExp->format('d M Y') }}
+                            </div>
+                            <div style="font-size:10px;color:#94a3b8;">{{ $planExpired ? 'Expired' : $planExp->diffForHumans() }}</div>
+                        @else
+                            <span style="font-size:12px;color:#94a3b8;">—</span>
+                        @endif
                     </td>
 
                     <td style="padding:14px;text-align:right;">

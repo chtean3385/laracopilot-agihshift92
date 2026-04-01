@@ -256,83 +256,6 @@
             @if(isset($errors) && $errors->has('status')) <p style="color:#ef4444;font-size:11px;margin:8px 0 0;">{{ $errors->first('status') }}</p> @endif
         </div>
 
-        {{-- Trial & Plan Expiry Management --}}
-        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:20px;">
-            <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
-                <span style="width:28px;height:28px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fas fa-hourglass-half" style="color:#fff;font-size:12px;"></i>
-                </span>
-                Trial & Plan Expiry
-            </h2>
-
-            {{-- Current status info --}}
-            @php
-                $isPlanTrial   = $hotel->plan === 'trial';
-                $trialEnd      = $hotel->trial_ends_at  ? \Carbon\Carbon::parse($hotel->trial_ends_at)  : null;
-                $planEnd       = $hotel->plan_expires_at ? \Carbon\Carbon::parse($hotel->plan_expires_at) : null;
-                $trialExpired  = $trialEnd && $trialEnd->isPast();
-                $planExpired   = $planEnd  && $planEnd->isPast();
-            @endphp
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-                <div style="padding:14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;">
-                    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">TRIAL ENDS</div>
-                    <div style="font-size:14px;font-weight:800;color:{{ $trialExpired ? '#b91c1c' : '#15803d' }};">
-                        {{ $trialEnd ? $trialEnd->format('d M Y') : '—' }}
-                        @if($trialExpired) <span style="font-size:11px;font-weight:600;color:#b91c1c;">(Expired)</span> @endif
-                        @if($trialEnd && !$trialExpired) <span style="font-size:11px;font-weight:500;color:#64748b;">({{ $trialEnd->diffForHumans() }})</span> @endif
-                    </div>
-                </div>
-                <div style="padding:14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;">
-                    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">PLAN EXPIRES</div>
-                    <div style="font-size:14px;font-weight:800;color:{{ $planExpired ? '#b91c1c' : ($planEnd ? '#15803d' : '#94a3b8') }};">
-                        {{ $planEnd ? $planEnd->format('d M Y') : '—' }}
-                        @if($planExpired) <span style="font-size:11px;font-weight:600;color:#b91c1c;">(Expired)</span> @endif
-                        @if($planEnd && !$planExpired) <span style="font-size:11px;font-weight:500;color:#64748b;">({{ $planEnd->diffForHumans() }})</span> @endif
-                    </div>
-                </div>
-            </div>
-
-            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
-                {{-- Activate / Reset Trial --}}
-                <form method="POST" action="{{ route('platform.hotels.activate-trial', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:center;">
-                    @csrf
-                    <div>
-                        <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Trial Days</label>
-                        <input type="number" name="trial_days" value="7" min="1" max="90"
-                               style="width:80px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;">
-                    </div>
-                    <div style="margin-top:18px;">
-                        <button type="submit"
-                            style="padding:9px 18px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
-                            <i class="fas fa-hourglass-start"></i> Activate Trial
-                        </button>
-                    </div>
-                </form>
-
-                {{-- Extend Plan --}}
-                <form method="POST" action="{{ route('platform.hotels.extend-plan', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:center;">
-                    @csrf
-                    <div>
-                        <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Extend By (Days)</label>
-                        <input type="number" name="extend_days" value="30" min="1" max="365"
-                               style="width:100px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;">
-                    </div>
-                    <div style="margin-top:18px;">
-                        <button type="submit"
-                            style="padding:9px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
-                            <i class="fas fa-calendar-plus"></i> Extend Plan
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <p style="font-size:11px;color:#94a3b8;margin:12px 0 0;">
-                <i class="fas fa-info-circle" style="margin-right:4px;"></i>
-                "Activate Trial" sets plan to <strong>trial</strong> and resets trial_ends_at. "Extend Plan" adds days to the current plan_expires_at (from today if already expired).
-            </p>
-        </div>
-
         {{-- Admin Notes --}}
         <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:24px;">
             <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
@@ -376,6 +299,84 @@
         </div>
 
     </form>
+
+    {{-- Trial & Plan Expiry Management (outside main form so sub-forms work correctly) --}}
+    @php
+        $isPlanTrial  = $hotel->plan === 'trial';
+        $trialEnd     = $hotel->trial_ends_at  ? \Carbon\Carbon::parse($hotel->trial_ends_at)  : null;
+        $planEnd      = $hotel->plan_expires_at ? \Carbon\Carbon::parse($hotel->plan_expires_at) : null;
+        $trialExpired = $trialEnd && $trialEnd->isPast();
+        $planExpired  = $planEnd  && $planEnd->isPast();
+    @endphp
+    <div style="margin-top:20px;background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;">
+        <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-hourglass-half" style="color:#fff;font-size:12px;"></i>
+            </span>
+            Trial & Plan Expiry
+        </h2>
+
+        {{-- Current dates display --}}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+            <div style="padding:14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">TRIAL ENDS</div>
+                <div style="font-size:14px;font-weight:800;color:{{ $trialExpired ? '#b91c1c' : ($trialEnd ? '#15803d' : '#94a3b8') }};">
+                    {{ $trialEnd ? $trialEnd->format('d M Y') : '—' }}
+                    @if($trialExpired) <span style="font-size:11px;font-weight:600;color:#b91c1c;">(Expired)</span> @endif
+                    @if($trialEnd && !$trialExpired) <span style="font-size:11px;font-weight:500;color:#64748b;">({{ $trialEnd->diffForHumans() }})</span> @endif
+                </div>
+            </div>
+            <div style="padding:14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;">
+                <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;">PLAN EXPIRES</div>
+                <div style="font-size:14px;font-weight:800;color:{{ $planExpired ? '#b91c1c' : ($planEnd ? '#15803d' : '#94a3b8') }};">
+                    {{ $planEnd ? $planEnd->format('d M Y') : '—' }}
+                    @if($planExpired) <span style="font-size:11px;font-weight:600;color:#b91c1c;">(Expired)</span> @endif
+                    @if($planEnd && !$planExpired) <span style="font-size:11px;font-weight:500;color:#64748b;">({{ $planEnd->diffForHumans() }})</span> @endif
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+
+            {{-- Activate / Reset Trial — standalone form --}}
+            <form method="POST" action="{{ route('platform.hotels.activate-trial', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:center;">
+                @csrf
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Trial Days</label>
+                    <input type="number" name="trial_days" value="7" min="1" max="90"
+                           style="width:80px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;">
+                </div>
+                <div style="margin-top:18px;">
+                    <button type="submit"
+                        style="padding:9px 18px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                        <i class="fas fa-hourglass-start"></i> Activate Trial
+                    </button>
+                </div>
+            </form>
+
+            {{-- Extend Plan — standalone form --}}
+            <form method="POST" action="{{ route('platform.hotels.extend-plan', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:center;">
+                @csrf
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Extend By (Days)</label>
+                    <input type="number" name="extend_days" value="30" min="1" max="365"
+                           style="width:100px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;">
+                </div>
+                <div style="margin-top:18px;">
+                    <button type="submit"
+                        style="padding:9px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                        <i class="fas fa-calendar-plus"></i> Extend Plan
+                    </button>
+                </div>
+            </form>
+
+        </div>
+        <p style="font-size:11px;color:#94a3b8;margin:12px 0 0;">
+            <i class="fas fa-info-circle" style="margin-right:4px;"></i>
+            "Activate Trial" sets plan to <strong>trial</strong> and resets trial_ends_at to N days from now — overrides any previous trial.
+            "Extend Plan" adds days to the current plan_expires_at (from today if already expired).
+        </p>
+    </div>
 
     {{-- Create New User for Hotel (separate form outside main form) --}}
     <div style="margin-top:28px;background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;">
