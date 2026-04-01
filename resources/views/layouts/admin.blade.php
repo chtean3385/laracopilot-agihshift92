@@ -513,6 +513,47 @@
 </head>
 <body>
 
+<!-- Full-Screen Lock Overlay (trial/plan expired — shown if middleware somehow didn't redirect) -->
+@php
+    $hotelIdForLock = session('crm_hotel_id');
+    $hotelForLock   = $hotelIdForLock ? \Illuminate\Support\Facades\DB::table('hotels')->where('id', $hotelIdForLock)->first() : null;
+    $showLock       = false;
+    $lockHindi      = '';
+    $lockEng        = '';
+    if ($hotelForLock && session('crm_user_role') !== 'Super Admin') {
+        if ($hotelForLock->plan === 'trial' && $hotelForLock->trial_ends_at && \Carbon\Carbon::parse($hotelForLock->trial_ends_at)->isPast()) {
+            $showLock  = true;
+            $lockHindi = 'आपका निःशुल्क ट्रायल समाप्त हो गया है';
+            $lockEng   = 'Your free trial has expired. Please upgrade to continue using the CRM.';
+        } elseif ($hotelForLock->plan_expires_at && \Carbon\Carbon::parse($hotelForLock->plan_expires_at)->isPast()) {
+            $showLock  = true;
+            $lockHindi = 'आपका प्लान समाप्त हो गया है';
+            $lockEng   = 'Your plan has expired. Please renew to continue using the CRM.';
+        }
+    }
+@endphp
+@if($showLock)
+<div style="position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(8px);">
+    <div style="background:linear-gradient(135deg,#1e1b4b,#0f172a);border:1px solid rgba(239,68,68,.3);border-radius:24px;padding:40px;max-width:480px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6);">
+        <div style="width:64px;height:64px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 24px rgba(239,68,68,.4);">
+            <i class="fas fa-lock" style="color:#fff;font-size:24px;"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:900;color:#fca5a5;margin-bottom:8px;">{{ $lockHindi }}</h2>
+        <p style="font-size:14px;color:rgba(252,165,165,.7);margin-bottom:28px;line-height:1.6;">{{ $lockEng }}</p>
+        <a href="{{ route('upgrade') }}"
+           style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border-radius:14px;font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 6px 20px rgba(124,58,237,.4);margin-bottom:16px;width:100%;justify-content:center;">
+            <i class="fas fa-arrow-up"></i> अभी अपग्रेड करें — Upgrade Now
+        </a>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:13px;">
+                <i class="fas fa-sign-out-alt" style="margin-right:5px;"></i> लॉग आउट करें
+            </button>
+        </form>
+    </div>
+</div>
+@endif
+
 <!-- Mobile Overlay -->
 <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
@@ -870,20 +911,27 @@
             $twColor   = $twUrgent ? '#b91c1c' : '#92400e';
             $twIcon    = $twUrgent ? 'fa-exclamation-triangle' : 'fa-clock';
             $twIconClr = $twUrgent ? '#ef4444' : '#d97706';
-            $twLabel   = $twDays === 0 ? 'expires today!' : "expires in {$twDays} day" . ($twDays === 1 ? '' : 's') . '!';
+            // Hindi + English warning text
+            if ($twDays === 0) {
+                $twHindi = 'आपका ट्रायल आज समाप्त हो रहा है!';
+                $twEng   = 'Your trial expires today! Upgrade now.';
+            } else {
+                $twHindi = "आपका ट्रायल {$twDays} दिन में समाप्त हो रहा है!";
+                $twEng   = "Your trial expires in {$twDays} day" . ($twDays === 1 ? '' : 's') . '. Upgrade to keep your data safe.';
+            }
         @endphp
         <div style="padding:14px 24px 0;">
             <div style="background:{{ $twBg }};border:1px solid {{ $twBorder }};border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <i class="fas {{ $twIcon }}" style="color:{{ $twIconClr }};font-size:16px;flex-shrink:0;"></i>
                     <div>
-                        <span style="font-size:13px;font-weight:700;color:{{ $twColor }};">Your plan {{ $twLabel }}</span>
-                        <span style="font-size:12px;color:{{ $twColor }};opacity:.8;margin-left:6px;">Upgrade now to keep your data safe and services running.</span>
+                        <div style="font-size:13px;font-weight:700;color:{{ $twColor }};">{{ $twHindi }}</div>
+                        <div style="font-size:12px;color:{{ $twColor }};opacity:.8;margin-top:2px;">{{ $twEng }}</div>
                     </div>
                 </div>
                 <a href="{{ route('upgrade') }}"
                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;background:{{ $twUrgent ? '#ef4444' : '#d97706' }};color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">
-                    <i class="fas fa-arrow-up"></i> Upgrade Now
+                    <i class="fas fa-arrow-up"></i> अभी अपग्रेड करें
                 </a>
             </div>
         </div>

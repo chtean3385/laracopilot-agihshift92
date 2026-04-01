@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upgrade Your Plan — Resort CRM</title>
+    <title>अपग्रेड करें — Resort CRM</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +22,7 @@
             border: 1px solid rgba(255,255,255,.1);
             border-radius: 24px;
             padding: 40px;
-            max-width: 800px;
+            max-width: 820px;
             width: 100%;
             margin-bottom: 24px;
         }
@@ -57,19 +57,30 @@
             text-decoration: none;
             box-shadow: 0 6px 20px rgba(37,211,102,.4);
             transition: all .2s;
+            width: 100%;
+            justify-content: center;
         }
         .btn-wa:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,211,102,.5); }
-        .logout-link {
-            color: rgba(255,255,255,.4);
+        input[type="text"], textarea, select {
+            background: rgba(255,255,255,.05);
+            border: 1.5px solid rgba(255,255,255,.12);
+            border-radius: 10px;
+            color: #fff;
             font-size: 13px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 16px;
-            transition: color .2s;
+            outline: none;
+            padding: 10px 14px;
+            width: 100%;
         }
-        .logout-link:hover { color: rgba(255,255,255,.7); }
+        input[type="text"]::placeholder, textarea::placeholder { color: rgba(255,255,255,.3); }
+        label.field-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,.4);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            display: block;
+            margin-bottom: 6px;
+        }
     </style>
 </head>
 <body>
@@ -87,18 +98,27 @@
 
     {{-- Expired / locked banner --}}
     @if(session('trial_expired') || session('plan_expired'))
-    <div class="card" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08);margin-bottom:20px;">
+    <div class="card" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08);margin-bottom:20px;max-width:820px;">
         <div style="display:flex;align-items:center;gap:14px;">
             <div style="width:52px;height:52px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <i class="fas fa-lock" style="color:#fff;font-size:20px;"></i>
             </div>
             <div>
+                @if(session('trial_expired'))
                 <div style="font-size:18px;font-weight:800;color:#fca5a5;margin-bottom:4px;">
-                    @if(session('trial_expired')) Your free trial has expired @else Your plan has expired @endif
+                    आपका ट्रायल समाप्त हो गया है
                 </div>
                 <div style="font-size:13px;color:rgba(252,165,165,.7);">
-                    Your CRM access is temporarily locked. Contact us on WhatsApp to reactivate instantly.
+                    Your free trial has expired. CRM access is temporarily locked. Contact us on WhatsApp to reactivate instantly.
                 </div>
+                @else
+                <div style="font-size:18px;font-weight:800;color:#fca5a5;margin-bottom:4px;">
+                    आपका प्लान समाप्त हो गया है
+                </div>
+                <div style="font-size:13px;color:rgba(252,165,165,.7);">
+                    Your plan has expired. CRM access is temporarily locked. Renew your plan to resume operations.
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -109,86 +129,101 @@
         <div style="text-align:center;margin-bottom:28px;">
             <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:6px 18px;margin-bottom:16px;">
                 <i class="fas fa-star" style="color:#a78bfa;font-size:12px;"></i>
-                <span style="font-size:12px;font-weight:700;color:#c4b5fd;letter-spacing:.06em;text-transform:uppercase;">Choose a Plan</span>
+                <span style="font-size:12px;font-weight:700;color:#c4b5fd;letter-spacing:.06em;text-transform:uppercase;">अपग्रेड करें</span>
             </div>
-            <h2 style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">Upgrade to keep going</h2>
-            <p style="font-size:14px;color:rgba(255,255,255,.5);">Select a plan below and our team will contact you on WhatsApp to complete the upgrade in minutes.</p>
+            <h2 style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">अपना प्लान चुनें</h2>
+            <p style="font-size:14px;color:rgba(255,255,255,.5);">नीचे से प्लान चुनें — हमारी टीम WhatsApp पर कुछ मिनटों में आपको सक्रिय कर देगी।</p>
         </div>
 
-        {{-- Plans --}}
+        {{-- Plan selection (visual only — selected slug is written to hidden input) --}}
         @if($plans && $plans->count())
         <div class="plan-grid" id="planGrid">
             @foreach($plans as $plan)
-            <div class="plan-card" onclick="selectPlan('{{ $plan->slug }}', '{{ $plan->label }}', {{ $plan->monthly_price }}, {{ $plan->yearly_price }})" data-slug="{{ $plan->slug }}">
+            @php $feats = is_string($plan->features) ? json_decode($plan->features, true) : []; @endphp
+            <div class="plan-card" onclick="selectPlan('{{ $plan->slug }}', '{{ addslashes($plan->label) }}', {{ $plan->monthly_price }})" data-slug="{{ $plan->slug }}">
                 <div style="font-size:14px;font-weight:800;color:#a78bfa;margin-bottom:6px;">{{ $plan->label }}</div>
                 <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px;">
-                    ₹{{ number_format($plan->monthly_price) }}<span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.4);">/mo</span>
+                    ₹{{ number_format($plan->monthly_price) }}<span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.4);">/माह</span>
                 </div>
-                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;">₹{{ number_format($plan->yearly_price) }}/yr</div>
-                @if($plan->features)
-                @php $features = is_string($plan->features) ? json_decode($plan->features, true) : $plan->features; @endphp
-                @if(is_array($features))
+                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;">₹{{ number_format($plan->yearly_price) }}/वर्ष</div>
+                @if(is_array($feats) && count($feats))
                 <ul style="list-style:none;padding:0;">
-                    @foreach(array_slice($features, 0, 4) as $feat)
+                    @foreach(array_slice($feats, 0, 4) as $feat)
                     <li style="font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;margin-bottom:3px;">
                         <i class="fas fa-check" style="color:#4ade80;font-size:9px;"></i> {{ $feat }}
                     </li>
                     @endforeach
                 </ul>
                 @endif
-                @endif
                 <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);">
                     <span class="selected-badge" style="display:none;font-size:10px;font-weight:700;color:#a78bfa;background:rgba(139,92,246,.2);padding:3px 10px;border-radius:999px;">
-                        <i class="fas fa-check"></i> Selected
+                        <i class="fas fa-check"></i> चयनित
                     </span>
                 </div>
             </div>
             @endforeach
         </div>
         @else
-        {{-- Fallback if no plans in DB --}}
+        {{-- Fallback --}}
         <div class="plan-grid" id="planGrid">
-            @foreach([['slug'=>'basic','label'=>'Basic','monthly'=>999,'yearly'=>9999],['slug'=>'pro','label'=>'Pro','monthly'=>1999,'yearly'=>19999],['slug'=>'enterprise','label'=>'Enterprise','monthly'=>3999,'yearly'=>39999]] as $fp)
-            <div class="plan-card" onclick="selectPlan('{{ $fp['slug'] }}', '{{ $fp['label'] }}', {{ $fp['monthly'] }}, {{ $fp['yearly'] }})" data-slug="{{ $fp['slug'] }}">
+            @foreach([['slug'=>'basic','label'=>'Basic','monthly'=>999],['slug'=>'standard','label'=>'Standard','monthly'=>1999],['slug'=>'premium','label'=>'Premium','monthly'=>2999]] as $fp)
+            <div class="plan-card" onclick="selectPlan('{{ $fp['slug'] }}', '{{ $fp['label'] }}', {{ $fp['monthly'] }})" data-slug="{{ $fp['slug'] }}">
                 <div style="font-size:14px;font-weight:800;color:#a78bfa;margin-bottom:6px;">{{ $fp['label'] }}</div>
-                <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px;">₹{{ number_format($fp['monthly']) }}<span style="font-size:12px;color:rgba(255,255,255,.4);">/mo</span></div>
+                <div style="font-size:22px;font-weight:900;color:#fff;">₹{{ number_format($fp['monthly']) }}<span style="font-size:12px;color:rgba(255,255,255,.4);">/माह</span></div>
             </div>
             @endforeach
         </div>
         @endif
 
-        {{-- Request via WhatsApp --}}
-        <div style="margin-top:32px;padding-top:28px;border-top:1px solid rgba(255,255,255,.08);text-align:center;">
-            <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px;">
+        {{-- POST form that submits plan interest to server, which composes WA URL --}}
+        <div style="margin-top:32px;padding-top:28px;border-top:1px solid rgba(255,255,255,.08);">
+            <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px;text-align:center;">
                 <i class="fas fa-shield-halved" style="color:#4ade80;margin-right:4px;"></i>
-                No payment portal — just send us a WhatsApp message and we'll activate your plan within minutes.
+                कोई पेमेंट पोर्टल नहीं — बस WhatsApp पर अनुरोध करें, हम तुरंत सक्रिय करेंगे।
             </p>
 
-            <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto;">
-                <label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:8px;">Optional Message</label>
-                <textarea id="customMsg" rows="3"
-                    placeholder="Any special requirements, number of rooms, etc..."
-                    style="width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;resize:vertical;outline:none;"></textarea>
-            </div>
+            <form method="POST" action="{{ route('upgrade.request') }}" id="upgradeForm">
+                @csrf
+                <input type="hidden" name="plan_interest" id="planInterestInput" value="">
 
-            <a id="waBtn" href="#"
-               class="btn-wa"
-               onclick="return openWhatsApp(event)">
-                <i class="fab fa-whatsapp" style="font-size:20px;"></i>
-                Request Upgrade on WhatsApp
-            </a>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+                    <div>
+                        <label class="field-label">आपका नाम</label>
+                        <input type="text" name="contact_name" value="{{ session('crm_user_name','') }}" placeholder="e.g. Rahul Sharma">
+                    </div>
+                    <div>
+                        <label class="field-label">होटल का नाम</label>
+                        <input type="text" name="hotel_name_input" value="{{ session('crm_hotel_name','') }}" readonly style="opacity:.7;">
+                    </div>
+                </div>
 
-            <p style="font-size:12px;color:rgba(255,255,255,.3);margin-top:14px;">
+                <div style="margin-bottom:16px;">
+                    <label class="field-label">अतिरिक्त संदेश (वैकल्पिक)</label>
+                    <textarea name="message" rows="3" placeholder="कमरों की संख्या, विशेष आवश्यकताएं..."></textarea>
+                </div>
+
+                <div id="noPlanWarning" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#fca5a5;text-align:center;">
+                    <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>
+                    कृपया पहले एक प्लान चुनें।
+                </div>
+
+                <button type="submit" class="btn-wa" onclick="return validateForm()">
+                    <i class="fab fa-whatsapp" style="font-size:20px;"></i>
+                    WhatsApp पर अपग्रेड का अनुरोध करें
+                </button>
+            </form>
+
+            <p style="font-size:12px;color:rgba(255,255,255,.3);margin-top:14px;text-align:center;">
                 <i class="fas fa-phone" style="margin-right:4px;"></i>
                 <a href="tel:+919725225519" style="color:rgba(255,255,255,.4);text-decoration:none;">+91 97252 25519</a>
             </p>
         </div>
     </div>
 
-    {{-- What's included note --}}
-    <div style="text-align:center;max-width:600px;">
-        <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;">
-            @foreach(['Unlimited guests','All modules included','WhatsApp integration','Priority support','Data backup','Channel Manager'] as $feat)
+    {{-- Feature highlights --}}
+    <div style="text-align:center;max-width:620px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;">
+            @foreach(['अनलिमिटेड गेस्ट','सभी मॉड्यूल','WhatsApp ऑटोमेशन','प्राथमिकता सपोर्ट','डेटा बैकअप','OTA Channel Manager'] as $feat)
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.4);">
                 <i class="fas fa-check-circle" style="color:#4ade80;font-size:11px;"></i> {{ $feat }}
             </div>
@@ -197,57 +232,46 @@
     </div>
 
     {{-- Logout link --}}
-    <div style="margin-top:24px;">
+    <div style="margin-top:8px;">
         <form action="{{ route('logout') }}" method="POST" style="display:inline;">
             @csrf
-            <button type="submit" class="logout-link" style="background:none;border:none;cursor:pointer;">
-                <i class="fas fa-arrow-left"></i> Sign out and return to login
+            <button type="submit" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:13px;display:inline-flex;align-items:center;gap:6px;transition:color .2s;" onmouseover="this.style.color='rgba(255,255,255,.7)'" onmouseout="this.style.color='rgba(255,255,255,.4)'">
+                <i class="fas fa-arrow-left"></i> लॉग आउट करें
             </button>
         </form>
     </div>
 
 <script>
-var selectedPlan  = '';
-var selectedLabel = '';
-var selectedPrice = 0;
+var selectedPlan = '';
 
-function selectPlan(slug, label, monthly, yearly) {
-    selectedPlan  = label;
-    selectedLabel = label;
-    selectedPrice = monthly;
+function selectPlan(slug, label, monthly) {
+    selectedPlan = label;
+    document.getElementById('planInterestInput').value = label + ' (₹' + monthly + '/माह)';
+    document.getElementById('noPlanWarning').style.display = 'none';
 
     document.querySelectorAll('.plan-card').forEach(function(c) {
         c.classList.remove('selected');
-        var badge = c.querySelector('.selected-badge');
-        if (badge) badge.style.display = 'none';
+        var b = c.querySelector('.selected-badge');
+        if (b) b.style.display = 'none';
     });
 
     var card = document.querySelector('.plan-card[data-slug="' + slug + '"]');
     if (card) {
         card.classList.add('selected');
-        var badge = card.querySelector('.selected-badge');
-        if (badge) badge.style.display = 'inline-block';
+        var b = card.querySelector('.selected-badge');
+        if (b) b.style.display = 'inline-block';
     }
 }
 
-function openWhatsApp(e) {
-    e.preventDefault();
-    var hotel   = @json(session('crm_hotel_name', 'Hotel'));
-    var user    = @json(session('crm_user_name', 'Admin'));
-    var plan    = selectedPlan || 'Not selected';
-    var msg     = document.getElementById('customMsg').value;
-
-    var text = 'Hello! I would like to upgrade my Resort CRM plan.\n\n'
-             + '*Hotel:* ' + hotel + '\n'
-             + '*Contact:* ' + user + '\n'
-             + '*Interested Plan:* ' + plan + '\n'
-             + (msg ? '*Message:* ' + msg : '');
-
-    window.open('https://wa.me/919725225519?text=' + encodeURIComponent(text), '_blank');
-    return false;
+function validateForm() {
+    if (!document.getElementById('planInterestInput').value) {
+        document.getElementById('noPlanWarning').style.display = 'block';
+        return false;
+    }
+    return true;
 }
 
-// Auto-select first plan
+// Auto-select first plan on page load
 var firstCard = document.querySelector('.plan-card');
 if (firstCard) firstCard.click();
 </script>

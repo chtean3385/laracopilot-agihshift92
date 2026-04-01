@@ -10,30 +10,40 @@ class UpgradeController extends Controller
 {
     public function index()
     {
-        $hotelId   = session('crm_hotel_id');
-        $hotel     = $hotelId ? DB::table('hotels')->where('id', $hotelId)->first() : null;
-        $plans     = DB::table('platform_plans')->where('is_active', true)->orderBy('sort_order')->get();
+        if (!session('crm_logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $hotelId = session('crm_hotel_id');
+        $hotel   = $hotelId ? DB::table('hotels')->where('id', $hotelId)->first() : null;
+        $plans   = DB::table('platform_plans')->where('is_active', true)->orderBy('sort_order')->get();
 
         return view('upgrade', compact('hotel', 'plans'));
     }
 
     public function request(Request $request)
     {
+        if (!session('crm_logged_in')) {
+            return redirect()->route('login');
+        }
+
         $request->validate([
-            'plan_interest' => 'required|string|max:100',
-            'message'       => 'nullable|string|max:500',
+            'plan_interest'    => 'required|string|max:200',
+            'message'          => 'nullable|string|max:1000',
+            'contact_name'     => 'nullable|string|max:150',
+            'hotel_name_input' => 'nullable|string|max:200',
         ]);
 
-        $hotelName = session('crm_hotel_name', 'Unknown Hotel');
-        $userName  = session('crm_user_name', 'Unknown User');
-        $plan      = $request->plan_interest;
-        $msg       = $request->message ?? '';
+        $hotelName = $request->input('hotel_name_input') ?: session('crm_hotel_name', 'Unknown Hotel');
+        $userName  = $request->input('contact_name')     ?: session('crm_user_name', 'Unknown User');
+        $plan      = $request->input('plan_interest');
+        $msg       = $request->input('message', '');
 
-        $waText = "Hello! I would like to upgrade my hotel plan.\n\n"
-                . "*Hotel:* {$hotelName}\n"
-                . "*Contact:* {$userName}\n"
-                . "*Interested Plan:* {$plan}\n"
-                . ($msg ? "*Message:* {$msg}" : '');
+        $waText = "नमस्ते! मैं अपने होटल का CRM प्लान अपग्रेड करना चाहता/चाहती हूं।\n\n"
+                . "*होटल:* {$hotelName}\n"
+                . "*संपर्क:* {$userName}\n"
+                . "*इच्छित प्लान:* {$plan}\n"
+                . ($msg ? "*संदेश:* {$msg}" : '');
 
         $waUrl = 'https://wa.me/919725225519?text=' . rawurlencode($waText);
 
