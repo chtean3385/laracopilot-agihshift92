@@ -602,11 +602,6 @@
             box-shadow: 0 4px 12px rgba(6,182,212,.3);
         }
         .tour-btn-next:hover { opacity: .9; }
-        #crm-tour-arrow {
-            position: fixed;
-            z-index: 200002;
-            pointer-events: none;
-        }
     </style>
     @stack('styles')
 </head>
@@ -1227,8 +1222,22 @@
         }
     ];
 
+    var ALL_STEPS = STEPS;
+    var STEPS_VISIBLE = [];
     var currentStep = 0;
     var hlEl = null, cardEl = null;
+
+    function resolveVisible() {
+        STEPS_VISIBLE = ALL_STEPS.filter(function (s) {
+            var nodes = document.querySelectorAll(s.sel);
+            for (var i = 0; i < nodes.length; i++) {
+                var r = nodes[i].getBoundingClientRect();
+                if (r.width > 0 || r.height > 0) return true;
+            }
+            return false;
+        });
+        STEPS = STEPS_VISIBLE.length > 0 ? STEPS_VISIBLE : ALL_STEPS;
+    }
 
     function buildUI() {
         if (document.getElementById('crm-tour-highlight')) return;
@@ -1273,12 +1282,6 @@
     function renderStep() {
         var step = STEPS[currentStep];
         var target = resolveTarget(step);
-
-        if (!target && currentStep < STEPS.length - 1) {
-            currentStep++;
-            renderStep();
-            return;
-        }
 
         document.getElementById('tBadge').textContent = 'चरण ' + (currentStep + 1) + ' / ' + STEPS.length;
         document.getElementById('tTitle').innerHTML =
@@ -1345,6 +1348,7 @@
     }
 
     window.crmTourStart = function () {
+        resolveVisible();
         currentStep = 0;
         buildUI();
         hlEl.style.display = 'none';
