@@ -413,10 +413,10 @@
                 @forelse($recentBookings as $booking)
                 <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:#f8fafc;transition:background .15s;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
                     <div style="width:40px;height:40px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:800;font-size:15px;flex-shrink:0;">
-                        {{ substr($booking->customer->name, 0, 1) }}
+                        {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
                     </div>
                     <div style="flex:1;min-width:0;">
-                        <div style="font-weight:700;color:#1e293b;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $booking->customer->name }}</div>
+                        <div style="font-weight:700;color:#1e293b;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
                         <div style="font-size:12px;color:#94a3b8;">Room {{ $booking->room->room_number }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }} &bull; {{ $booking->nights }} nights</div>
                     </div>
                     <div style="text-align:right;flex-shrink:0;">

@@ -72,7 +72,7 @@ class DashboardController extends Controller
         }
 
         try {
-            $recentBookings = Booking::with(['customer', 'room'])
+            $recentBookings = Booking::with(['customer' => fn($q) => $q->withTrashed(), 'room'])
                 ->orderBy('created_at', 'desc')
                 ->take(8)
                 ->get();
