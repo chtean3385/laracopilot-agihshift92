@@ -1249,6 +1249,7 @@
                 var nextIdx = currentStep + 1;
                 var nextStep = ALL_STEPS[nextIdx];
                 if (nextStep.url) {
+                    localStorage.removeItem(CRM_TOUR_KEY);
                     localStorage.setItem(CRM_TOUR_STEP_KEY, nextIdx);
                     window.location.href = nextStep.url;
                 } else {
@@ -1342,6 +1343,7 @@
     }
 
     window.crmTourStart = function (startAt) {
+        localStorage.removeItem(CRM_TOUR_KEY);
         currentStep = (typeof startAt === 'number') ? startAt : 0;
         buildUI();
         hlEl.style.display = 'none';
