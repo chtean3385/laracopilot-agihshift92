@@ -144,6 +144,7 @@ class HotelController extends Controller
             }
 
             $this->provisionRoles($hotelId);
+            $this->seedWhatsAppTemplates($hotelId);
 
             if ($existingUser) {
                 // User already exists — link them to the new hotel as admin
@@ -340,6 +341,7 @@ class HotelController extends Controller
             }
 
             $this->provisionRoles($newHotelId);
+            $this->seedWhatsAppTemplates($newHotelId);
 
             DB::table('hotel_users')->insert([
                 'hotel_id'       => $newHotelId,
@@ -836,17 +838,67 @@ class HotelController extends Controller
 
     private function provisionRoles(int $hotelId): void
     {
-        $all        = Permission::pluck('slug')->all();
-        $limited    = Permission::whereNotIn('slug', ['settings.view', 'roles.view', 'roles.edit', 'users.view', 'users.create', 'users.edit', 'users.delete'])->pluck('slug')->all();
-        $frontdesk  = ['guests.view', 'guests.create', 'guests.edit', 'rooms.view',
-                        'bookings.view', 'bookings.create', 'bookings.edit',
-                        'checkin.process', 'checkout.process', 'payments.view',
-                        'payments.create', 'invoices.view'];
+        $allSlugs = [
+            'guests.view', 'guests.create', 'guests.edit', 'guests.delete',
+            'rooms.view', 'rooms.create', 'rooms.edit', 'rooms.delete',
+            'bookings.view', 'bookings.create', 'bookings.edit', 'bookings.delete',
+            'checkin.process', 'checkout.process',
+            'payments.view', 'payments.create', 'payments.delete',
+            'invoices.view', 'invoices.delete',
+            'reports.view',
+            'settings.view', 'settings.edit',
+            'activity_log.view',
+            'roles.view', 'roles.edit',
+            'users.view', 'users.create', 'users.edit', 'users.delete',
+            'whatsapp.send',
+        ];
+
+        $managerExcluded = ['settings.view', 'roles.view', 'roles.edit', 'users.view', 'users.create', 'users.edit', 'users.delete'];
+
+        $all       = $allSlugs;
+        $limited   = array_values(array_filter($allSlugs, fn($s) => !in_array($s, $managerExcluded)));
+        $frontdesk = ['guests.view', 'guests.create', 'guests.edit', 'rooms.view',
+                      'bookings.view', 'bookings.create', 'bookings.edit',
+                      'checkin.process', 'checkout.process', 'payments.view',
+                      'payments.create', 'invoices.view'];
+
+        // Ensure the permissions catalog is populated (idempotent seed)
+        $existingSlugs = Permission::pluck('slug')->all();
+        $missingSlugs  = array_diff($allSlugs, $existingSlugs);
+        if (!empty($missingSlugs)) {
+            $permLabels = [
+                'guests.view' => ['View Guests','Guests',1], 'guests.create' => ['Add Guests','Guests',2],
+                'guests.edit' => ['Edit Guests','Guests',3], 'guests.delete' => ['Delete Guests','Guests',4],
+                'rooms.view'  => ['View Rooms','Rooms',5],   'rooms.create'  => ['Add Rooms','Rooms',6],
+                'rooms.edit'  => ['Edit Rooms','Rooms',7],   'rooms.delete'  => ['Delete Rooms','Rooms',8],
+                'bookings.view'   => ['View Bookings','Bookings',9],  'bookings.create' => ['Create Bookings','Bookings',10],
+                'bookings.edit'   => ['Edit Bookings','Bookings',11], 'bookings.delete' => ['Delete Bookings','Bookings',12],
+                'checkin.process' => ['Process Check-In','Operations',13], 'checkout.process' => ['Process Check-Out','Operations',14],
+                'payments.view'   => ['View Payments','Payments',15], 'payments.create' => ['Record Payments','Payments',16],
+                'payments.delete' => ['Delete Payments','Payments',17],
+                'invoices.view'   => ['View Invoices','Invoices',18], 'invoices.delete' => ['Delete Invoices','Invoices',19],
+                'reports.view'    => ['View Reports','Reports',20],
+                'settings.view'   => ['View Settings','Settings',21], 'settings.edit' => ['Edit Settings','Settings',22],
+                'activity_log.view' => ['View Activity Log','System',23],
+                'roles.view'  => ['View Roles & Permissions','System',24], 'roles.edit' => ['Edit Roles & Permissions','System',25],
+                'users.view'  => ['View Users','Users',26], 'users.create' => ['Create Users','Users',27],
+                'users.edit'  => ['Edit Users','Users',28],  'users.delete' => ['Delete Users','Users',29],
+                'whatsapp.send' => ['Send WhatsApp Messages','WhatsApp',30],
+            ];
+            $now = now();
+            foreach ($missingSlugs as $slug) {
+                [$label, $module, $sort] = $permLabels[$slug] ?? [$slug, 'System', 99];
+                DB::table('permissions')->insertOrIgnore([
+                    'slug' => $slug, 'label' => $label, 'module' => $module,
+                    'sort_order' => $sort, 'created_at' => $now, 'updated_at' => $now,
+                ]);
+            }
+        }
 
         $defs = [
-            ['name' => 'Admin',        'description' => 'Full access',                 'is_system' => true,  'perms' => $all],
-            ['name' => 'Manager',      'description' => 'Manage bookings and reports',  'is_system' => true,  'perms' => $limited],
-            ['name' => 'Receptionist', 'description' => 'Front-desk operations',        'is_system' => true,  'perms' => $frontdesk],
+            ['name' => 'Admin',        'description' => 'Full access',                'is_system' => true, 'perms' => $all],
+            ['name' => 'Manager',      'description' => 'Manage bookings and reports', 'is_system' => true, 'perms' => $limited],
+            ['name' => 'Receptionist', 'description' => 'Front-desk operations',       'is_system' => true, 'perms' => $frontdesk],
         ];
 
         foreach ($defs as $d) {
@@ -856,6 +908,68 @@ class HotelController extends Controller
             );
             $permIds = Permission::whereIn('slug', $d['perms'])->pluck('id')->all();
             $role->permissions()->syncWithoutDetaching($permIds);
+        }
+    }
+
+    private function seedWhatsAppTemplates(int $hotelId): void
+    {
+        $templates = [
+            [
+                'trigger_event'  => 'booking.created',
+                'template_name'  => 'Booking Confirmation',
+                'message_body'   => "Hello {{guest_name}}, your booking at {{hotel_name}} is confirmed! 🏨\n\nRoom: {{room_number}}\nCheck-in: {{check_in_date}}\nCheck-out: {{check_out_date}}\nBooking Ref: {{booking_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe look forward to welcoming you! For any queries, please contact us.",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{check_in_date}}, {{check_out_date}}, {{booking_number}}, {{total_amount}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'checkin.tomorrow',
+                'template_name'  => 'Check-In Reminder',
+                'message_body'   => "Hello {{guest_name}}, this is a friendly reminder that your check-in at {{hotel_name}} is tomorrow! 🌟\n\nRoom: {{room_number}}\nCheck-in Date: {{check_in_date}}\n\nYour room is being prepared for you. We look forward to welcoming you!",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{check_in_date}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'checkout.done',
+                'template_name'  => 'Check-Out Thank You + Bill',
+                'message_body'   => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! 🙏\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'checkin.done',
+                'template_name'  => 'Arrival Welcome',
+                'message_body'   => "Welcome to {{hotel_name}}, {{guest_name}}! 🏨\n\nYou're all checked in!\n📍 Room: {{room_number}} ({{room_type}})\n📅 Check-out: {{check_out_date}}\n\nWe hope you have a wonderful stay.",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{room_type}}, {{check_out_date}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'payment.received',
+                'template_name'  => 'Payment Receipt',
+                'message_body'   => "Payment Received ✅\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\n\n📋 Booking: {{booking_number}}\n💰 Balance Due: {{balance_due}}\n\nThank you! — {{hotel_name}}",
+                'variables_hint' => '{{guest_name}}, {{amount_paid}}, {{payment_method}}, {{booking_number}}, {{balance_due}}, {{hotel_name}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'feedback.request',
+                'template_name'  => 'Feedback Request',
+                'message_body'   => "Dear {{guest_name}},\n\nThank you for staying with us at {{hotel_name}}! 🙏\n\nWe hope you had a pleasant stay from {{check_in_date}} to {{check_out_date}}.\n\nWe'd love to hear your feedback to help us serve you better.\n\nWe look forward to welcoming you again! 🌟",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{check_in_date}}, {{check_out_date}}',
+                'is_active'      => true,
+            ],
+        ];
+
+        foreach ($templates as $t) {
+            $exists = DB::table('whatsapp_templates')
+                ->where('hotel_id', $hotelId)
+                ->where('trigger_event', $t['trigger_event'])
+                ->exists();
+            if (!$exists) {
+                DB::table('whatsapp_templates')->insert(array_merge($t, [
+                    'hotel_id'   => $hotelId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
+            }
         }
     }
 }

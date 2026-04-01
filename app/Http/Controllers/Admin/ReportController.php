@@ -74,7 +74,7 @@ class ReportController extends Controller
         $to     = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::now()->endOfMonth();
         $search = $request->search;
 
-        $bookingsQuery = Booking::with(['customer', 'room', 'bookingGuests'])
+        $bookingsQuery = Booking::with(['customer.documents', 'room', 'bookingGuests'])
             ->whereBetween('check_in_date', [$from->toDateString(), $to->toDateString()])
             ->whereIn('status', ['confirmed','checked_in','checked_out']);
 
@@ -108,7 +108,7 @@ class ReportController extends Controller
 
         $callback = function () use ($bookings) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Booking#', 'Room', 'Check-In', 'Check-Out', 'Guest Name', 'Relation', 'Age', 'Gender', 'Nationality', 'ID Type', 'ID Number', 'DOB', 'Has Signature', 'Has ID Document']);
+            fputcsv($out, ['Booking#', 'Room', 'Check-In', 'Check-Out', 'Guest Name', 'Relation', 'Age', 'Gender', 'Nationality', 'ID Type', 'ID Number', 'Has Signature', 'Has ID Document']);
             foreach ($bookings as $booking) {
                 $primary = $booking->customer;
                 fputcsv($out, [
@@ -118,14 +118,13 @@ class ReportController extends Controller
                     $booking->check_out_date?->format('d/m/Y'),
                     $primary->name ?? '',
                     'Primary Guest',
-                    '',
+                    $primary->age ?? '',
                     '',
                     $primary->nationality ?? 'Indian',
                     $primary->id_type ?? '',
                     $primary->id_number ?? '',
-                    $primary->date_of_birth?->format('d/m/Y') ?? '',
-                    '',
-                    '',
+                    $primary?->signature ? 'Yes' : 'No',
+                    ($primary && $primary->documents->isNotEmpty()) ? 'Yes' : 'No',
                 ]);
                 foreach ($booking->bookingGuests as $g) {
                     fputcsv($out, [
@@ -140,7 +139,6 @@ class ReportController extends Controller
                         $g->nationality ?? 'Indian',
                         BookingGuest::idTypes()[$g->id_type] ?? $g->id_type ?? '',
                         $g->id_number ?? '',
-                        $g->dob?->format('d/m/Y') ?? '',
                         $g->signature ? 'Yes' : 'No',
                         $g->id_document_path ? 'Yes' : 'No',
                     ]);

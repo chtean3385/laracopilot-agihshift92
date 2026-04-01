@@ -95,7 +95,6 @@
                     <th style="padding:8px 14px;text-align:left;font-weight:700;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.05em;">Nationality</th>
                     <th style="padding:8px 14px;text-align:left;font-weight:700;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.05em;">ID Type</th>
                     <th style="padding:8px 14px;text-align:left;font-weight:700;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.05em;">ID Number</th>
-                    <th style="padding:8px 14px;text-align:left;font-weight:700;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.05em;">DOB</th>
                     <th style="padding:8px 14px;text-align:center;font-weight:700;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.05em;">Sign</th>
                     <th style="padding:8px 14px;text-align:center;font-weight:700;color:#64748b;text-transform:uppercase;font-size:10px;letter-spacing:.05em;">ID Doc</th>
                 </tr>
@@ -114,9 +113,22 @@
                     <td style="padding:10px 14px;color:#64748b;">{{ $booking->customer->nationality ?? 'Indian' }}</td>
                     <td style="padding:10px 14px;color:#64748b;">{{ ucfirst($booking->customer->id_type ?? '-') }}</td>
                     <td style="padding:10px 14px;font-family:monospace;color:#1e293b;font-weight:600;">{{ $booking->customer->id_number ?? '-' }}</td>
-                    <td style="padding:10px 14px;color:#64748b;">-</td>
-                    <td style="padding:10px 14px;text-align:center;"><span style="color:#94a3b8;font-size:11px;">—</span></td>
-                    <td style="padding:10px 14px;text-align:center;"><span style="color:#94a3b8;font-size:11px;">—</span></td>
+                    <td style="padding:10px 14px;text-align:center;">
+                        @if($booking->customer?->signature)
+                            <i class="fas fa-check-circle" style="color:#16a34a;" title="Signature collected"></i>
+                        @else
+                            <i class="fas fa-times-circle" style="color:#e2e8f0;"></i>
+                        @endif
+                    </td>
+                    <td style="padding:10px 14px;text-align:center;">
+                        @if($booking->customer && $booking->customer->documents->isNotEmpty())
+                            <a href="{{ route('documents.index', $booking->customer->id) }}" style="color:#0891b2;" title="View uploaded documents">
+                                <i class="fas fa-file-download"></i>
+                            </a>
+                        @else
+                            <i class="fas fa-times-circle" style="color:#e2e8f0;"></i>
+                        @endif
+                    </td>
                 </tr>
                 {{-- Additional Guests --}}
                 @foreach($booking->bookingGuests as $guest)
@@ -130,7 +142,6 @@
                     <td style="padding:10px 14px;color:#64748b;">{{ $guest->nationality ?? 'Indian' }}</td>
                     <td style="padding:10px 14px;color:#64748b;">{{ \App\Models\BookingGuest::idTypes()[$guest->id_type] ?? ($guest->id_type ?? '-') }}</td>
                     <td style="padding:10px 14px;font-family:monospace;color:#1e293b;font-weight:600;">{{ $guest->id_number ?? '-' }}</td>
-                    <td style="padding:10px 14px;color:#64748b;">{{ $guest->dob?->format('d/m/Y') ?? '-' }}</td>
                     <td style="padding:10px 14px;text-align:center;">
                         @if($guest->signature)
                             <i class="fas fa-check-circle" style="color:#16a34a;" title="Signature collected"></i>
