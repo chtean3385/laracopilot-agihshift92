@@ -184,7 +184,7 @@
 
             <form method="POST" action="{{ route('upgrade.request') }}" id="upgradeForm">
                 @csrf
-                <input type="hidden" name="plan_interest" id="planInterestInput" value="">
+                <input type="hidden" name="plan_slug" id="planSlugInput" value="">
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
                     <div>
@@ -245,8 +245,8 @@
 var selectedPlan = '';
 
 function selectPlan(slug, label, monthly) {
-    selectedPlan = label;
-    document.getElementById('planInterestInput').value = label + ' (₹' + monthly + '/माह)';
+    selectedPlan = slug;
+    document.getElementById('planSlugInput').value = slug;
     document.getElementById('noPlanWarning').style.display = 'none';
 
     document.querySelectorAll('.plan-card').forEach(function(c) {
@@ -264,7 +264,7 @@ function selectPlan(slug, label, monthly) {
 }
 
 function validateForm() {
-    if (!document.getElementById('planInterestInput').value) {
+    if (!document.getElementById('planSlugInput').value) {
         document.getElementById('noPlanWarning').style.display = 'block';
         return false;
     }

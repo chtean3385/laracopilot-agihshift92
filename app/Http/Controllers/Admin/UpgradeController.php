@@ -27,30 +27,33 @@ class UpgradeController extends Controller
             return redirect()->route('login');
         }
 
-        // Build allowed plan values from DB to validate against
-        $planLabels = DB::table('platform_plans')
-            ->where('is_active', true)
-            ->pluck('label')
-            ->map(fn($l) => $l . ' (%)')  // the form appends price, so just check it's non-empty
-            ->all();
-
         $request->validate([
-            'plan_interest'    => 'required|string|min:2|max:200',
+            'plan_slug'        => 'required|string|max:100',
             'message'          => 'nullable|string|max:1000',
             'contact_name'     => 'nullable|string|max:150',
             'hotel_name_input' => 'nullable|string|max:200',
         ]);
 
-        // Sanitise — ensure plan_interest is printable, strip control characters
-        $plan      = preg_replace('/[\x00-\x1F\x7F]/u', '', $request->input('plan_interest'));
-        $hotelName = preg_replace('/[\x00-\x1F\x7F]/u', '', $request->input('hotel_name_input') ?: session('crm_hotel_name', 'Unknown Hotel'));
-        $userName  = preg_replace('/[\x00-\x1F\x7F]/u', '', $request->input('contact_name')     ?: session('crm_user_name', 'Unknown User'));
-        $msg       = preg_replace('/[\x00-\x1F\x7F]/u', '', $request->input('message', ''));
+        // Resolve plan from DB using submitted slug — reject unknown slugs
+        $planSlug = $request->input('plan_slug');
+        $plan     = DB::table('platform_plans')
+                        ->where('slug', $planSlug)
+                        ->where('is_active', true)
+                        ->first();
+
+        if (!$plan) {
+            return back()->withErrors(['plan_slug' => 'Selected plan is not valid. Please choose from the available plans.']);
+        }
+
+        $planLabel = $plan->label . ' (₹' . number_format($plan->monthly_price) . '/माह)';
+        $hotelName = $request->input('hotel_name_input') ?: session('crm_hotel_name', 'Unknown Hotel');
+        $userName  = $request->input('contact_name')     ?: session('crm_user_name', 'Unknown User');
+        $msg       = $request->input('message', '');
 
         $waText = "नमस्ते! मैं अपने होटल का CRM प्लान अपग्रेड करना चाहता/चाहती हूं।\n\n"
                 . "*होटल:* {$hotelName}\n"
                 . "*संपर्क:* {$userName}\n"
-                . "*इच्छित प्लान:* {$plan}\n"
+                . "*इच्छित प्लान:* {$planLabel}\n"
                 . ($msg ? "*संदेश:* {$msg}" : '');
 
         $waUrl = 'https://wa.me/919725225519?text=' . rawurlencode($waText);
