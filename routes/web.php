@@ -52,6 +52,10 @@ Route::post('/reset-password',        [ForgotPasswordController::class, 'resetPa
 Route::get('/select-hotel',  [HotelSwitchController::class, 'index'] )->name('select.hotel');
 Route::post('/select-hotel', [HotelSwitchController::class, 'select'])->name('select.hotel.post');
 
+// ── Upgrade / Plan expired page (accessible even when trial locked) ─────────
+Route::get('/upgrade',         [\App\Http\Controllers\Admin\UpgradeController::class, 'index'])->name('upgrade');
+Route::post('/upgrade/request',[\App\Http\Controllers\Admin\UpgradeController::class, 'request'])->name('upgrade.request');
+
 // ── Super Admin Hotel Filter ─────────────────────────────────────────────────
 Route::post('/super-admin/hotel-filter', [SaHotelFilterController::class, 'filter'])->name('sa.hotel.filter');
 
@@ -260,6 +264,10 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     // Deleted Guests (Task #18)
     Route::get('/guests/deleted',        [\App\Http\Controllers\Platform\GuestController::class, 'deleted'])->name('platform.guests.deleted');
     Route::post('/guests/{id}/restore',  [\App\Http\Controllers\Platform\GuestController::class, 'restore'])->name('platform.guests.restore');
+
+    // Trial management (Task #19)
+    Route::post('/hotels/{id}/activate-trial',   [\App\Http\Controllers\Platform\HotelController::class, 'activateTrial'])->name('platform.hotels.activate-trial');
+    Route::post('/hotels/{id}/extend-plan',      [\App\Http\Controllers\Platform\HotelController::class, 'extendPlan'])->name('platform.hotels.extend-plan');
 
     // 2FA settings
     Route::get('/settings/2fa',          [\App\Http\Controllers\Platform\AuthController::class, 'show2faSetup'])->name('platform.settings.2fa');

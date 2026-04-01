@@ -408,6 +408,52 @@ class HotelController extends Controller
             ->with('success', "User \"{$data['user_name']}\" created and added to {$hotel->name}." . ($makeAdmin ? ' They are now the Hotel Admin.' : ''));
     }
 
+    // ── Trial activation / plan extension (Task #19) ─────────────────────────
+
+    public function activateTrial(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.edit', $id)->with('error', 'Hotel not found.');
+        }
+
+        $days  = (int) ($request->input('trial_days', 7));
+        $days  = max(1, min($days, 90));
+
+        DB::table('hotels')->where('id', $id)->update([
+            'plan'          => 'trial',
+            'trial_ends_at' => now()->addDays($days),
+            'updated_at'    => now(),
+        ]);
+
+        return redirect()->route('platform.hotels.edit', $id)
+            ->with('success', "{$hotel->name} — {$days}-day free trial activated.");
+    }
+
+    public function extendPlan(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.edit', $id)->with('error', 'Hotel not found.');
+        }
+
+        $days = (int) ($request->input('extend_days', 30));
+        $days = max(1, min($days, 365));
+
+        // Extend from today or from existing expiry (whichever is later)
+        $base = $hotel->plan_expires_at && now()->lt(\Carbon\Carbon::parse($hotel->plan_expires_at))
+              ? \Carbon\Carbon::parse($hotel->plan_expires_at)
+              : now();
+
+        DB::table('hotels')->where('id', $id)->update([
+            'plan_expires_at' => $base->addDays($days),
+            'updated_at'      => now(),
+        ]);
+
+        return redirect()->route('platform.hotels.edit', $id)
+            ->with('success', "{$hotel->name} — plan extended by {$days} days.");
+    }
+
     // ── Destroy (hard delete) ─────────────────────────────────────────────────
 
     public function destroy(int $id)

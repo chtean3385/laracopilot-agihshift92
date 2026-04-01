@@ -860,6 +860,35 @@
             </div>
         </header>
 
+        <!-- Trial Warning Banner -->
+        @if(session('trial_warning'))
+        @php
+            $twDays    = session('trial_days_left', 0);
+            $twUrgent  = session('trial_warning') === 'urgent';
+            $twBg      = $twUrgent ? '#fef2f2' : '#fffbeb';
+            $twBorder  = $twUrgent ? '#fecaca' : '#fde68a';
+            $twColor   = $twUrgent ? '#b91c1c' : '#92400e';
+            $twIcon    = $twUrgent ? 'fa-exclamation-triangle' : 'fa-clock';
+            $twIconClr = $twUrgent ? '#ef4444' : '#d97706';
+            $twLabel   = $twDays === 0 ? 'expires today!' : "expires in {$twDays} day" . ($twDays === 1 ? '' : 's') . '!';
+        @endphp
+        <div style="padding:14px 24px 0;">
+            <div style="background:{{ $twBg }};border:1px solid {{ $twBorder }};border-radius:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="fas {{ $twIcon }}" style="color:{{ $twIconClr }};font-size:16px;flex-shrink:0;"></i>
+                    <div>
+                        <span style="font-size:13px;font-weight:700;color:{{ $twColor }};">Your plan {{ $twLabel }}</span>
+                        <span style="font-size:12px;color:{{ $twColor }};opacity:.8;margin-left:6px;">Upgrade now to keep your data safe and services running.</span>
+                    </div>
+                </div>
+                <a href="{{ route('upgrade') }}"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;background:{{ $twUrgent ? '#ef4444' : '#d97706' }};color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+                    <i class="fas fa-arrow-up"></i> Upgrade Now
+                </a>
+            </div>
+        </div>
+        @endif
+
         <!-- Flash Messages -->
         @if(session('success') || session('error'))
         <div style="padding:16px 24px 0;">

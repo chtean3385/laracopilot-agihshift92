@@ -25,7 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PREFIX);
-        $middleware->web(append: [\App\Http\Middleware\SetHotelContext::class]);
+        $middleware->web(append: [
+            \App\Http\Middleware\SetHotelContext::class,
+            \App\Http\Middleware\CheckTrialStatus::class,
+        ]);
         $middleware->alias([
             'permission'     => \App\Http\Middleware\PermissionMiddleware::class,
             'not.installed'  => \App\Http\Middleware\CheckNotInstalled::class,
