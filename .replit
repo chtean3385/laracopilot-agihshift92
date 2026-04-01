@@ -61,11 +61,15 @@ externalPort = 80
 localPort = 5001
 externalPort = 3000
 
+[[ports]]
+localPort = 5002
+externalPort = 3001
+
 [deployment]
 deploymentTarget = "autoscale"
-run = ["php", "-S", "0.0.0.0:5000", "server.php"]
+run = ["php", "-S", "0.0.0.0:5000", "-t", "public", "public/router.php"]
 publicDir = "public"
-build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && DB_CONNECTION=pgsql php artisan app:safe-migrate && php artisan config:cache && php artisan route:cache && php artisan view:cache"]
+build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && DB_CONNECTION=pgsql php artisan app:safe-migrate"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
