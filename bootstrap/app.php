@@ -4,6 +4,16 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+// Copy OS-level env vars (injected by Replit) into $_ENV before phpdotenv runs.
+// phpdotenv (createImmutable) checks $_ENV for existing vars — not getenv() —
+// so without this, it silently overwrites Replit's injected vars with .env values.
+foreach (['DB_CONNECTION','DATABASE_URL','APP_ENV','APP_DEBUG','APP_URL','APP_KEY'] as $_k) {
+    if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
+        $_ENV[$_k] = $_SERVER[$_k] = $v;
+    }
+}
+unset($_k, $v);
+
 // Force file-based sessions/cache for installer routes so the install page
 // works on a fresh server with no database tables yet (runs before anything else).
 if (str_contains($_SERVER['REQUEST_URI'] ?? '', '/install')) {
