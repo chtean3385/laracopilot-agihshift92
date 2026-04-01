@@ -522,10 +522,10 @@
         #crm-tour-card {
             position: fixed;
             background: #fff;
-            border-radius: 18px;
-            box-shadow: 0 20px 60px rgba(0,0,0,.25), 0 4px 16px rgba(0,0,0,.1);
-            padding: 20px 22px 16px;
-            width: 290px;
+            border-radius: 20px;
+            box-shadow: 0 24px 70px rgba(0,0,0,.28), 0 4px 20px rgba(0,0,0,.12);
+            padding: 24px 26px 18px;
+            width: 360px;
             z-index: 200002;
             transition: top .3s ease, left .3s ease;
         }
@@ -535,23 +535,24 @@
             gap: 5px;
             background: linear-gradient(135deg,#06b6d4,#3b82f6);
             color: #fff;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 999px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
         #crm-tour-card .tour-title {
-            font-size: 15px;
+            font-size: 20px;
             font-weight: 800;
             color: #0f172a;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            line-height: 1.3;
         }
         #crm-tour-card .tour-desc {
-            font-size: 13px;
-            color: #475569;
-            line-height: 1.6;
-            margin-bottom: 16px;
+            font-size: 15px;
+            color: #334155;
+            line-height: 1.7;
+            margin-bottom: 18px;
         }
         #crm-tour-card .tour-actions {
             display: flex;
@@ -565,24 +566,24 @@
             align-items: center;
         }
         #crm-tour-card .tour-dot {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background: #e2e8f0;
             transition: background .2s, width .2s;
         }
         #crm-tour-card .tour-dot.active {
             background: #06b6d4;
-            width: 18px;
+            width: 20px;
             border-radius: 4px;
         }
         .tour-btn-skip {
             background: none;
             border: none;
-            font-size: 12px;
+            font-size: 14px;
             color: #94a3b8;
             cursor: pointer;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 8px;
             transition: color .15s, background .15s;
         }
@@ -590,17 +591,17 @@
         .tour-btn-next {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             background: linear-gradient(135deg,#06b6d4,#3b82f6);
             color: #fff;
             border: none;
-            padding: 8px 18px;
-            border-radius: 10px;
-            font-size: 13px;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
             transition: opacity .15s;
-            box-shadow: 0 4px 12px rgba(6,182,212,.3);
+            box-shadow: 0 4px 14px rgba(6,182,212,.35);
         }
         .tour-btn-next:hover { opacity: .9; }
     </style>
@@ -1132,94 +1133,93 @@
 ════════════════════════════════════════════════════ --}}
 <script>
 (function () {
-    var CRM_TOUR_KEY = 'crm_tour_done_{{ auth()->id() ?? 0 }}';
+    var CRM_TOUR_KEY      = 'crm_tour_done_{{ auth()->id() ?? 0 }}';
+    var CRM_TOUR_STEP_KEY = 'crm_tour_step_{{ auth()->id() ?? 0 }}';
 
     var STEPS = [
         {
             sel: '#sidebar a[href*="dashboard"]',
+            url: '{{ route("dashboard") }}',
             icon: 'fa-th-large',
-            title: 'डैशबोर्ड',
-            desc: 'यहाँ आप होटल की पूरी जानकारी एक नज़र में देख सकते हैं — बुकिंग, कमाई, और हाल की गतिविधियाँ।'
+            title: 'डैशबोर्ड (Dashboard)',
+            desc: 'यहाँ होटल की पूरी जानकारी एक नज़र में देखें — आज की बुकिंग, कमाई, चेक-इन / चेक-आउट और हाल की गतिविधियाँ।'
         },
         {
             sel: '#sidebar a[href*="customers"]',
+            url: '{{ route("customers.index") }}',
             icon: 'fa-users',
             title: 'मेहमान (Guests)',
-            desc: 'होटल में आने वाले सभी मेहमानों की जानकारी यहाँ रखें — नाम, मोबाइल, पता, और दस्तावेज़।'
+            desc: 'होटल में आने वाले सभी मेहमानों की प्रोफ़ाइल यहाँ रखें — नाम, मोबाइल, पता, ID प्रूफ और दस्तावेज़।'
         },
         {
             sel: '#sidebar a[href*="rooms"]',
+            url: '{{ route("rooms.index") }}',
             icon: 'fa-door-open',
             title: 'कमरे (Rooms)',
-            desc: 'होटल के सभी कमरों का प्रबंधन करें — कमरा नंबर, प्रकार, किराया और उपलब्धता।'
+            desc: 'होटल के सभी कमरों का प्रबंधन करें — कमरा नंबर, प्रकार (AC/Non-AC), किराया और उपलब्धता।'
         },
         {
             sel: '#sidebar a[href*="bookings"]',
+            url: '{{ route("bookings.index") }}',
             icon: 'fa-calendar-check',
             title: 'बुकिंग (Bookings)',
-            desc: 'नई बुकिंग बनाएँ और पुरानी बुकिंग देखें। चेक-इन और चेक-आउट की तारीखें यहीं से तय होती हैं।'
+            desc: 'नई बुकिंग बनाएँ और सभी बुकिंग की सूची देखें। चेक-इन/आउट तारीख, कमरा और मेहमान यहीं से तय होते हैं।'
         },
         {
             sel: '#sidebar a[href*="checkin"]',
+            url: '{{ route("checkin.index") }}',
             icon: 'fa-sign-in-alt',
             title: 'चेक-इन (Check-In)',
-            desc: 'मेहमान के आने पर उन्हें यहाँ से चेक-इन करें और कमरा आवंटित करें।'
+            desc: 'मेहमान के आने पर यहाँ से चेक-इन करें — ID वेरिफाई करें, कमरा आवंटित करें और स्वागत करें।'
         },
         {
             sel: '#sidebar a[href*="checkout"]',
+            url: '{{ route("checkout.index") }}',
             icon: 'fa-sign-out-alt',
             title: 'चेक-आउट (Check-Out)',
-            desc: 'मेहमान के जाने पर यहाँ से चेक-आउट करें और अंतिम बिल तैयार करें।'
+            desc: 'मेहमान के जाने पर यहाँ से चेक-आउट करें — अंतिम बिल बनाएँ, भुगतान लें और कमरा खाली करें।'
         },
         {
             sel: '#sidebar a[href*="payments"]',
+            url: '{{ route("payments.index") }}',
             icon: 'fa-credit-card',
             title: 'भुगतान (Payments)',
-            desc: 'कैश, कार्ड, UPI — सभी प्रकार के भुगतान यहाँ दर्ज करें और हिसाब रखें।'
+            desc: 'कैश, कार्ड, UPI — सभी प्रकार के भुगतान यहाँ दर्ज करें। बकाया और प्राप्त राशि का पूरा हिसाब।'
         },
         {
             sel: '#sidebar a[href*="invoices"]',
+            url: '{{ route("invoices.index") }}',
             icon: 'fa-file-invoice-dollar',
             title: 'इनवॉइस (Invoices)',
-            desc: 'मेहमानों के लिए बिल देखें और प्रिंट करें। सभी बुकिंग के लिए स्वचालित इनवॉइस बनते हैं।'
+            desc: 'मेहमानों के बिल यहाँ देखें और प्रिंट करें। हर बुकिंग के लिए GST इनवॉइस स्वचालित बनता है।'
         },
         {
             sel: '#sidebar a[href*="reports"]',
+            url: '{{ route("reports.index") }}',
             icon: 'fa-chart-bar',
             title: 'रिपोर्ट (Reports)',
-            desc: 'होटल की कमाई, कमरों की भराई और मेहमान रजिस्टर जैसी विस्तृत रिपोर्टें यहाँ देखें।'
+            desc: 'कमाई, कमरों की भराई दर, और पुलिस / सरकारी मेहमान रजिस्टर जैसी विस्तृत रिपोर्टें यहाँ देखें।'
         },
         {
             sel: '#sidebar a[href*="settings"]',
+            url: '{{ route("settings.index") }}',
             icon: 'fa-cog',
             title: 'सेटिंग्स (Settings)',
             desc: 'होटल का नाम, लोगो, GST नंबर, ईमेल और अन्य जानकारी यहाँ से अपडेट करें।'
         },
         {
             sel: '#header-wa-btn',
+            url: null,
             icon: 'fa-whatsapp',
             iconLib: 'fab',
             title: 'WhatsApp सपोर्ट',
-            desc: 'कोई भी समस्या हो? ऊपर हेडर में यह हरा बटन दबाएँ — सीधे हमारी सपोर्ट टीम से WhatsApp पर बात करें।'
+            desc: 'कोई भी समस्या हो? हेडर में यह हरा बटन दबाएँ — सीधे हमारी सपोर्ट टीम से WhatsApp पर बात करें।'
         }
     ];
 
     var ALL_STEPS = STEPS;
-    var STEPS_VISIBLE = [];
     var currentStep = 0;
     var hlEl = null, cardEl = null;
-
-    function resolveVisible() {
-        STEPS_VISIBLE = ALL_STEPS.filter(function (s) {
-            var nodes = document.querySelectorAll(s.sel);
-            for (var i = 0; i < nodes.length; i++) {
-                var r = nodes[i].getBoundingClientRect();
-                if (r.width > 0 || r.height > 0) return true;
-            }
-            return false;
-        });
-        STEPS = STEPS_VISIBLE.length > 0 ? STEPS_VISIBLE : ALL_STEPS;
-    }
 
     function buildUI() {
         if (document.getElementById('crm-tour-highlight')) return;
@@ -1230,22 +1230,31 @@
 
         cardEl = document.createElement('div');
         cardEl.id = 'crm-tour-card';
-        cardEl.innerHTML = '<div class="tour-step-badge"><i class="fas fa-map-signs" style="font-size:10px;"></i> <span id="tBadge"></span></div>' +
+        cardEl.innerHTML =
+            '<div class="tour-step-badge"><i class="fas fa-map-signs" style="font-size:11px;"></i> <span id="tBadge"></span></div>' +
             '<div class="tour-title" id="tTitle"></div>' +
             '<div class="tour-desc" id="tDesc"></div>' +
             '<div class="tour-actions">' +
-            '<div class="tour-dots" id="tDots"></div>' +
-            '<div style="display:flex;gap:8px;align-items:center;">' +
-            '<button class="tour-btn-skip" id="tSkip">छोड़ें</button>' +
-            '<button class="tour-btn-next" id="tNext"></button>' +
-            '</div></div>';
+              '<div class="tour-dots" id="tDots"></div>' +
+              '<div style="display:flex;gap:8px;align-items:center;">' +
+                '<button class="tour-btn-skip" id="tSkip">छोड़ें</button>' +
+                '<button class="tour-btn-next" id="tNext"></button>' +
+              '</div>' +
+            '</div>';
         document.body.appendChild(cardEl);
 
         document.getElementById('tSkip').addEventListener('click', crmTourEnd);
         document.getElementById('tNext').addEventListener('click', function () {
-            if (currentStep < STEPS.length - 1) {
-                currentStep++;
-                renderStep();
+            if (currentStep < ALL_STEPS.length - 1) {
+                var nextIdx = currentStep + 1;
+                var nextStep = ALL_STEPS[nextIdx];
+                if (nextStep.url) {
+                    localStorage.setItem(CRM_TOUR_STEP_KEY, nextIdx);
+                    window.location.href = nextStep.url;
+                } else {
+                    currentStep = nextIdx;
+                    renderStep();
+                }
             } else {
                 crmTourEnd();
             }
@@ -1262,21 +1271,21 @@
     }
 
     function renderStep() {
-        var step = STEPS[currentStep];
+        var step = ALL_STEPS[currentStep];
         var target = resolveTarget(step);
 
-        document.getElementById('tBadge').textContent = 'चरण ' + (currentStep + 1) + ' / ' + STEPS.length;
+        document.getElementById('tBadge').textContent = 'चरण ' + (currentStep + 1) + ' / ' + ALL_STEPS.length;
         document.getElementById('tTitle').innerHTML =
-            '<i class="' + (step.iconLib || 'fas') + ' ' + step.icon + '" style="color:#06b6d4;margin-right:6px;"></i>' + step.title;
+            '<i class="' + (step.iconLib || 'fas') + ' ' + step.icon + '" style="color:#06b6d4;margin-right:8px;"></i>' + step.title;
         document.getElementById('tDesc').textContent = step.desc;
         document.getElementById('tNext').innerHTML =
-            currentStep === STEPS.length - 1
-                ? 'समाप्त <i class="fas fa-check" style="font-size:11px;"></i>'
-                : 'आगे <i class="fas fa-arrow-right" style="font-size:11px;"></i>';
+            currentStep === ALL_STEPS.length - 1
+                ? 'समाप्त <i class="fas fa-check" style="font-size:12px;"></i>'
+                : 'आगे <i class="fas fa-arrow-right" style="font-size:12px;"></i>';
 
         var dots = document.getElementById('tDots');
         dots.innerHTML = '';
-        for (var d = 0; d < STEPS.length; d++) {
+        for (var d = 0; d < ALL_STEPS.length; d++) {
             var dot = document.createElement('span');
             dot.className = 'tour-dot' + (d === currentStep ? ' active' : '');
             dots.appendChild(dot);
@@ -1284,7 +1293,7 @@
 
         if (!target) {
             hlEl.style.display = 'none';
-            positionCard(window.innerWidth / 2 - 145, window.innerHeight / 2 - 100);
+            positionCard(window.innerWidth / 2 - 180, window.innerHeight / 2 - 130);
             return;
         }
 
@@ -1297,31 +1306,34 @@
             }
         }
 
+        target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
         hlEl.style.display = 'block';
-        var r = target.getBoundingClientRect();
-        var pad = 6;
-        hlEl.style.top    = (r.top - pad) + 'px';
-        hlEl.style.left   = (r.left - pad) + 'px';
-        hlEl.style.width  = (r.width + pad * 2) + 'px';
-        hlEl.style.height = (r.height + pad * 2) + 'px';
+        setTimeout(function () {
+            var r = target.getBoundingClientRect();
+            var pad = 6;
+            hlEl.style.top    = (r.top  - pad) + 'px';
+            hlEl.style.left   = (r.left - pad) + 'px';
+            hlEl.style.width  = (r.width  + pad * 2) + 'px';
+            hlEl.style.height = (r.height + pad * 2) + 'px';
 
-        var cardW = 290, cardH = 220;
-        var vw = window.innerWidth, vh = window.innerHeight;
-
-        var cx, cy;
-        if (r.right + 16 + cardW <= vw) {
-            cx = r.right + 16;
-            cy = Math.min(r.top, vh - cardH - 16);
-        } else if (r.left - 16 - cardW >= 0) {
-            cx = r.left - 16 - cardW;
-            cy = Math.min(r.top, vh - cardH - 16);
-        } else {
-            cx = Math.max(8, (vw - cardW) / 2);
-            cy = r.bottom + 12;
-            if (cy + cardH > vh) cy = r.top - cardH - 12;
-        }
-        cy = Math.max(8, Math.min(cy, vh - cardH - 8));
-        positionCard(cx, cy);
+            var cardW = 360, cardH = 260;
+            var vw = window.innerWidth, vh = window.innerHeight;
+            var cx, cy;
+            if (r.right + 20 + cardW <= vw) {
+                cx = r.right + 20;
+                cy = Math.min(r.top, vh - cardH - 16);
+            } else if (r.left - 20 - cardW >= 0) {
+                cx = r.left - 20 - cardW;
+                cy = Math.min(r.top, vh - cardH - 16);
+            } else {
+                cx = Math.max(8, (vw - cardW) / 2);
+                cy = r.bottom + 16;
+                if (cy + cardH > vh) cy = r.top - cardH - 16;
+            }
+            cy = Math.max(8, Math.min(cy, vh - cardH - 8));
+            positionCard(cx, cy);
+        }, 150);
     }
 
     function positionCard(x, y) {
@@ -1329,9 +1341,8 @@
         cardEl.style.top  = y + 'px';
     }
 
-    window.crmTourStart = function () {
-        resolveVisible();
-        currentStep = 0;
+    window.crmTourStart = function (startAt) {
+        currentStep = (typeof startAt === 'number') ? startAt : 0;
         buildUI();
         hlEl.style.display = 'none';
         cardEl.style.display = 'block';
@@ -1340,6 +1351,7 @@
 
     function crmTourEnd() {
         localStorage.setItem(CRM_TOUR_KEY, '1');
+        localStorage.removeItem(CRM_TOUR_STEP_KEY);
         if (hlEl) hlEl.style.display = 'none';
         if (cardEl) cardEl.style.display = 'none';
         if (window.innerWidth <= 1024) {
@@ -1352,8 +1364,13 @@
     window.crmTourEnd = crmTourEnd;
 
     document.addEventListener('DOMContentLoaded', function () {
-        if (!localStorage.getItem(CRM_TOUR_KEY)) {
-            setTimeout(crmTourStart, 800);
+        if (localStorage.getItem(CRM_TOUR_KEY)) return;
+        var savedStep = localStorage.getItem(CRM_TOUR_STEP_KEY);
+        if (savedStep !== null) {
+            localStorage.removeItem(CRM_TOUR_STEP_KEY);
+            setTimeout(function () { window.crmTourStart(parseInt(savedStep, 10)); }, 600);
+        } else {
+            setTimeout(function () { window.crmTourStart(0); }, 800);
         }
     });
 })();
