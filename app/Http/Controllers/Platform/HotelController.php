@@ -417,8 +417,11 @@ class HotelController extends Controller
             return redirect()->route('platform.hotels.edit', $id)->with('error', 'Hotel not found.');
         }
 
-        $days  = (int) ($request->input('trial_days', 7));
-        $days  = max(1, min($days, 90));
+        // Fixed 7-day trial; allow custom days only if explicitly submitted by platform admin
+        $days = 7;
+        if ($request->has('trial_days')) {
+            $days = max(1, min((int) $request->input('trial_days', 7), 90));
+        }
 
         DB::table('hotels')->where('id', $id)->update([
             'plan'          => 'trial',

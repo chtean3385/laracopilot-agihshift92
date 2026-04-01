@@ -53,13 +53,15 @@ class CheckTrialStatus
                     return redirect()->route('upgrade')->with('trial_expired', true);
                 }
 
-                // Days remaining for warning display (integer, always >= 0 here)
+                // Days remaining for warning display (integer, always >= 0 here since isPast() was false)
                 $daysLeft = (int) $now->diffInDays($trialEnds, false);
 
-                if ($daysLeft <= 1) {
-                    session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
-                } elseif ($daysLeft <= 3) {
-                    session(['trial_warning' => 'warning', 'trial_days_left' => $daysLeft]);
+                if ($daysLeft === 0) {
+                    // Less than 24 hours left but not yet past → urgent
+                    session(['trial_warning' => 'urgent', 'trial_days_left' => 0]);
+                } elseif ($daysLeft === 1) {
+                    // 1 day left → urgent
+                    session(['trial_warning' => 'urgent', 'trial_days_left' => 1]);
                 } else {
                     session()->forget(['trial_warning', 'trial_days_left']);
                 }
@@ -79,10 +81,10 @@ class CheckTrialStatus
 
             $daysLeft = (int) $now->diffInDays($planExpires, false);
 
-            if ($daysLeft <= 1) {
-                session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
-            } elseif ($daysLeft <= 3) {
-                session(['trial_warning' => 'warning', 'trial_days_left' => $daysLeft]);
+            if ($daysLeft === 0) {
+                session(['trial_warning' => 'urgent', 'trial_days_left' => 0]);
+            } elseif ($daysLeft === 1) {
+                session(['trial_warning' => 'urgent', 'trial_days_left' => 1]);
             } else {
                 session()->forget(['trial_warning', 'trial_days_left']);
             }
