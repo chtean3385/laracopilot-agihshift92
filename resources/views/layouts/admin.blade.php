@@ -508,6 +508,105 @@
         @media (max-width: 400px) {
             .topbar-title h1 { font-size: 13px !important; }
         }
+
+        /* ── Onboarding Tour ── */
+        #crm-tour-highlight {
+            position: fixed;
+            border-radius: 12px;
+            box-shadow: 0 0 0 4000px rgba(0,0,0,.65), 0 0 0 3px #06b6d4, 0 0 24px rgba(6,182,212,.7);
+            transition: top .3s ease, left .3s ease, width .3s ease, height .3s ease;
+            z-index: 200001;
+            pointer-events: none;
+        }
+        #crm-tour-card {
+            position: fixed;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.25), 0 4px 16px rgba(0,0,0,.1);
+            padding: 20px 22px 16px;
+            width: 290px;
+            z-index: 200002;
+            transition: top .3s ease, left .3s ease;
+        }
+        #crm-tour-card .tour-step-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg,#06b6d4,#3b82f6);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+        #crm-tour-card .tour-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+        #crm-tour-card .tour-desc {
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        #crm-tour-card .tour-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        #crm-tour-card .tour-dots {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        #crm-tour-card .tour-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            transition: background .2s, width .2s;
+        }
+        #crm-tour-card .tour-dot.active {
+            background: #06b6d4;
+            width: 18px;
+            border-radius: 4px;
+        }
+        .tour-btn-skip {
+            background: none;
+            border: none;
+            font-size: 12px;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: color .15s, background .15s;
+        }
+        .tour-btn-skip:hover { color: #475569; background: #f8fafc; }
+        .tour-btn-next {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg,#06b6d4,#3b82f6);
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .15s;
+            box-shadow: 0 4px 12px rgba(6,182,212,.3);
+        }
+        .tour-btn-next:hover { opacity: .9; }
+        #crm-tour-arrow {
+            position: fixed;
+            z-index: 200002;
+            pointer-events: none;
+        }
     </style>
     @stack('styles')
 </head>
@@ -883,6 +982,9 @@
                         <a href="{{ route('password.change.form') }}" style="display:block;padding:10px 14px;font-size:13px;color:#475569;text-decoration:none;transition:background .15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
                             <i class="fas fa-lock" style="color:#64748b;font-size:12px;margin-right:8px;"></i>Change Password
                         </a>
+                        <button onclick="crmTourStart();document.getElementById('user-menu').style.display='none';" style="display:block;width:100%;padding:10px 14px;font-size:13px;color:#0891b2;text-align:left;text-decoration:none;border:none;background:none;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background=''">
+                            <i class="fas fa-graduation-cap" style="color:#06b6d4;font-size:12px;margin-right:8px;"></i>फिर से टूर शुरू करें
+                        </button>
                         <form action="{{ route('logout') }}" method="POST" style="margin:0;">
                             @csrf
                             <button type="submit" style="display:block;width:100%;padding:10px 14px;font-size:13px;color:#dc2626;text-align:left;text-decoration:none;border:none;background:none;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background=''">
@@ -1046,6 +1148,231 @@
 </script>
 
 @stack('scripts')
+
+{{-- ════════════════════════════════════════════════════
+     ONBOARDING TOUR — Hindi guided walkthrough
+     State stored in localStorage per user (no DB)
+════════════════════════════════════════════════════ --}}
+<script>
+(function () {
+    var CRM_TOUR_KEY = 'crm_tour_done_{{ auth()->id() ?? 0 }}';
+
+    var STEPS = [
+        {
+            sel: '#sidebar a[href*="dashboard"]',
+            icon: 'fa-th-large',
+            title: 'डैशबोर्ड',
+            desc: 'यहाँ आप होटल की पूरी जानकारी एक नज़र में देख सकते हैं — बुकिंग, कमाई, और हाल की गतिविधियाँ।'
+        },
+        {
+            sel: '#sidebar a[href*="customers"]',
+            icon: 'fa-users',
+            title: 'मेहमान (Guests)',
+            desc: 'होटल में आने वाले सभी मेहमानों की जानकारी यहाँ रखें — नाम, मोबाइल, पता, और दस्तावेज़।'
+        },
+        {
+            sel: '#sidebar a[href*="rooms"]',
+            icon: 'fa-door-open',
+            title: 'कमरे (Rooms)',
+            desc: 'होटल के सभी कमरों का प्रबंधन करें — कमरा नंबर, प्रकार, किराया और उपलब्धता।'
+        },
+        {
+            sel: '#sidebar a[href*="bookings"]',
+            icon: 'fa-calendar-check',
+            title: 'बुकिंग (Bookings)',
+            desc: 'नई बुकिंग बनाएँ और पुरानी बुकिंग देखें। चेक-इन और चेक-आउट की तारीखें यहीं से तय होती हैं।'
+        },
+        {
+            sel: '#sidebar a[href*="checkin"]',
+            icon: 'fa-sign-in-alt',
+            title: 'चेक-इन (Check-In)',
+            desc: 'मेहमान के आने पर उन्हें यहाँ से चेक-इन करें और कमरा आवंटित करें।'
+        },
+        {
+            sel: '#sidebar a[href*="checkout"]',
+            icon: 'fa-sign-out-alt',
+            title: 'चेक-आउट (Check-Out)',
+            desc: 'मेहमान के जाने पर यहाँ से चेक-आउट करें और अंतिम बिल तैयार करें।'
+        },
+        {
+            sel: '#sidebar a[href*="payments"]',
+            icon: 'fa-credit-card',
+            title: 'भुगतान (Payments)',
+            desc: 'कैश, कार्ड, UPI — सभी प्रकार के भुगतान यहाँ दर्ज करें और हिसाब रखें।'
+        },
+        {
+            sel: '#sidebar a[href*="invoices"]',
+            icon: 'fa-file-invoice-dollar',
+            title: 'इनवॉइस (Invoices)',
+            desc: 'मेहमानों के लिए बिल देखें और प्रिंट करें। सभी बुकिंग के लिए स्वचालित इनवॉइस बनते हैं।'
+        },
+        {
+            sel: '#sidebar a[href*="reports"]',
+            icon: 'fa-chart-bar',
+            title: 'रिपोर्ट (Reports)',
+            desc: 'होटल की कमाई, कमरों की भराई और मेहमान रजिस्टर जैसी विस्तृत रिपोर्टें यहाँ देखें।'
+        },
+        {
+            sel: '#sidebar a[href*="settings"]',
+            icon: 'fa-cog',
+            title: 'सेटिंग्स (Settings)',
+            desc: 'होटल का नाम, लोगो, GST नंबर, ईमेल और अन्य जानकारी यहाँ से अपडेट करें।'
+        },
+        {
+            sel: '#sidebar-wa-btn',
+            icon: 'fa-whatsapp',
+            iconLib: 'fab',
+            title: 'WhatsApp सपोर्ट',
+            desc: 'कोई भी समस्या हो? इस बटन से सीधे हमारी सपोर्ट टीम से WhatsApp पर बात करें।'
+        }
+    ];
+
+    var currentStep = 0;
+    var hlEl = null, cardEl = null;
+
+    function buildUI() {
+        if (document.getElementById('crm-tour-highlight')) return;
+
+        hlEl = document.createElement('div');
+        hlEl.id = 'crm-tour-highlight';
+        document.body.appendChild(hlEl);
+
+        cardEl = document.createElement('div');
+        cardEl.id = 'crm-tour-card';
+        cardEl.innerHTML = '<div class="tour-step-badge"><i class="fas fa-map-signs" style="font-size:10px;"></i> <span id="tBadge"></span></div>' +
+            '<div class="tour-title" id="tTitle"></div>' +
+            '<div class="tour-desc" id="tDesc"></div>' +
+            '<div class="tour-actions">' +
+            '<div class="tour-dots" id="tDots"></div>' +
+            '<div style="display:flex;gap:8px;align-items:center;">' +
+            '<button class="tour-btn-skip" id="tSkip">छोड़ें</button>' +
+            '<button class="tour-btn-next" id="tNext"></button>' +
+            '</div></div>';
+        document.body.appendChild(cardEl);
+
+        document.getElementById('tSkip').addEventListener('click', crmTourEnd);
+        document.getElementById('tNext').addEventListener('click', function () {
+            if (currentStep < STEPS.length - 1) {
+                currentStep++;
+                renderStep();
+            } else {
+                crmTourEnd();
+            }
+        });
+    }
+
+    function resolveTarget(step) {
+        var candidates = document.querySelectorAll(step.sel);
+        for (var i = 0; i < candidates.length; i++) {
+            var rect = candidates[i].getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) return candidates[i];
+        }
+        return null;
+    }
+
+    function renderStep() {
+        var step = STEPS[currentStep];
+        var target = resolveTarget(step);
+
+        if (!target && currentStep < STEPS.length - 1) {
+            currentStep++;
+            renderStep();
+            return;
+        }
+
+        document.getElementById('tBadge').textContent = 'चरण ' + (currentStep + 1) + ' / ' + STEPS.length;
+        document.getElementById('tTitle').innerHTML =
+            '<i class="' + (step.iconLib || 'fas') + ' ' + step.icon + '" style="color:#06b6d4;margin-right:6px;"></i>' + step.title;
+        document.getElementById('tDesc').textContent = step.desc;
+        document.getElementById('tNext').innerHTML =
+            currentStep === STEPS.length - 1
+                ? 'समाप्त <i class="fas fa-check" style="font-size:11px;"></i>'
+                : 'आगे <i class="fas fa-arrow-right" style="font-size:11px;"></i>';
+
+        var dots = document.getElementById('tDots');
+        dots.innerHTML = '';
+        for (var d = 0; d < STEPS.length; d++) {
+            var dot = document.createElement('span');
+            dot.className = 'tour-dot' + (d === currentStep ? ' active' : '');
+            dots.appendChild(dot);
+        }
+
+        if (!target) {
+            hlEl.style.display = 'none';
+            positionCard(window.innerWidth / 2 - 145, window.innerHeight / 2 - 100);
+            return;
+        }
+
+        if (window.innerWidth <= 1024) {
+            var sb = document.getElementById('sidebar');
+            if (sb && !sb.classList.contains('open')) {
+                sb.classList.add('open');
+                var ov = document.getElementById('sidebar-overlay');
+                if (ov) ov.classList.add('show');
+            }
+        }
+
+        hlEl.style.display = 'block';
+        var r = target.getBoundingClientRect();
+        var pad = 6;
+        hlEl.style.top    = (r.top - pad) + 'px';
+        hlEl.style.left   = (r.left - pad) + 'px';
+        hlEl.style.width  = (r.width + pad * 2) + 'px';
+        hlEl.style.height = (r.height + pad * 2) + 'px';
+
+        var cardW = 290, cardH = 220;
+        var vw = window.innerWidth, vh = window.innerHeight;
+
+        var cx, cy;
+        if (r.right + 16 + cardW <= vw) {
+            cx = r.right + 16;
+            cy = Math.min(r.top, vh - cardH - 16);
+        } else if (r.left - 16 - cardW >= 0) {
+            cx = r.left - 16 - cardW;
+            cy = Math.min(r.top, vh - cardH - 16);
+        } else {
+            cx = Math.max(8, (vw - cardW) / 2);
+            cy = r.bottom + 12;
+            if (cy + cardH > vh) cy = r.top - cardH - 12;
+        }
+        cy = Math.max(8, Math.min(cy, vh - cardH - 8));
+        positionCard(cx, cy);
+    }
+
+    function positionCard(x, y) {
+        cardEl.style.left = x + 'px';
+        cardEl.style.top  = y + 'px';
+    }
+
+    window.crmTourStart = function () {
+        currentStep = 0;
+        buildUI();
+        hlEl.style.display = 'none';
+        cardEl.style.display = 'block';
+        renderStep();
+    };
+
+    function crmTourEnd() {
+        localStorage.setItem(CRM_TOUR_KEY, '1');
+        if (hlEl) hlEl.style.display = 'none';
+        if (cardEl) cardEl.style.display = 'none';
+        if (window.innerWidth <= 1024) {
+            var sb = document.getElementById('sidebar');
+            if (sb) sb.classList.remove('open');
+            var ov = document.getElementById('sidebar-overlay');
+            if (ov) ov.classList.remove('show');
+        }
+    }
+    window.crmTourEnd = crmTourEnd;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!localStorage.getItem(CRM_TOUR_KEY)) {
+            setTimeout(crmTourStart, 800);
+        }
+    });
+})();
+</script>
+
 @livewireScripts
 </body>
 </html>
