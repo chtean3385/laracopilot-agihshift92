@@ -58,43 +58,7 @@ class SafeMigrate extends Command
             // ── 3. Global permissions catalog ────────────────────────────────────────
             if (Schema::hasTable('permissions') && DB::table('permissions')->count() === 0) {
                 $this->info('Seeding global permissions catalog...');
-                $permissions = [
-                    ['slug' => 'guests.view',       'label' => 'View Guests',              'module' => 'Guests',     'sort_order' => 1],
-                    ['slug' => 'guests.create',     'label' => 'Add Guests',               'module' => 'Guests',     'sort_order' => 2],
-                    ['slug' => 'guests.edit',       'label' => 'Edit Guests',              'module' => 'Guests',     'sort_order' => 3],
-                    ['slug' => 'guests.delete',     'label' => 'Delete Guests',            'module' => 'Guests',     'sort_order' => 4],
-                    ['slug' => 'rooms.view',        'label' => 'View Rooms',               'module' => 'Rooms',      'sort_order' => 5],
-                    ['slug' => 'rooms.create',      'label' => 'Add Rooms',                'module' => 'Rooms',      'sort_order' => 6],
-                    ['slug' => 'rooms.edit',        'label' => 'Edit Rooms',               'module' => 'Rooms',      'sort_order' => 7],
-                    ['slug' => 'rooms.delete',      'label' => 'Delete Rooms',             'module' => 'Rooms',      'sort_order' => 8],
-                    ['slug' => 'bookings.view',     'label' => 'View Bookings',            'module' => 'Bookings',   'sort_order' => 9],
-                    ['slug' => 'bookings.create',   'label' => 'Create Bookings',          'module' => 'Bookings',   'sort_order' => 10],
-                    ['slug' => 'bookings.edit',     'label' => 'Edit Bookings',            'module' => 'Bookings',   'sort_order' => 11],
-                    ['slug' => 'bookings.delete',   'label' => 'Delete Bookings',          'module' => 'Bookings',   'sort_order' => 12],
-                    ['slug' => 'checkin.process',   'label' => 'Process Check-In',         'module' => 'Operations', 'sort_order' => 13],
-                    ['slug' => 'checkout.process',  'label' => 'Process Check-Out',        'module' => 'Operations', 'sort_order' => 14],
-                    ['slug' => 'payments.view',     'label' => 'View Payments',            'module' => 'Payments',   'sort_order' => 15],
-                    ['slug' => 'payments.create',   'label' => 'Record Payments',          'module' => 'Payments',   'sort_order' => 16],
-                    ['slug' => 'payments.delete',   'label' => 'Delete Payments',          'module' => 'Payments',   'sort_order' => 17],
-                    ['slug' => 'invoices.view',     'label' => 'View Invoices',            'module' => 'Invoices',   'sort_order' => 18],
-                    ['slug' => 'invoices.delete',   'label' => 'Delete Invoices',          'module' => 'Invoices',   'sort_order' => 19],
-                    ['slug' => 'reports.view',      'label' => 'View Reports',             'module' => 'Reports',    'sort_order' => 20],
-                    ['slug' => 'settings.view',     'label' => 'View Settings',            'module' => 'Settings',   'sort_order' => 21],
-                    ['slug' => 'settings.edit',     'label' => 'Edit Settings',            'module' => 'Settings',   'sort_order' => 22],
-                    ['slug' => 'activity_log.view', 'label' => 'View Activity Log',        'module' => 'System',     'sort_order' => 23],
-                    ['slug' => 'roles.view',        'label' => 'View Roles & Permissions', 'module' => 'System',     'sort_order' => 24],
-                    ['slug' => 'roles.edit',        'label' => 'Edit Roles & Permissions', 'module' => 'System',     'sort_order' => 25],
-                    ['slug' => 'users.view',        'label' => 'View Users',               'module' => 'System',     'sort_order' => 26],
-                    ['slug' => 'users.create',      'label' => 'Create Users',             'module' => 'System',     'sort_order' => 27],
-                    ['slug' => 'users.edit',        'label' => 'Edit Users',               'module' => 'System',     'sort_order' => 28],
-                    ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'System',     'sort_order' => 29],
-                ];
-                foreach ($permissions as $p) {
-                    DB::table('permissions')->insertOrIgnore(array_merge($p, [
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]));
-                }
+                $this->seedPermissions();
                 $this->info('Permissions seeded: ' . DB::table('permissions')->count() . ' rows.');
             }
 
@@ -115,12 +79,71 @@ class SafeMigrate extends Command
         return 0;
     }
 
+    private function seedPermissions(): void
+    {
+        $permissions = [
+            ['slug' => 'guests.view',       'label' => 'View Guests',              'module' => 'Guests',     'sort_order' => 1],
+            ['slug' => 'guests.create',     'label' => 'Add Guests',               'module' => 'Guests',     'sort_order' => 2],
+            ['slug' => 'guests.edit',       'label' => 'Edit Guests',              'module' => 'Guests',     'sort_order' => 3],
+            ['slug' => 'guests.delete',     'label' => 'Delete Guests',            'module' => 'Guests',     'sort_order' => 4],
+
+            ['slug' => 'rooms.view',        'label' => 'View Rooms',               'module' => 'Rooms',      'sort_order' => 5],
+            ['slug' => 'rooms.create',      'label' => 'Add Rooms',                'module' => 'Rooms',      'sort_order' => 6],
+            ['slug' => 'rooms.edit',        'label' => 'Edit Rooms',               'module' => 'Rooms',      'sort_order' => 7],
+            ['slug' => 'rooms.delete',      'label' => 'Delete Rooms',             'module' => 'Rooms',      'sort_order' => 8],
+
+            ['slug' => 'bookings.view',     'label' => 'View Bookings',            'module' => 'Bookings',   'sort_order' => 9],
+            ['slug' => 'bookings.create',   'label' => 'Create Bookings',          'module' => 'Bookings',   'sort_order' => 10],
+            ['slug' => 'bookings.edit',     'label' => 'Edit Bookings',            'module' => 'Bookings',   'sort_order' => 11],
+            ['slug' => 'bookings.delete',   'label' => 'Delete Bookings',          'module' => 'Bookings',   'sort_order' => 12],
+
+            ['slug' => 'checkin.process',   'label' => 'Process Check-In',         'module' => 'Operations', 'sort_order' => 13],
+            ['slug' => 'checkout.process',  'label' => 'Process Check-Out',        'module' => 'Operations', 'sort_order' => 14],
+
+            ['slug' => 'payments.view',     'label' => 'View Payments',            'module' => 'Payments',   'sort_order' => 15],
+            ['slug' => 'payments.create',   'label' => 'Record Payments',          'module' => 'Payments',   'sort_order' => 16],
+            ['slug' => 'payments.delete',   'label' => 'Delete Payments',          'module' => 'Payments',   'sort_order' => 17],
+
+            ['slug' => 'invoices.view',     'label' => 'View Invoices',            'module' => 'Invoices',   'sort_order' => 18],
+            ['slug' => 'invoices.delete',   'label' => 'Delete Invoices',          'module' => 'Invoices',   'sort_order' => 19],
+
+            ['slug' => 'reports.view',      'label' => 'View Reports',             'module' => 'Reports',    'sort_order' => 20],
+
+            ['slug' => 'settings.view',     'label' => 'View Settings',            'module' => 'Settings',   'sort_order' => 21],
+            ['slug' => 'settings.edit',     'label' => 'Edit Settings',            'module' => 'Settings',   'sort_order' => 22],
+
+            ['slug' => 'activity_log.view', 'label' => 'View Activity Log',        'module' => 'System',     'sort_order' => 23],
+
+            ['slug' => 'roles.view',        'label' => 'View Roles & Permissions', 'module' => 'System',     'sort_order' => 24],
+            ['slug' => 'roles.edit',        'label' => 'Edit Roles & Permissions', 'module' => 'System',     'sort_order' => 25],
+
+            ['slug' => 'users.view',        'label' => 'View Users',               'module' => 'Users',      'sort_order' => 26],
+            ['slug' => 'users.create',      'label' => 'Create Users',             'module' => 'Users',      'sort_order' => 27],
+            ['slug' => 'users.edit',        'label' => 'Edit Users',               'module' => 'Users',      'sort_order' => 28],
+            ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'Users',      'sort_order' => 29],
+
+            ['slug' => 'whatsapp.send',     'label' => 'Send WhatsApp Messages',   'module' => 'WhatsApp',   'sort_order' => 30],
+        ];
+
+        $now = now();
+        foreach ($permissions as $p) {
+            DB::table('permissions')->insertOrIgnore([
+                'slug'       => $p['slug'],
+                'label'      => $p['label'],
+                'module'     => $p['module'],
+                'sort_order' => $p['sort_order'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+    }
+
     private function provisionHotel(int $hotelId, string $hotelName): void
     {
         // ── Roles + permissions ──────────────────────────────────────────────────
         $allSlugs      = DB::table('permissions')->pluck('slug')->all();
         $limitedSlugs  = DB::table('permissions')
-            ->whereNotIn('slug', ['settings.view', 'settings.edit', 'roles.view', 'roles.edit',
+            ->whereNotIn('slug', ['settings.view', 'roles.view', 'roles.edit',
                                   'users.view', 'users.create', 'users.edit', 'users.delete'])
             ->pluck('slug')->all();
         $frontdeskSlugs = [
@@ -157,9 +180,9 @@ class SafeMigrate extends Command
                 $roleId = $existing->id;
             }
 
-            $permIds = DB::table('permissions')->whereIn('slug', $def['perms'])->pluck('id')->all();
+            $permIds        = DB::table('permissions')->whereIn('slug', $def['perms'])->pluck('id')->all();
             $existing_pivot = DB::table('role_permissions')->where('role_id', $roleId)->pluck('permission_id')->all();
-            $toInsert = array_diff($permIds, $existing_pivot);
+            $toInsert       = array_diff($permIds, $existing_pivot);
             foreach ($toInsert as $permId) {
                 DB::table('role_permissions')->insertOrIgnore([
                     'role_id'       => $roleId,

@@ -65,10 +65,12 @@ class RolesAndPermissionsSeeder extends Seeder
             ['slug' => 'roles.view',        'label' => 'View Roles & Permissions', 'module' => 'System',     'sort_order' => 24],
             ['slug' => 'roles.edit',        'label' => 'Edit Roles & Permissions', 'module' => 'System',     'sort_order' => 25],
 
-            ['slug' => 'users.view',        'label' => 'View Users',               'module' => 'System',     'sort_order' => 26],
-            ['slug' => 'users.create',      'label' => 'Create Users',             'module' => 'System',     'sort_order' => 27],
-            ['slug' => 'users.edit',        'label' => 'Edit Users',               'module' => 'System',     'sort_order' => 28],
-            ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'System',     'sort_order' => 29],
+            ['slug' => 'users.view',        'label' => 'View Users',               'module' => 'Users',      'sort_order' => 26],
+            ['slug' => 'users.create',      'label' => 'Create Users',             'module' => 'Users',      'sort_order' => 27],
+            ['slug' => 'users.edit',        'label' => 'Edit Users',               'module' => 'Users',      'sort_order' => 28],
+            ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'Users',      'sort_order' => 29],
+
+            ['slug' => 'whatsapp.send',     'label' => 'Send WhatsApp Messages',   'module' => 'WhatsApp',   'sort_order' => 30],
         ];
 
         foreach ($permissions as $p) {
@@ -111,9 +113,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'description' => 'Day-to-day front desk operations only',
                 'is_system'   => true,
                 'permissions' => [
-                    'guests.view', 'guests.create',
+                    'guests.view', 'guests.create', 'guests.edit',
                     'rooms.view',
-                    'bookings.view', 'bookings.create',
+                    'bookings.view', 'bookings.create', 'bookings.edit',
                     'checkin.process', 'checkout.process',
                     'payments.view', 'payments.create',
                     'invoices.view',
