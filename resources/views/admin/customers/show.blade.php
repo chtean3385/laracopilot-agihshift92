@@ -134,12 +134,12 @@
                         </div>
                     </div>
                     @endif
-                    @if($customer->date_of_birth)
+                    @if($customer->age)
                     <div class="info-row">
-                        <div class="info-icon" style="background:#fdf4ff;"><i class="fas fa-birthday-cake" style="color:#9333ea;font-size:12px;"></i></div>
+                        <div class="info-icon" style="background:#fdf4ff;"><i class="fas fa-user-clock" style="color:#9333ea;font-size:12px;"></i></div>
                         <div>
-                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">Date of Birth</div>
-                            <div style="font-size:13px;color:#1e293b;font-weight:600;">{{ $customer->date_of_birth->format('d M Y') }}</div>
+                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">Age</div>
+                            <div style="font-size:13px;color:#1e293b;font-weight:600;">{{ $customer->age }} yrs</div>
                         </div>
                     </div>
                     @endif

@@ -13,12 +13,13 @@ class Customer extends Model
     protected $fillable = [
         'hotel_id',
         'name', 'email', 'phone', 'address', 'city', 'state',
-        'country', 'id_type', 'id_number', 'date_of_birth',
+        'country', 'id_type', 'id_number', 'date_of_birth', 'age',
         'nationality', 'notes', 'signature',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
+        'age'           => 'integer',
     ];
 
     public function bookings()

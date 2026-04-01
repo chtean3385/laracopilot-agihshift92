@@ -39,8 +39,9 @@
                     @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="form-label">Date of Birth</label>
-                    <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" class="form-input">
+                    <label class="form-label">Age <span class="text-gray-400 font-normal text-xs">(years)</span></label>
+                    <input type="number" name="age" value="{{ old('age') }}" class="form-input @error('age') border-red-400 @enderror" placeholder="e.g. 35" min="1" max="120">
+                    @error('age')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div class="md:col-span-2">
                     <label class="form-label">Address</label>

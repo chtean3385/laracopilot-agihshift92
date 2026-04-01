@@ -109,12 +109,12 @@
                     </td>
                     <td style="padding:10px 14px;color:#64748b;">Self</td>
                     <td style="padding:10px 14px;color:#64748b;">
-                        {{ $booking->customer->date_of_birth ? now()->diffInYears($booking->customer->date_of_birth) . ' yrs' : '-' }}
+                        {{ $booking->customer->age ? $booking->customer->age . ' yrs' : '-' }}
                     </td>
                     <td style="padding:10px 14px;color:#64748b;">{{ $booking->customer->nationality ?? 'Indian' }}</td>
                     <td style="padding:10px 14px;color:#64748b;">{{ ucfirst($booking->customer->id_type ?? '-') }}</td>
                     <td style="padding:10px 14px;font-family:monospace;color:#1e293b;font-weight:600;">{{ $booking->customer->id_number ?? '-' }}</td>
-                    <td style="padding:10px 14px;color:#64748b;">{{ $booking->customer->date_of_birth?->format('d/m/Y') ?? '-' }}</td>
+                    <td style="padding:10px 14px;color:#64748b;">-</td>
                     <td style="padding:10px 14px;text-align:center;"><span style="color:#94a3b8;font-size:11px;">—</span></td>
                     <td style="padding:10px 14px;text-align:center;"><span style="color:#94a3b8;font-size:11px;">—</span></td>
                 </tr>

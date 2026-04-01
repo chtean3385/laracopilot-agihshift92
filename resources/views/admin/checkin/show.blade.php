@@ -726,7 +726,7 @@ function sendToPathikCheckin() {
         nationality:  {!! json_encode($booking->customer->nationality ?? 'Indian') !!},
         id_type:      {!! json_encode($booking->customer?->id_type ?? '') !!},
         id_number:    {!! json_encode($booking->customer?->id_number ?? '') !!},
-        date_of_birth: {!! json_encode($booking->customer->date_of_birth ? $booking->customer->date_of_birth->format('Y-m-d') : '') !!},
+        date_of_birth: '',
         check_in_date:  {!! json_encode($booking->check_in_date->format('Y-m-d')) !!},
         check_out_date: {!! json_encode($booking->check_out_date->format('Y-m-d')) !!},
         nights:      {{ $booking->nights }},
