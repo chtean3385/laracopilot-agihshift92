@@ -513,23 +513,16 @@
 </head>
 <body>
 
-<!-- Full-Screen Lock Overlay (trial/plan expired — shown if middleware somehow didn't redirect) -->
+<!-- Full-Screen Lock Overlay (trial/plan expired — state set by CheckTrialStatus middleware in session) -->
 @php
-    $hotelIdForLock = session('crm_hotel_id');
-    $hotelForLock   = $hotelIdForLock ? \Illuminate\Support\Facades\DB::table('hotels')->where('id', $hotelIdForLock)->first() : null;
-    $showLock       = false;
-    $lockHindi      = '';
-    $lockEng        = '';
-    if ($hotelForLock && session('crm_user_role') !== 'Super Admin') {
-        if ($hotelForLock->plan === 'trial' && $hotelForLock->trial_ends_at && \Carbon\Carbon::parse($hotelForLock->trial_ends_at)->isPast()) {
-            $showLock  = true;
-            $lockHindi = 'आपका निःशुल्क ट्रायल समाप्त हो गया है';
-            $lockEng   = 'Your free trial has expired. Please upgrade to continue using the CRM.';
-        } elseif ($hotelForLock->plan_expires_at && \Carbon\Carbon::parse($hotelForLock->plan_expires_at)->isPast()) {
-            $showLock  = true;
-            $lockHindi = 'आपका प्लान समाप्त हो गया है';
-            $lockEng   = 'Your plan has expired. Please renew to continue using the CRM.';
-        }
+    $showLock  = session('crm_plan_locked', false) && session('crm_user_role') !== 'Super Admin';
+    $lockReason = session('crm_lock_reason', '');
+    if ($lockReason === 'trial_expired') {
+        $lockHindi = 'आपका निःशुल्क ट्रायल समाप्त हो गया है';
+        $lockEng   = 'Your free trial has expired. Please upgrade to continue using the CRM.';
+    } else {
+        $lockHindi = 'आपका प्लान समाप्त हो गया है';
+        $lockEng   = 'Your plan has expired. Please renew to continue using the CRM.';
     }
 @endphp
 @if($showLock)

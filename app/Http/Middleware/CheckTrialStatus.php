@@ -48,23 +48,21 @@ class CheckTrialStatus
             $trialEnds = $hotel->trial_ends_at ? Carbon::parse($hotel->trial_ends_at) : null;
 
             if ($trialEnds) {
-                // Use isPast() — timestamp comparison, no float-cast rounding bug
                 if ($trialEnds->isPast()) {
+                    session(['crm_plan_locked' => true, 'crm_lock_reason' => 'trial_expired']);
+                    session()->forget(['trial_warning', 'trial_days_left']);
                     return redirect()->route('upgrade')->with('trial_expired', true);
                 }
 
-                // Days remaining for warning display (integer, always >= 0 here since isPast() was false)
                 $daysLeft = (int) $now->diffInDays($trialEnds, false);
-
-                if ($daysLeft === 0) {
-                    // Less than 24 hours left but not yet past → urgent
-                    session(['trial_warning' => 'urgent', 'trial_days_left' => 0]);
-                } elseif ($daysLeft === 1) {
-                    // 1 day left → urgent
-                    session(['trial_warning' => 'urgent', 'trial_days_left' => 1]);
+                session()->forget('crm_plan_locked');
+                if ($daysLeft <= 1) {
+                    session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
                 } else {
                     session()->forget(['trial_warning', 'trial_days_left']);
                 }
+            } else {
+                session()->forget(['crm_plan_locked', 'trial_warning', 'trial_days_left']);
             }
 
             return $next($request);
@@ -74,20 +72,21 @@ class CheckTrialStatus
         if ($hotel->plan_expires_at) {
             $planExpires = Carbon::parse($hotel->plan_expires_at);
 
-            // Use isPast() — same fix
             if ($planExpires->isPast()) {
+                session(['crm_plan_locked' => true, 'crm_lock_reason' => 'plan_expired']);
+                session()->forget(['trial_warning', 'trial_days_left']);
                 return redirect()->route('upgrade')->with('plan_expired', true);
             }
 
             $daysLeft = (int) $now->diffInDays($planExpires, false);
-
-            if ($daysLeft === 0) {
-                session(['trial_warning' => 'urgent', 'trial_days_left' => 0]);
-            } elseif ($daysLeft === 1) {
-                session(['trial_warning' => 'urgent', 'trial_days_left' => 1]);
+            session()->forget('crm_plan_locked');
+            if ($daysLeft <= 1) {
+                session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
             } else {
                 session()->forget(['trial_warning', 'trial_days_left']);
             }
+        } else {
+            session()->forget(['crm_plan_locked', 'trial_warning', 'trial_days_left']);
         }
 
         return $next($request);
