@@ -57,11 +57,15 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5001
+externalPort = 3000
+
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "DB_CONNECTION=pgsql php artisan serve --host=0.0.0.0 --port=5000"]
+run = ["php", "-S", "0.0.0.0:5000", "server.php"]
 publicDir = "public"
-build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && DB_CONNECTION=pgsql php artisan app:safe-migrate"]
+build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && DB_CONNECTION=pgsql php artisan app:safe-migrate && php artisan config:cache && php artisan route:cache && php artisan view:cache"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
