@@ -268,6 +268,8 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     // Trial management (Task #19)
     Route::post('/hotels/{id}/activate-trial',   [\App\Http\Controllers\Platform\HotelController::class, 'activateTrial'])->name('platform.hotels.activate-trial');
     Route::post('/hotels/{id}/extend-plan',      [\App\Http\Controllers\Platform\HotelController::class, 'extendPlan'])->name('platform.hotels.extend-plan');
+    Route::post('/hotels/{id}/cancel-trial',     [\App\Http\Controllers\Platform\HotelController::class, 'cancelTrial'])->name('platform.hotels.cancel-trial');
+    Route::post('/hotels/{id}/cancel-plan-expiry', [\App\Http\Controllers\Platform\HotelController::class, 'cancelPlanExpiry'])->name('platform.hotels.cancel-plan-expiry');
 
     // 2FA settings
     Route::get('/settings/2fa',          [\App\Http\Controllers\Platform\AuthController::class, 'show2faSetup'])->name('platform.settings.2fa');

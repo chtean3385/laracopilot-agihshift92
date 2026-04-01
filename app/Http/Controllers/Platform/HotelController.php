@@ -464,6 +464,48 @@ class HotelController extends Controller
             ->with('success', "{$hotel->name} — plan extended by {$days} days.");
     }
 
+    public function cancelTrial(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.edit', $id)->with('error', 'Hotel not found.');
+        }
+
+        $validSlugs = DB::table('platform_plans')->where('is_active', true)->pluck('slug')->toArray();
+        if (empty($validSlugs)) {
+            $validSlugs = array_keys(config('plans', []));
+        }
+        $revertPlan = $request->input('revert_plan', 'basic');
+        if (!in_array($revertPlan, $validSlugs)) {
+            $revertPlan = $validSlugs[0] ?? 'basic';
+        }
+
+        DB::table('hotels')->where('id', $id)->update([
+            'plan'          => $revertPlan,
+            'trial_ends_at' => null,
+            'updated_at'    => now(),
+        ]);
+
+        return redirect()->route('platform.hotels.edit', $id)
+            ->with('success', "{$hotel->name} — trial cancelled. Plan set to {$revertPlan}.");
+    }
+
+    public function cancelPlanExpiry(Request $request, int $id)
+    {
+        $hotel = DB::table('hotels')->where('id', $id)->first();
+        if (!$hotel) {
+            return redirect()->route('platform.hotels.edit', $id)->with('error', 'Hotel not found.');
+        }
+
+        DB::table('hotels')->where('id', $id)->update([
+            'plan_expires_at' => null,
+            'updated_at'      => now(),
+        ]);
+
+        return redirect()->route('platform.hotels.edit', $id)
+            ->with('success', "{$hotel->name} — plan expiry cleared (no expiry date).");
+    }
+
     // ── Destroy (hard delete) ─────────────────────────────────────────────────
 
     public function destroy(int $id)

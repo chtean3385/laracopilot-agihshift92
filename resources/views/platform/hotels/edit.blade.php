@@ -336,45 +336,84 @@
             </div>
         </div>
 
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+        {{-- Row 1: Activate Trial + Cancel Trial --}}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #f1f5f9;">
 
-            {{-- Activate / Reset Trial — standalone form --}}
-            <form method="POST" action="{{ route('platform.hotels.activate-trial', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:center;">
+            {{-- Activate / Reset Trial --}}
+            <form method="POST" action="{{ route('platform.hotels.activate-trial', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:flex-end;">
                 @csrf
                 <div>
                     <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Trial Days</label>
                     <input type="number" name="trial_days" value="7" min="1" max="90"
                            style="width:80px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;">
                 </div>
-                <div style="margin-top:18px;">
-                    <button type="submit"
-                        style="padding:9px 18px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
-                        <i class="fas fa-hourglass-start"></i> Activate Trial
-                    </button>
-                </div>
+                <button type="submit"
+                    style="padding:9px 18px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <i class="fas fa-hourglass-start"></i> Activate Trial
+                </button>
             </form>
 
-            {{-- Extend Plan — standalone form --}}
-            <form method="POST" action="{{ route('platform.hotels.extend-plan', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:center;">
+            {{-- Cancel Trial (only shown when hotel is currently on trial) --}}
+            @if($hotel->plan === 'trial' || $trialEnd)
+            <form method="POST" action="{{ route('platform.hotels.cancel-trial', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:flex-end;"
+                  onsubmit="return confirm('Cancel trial for {{ addslashes($hotel->name) }}? The trial date will be cleared and the plan will revert to the selected plan.')">
+                @csrf
+                <div>
+                    <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Revert to Plan</label>
+                    <select name="revert_plan" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;background:#fff;">
+                        @foreach($plans as $slug => $plan)
+                        <option value="{{ $slug }}" {{ $slug === 'basic' ? 'selected' : '' }}>{{ $plan['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit"
+                    style="padding:9px 16px;background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <i class="fas fa-times-circle"></i> Cancel Trial
+                </button>
+            </form>
+            @endif
+
+        </div>
+
+        {{-- Row 2: Extend Plan + Cancel Plan Expiry --}}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+            {{-- Extend Plan --}}
+            <form method="POST" action="{{ route('platform.hotels.extend-plan', $hotel->id) }}" style="margin:0;display:flex;gap:8px;align-items:flex-end;">
                 @csrf
                 <div>
                     <label style="font-size:11px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Extend By (Days)</label>
                     <input type="number" name="extend_days" value="30" min="1" max="365"
                            style="width:100px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;box-sizing:border-box;">
                 </div>
-                <div style="margin-top:18px;">
+                <button type="submit"
+                    style="padding:9px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <i class="fas fa-calendar-plus"></i> Extend Plan
+                </button>
+            </form>
+
+            {{-- Cancel Plan Expiry (only shown when plan_expires_at is set) --}}
+            @if($planEnd)
+            <form method="POST" action="{{ route('platform.hotels.cancel-plan-expiry', $hotel->id) }}" style="margin:0;"
+                  onsubmit="return confirm('Clear the plan expiry date for {{ addslashes($hotel->name) }}? The plan will have no expiry limit.')">
+                @csrf
+                <div style="padding-top:18px;">
                     <button type="submit"
-                        style="padding:9px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
-                        <i class="fas fa-calendar-plus"></i> Extend Plan
+                        style="padding:9px 16px;background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                        <i class="fas fa-calendar-times"></i> Cancel Plan Expiry
                     </button>
                 </div>
             </form>
+            @endif
 
         </div>
-        <p style="font-size:11px;color:#94a3b8;margin:12px 0 0;">
+
+        <p style="font-size:11px;color:#94a3b8;margin:14px 0 0;">
             <i class="fas fa-info-circle" style="margin-right:4px;"></i>
-            "Activate Trial" sets plan to <strong>trial</strong> and resets trial_ends_at to N days from now — overrides any previous trial.
-            "Extend Plan" adds days to the current plan_expires_at (from today if already expired).
+            <strong>Activate Trial</strong> — sets plan to trial, resets trial_ends_at (overrides any previous trial).
+            <strong>Cancel Trial</strong> — clears trial_ends_at and reverts to selected plan.
+            <strong>Extend Plan</strong> — adds days to plan_expires_at.
+            <strong>Cancel Plan Expiry</strong> — removes the expiry date (no limit).
         </p>
     </div>
 
