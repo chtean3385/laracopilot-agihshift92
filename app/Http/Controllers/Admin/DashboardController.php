@@ -245,7 +245,8 @@ class DashboardController extends Controller
         }
 
         $rooms = Room::with(['bookings' => function ($q) use ($d) {
-            $q->whereIn('status', ['confirmed', 'checked_in'])
+            $q->with('customer')
+              ->whereIn('status', ['confirmed', 'checked_in'])
               ->where(function ($q2) use ($d) {
                   // Per-night: occupies if check_in <= date < check_out
                   $q2->where(function ($q3) use ($d) {
