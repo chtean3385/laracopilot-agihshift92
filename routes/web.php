@@ -180,7 +180,8 @@ Route::post('/settings/add-ons',                      [TimeSlotController::class
 Route::delete('/settings/add-ons/{id}',               [TimeSlotController::class, 'addOnDestroy'])->name('add-ons.destroy');
 
 // ── Dashboard calendar day-summary ─────────────────────────────────────────
-Route::get('/calendar/day-summary', [DashboardController::class, 'daySummary'])->name('calendar.day_summary');
+Route::get('/calendar/day-summary',      [DashboardController::class, 'daySummary']       )->name('calendar.day_summary');
+Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvailability'])->name('dashboard.availability');
 
 // ── Slot Availability Report ────────────────────────────────────────────────
 Route::get('/reports/slot-availability',        [ReportController::class, 'slotAvailability']      )->middleware('permission:reports.view')->name('reports.slot_availability');

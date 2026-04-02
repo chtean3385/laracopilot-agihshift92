@@ -230,4 +230,68 @@ class DashboardController extends Controller
             'staying'   => $fmt($staying),
         ]);
     }
+
+    public function checkAvailability()
+    {
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
+
+        $date = request('date');
+        if (!$date) return response()->json(['error' => 'Date required'], 422);
+
+        try {
+            $d = Carbon::parse($date)->toDateString();
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid date'], 422);
+        }
+
+        $rooms = Room::with(['bookings' => function ($q) use ($d) {
+            $q->whereIn('status', ['confirmed', 'checked_in'])
+              ->where(function ($q2) use ($d) {
+                  // Per-night: occupies if check_in <= date < check_out
+                  $q2->where(function ($q3) use ($d) {
+                      $q3->where('check_in_date', '<=', $d)
+                         ->where('check_out_date', '>', $d)
+                         ->whereNull('booking_date');
+                  })
+                  // Per-slot / per-hour: occupies if booking_date = date
+                  ->orWhere(function ($q3) use ($d) {
+                      $q3->whereDate('booking_date', $d)
+                         ->whereNotNull('booking_date');
+                  });
+              });
+        }])->where('status', '!=', 'maintenance')->orderBy('room_number')->get();
+
+        $available = [];
+        $occupied  = [];
+
+        foreach ($rooms as $room) {
+            $activeBookings = $room->bookings;
+            if ($activeBookings->isEmpty()) {
+                $available[] = [
+                    'id'           => $room->id,
+                    'room_number'  => $room->room_number,
+                    'type'         => ucfirst($room->type),
+                    'pricing_type' => $room->pricing_type,
+                    'booking_url'  => route('bookings.create', ['room_id' => $room->id, 'date' => $d]),
+                ];
+            } else {
+                $booking = $activeBookings->first();
+                $occupied[] = [
+                    'id'           => $room->id,
+                    'room_number'  => $room->room_number,
+                    'type'         => ucfirst($room->type),
+                    'pricing_type' => $room->pricing_type,
+                    'guest'        => $booking->customer->name ?? '—',
+                    'status'       => $booking->status,
+                    'booking_url'  => route('bookings.show', $booking->id),
+                ];
+            }
+        }
+
+        return response()->json([
+            'date'      => Carbon::parse($d)->format('D, d M Y'),
+            'available' => $available,
+            'occupied'  => $occupied,
+        ]);
+    }
 }

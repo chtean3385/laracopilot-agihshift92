@@ -308,7 +308,7 @@
                        class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
                        @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif
                        data-ds="{{ $cell['ds'] }}"
-                       onclick="if({{ $hasGuests ? 'true' : 'false' }}){event.preventDefault();openDaySummary('{{ $cell['ds'] }}')}">
+                       onclick="event.preventDefault();openDaySummary('{{ $cell['ds'] }}')">
                         <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
                         <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
                             @if($cell['checkins'] > 0)
@@ -493,6 +493,33 @@
     </div>
     @endif
 
+    {{-- Room Availability Checker --}}
+    <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+        <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0fdf4,#dcfce7);flex-wrap:wrap;gap:12px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,.3);">
+                    <i class="fas fa-search" style="color:#fff;font-size:16px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:800;color:#1e293b;font-size:16px;">Room Availability</div>
+                    <div style="font-size:12px;color:#64748b;">Check which rooms are free on any date</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <input type="date" id="availDatePicker" value="{{ now()->toDateString() }}"
+                    style="border:1.5px solid #d1fae5;border-radius:10px;padding:8px 14px;font-size:14px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
+                    onchange="loadAvailability(this.value)">
+                <button onclick="loadAvailability(document.getElementById('availDatePicker').value)"
+                    style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(16,185,129,.3);">
+                    <i class="fas fa-search" style="margin-right:6px;"></i>Check
+                </button>
+            </div>
+        </div>
+        <div id="availBody" style="padding:20px;">
+            <div class="text-center" style="color:#94a3b8;padding:16px 0;font-size:14px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
+        </div>
+    </div>
+
 </div>
 
 {{-- Mobile responsiveness --}}
@@ -501,6 +528,7 @@
     .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
     .occ-rev-grid { grid-template-columns: 1fr !important; }
     .qa-recent-grid { grid-template-columns: 1fr !important; }
+    .avail-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 600px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
@@ -613,13 +641,19 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 <script>
+var availabilityRoute = '{{ route("dashboard.availability") }}';
+var bookingsCreateRoute = '{{ route("bookings.create") }}';
+
 function openDaySummary(ds) {
     document.getElementById('daySummaryModal').classList.remove('hidden');
     document.getElementById('dsmDate').textContent = '...';
     document.getElementById('dsmBody').innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-cyan-400 text-2xl"></i></div>';
-    fetch('{{ route("calendar.day_summary") }}?date=' + ds, { headers: {'X-Requested-With':'XMLHttpRequest'} })
-        .then(r => r.json())
-        .then(data => {
+
+    var summaryPromise = fetch('{{ route("calendar.day_summary") }}?date=' + ds, { headers: {'X-Requested-With':'XMLHttpRequest'} }).then(r => r.json());
+    var availPromise   = fetch(availabilityRoute + '?date=' + ds, { headers: {'X-Requested-With':'XMLHttpRequest'} }).then(r => r.json());
+
+    Promise.all([summaryPromise, availPromise])
+        .then(([data, avail]) => {
             document.getElementById('dsmDate').textContent = data.date || ds;
             let html = '';
             const section = (title, color, icon, items) => {
@@ -646,6 +680,30 @@ function openDaySummary(ds) {
             html += section('Check-Ins',  'cyan',  'sign-in-alt', data.checkins);
             html += section('Check-Outs', 'amber', 'sign-out-alt',data.checkouts);
             html += section('In-House',   'green', 'home',        data.staying);
+
+            if (avail.available && avail.available.length > 0) {
+                let pricingLabel = pt => pt === 'per_slot' ? 'Slot' : (pt === 'per_hour' ? 'Hourly' : 'Nightly');
+                let availRows = avail.available.map(r => `
+                    <a href="${r.booking_url}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 transition-colors text-sm">
+                        <span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                            <i class="fas fa-door-open text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-800">Room ${r.room_number}</div>
+                            <div class="text-xs text-gray-400">${r.type} · ${pricingLabel(r.pricing_type)}</div>
+                        </div>
+                        <span class="text-xs bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 font-medium">Book →</span>
+                    </a>`).join('');
+                if (html) html += '<div class="border-t border-gray-100 my-2"></div>';
+                html += `<div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Available Rooms (${avail.available.length})</span>
+                    </div>
+                    <div class="space-y-1">${availRows}</div>
+                </div>`;
+            }
+
             document.getElementById('dsmBody').innerHTML = html || '<p class="text-center text-gray-400 py-6 text-sm">No bookings for this day.</p>';
         })
         .catch(() => {
@@ -654,6 +712,77 @@ function openDaySummary(ds) {
 }
 function closeDaySummary() { document.getElementById('daySummaryModal').classList.add('hidden'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDaySummary(); });
+</script>
+
+<script>
+function loadAvailability(date) {
+    var body = document.getElementById('availBody');
+    body.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px 0;font-size:14px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>';
+    fetch(availabilityRoute + '?date=' + date, { headers: {'X-Requested-With':'XMLHttpRequest'} })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { body.innerHTML = '<p style="text-align:center;color:#ef4444;padding:16px 0;font-size:14px;">'+data.error+'</p>'; return; }
+            var avail = data.available || [], occ = data.occupied || [];
+            var pricingLabel = function(pt) { return pt === 'per_slot' ? 'Slot' : (pt === 'per_hour' ? 'Hourly' : 'Nightly'); };
+            var html = '';
+
+            if (avail.length === 0 && occ.length === 0) {
+                body.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:16px 0;font-size:14px;">No rooms found.</p>';
+                return;
+            }
+
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="avail-grid">';
+
+            html += '<div>';
+            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
+            html += '<span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span>';
+            html += '<span style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Available (' + avail.length + ')</span>';
+            html += '</div>';
+            if (avail.length === 0) {
+                html += '<p style="font-size:13px;color:#94a3b8;">No rooms available.</p>';
+            } else {
+                avail.forEach(function(r) {
+                    html += '<a href="' + r.booking_url + '" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);margin-bottom:6px;text-decoration:none;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow=\'0 4px 12px rgba(16,185,129,.2)\'" onmouseleave="this.style.boxShadow=\'none\'">';
+                    html += '<div style="width:36px;height:36px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i></div>';
+                    html += '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#1e293b;font-size:14px;">Room ' + r.room_number + '</div><div style="font-size:11px;color:#64748b;">' + r.type + ' · ' + pricingLabel(r.pricing_type) + '</div></div>';
+                    html += '<span style="font-size:11px;background:#d1fae5;color:#065f46;border-radius:20px;padding:3px 10px;font-weight:700;white-space:nowrap;">Book →</span>';
+                    html += '</a>';
+                });
+            }
+            html += '</div>';
+
+            html += '<div>';
+            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
+            html += '<span style="width:10px;height:10px;border-radius:50%;background:#f43f5e;display:inline-block;"></span>';
+            html += '<span style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Occupied (' + occ.length + ')</span>';
+            html += '</div>';
+            if (occ.length === 0) {
+                html += '<p style="font-size:13px;color:#94a3b8;">No occupied rooms.</p>';
+            } else {
+                occ.forEach(function(r) {
+                    var statusColor = r.status === 'checked_in' ? '#10b981' : '#3b82f6';
+                    var statusBg    = r.status === 'checked_in' ? '#d1fae5' : '#dbeafe';
+                    var statusTxt   = r.status === 'checked_in' ? '#065f46' : '#1e40af';
+                    html += '<a href="' + r.booking_url + '" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,#fff1f2,#ffe4e6);margin-bottom:6px;text-decoration:none;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow=\'0 4px 12px rgba(244,63,94,.2)\'" onmouseleave="this.style.boxShadow=\'none\'">';
+                    html += '<div style="width:36px;height:36px;background:linear-gradient(135deg,#f43f5e,#be185d);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-bed" style="color:#fff;font-size:13px;"></i></div>';
+                    html += '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#1e293b;font-size:14px;">Room ' + r.room_number + '</div><div style="font-size:11px;color:#64748b;">' + r.guest + ' · ' + r.type + '</div></div>';
+                    html += '<span style="font-size:11px;background:'+statusBg+';color:'+statusTxt+';border-radius:20px;padding:3px 10px;font-weight:700;white-space:nowrap;">' + r.status.replace('_',' ') + '</span>';
+                    html += '</a>';
+                });
+            }
+            html += '</div>';
+
+            html += '</div>';
+            body.innerHTML = html;
+        })
+        .catch(function() {
+            body.innerHTML = '<p style="text-align:center;color:#ef4444;padding:16px 0;font-size:14px;">Failed to load availability.</p>';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAvailability(document.getElementById('availDatePicker').value);
+});
 </script>
 
 @endsection
