@@ -456,6 +456,15 @@
         onChange: function() { updatePricingUI(); updateMealOptions(); calculateTotal(); }
     });
 
+    // Disable/enable all form inputs inside a container so hidden ones
+    // are excluded from submission (fixes duplicate name="booking_date" issue).
+    function setFieldsEnabled(container, enabled) {
+        if (!container) return;
+        container.querySelectorAll('input, select, textarea').forEach(function(el) {
+            el.disabled = !enabled;
+        });
+    }
+
     function updatePricingUI() {
         const roomEl = document.getElementById('roomSelect');
         const opt    = roomEl.options[roomEl.selectedIndex];
@@ -465,33 +474,37 @@
         const perSlotEl  = document.getElementById('perSlotFields');
         const perHourEl  = document.getElementById('perHourFields');
 
-        // Show/hide per-night section and set required on those date inputs
+        // Per-Night: show/hide + enable/disable + required flags
         if (perNightEl) {
             if (pt === 'per_night') {
                 perNightEl.classList.remove('hidden'); perNightEl.classList.add('contents');
+                setFieldsEnabled(perNightEl, true);
                 document.getElementById('checkIn').required  = true;
                 document.getElementById('checkOut').required = true;
             } else {
                 perNightEl.classList.remove('contents'); perNightEl.classList.add('hidden');
+                setFieldsEnabled(perNightEl, false);
                 document.getElementById('checkIn').required  = false;
                 document.getElementById('checkOut').required = false;
             }
         }
 
-        // Show/hide slot section
+        // Per-Slot: show/hide + enable/disable + required flags
         if (perSlotEl) {
             const showSlot = pt === 'per_slot';
             perSlotEl.classList.toggle('hidden', !showSlot);
+            setFieldsEnabled(perSlotEl, showSlot);
             const sd = document.getElementById('slotBookingDate');
             const st = document.getElementById('timeSlotSelect');
             if (sd) sd.required = showSlot;
             if (st) st.required = showSlot;
         }
 
-        // Show/hide hour section
+        // Per-Hour: show/hide + enable/disable + required flags
         if (perHourEl) {
             const showHour = pt === 'per_hour';
             perHourEl.classList.toggle('hidden', !showHour);
+            setFieldsEnabled(perHourEl, showHour);
             const hd = document.getElementById('hourBookingDate');
             const hs = document.getElementById('slotStartTime');
             const hb = document.getElementById('hoursBooked');
@@ -509,16 +522,14 @@
         if (hrTag && opt) hrTag.textContent = '₹' + parseFloat(opt.dataset.hourlyRate || 0).toLocaleString('en-IN') + '/hr';
     }
 
-    // Restore pricing section on page reload (e.g. after validation error redirect)
+    // Run on page load: disables hidden-section inputs from the start and
+    // restores the correct pricing section if old('room_id') is set.
     (function initPricingUI() {
-        const roomEl = document.getElementById('roomSelect');
-        if (roomEl && roomEl.value) {
-            updatePricingUI();
-            updateMealOptions();
-            calculateTotal();
-            calculateSlotTotal();
-            calculateHourTotal();
-        }
+        updatePricingUI();   // always — ensures hidden sections are disabled
+        updateMealOptions();
+        calculateTotal();
+        calculateSlotTotal();
+        calculateHourTotal();
     })();
 
     function calculateSlotTotal() {
