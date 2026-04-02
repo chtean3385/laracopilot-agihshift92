@@ -32,14 +32,15 @@
                     <input type="number" name="capacity" value="{{ old('capacity', 2) }}" min="1" max="50" class="form-input" required>
                 </div>
 
-                @if($slotModuleOn)
+                @if($slotModuleOn || $hourlyModuleOn)
                 {{-- Pricing Type (module-gated) --}}
+                @php $curPricing = old('pricing_type','per_night'); @endphp
                 <div class="md:col-span-2">
                     <label class="form-label">Pricing Mode <span class="text-red-500">*</span></label>
-                    <div class="grid grid-cols-3 gap-3">
-                        @foreach(['per_night'=>['icon'=>'fa-moon','label'=>'Per Night','sub'=>'Standard nightly rate'],'per_slot'=>['icon'=>'fa-clock','label'=>'Per Slot','sub'=>'Fixed time-block pricing'],'per_hour'=>['icon'=>'fa-hourglass-half','label'=>'Per Hour','sub'=>'Hourly rate pricing']] as $val=>$info)
-                        <label class="relative flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors pricing-mode-card {{ old('pricing_type','per_night') === $val ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300' }}">
-                            <input type="radio" name="pricing_type" value="{{ $val }}" class="hidden pricing-mode-radio" {{ old('pricing_type','per_night') === $val ? 'checked' : '' }} onchange="onPricingModeChange(this)">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        @foreach(['per_night'=>['icon'=>'fa-moon','label'=>'Per Night','sub'=>'Standard nightly rate']] + ($slotModuleOn ? ['per_slot'=>['icon'=>'fa-clock','label'=>'Per Slot','sub'=>'Fixed time-block pricing']] : []) + ($hourlyModuleOn ? ['per_hour'=>['icon'=>'fa-hourglass-half','label'=>'Per Hour','sub'=>'Hourly rate pricing']] : []) as $val=>$info)
+                        <label class="relative flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors pricing-mode-card {{ $curPricing === $val ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300' }}">
+                            <input type="radio" name="pricing_type" value="{{ $val }}" class="hidden pricing-mode-radio" {{ $curPricing === $val ? 'checked' : '' }} onchange="onPricingModeChange(this)">
                             <i class="fas {{ $info['icon'] }} text-violet-500 text-lg w-5 text-center"></i>
                             <div>
                                 <div class="font-semibold text-gray-800 text-sm">{{ $info['label'] }}</div>
@@ -53,11 +54,11 @@
                 <input type="hidden" name="pricing_type" value="per_night">
                 @endif
 
-                <div id="pricePerNightWrap" class="{{ old('pricing_type','per_night') !== 'per_night' && $slotModuleOn ? 'hidden' : '' }}">
+                <div id="pricePerNightWrap" class="{{ old('pricing_type','per_night') !== 'per_night' && ($slotModuleOn || $hourlyModuleOn) ? 'hidden' : '' }}">
                     <label class="form-label">Price per Night (₹) <span class="text-red-500">*</span></label>
                     <input type="number" name="price_per_night" id="pricePerNight" value="{{ old('price_per_night') }}" step="0.01" class="form-input" placeholder="5000">
                 </div>
-                <div id="hourlyRateWrap" class="{{ old('pricing_type','per_night') !== 'per_hour' || !$slotModuleOn ? 'hidden' : '' }}">
+                <div id="hourlyRateWrap" class="{{ old('pricing_type','per_night') !== 'per_hour' || !$hourlyModuleOn ? 'hidden' : '' }}">
                     <label class="form-label">Hourly Rate (₹) <span class="text-red-500">*</span></label>
                     <input type="number" name="hourly_rate" id="hourlyRate" value="{{ old('hourly_rate') }}" step="0.01" class="form-input" placeholder="200">
                 </div>

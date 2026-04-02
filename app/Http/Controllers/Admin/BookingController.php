@@ -35,12 +35,13 @@ class BookingController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $customers    = Customer::orderBy('name')->get();
-        $rooms        = Room::where('status', 'available')->orderBy('room_number')->get();
-        $slotModuleOn = \App\Models\Module::isEnabled('time-slot-pricing');
-        $timeSlots    = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
-        $addOns       = $slotModuleOn ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
-        return view('admin.bookings.create', compact('customers', 'rooms', 'slotModuleOn', 'timeSlots', 'addOns'));
+        $customers      = Customer::orderBy('name')->get();
+        $rooms          = Room::where('status', 'available')->orderBy('room_number')->get();
+        $slotModuleOn   = \App\Models\Module::isEnabled('time-slot-pricing');
+        $hourlyModuleOn = \App\Models\Module::isEnabled('hourly-pricing');
+        $timeSlots      = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
+        $addOns         = ($slotModuleOn || $hourlyModuleOn) ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+        return view('admin.bookings.create', compact('customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'timeSlots', 'addOns'));
     }
 
     public function store(Request $request)
@@ -49,14 +50,20 @@ class BookingController extends Controller
 
         $room         = Room::findOrFail($request->input('room_id'));
         $pricingType  = $room->pricing_type ?? 'per_night';
-        // Check module using room's own hotel_id — bypasses HotelContext so
+        // Check modules using room's own hotel_id — bypasses HotelContext so
         // superadmin "All Hotels" mode doesn't accidentally force per_night.
-        $slotModuleOn = \App\Models\Module::withoutGlobalScopes()
+        $slotModuleOn   = \App\Models\Module::withoutGlobalScopes()
             ->where('hotel_id', $room->hotel_id)
             ->where('slug', 'time-slot-pricing')
             ->where('is_enabled', true)
             ->exists();
-        if (!$slotModuleOn) $pricingType = 'per_night';
+        $hourlyModuleOn = \App\Models\Module::withoutGlobalScopes()
+            ->where('hotel_id', $room->hotel_id)
+            ->where('slug', 'hourly-pricing')
+            ->where('is_enabled', true)
+            ->exists();
+        if ($pricingType === 'per_slot' && !$slotModuleOn)   $pricingType = 'per_night';
+        if ($pricingType === 'per_hour' && !$hourlyModuleOn) $pricingType = 'per_night';
 
         // Validate based on pricing type
         $baseRules = [

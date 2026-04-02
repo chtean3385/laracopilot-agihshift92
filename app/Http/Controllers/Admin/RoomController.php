@@ -42,16 +42,20 @@ class RoomController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $slotModuleOn = Module::isEnabled('time-slot-pricing');
-        $addOns       = $slotModuleOn ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
-        return view('admin.rooms.create', compact('slotModuleOn', 'addOns'));
+        $slotModuleOn   = Module::isEnabled('time-slot-pricing');
+        $hourlyModuleOn = Module::isEnabled('hourly-pricing');
+        $addOns         = ($slotModuleOn || $hourlyModuleOn) ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+        return view('admin.rooms.create', compact('slotModuleOn', 'hourlyModuleOn', 'addOns'));
     }
 
     public function store(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $slotModuleOn  = Module::isEnabled('time-slot-pricing');
-        $pricingType   = $slotModuleOn ? ($request->input('pricing_type', 'per_night')) : 'per_night';
+        $slotModuleOn   = Module::isEnabled('time-slot-pricing');
+        $hourlyModuleOn = Module::isEnabled('hourly-pricing');
+        $allowedTypes   = array_filter(['per_night', $slotModuleOn ? 'per_slot' : null, $hourlyModuleOn ? 'per_hour' : null]);
+        $reqType        = $request->input('pricing_type', 'per_night');
+        $pricingType    = in_array($reqType, $allowedTypes) ? $reqType : 'per_night';
         $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())],
@@ -95,18 +99,22 @@ class RoomController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $room         = Room::findOrFail($id);
-        $slotModuleOn = Module::isEnabled('time-slot-pricing');
-        $addOns       = $slotModuleOn ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
-        return view('admin.rooms.edit', compact('room', 'slotModuleOn', 'addOns'));
+        $room           = Room::findOrFail($id);
+        $slotModuleOn   = Module::isEnabled('time-slot-pricing');
+        $hourlyModuleOn = Module::isEnabled('hourly-pricing');
+        $addOns         = ($slotModuleOn || $hourlyModuleOn) ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+        return view('admin.rooms.edit', compact('room', 'slotModuleOn', 'hourlyModuleOn', 'addOns'));
     }
 
     public function update(Request $request, $id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $room          = Room::findOrFail($id);
-        $slotModuleOn  = Module::isEnabled('time-slot-pricing');
-        $pricingType   = $slotModuleOn ? ($request->input('pricing_type', $room->pricing_type ?? 'per_night')) : 'per_night';
+        $room           = Room::findOrFail($id);
+        $slotModuleOn   = Module::isEnabled('time-slot-pricing');
+        $hourlyModuleOn = Module::isEnabled('hourly-pricing');
+        $allowedTypes   = array_filter(['per_night', $slotModuleOn ? 'per_slot' : null, $hourlyModuleOn ? 'per_hour' : null]);
+        $reqType        = $request->input('pricing_type', $room->pricing_type ?? 'per_night');
+        $pricingType    = in_array($reqType, $allowedTypes) ? $reqType : 'per_night';
         $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())->ignore($id)],

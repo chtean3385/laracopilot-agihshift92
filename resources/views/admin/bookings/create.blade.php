@@ -181,7 +181,7 @@
                 </div>
 
                 @if($slotModuleOn)
-                {{-- Per Slot fields --}}
+                {{-- Per Slot fields (time-slot-pricing module) --}}
                 <div id="perSlotFields" class="md:col-span-2 hidden">
                     <div class="border border-violet-100 bg-violet-50 rounded-2xl p-5 space-y-4">
                         <div class="flex items-center gap-2 mb-1">
@@ -227,8 +227,10 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                {{-- Per Hour fields --}}
+                @if($hourlyModuleOn)
+                {{-- Per Hour fields (hourly-pricing module) --}}
                 <div id="perHourFields" class="md:col-span-2 hidden">
                     <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5 space-y-4">
                         <div class="flex items-center gap-2 mb-1">

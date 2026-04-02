@@ -13,10 +13,12 @@
 
 @php
 $icons = [
-    'whatsapp'        => ['fab fa-whatsapp', 'linear-gradient(135deg,#25d366,#128c7e)', '#25d366'],
-    'payment_links'   => ['fas fa-link',      'linear-gradient(135deg,#f59e0b,#d97706)', '#f59e0b'],
-    'pathik'          => ['fas fa-id-card',   'linear-gradient(135deg,#3b82f6,#1d4ed8)', '#3b82f6'],
-    'channel_manager' => ['fas fa-hotel',     'linear-gradient(135deg,#8b5cf6,#6d28d9)', '#8b5cf6'],
+    'whatsapp'          => ['fab fa-whatsapp',       'linear-gradient(135deg,#25d366,#128c7e)', '#25d366'],
+    'payment_links'     => ['fas fa-link',            'linear-gradient(135deg,#f59e0b,#d97706)', '#f59e0b'],
+    'pathik'            => ['fas fa-id-card',         'linear-gradient(135deg,#3b82f6,#1d4ed8)', '#3b82f6'],
+    'channel_manager'   => ['fas fa-hotel',           'linear-gradient(135deg,#8b5cf6,#6d28d9)', '#8b5cf6'],
+    'time-slot-pricing' => ['fas fa-clock',           'linear-gradient(135deg,#7c3aed,#a855f7)', '#7c3aed'],
+    'hourly-pricing'    => ['fas fa-hourglass-half',  'linear-gradient(135deg,#0891b2,#0e7490)', '#0891b2'],
 ];
 @endphp
 
