@@ -240,7 +240,7 @@
                     <label class="form-label">Payment at Check-In (₹)</label>
                     @php $pricingType = $booking->room->pricing_type ?? 'per_night'; @endphp
                     <input type="number" name="additional_payment"
-                        value="{{ $pricingType === 'per_night' && $booking->balance_due > 0 ? max(0, $booking->balance_due) : 0 }}"
+                        value="0"
                         min="0" step="0.01" class="form-input">
                     @if($pricingType === 'per_hour')
                     <p style="font-size:11px;color:#7c3aed;margin-top:4px;font-weight:600;">
