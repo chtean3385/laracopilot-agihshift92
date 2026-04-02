@@ -35,13 +35,28 @@ class BookingController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $customers      = Customer::orderBy('name')->get();
-        $rooms          = Room::where('status', 'available')->orderBy('room_number')->get();
-        $slotModuleOn   = \App\Models\Module::isEnabled('time-slot-pricing');
-        $hourlyModuleOn = \App\Models\Module::isEnabled('hourly-pricing');
-        $timeSlots      = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
-        $addOns         = ($slotModuleOn || $hourlyModuleOn) ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
-        return view('admin.bookings.create', compact('customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'timeSlots', 'addOns'));
+        $customers = Customer::orderBy('name')->get();
+        $rooms     = Room::where('status', 'available')->orderBy('room_number')->get();
+
+        // Build per-hotel module flags so create form JS can gate sections
+        // correctly even in superadmin "All Hotels" mode where rooms from
+        // multiple hotels may appear in the same dropdown.
+        $hotelModules = [];
+        foreach ($rooms->pluck('hotel_id')->unique() as $hid) {
+            $hotelModules[$hid] = [
+                'slot'   => \App\Models\Module::withoutGlobalScopes()->where('hotel_id', $hid)->where('slug', 'time-slot-pricing')->where('is_enabled', true)->exists(),
+                'hourly' => \App\Models\Module::withoutGlobalScopes()->where('hotel_id', $hid)->where('slug', 'hourly-pricing')->where('is_enabled', true)->exists(),
+            ];
+        }
+
+        // Convenience flags for PHP-level @if guards (current hotel context)
+        $slotModuleOn   = collect($hotelModules)->contains('slot', true);
+        $hourlyModuleOn = collect($hotelModules)->contains('hourly', true);
+
+        $timeSlots = $slotModuleOn  ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
+        $addOns    = ($slotModuleOn || $hourlyModuleOn) ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+
+        return view('admin.bookings.create', compact('customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'hotelModules', 'timeSlots', 'addOns'));
     }
 
     public function store(Request $request)
@@ -235,12 +250,19 @@ class BookingController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking        = Booking::findOrFail($id);
-        $customers      = Customer::orderBy('name')->get();
-        $rooms          = Room::orderBy('room_number')->get();
-        $slotModuleOn   = \App\Models\Module::isEnabled('time-slot-pricing');
-        $hourlyModuleOn = \App\Models\Module::isEnabled('hourly-pricing');
-        $timeSlots      = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
+        $booking  = Booking::findOrFail($id);
+        $customers = Customer::orderBy('name')->get();
+        $rooms     = Room::orderBy('room_number')->get();
+
+        // Use the booking's own room hotel_id — bypasses HotelContext so
+        // superadmin scenarios resolve the correct module state.
+        $bookingHotelId = $booking->room?->hotel_id;
+        $slotModuleOn   = $bookingHotelId ? \App\Models\Module::withoutGlobalScopes()
+            ->where('hotel_id', $bookingHotelId)->where('slug', 'time-slot-pricing')->where('is_enabled', true)->exists() : false;
+        $hourlyModuleOn = $bookingHotelId ? \App\Models\Module::withoutGlobalScopes()
+            ->where('hotel_id', $bookingHotelId)->where('slug', 'hourly-pricing')->where('is_enabled', true)->exists() : false;
+
+        $timeSlots = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
         return view('admin.bookings.edit', compact('booking', 'customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'timeSlots'));
     }
 
