@@ -235,66 +235,155 @@ class BookingController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking   = Booking::findOrFail($id);
-        $customers = Customer::orderBy('name')->get();
-        $rooms     = Room::orderBy('room_number')->get();
-        return view('admin.bookings.edit', compact('booking', 'customers', 'rooms'));
+        $booking        = Booking::findOrFail($id);
+        $customers      = Customer::orderBy('name')->get();
+        $rooms          = Room::orderBy('room_number')->get();
+        $slotModuleOn   = \App\Models\Module::isEnabled('time-slot-pricing');
+        $hourlyModuleOn = \App\Models\Module::isEnabled('hourly-pricing');
+        $timeSlots      = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
+        return view('admin.bookings.edit', compact('booking', 'customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'timeSlots'));
     }
 
     public function update(Request $request, $id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking   = Booking::findOrFail($id);
-        $validated = $request->validate([
-            'room_id'        => 'required|exists:rooms,id',
-            'check_in_date'  => 'required|date',
-            'check_out_date' => 'required|date|after:check_in_date',
-            'adults'         => 'required|integer|min:1',
-            'children'       => 'nullable|integer|min:0',
+        $booking     = Booking::findOrFail($id);
+        $oldRoomId   = $booking->room_id;
+        $newRoomId   = (int) $request->input('room_id', $oldRoomId);
+        $room        = Room::findOrFail($newRoomId);
+        $pricingType = $room->pricing_type ?? 'per_night';
+
+        // Module gating — use room's hotel to bypass HotelContext in superadmin mode
+        $slotModuleOn = \App\Models\Module::withoutGlobalScopes()
+            ->where('hotel_id', $room->hotel_id)
+            ->where('slug', 'time-slot-pricing')
+            ->where('is_enabled', true)
+            ->exists();
+        $hourlyModuleOn = \App\Models\Module::withoutGlobalScopes()
+            ->where('hotel_id', $room->hotel_id)
+            ->where('slug', 'hourly-pricing')
+            ->where('is_enabled', true)
+            ->exists();
+        if ($pricingType === 'per_slot' && !$slotModuleOn)   $pricingType = 'per_night';
+        if ($pricingType === 'per_hour' && !$hourlyModuleOn) $pricingType = 'per_night';
+
+        $baseRules = [
+            'room_id'         => 'required|exists:rooms,id',
+            'adults'          => 'required|integer|min:1',
+            'children'        => 'nullable|integer|min:0',
             'special_requests'=> 'nullable|string',
-            'status'         => 'required|in:confirmed,checked_in,checked_out,cancelled',
-        ]);
-        $oldRoomId = $booking->room_id;
-        $newRoomId = (int) $validated['room_id'];
-        $room      = Room::findOrFail($newRoomId);
-        $nights    = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
-        $mealBreakfast = $request->boolean('meal_breakfast') && $room->has_breakfast;
-        $mealLunch     = $request->boolean('meal_lunch')     && $room->has_lunch;
-        $mealDinner    = $request->boolean('meal_dinner')    && $room->has_dinner;
-        $mealCost      = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
-                       + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
-                       + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
-        $extraBeds     = ($room->has_extra_bed) ? max(0, (int) $request->input('extra_beds', 0)) : 0;
-        $extraBedCost  = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
-        $total         = $nights * $room->price_per_night + $mealCost + $extraBedCost;
-        $booking->update(array_merge($validated, [
-            'nights'         => $nights,
-            'total_amount'   => $total,
-            'balance_due'    => max(0, $total - $booking->advance_payment),
-            'meal_breakfast' => $mealBreakfast,
-            'meal_lunch'     => $mealLunch,
-            'meal_dinner'    => $mealDinner,
-            'meal_cost'      => $mealCost,
-            'extra_beds'     => $extraBeds,
-            'extra_bed_cost' => $extraBedCost,
-        ]));
+            'status'          => 'required|in:confirmed,checked_in,checked_out,cancelled',
+            'advance_payment' => 'nullable|numeric|min:0',
+        ];
+
+        if ($pricingType === 'per_slot') {
+            $rules = array_merge($baseRules, [
+                'booking_date' => 'required|date',
+                'time_slot_id' => 'required|exists:hotel_time_slots,id',
+            ]);
+        } elseif ($pricingType === 'per_hour') {
+            $rules = array_merge($baseRules, [
+                'booking_date'    => 'required|date',
+                'slot_start_time' => 'required|string|regex:/^\d{2}:\d{2}$/',
+                'hours_booked'    => 'required|integer|min:1|max:24',
+            ]);
+        } else {
+            $rules = array_merge($baseRules, [
+                'check_in_date'  => 'required|date',
+                'check_out_date' => 'required|date|after:check_in_date',
+            ]);
+        }
+
+        $validated = $request->validate($rules);
+        $advancePayment = (float) ($validated['advance_payment'] ?? $booking->advance_payment ?? 0);
+
+        if ($pricingType === 'per_slot') {
+            $slot        = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
+            $totalAmount = $slot->base_price;
+            $updateData  = [
+                'room_id'         => $newRoomId,
+                'booking_date'    => $validated['booking_date'],
+                'check_in_date'   => $validated['booking_date'],
+                'check_out_date'  => $validated['booking_date'],
+                'time_slot_id'    => $validated['time_slot_id'],
+                'adults'          => $validated['adults'],
+                'children'        => $validated['children'] ?? 0,
+                'special_requests'=> $validated['special_requests'] ?? null,
+                'status'          => $validated['status'],
+                'total_amount'    => $totalAmount,
+                'advance_payment' => $advancePayment,
+                'balance_due'     => max(0, $totalAmount - $advancePayment),
+                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+            ];
+        } elseif ($pricingType === 'per_hour') {
+            $hours       = (int) $validated['hours_booked'];
+            $totalAmount = $hours * ($room->hourly_rate ?? 0);
+            $updateData  = [
+                'room_id'         => $newRoomId,
+                'booking_date'    => $validated['booking_date'],
+                'check_in_date'   => $validated['booking_date'],
+                'check_out_date'  => $validated['booking_date'],
+                'slot_start_time' => $validated['slot_start_time'],
+                'hours_booked'    => $hours,
+                'adults'          => $validated['adults'],
+                'children'        => $validated['children'] ?? 0,
+                'special_requests'=> $validated['special_requests'] ?? null,
+                'status'          => $validated['status'],
+                'total_amount'    => $totalAmount,
+                'advance_payment' => $advancePayment,
+                'balance_due'     => max(0, $totalAmount - $advancePayment),
+                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+            ];
+        } else {
+            // per_night — original flow
+            $nights        = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+            $mealBreakfast = $request->boolean('meal_breakfast') && $room->has_breakfast;
+            $mealLunch     = $request->boolean('meal_lunch')     && $room->has_lunch;
+            $mealDinner    = $request->boolean('meal_dinner')    && $room->has_dinner;
+            $mealCost      = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
+                           + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
+                           + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
+            $extraBeds     = ($room->has_extra_bed) ? max(0, (int) $request->input('extra_beds', 0)) : 0;
+            $extraBedCost  = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
+            $total         = $nights * $room->price_per_night + $mealCost + $extraBedCost;
+            $updateData    = array_merge($validated, [
+                'room_id'         => $newRoomId,
+                'nights'          => $nights,
+                'total_amount'    => $total,
+                'advance_payment' => $advancePayment,
+                'balance_due'     => max(0, $total - $advancePayment),
+                'meal_breakfast'  => $mealBreakfast,
+                'meal_lunch'      => $mealLunch,
+                'meal_dinner'     => $mealDinner,
+                'meal_cost'       => $mealCost,
+                'extra_beds'      => $extraBeds,
+                'extra_bed_cost'  => $extraBedCost,
+            ]);
+        }
+
+        $booking->update($updateData);
         $newStatus = $validated['status'];
+
+        // Room occupancy: only track for per_night rooms
         if ($oldRoomId !== $newRoomId) {
             $oldRoom = Room::find($oldRoomId);
-            if ($oldRoom) {
+            if ($oldRoom && ($oldRoom->pricing_type ?? 'per_night') === 'per_night') {
                 $oldRoom->update(['status' => 'available']);
             }
-            if (in_array($newStatus, ['confirmed', 'checked_in'])) {
+            if ($pricingType === 'per_night' && in_array($newStatus, ['confirmed', 'checked_in'])) {
                 $room->update(['status' => 'occupied']);
             }
         } else {
-            if (in_array($newStatus, ['cancelled', 'checked_out'])) {
-                $room->update(['status' => 'available']);
-            } elseif (in_array($newStatus, ['confirmed', 'checked_in'])) {
-                $room->update(['status' => 'occupied']);
+            if ($pricingType === 'per_night') {
+                if (in_array($newStatus, ['cancelled', 'checked_out'])) {
+                    $room->update(['status' => 'available']);
+                } elseif (in_array($newStatus, ['confirmed', 'checked_in'])) {
+                    $room->update(['status' => 'occupied']);
+                }
             }
         }
-        ActivityLogger::log('Updated', 'Booking', 'Updated booking #' . $booking->booking_number);
+
+        ActivityLogger::log('Updated', 'Booking', 'Updated booking #' . $booking->booking_number . ' (' . $pricingType . ')');
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking updated!');
     }
 

@@ -143,6 +143,8 @@
                             data-price="{{ $room->price_per_night }}"
                             data-pricing-type="{{ $room->pricing_type ?? 'per_night' }}"
                             data-hourly-rate="{{ $room->hourly_rate ?? 0 }}"
+                            data-slot-module="{{ $slotModuleOn ? '1' : '0' }}"
+                            data-hourly-module="{{ $hourlyModuleOn ? '1' : '0' }}"
                             data-has-breakfast="{{ $room->has_breakfast ? '1' : '0' }}"
                             data-breakfast-price="{{ $room->breakfast_price ?? 0 }}"
                             data-has-lunch="{{ $room->has_lunch ? '1' : '0' }}"
@@ -472,13 +474,18 @@
         const opt    = roomEl.options[roomEl.selectedIndex];
         const pt     = opt ? (opt.dataset.pricingType || 'per_night') : 'per_night';
 
+        // Per-room module flags baked into the option's data attributes
+        const slotModuleEnabled   = opt ? opt.dataset.slotModule   === '1' : false;
+        const hourlyModuleEnabled = opt ? opt.dataset.hourlyModule  === '1' : false;
+
         const perNightEl = document.getElementById('perNightFields');
         const perSlotEl  = document.getElementById('perSlotFields');
         const perHourEl  = document.getElementById('perHourFields');
 
         // Per-Night: show/hide + enable/disable + required flags
         if (perNightEl) {
-            if (pt === 'per_night') {
+            const showNight = pt === 'per_night' || (pt === 'per_slot' && !slotModuleEnabled) || (pt === 'per_hour' && !hourlyModuleEnabled);
+            if (showNight) {
                 perNightEl.classList.remove('hidden'); perNightEl.classList.add('contents');
                 setFieldsEnabled(perNightEl, true);
                 document.getElementById('checkIn').required  = true;
@@ -491,9 +498,9 @@
             }
         }
 
-        // Per-Slot: show/hide + enable/disable + required flags
+        // Per-Slot: show only when room is per_slot AND slot module is enabled
         if (perSlotEl) {
-            const showSlot = pt === 'per_slot';
+            const showSlot = pt === 'per_slot' && slotModuleEnabled;
             perSlotEl.classList.toggle('hidden', !showSlot);
             setFieldsEnabled(perSlotEl, showSlot);
             const sd = document.getElementById('slotBookingDate');
@@ -502,9 +509,9 @@
             if (st) st.required = showSlot;
         }
 
-        // Per-Hour: show/hide + enable/disable + required flags
+        // Per-Hour: show only when room is per_hour AND hourly module is enabled
         if (perHourEl) {
-            const showHour = pt === 'per_hour';
+            const showHour = pt === 'per_hour' && hourlyModuleEnabled;
             perHourEl.classList.toggle('hidden', !showHour);
             setFieldsEnabled(perHourEl, showHour);
             const hd = document.getElementById('hourBookingDate');

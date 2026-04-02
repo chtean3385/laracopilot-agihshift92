@@ -4,6 +4,7 @@
 @section('page-subtitle','{{ $booking->booking_reference }}')
 
 @section('content')
+@php $pricingType = $booking->room?->pricing_type ?? 'per_night'; @endphp
 <div class="max-w-3xl">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <form action="{{ route('bookings.update',$booking->id) }}" method="POST" class="space-y-5">
@@ -25,6 +26,9 @@
                         @endforeach
                     </select>
                 </div>
+
+                {{-- Per Night: check-in/out dates --}}
+                @if($pricingType === 'per_night')
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Check-In Date *</label>
                     <input type="date" name="check_in_date" value="{{ old('check_in_date',$booking->check_in_date->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
@@ -33,6 +37,67 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Check-Out Date *</label>
                     <input type="date" name="check_out_date" value="{{ old('check_out_date',$booking->check_out_date->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
                 </div>
+                @endif
+
+                {{-- Per Slot: booking date + time slot --}}
+                @if($pricingType === 'per_slot' && $slotModuleOn)
+                <div class="md:col-span-2">
+                    <div class="border border-violet-100 bg-violet-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fas fa-clock text-violet-500"></i>
+                            <h4 class="font-bold text-slate-700">Slot Booking</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Booking Date *</label>
+                                <input type="date" name="booking_date" value="{{ old('booking_date', $booking->booking_date?->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Time Slot *</label>
+                                <select name="time_slot_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                                    <option value="">Select a time slot...</option>
+                                    @foreach($timeSlots as $slot)
+                                    <option value="{{ $slot->id }}" {{ old('time_slot_id', $booking->time_slot_id) == $slot->id ? 'selected' : '' }}>
+                                        {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }}) — ₹{{ number_format($slot->base_price) }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Per Hour: booking date + start time + hours --}}
+                @if($pricingType === 'per_hour' && $hourlyModuleOn)
+                <div class="md:col-span-2">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fas fa-hourglass-half text-amber-500"></i>
+                            <h4 class="font-bold text-slate-700">Hourly Booking
+                                @if($booking->room)
+                                <span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold ml-1">₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr</span>
+                                @endif
+                            </h4>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Booking Date *</label>
+                                <input type="date" name="booking_date" value="{{ old('booking_date', $booking->booking_date?->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Start Time *</label>
+                                <input type="time" name="slot_start_time" value="{{ old('slot_start_time', $booking->slot_start_time) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Hours *</label>
+                                <input type="number" name="hours_booked" value="{{ old('hours_booked', $booking->hours_booked ?? 1) }}" min="1" max="24" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Adults *</label>
                     <input type="number" name="adults" value="{{ old('adults',$booking->adults) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" min="1" required>
@@ -57,6 +122,8 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Special Requests</label>
                     <textarea name="special_requests" rows="2" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">{{ old('special_requests',$booking->special_requests) }}</textarea>
                 </div>
+
+                @if($pricingType === 'per_night')
                 @if($booking->room && $booking->room->has_extra_bed)
                 <div class="md:col-span-2">
                     <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
@@ -114,6 +181,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
                 @endif
             </div>
             <div class="flex gap-3">
