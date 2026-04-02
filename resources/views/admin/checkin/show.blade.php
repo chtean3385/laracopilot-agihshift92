@@ -238,11 +238,11 @@
             <div class="ci-form-grid">
                 <div>
                     <label class="form-label">Payment at Check-In (₹)</label>
-                    <input type="number" name="additional_payment" value="{{ max(0, $booking->balance_due) }}" min="0" step="0.01" class="form-input">
+                    <input type="number" name="additional_payment" value="0" min="0" step="0.01" class="form-input">
                     @if($booking->balance_due > 0)
                     <p style="font-size:11px;color:#f59e0b;margin-top:4px;font-weight:600;">
                         <i class="fas fa-info-circle" style="margin-right:3px;"></i>
-                        Minimum due: ₹{{ number_format($booking->balance_due) }} (full booking amount). Adjust if collecting partial.
+                        Balance due: ₹{{ number_format($booking->balance_due) }}. Customer can pay now or at check-out.
                     </p>
                     @else
                     <p style="font-size:11px;color:#16a34a;margin-top:4px;font-weight:600;">

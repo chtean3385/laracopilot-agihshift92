@@ -90,7 +90,7 @@
                                 @endif
                             </h4>
                         </div>
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-1.5">Booking Date *</label>
                                 <input type="date" name="booking_date" value="{{ old('booking_date', $booking->booking_date?->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
@@ -99,11 +99,8 @@
                                 <label class="block text-sm font-semibold text-slate-700 mb-1.5">Start Time *</label>
                                 <input type="time" name="slot_start_time" value="{{ old('slot_start_time', $booking->slot_start_time) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
                             </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Hours *</label>
-                                <input type="number" name="hours_booked" value="{{ old('hours_booked', $booking->hours_booked ?? 1) }}" min="1" max="24" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
-                            </div>
                         </div>
+                        <p class="text-xs text-amber-600 mt-2"><i class="fas fa-clock mr-1"></i>Billing calculated at check-out using actual hours stayed.</p>
                     </div>
                 </div>
                 @endif

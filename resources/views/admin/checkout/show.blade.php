@@ -47,8 +47,8 @@
                 </div>
                 @elseif($pricingType === 'per_hour')
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
-                    <span style="color:#64748b;">Hours Booked</span>
-                    <span style="font-weight:800;font-size:20px;color:#7c3aed;">{{ $hoursBooked ?? $booking->hours_booked ?? '—' }}</span>
+                    <span style="color:#64748b;">Actual Hours Billed</span>
+                    <span style="font-weight:800;font-size:20px;color:#7c3aed;">{{ $hoursBooked ?? '—' }}</span>
                 </div>
                 @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
@@ -81,7 +81,7 @@
                 @elseif($pricingType === 'per_hour')
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">
-                        {{ $hoursBooked ?? $booking->hours_booked ?? '' }} hr{{ ($hoursBooked ?? $booking->hours_booked ?? 0) != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr
+                        {{ $hoursBooked ?? 0 }} actual hr{{ ($hoursBooked ?? 0) != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr
                     </span>
                     <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>

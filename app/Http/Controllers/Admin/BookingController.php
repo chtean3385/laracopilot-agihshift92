@@ -98,7 +98,6 @@ class BookingController extends Controller
             $rules = array_merge($baseRules, [
                 'booking_date'   => 'required|date',
                 'slot_start_time'=> 'required|string|regex:/^\d{2}:\d{2}$/',
-                'hours_booked'   => 'required|integer|min:1|max:24',
             ]);
         } else {
             $rules = array_merge($baseRules, [
@@ -136,9 +135,8 @@ class BookingController extends Controller
                 'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
             ];
         } elseif ($pricingType === 'per_hour') {
-            $hours         = (int) $validated['hours_booked'];
-            $totalAmount   = $hours * ($room->hourly_rate ?? 0);
-            $advancePayment= $validated['advance_payment'] ?? 0;
+            // total_amount is 0 at booking time — calculated at checkout using actual elapsed hours
+            $advancePayment= 0;
             $bookingData   = [
                 'booking_number'  => $bookingNumber,
                 'customer_id'     => $validated['customer_id'],
@@ -147,16 +145,16 @@ class BookingController extends Controller
                 'check_out_date'  => $validated['booking_date'],
                 'booking_date'    => $validated['booking_date'],
                 'slot_start_time' => $validated['slot_start_time'],
-                'hours_booked'    => $hours,
+                'hours_booked'    => null,
                 'nights'          => 0,
                 'adults'          => $validated['adults'],
                 'children'        => $validated['children'] ?? 0,
-                'total_amount'    => $totalAmount,
-                'advance_payment' => $advancePayment,
-                'balance_due'     => $totalAmount - $advancePayment,
+                'total_amount'    => 0,
+                'advance_payment' => 0,
+                'balance_due'     => 0,
                 'special_requests'=> $validated['special_requests'] ?? null,
                 'status'          => 'confirmed',
-                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+                'payment_status'  => 'pending',
                 'meal_breakfast'  => false, 'meal_lunch' => false, 'meal_dinner' => false,
                 'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
             ];
@@ -310,7 +308,6 @@ class BookingController extends Controller
             $rules = array_merge($baseRules, [
                 'booking_date'    => 'required|date',
                 'slot_start_time' => 'required|string|regex:/^\d{2}:\d{2}$/',
-                'hours_booked'    => 'required|integer|min:1|max:24',
             ]);
         } else {
             $rules = array_merge($baseRules, [
@@ -341,23 +338,22 @@ class BookingController extends Controller
                 'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
             ];
         } elseif ($pricingType === 'per_hour') {
-            $hours       = (int) $validated['hours_booked'];
-            $totalAmount = $hours * ($room->hourly_rate ?? 0);
+            // total_amount kept at 0 — recalculated at checkout using actual elapsed hours
             $updateData  = [
                 'room_id'         => $newRoomId,
                 'booking_date'    => $validated['booking_date'],
                 'check_in_date'   => $validated['booking_date'],
                 'check_out_date'  => $validated['booking_date'],
                 'slot_start_time' => $validated['slot_start_time'],
-                'hours_booked'    => $hours,
+                'hours_booked'    => null,
                 'adults'          => $validated['adults'],
                 'children'        => $validated['children'] ?? 0,
                 'special_requests'=> $validated['special_requests'] ?? null,
                 'status'          => $validated['status'],
-                'total_amount'    => $totalAmount,
-                'advance_payment' => $advancePayment,
-                'balance_due'     => max(0, $totalAmount - $advancePayment),
-                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+                'total_amount'    => 0,
+                'advance_payment' => 0,
+                'balance_due'     => 0,
+                'payment_status'  => 'pending',
             ];
         } else {
             // per_night — original flow

@@ -240,18 +240,14 @@
                             <h4 class="font-bold text-gray-700">Hourly Booking</h4>
                             <span id="hourlyRateTag" class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold"></span>
                         </div>
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="booking_date" id="hourBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateHourTotal()">
+                                <input type="date" name="booking_date" id="hourBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input">
                             </div>
                             <div>
                                 <label class="form-label">Start Time <span class="text-red-500">*</span></label>
-                                <input type="time" name="slot_start_time" id="slotStartTime" value="{{ old('slot_start_time') }}" class="form-input" onchange="calculateHourTotal()">
-                            </div>
-                            <div>
-                                <label class="form-label">Hours <span class="text-red-500">*</span></label>
-                                <input type="number" name="hours_booked" id="hoursBooked" value="{{ old('hours_booked', 1) }}" min="1" max="24" class="form-input" onchange="calculateHourTotal()">
+                                <input type="time" name="slot_start_time" id="slotStartTime" value="{{ old('slot_start_time') }}" class="form-input">
                             </div>
                         </div>
                         @if($addOns->isNotEmpty())
@@ -260,7 +256,7 @@
                             <div class="flex flex-wrap gap-3 mt-1">
                                 @foreach($addOns as $ao)
                                 <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-amber-300 transition-colors text-sm">
-                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded text-amber-500 addon-check-hour" data-price="{{ $ao->price }}" onchange="calculateHourTotal()">
+                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded text-amber-500 addon-check-hour" data-price="{{ $ao->price }}">
                                     <span class="font-medium text-gray-700">{{ $ao->name }}</span>
                                     <span class="text-amber-600 font-bold">+₹{{ number_format($ao->price) }}</span>
                                 </label>
@@ -269,9 +265,8 @@
                         </div>
                         @endif
                         <div class="bg-white rounded-xl border border-amber-100 px-4 py-3 flex items-center gap-3">
-                            <i class="fas fa-rupee-sign text-amber-500"></i>
-                            <span class="text-sm text-gray-500">Hour Total:</span>
-                            <span id="hourTotalDisplay" class="text-xl font-bold text-amber-700">—</span>
+                            <i class="fas fa-clock text-amber-500"></i>
+                            <span class="text-sm text-amber-700 font-medium">Billing will be calculated at check-out based on actual hours stayed at the rate shown above.</span>
                         </div>
                     </div>
                 </div>
@@ -516,10 +511,8 @@
             setFieldsEnabled(perHourEl, showHour);
             const hd = document.getElementById('hourBookingDate');
             const hs = document.getElementById('slotStartTime');
-            const hb = document.getElementById('hoursBooked');
             if (hd) hd.required = showHour;
             if (hs) hs.required = showHour;
-            if (hb) hb.required = showHour;
         }
 
         // Show/hide price summary
@@ -538,7 +531,6 @@
         updateMealOptions();
         calculateTotal();
         calculateSlotTotal();
-        calculateHourTotal();
     })();
 
     function calculateSlotTotal() {
@@ -547,17 +539,6 @@
         let total = slotOpt ? parseFloat(slotOpt.dataset.price || 0) : 0;
         document.querySelectorAll('.addon-check:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
         const el = document.getElementById('slotTotalDisplay');
-        if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
-    }
-
-    function calculateHourTotal() {
-        const roomEl = document.getElementById('roomSelect');
-        const opt    = roomEl.options[roomEl.selectedIndex];
-        const rate   = opt ? parseFloat(opt.dataset.hourlyRate || 0) : 0;
-        const hours  = parseInt(document.getElementById('hoursBooked')?.value || 1);
-        let total = rate * hours;
-        document.querySelectorAll('.addon-check-hour:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
-        const el = document.getElementById('hourTotalDisplay');
         if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
     }
 

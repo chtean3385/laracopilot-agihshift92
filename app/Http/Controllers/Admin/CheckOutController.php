@@ -36,7 +36,7 @@ class CheckOutController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
 
-        $booking = Booking::with(['customer', 'room', 'payments', 'timeSlot'])->findOrFail($bookingId);
+        $booking = Booking::with(['customer', 'room', 'payments', 'timeSlot', 'bookingAddOns'])->findOrFail($bookingId);
 
         $pricingType = $booking->room->pricing_type ?? 'per_night';
 
@@ -51,10 +51,22 @@ class CheckOutController extends Controller
             $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
             $actualTotal  = $roomCost + $mealCost + $extraBedCost;
             $hoursBooked  = null;
-        } else {
-            // per_hour / per_slot: total_amount is stored correctly at booking time
+        } elseif ($pricingType === 'per_hour') {
+            // Calculate actual hours using system clock from check-in time to now
             $actualNights = 0;
-            $hoursBooked  = $booking->hours_booked ?? null;
+            $checkinAt    = $booking->actual_checkin_at
+                            ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
+            $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
+            $hoursBooked  = max(1, (int) ceil($actualMinutes / 60));
+            $addOnTotal   = $booking->bookingAddOns()->sum('price');
+            $roomCost     = $hoursBooked * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+            $mealCost     = 0;
+            $extraBedCost = 0;
+            $actualTotal  = $roomCost;
+        } else {
+            // per_slot: total_amount stored at booking time
+            $actualNights = 0;
+            $hoursBooked  = null;
             $roomCost     = (float) $booking->total_amount;
             $mealCost     = 0;
             $extraBedCost = 0;
@@ -93,6 +105,19 @@ class CheckOutController extends Controller
                 'notes'          => 'Final payment at check-out',
                 'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
+        }
+
+        // For per_hour rooms, recalculate total using actual elapsed hours (system clock)
+        if (($booking->room->pricing_type ?? 'per_night') === 'per_hour') {
+            $checkinAt     = $booking->actual_checkin_at
+                             ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
+            $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
+            $actualHours   = max(1, (int) ceil($actualMinutes / 60));
+            $addOnTotal    = $booking->bookingAddOns()->sum('price');
+            $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+            // Persist the calculated total and hours back onto the booking
+            $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
+            $booking->refresh();
         }
 
         $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
