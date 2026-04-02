@@ -19,20 +19,22 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Room</label>
-                    {{-- Room is locked on edit to keep pricing-type context stable --}}
-                    <input type="hidden" name="room_id" value="{{ $booking->room_id }}">
-                    <div class="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-2.5 text-sm text-slate-600">
-                        @if($booking->room)
-                            Room {{ $booking->room->room_number }} — {{ ucfirst($booking->room->type) }}
-                            @if($pricingType === 'per_night') — ₹{{ number_format($booking->room->price_per_night, 0) }}/night
-                            @elseif($pricingType === 'per_hour') — ₹{{ number_format($booking->room->hourly_rate ?? 0, 0) }}/hr
-                            @else — Slot-based @endif
-                            <span class="ml-1 text-xs text-slate-400">(locked — to reassign room, cancel and create a new booking)</span>
-                        @else
-                            Room #{{ $booking->room_id }}
-                        @endif
-                    </div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Room *</label>
+                    <select name="room_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                        @foreach($rooms as $r)
+                        @php
+                            $rLabel = match($r->pricing_type ?? 'per_night') {
+                                'per_slot' => 'Slot-based',
+                                'per_hour' => '₹' . number_format($r->hourly_rate ?? 0) . '/hr',
+                                default    => '₹' . number_format($r->price_per_night, 0) . '/night',
+                            };
+                        @endphp
+                        <option value="{{ $r->id }}" {{ old('room_id', $booking->room_id) == $r->id ? 'selected' : '' }}>
+                            Room {{ $r->room_number }} — {{ ucfirst($r->type) }} — {{ $rLabel }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-slate-400 mt-1">Only rooms of the same pricing type are shown.</p>
                 </div>
 
                 {{-- Per Night: check-in/out dates --}}

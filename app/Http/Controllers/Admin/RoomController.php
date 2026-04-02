@@ -114,7 +114,13 @@ class RoomController extends Controller
         $hourlyModuleOn = Module::isEnabled('hourly-pricing');
         $allowedTypes   = array_filter(['per_night', $slotModuleOn ? 'per_slot' : null, $hourlyModuleOn ? 'per_hour' : null]);
         $reqType        = $request->input('pricing_type', $room->pricing_type ?? 'per_night');
-        $pricingType    = in_array($reqType, $allowedTypes) ? $reqType : 'per_night';
+        // If the room's current pricing_type module is disabled, preserve it so the
+        // room isn't silently coerced to per_night just because the module is off.
+        if (!in_array($room->pricing_type, $allowedTypes)) {
+            $pricingType = $room->pricing_type ?? 'per_night';
+        } else {
+            $pricingType = in_array($reqType, $allowedTypes) ? $reqType : ($room->pricing_type ?? 'per_night');
+        }
         $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())->ignore($id)],

@@ -252,7 +252,6 @@ class BookingController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $booking  = Booking::findOrFail($id);
         $customers = Customer::orderBy('name')->get();
-        $rooms     = Room::orderBy('room_number')->get();
 
         // Use the booking's own room hotel_id — bypasses HotelContext so
         // superadmin scenarios resolve the correct module state.
@@ -261,6 +260,10 @@ class BookingController extends Controller
             ->where('hotel_id', $bookingHotelId)->where('slug', 'time-slot-pricing')->where('is_enabled', true)->exists() : false;
         $hourlyModuleOn = $bookingHotelId ? \App\Models\Module::withoutGlobalScopes()
             ->where('hotel_id', $bookingHotelId)->where('slug', 'hourly-pricing')->where('is_enabled', true)->exists() : false;
+
+        // Only show rooms of the same pricing_type to keep pricing context stable.
+        $pricingType = $booking->room?->pricing_type ?? 'per_night';
+        $rooms = Room::where('pricing_type', $pricingType)->orderBy('room_number')->get();
 
         $timeSlots = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
         return view('admin.bookings.edit', compact('booking', 'customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'timeSlots'));
