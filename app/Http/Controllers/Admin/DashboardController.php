@@ -248,11 +248,10 @@ class DashboardController extends Controller
             $q->with('customer')
               ->whereIn('status', ['confirmed', 'checked_in'])
               ->where(function ($q2) use ($d) {
-                  // Per-night: occupies if check_in <= date < check_out
+                  // Per-night: occupies if check_in <= date AND check_out >= date
                   $q2->where(function ($q3) use ($d) {
                       $q3->where('check_in_date', '<=', $d)
-                         ->where('check_out_date', '>', $d)
-                         ->whereNull('booking_date');
+                         ->where('check_out_date', '>=', $d);
                   })
                   // Per-slot / per-hour: occupies if booking_date = date
                   ->orWhere(function ($q3) use ($d) {
