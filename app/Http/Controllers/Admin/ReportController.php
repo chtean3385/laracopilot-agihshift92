@@ -47,14 +47,26 @@ class ReportController extends Controller
         $totalRooms = Room::count();
         $fromStr    = $from->toDateString();
         $toStr      = $to->toDateString();
-        $roomStats  = Room::withCount(['bookings' => fn($q) => $q->where(function ($q2) use ($fromStr, $toStr) {
-            $q2->whereBetween('check_in_date', [$fromStr, $toStr])
-               ->orWhereBetween('booking_date',  [$fromStr, $toStr]);
-        })])->get();
-        $bookingsByType = Booking::with('room')->where(function ($q) use ($fromStr, $toStr) {
-            $q->whereBetween('check_in_date', [$fromStr, $toStr])
-              ->orWhereBetween('booking_date', [$fromStr, $toStr]);
-        })->get()->groupBy('room.type')->map(fn($g) => $g->count());
+
+        // Overlap predicate reused for both queries.
+        // Per-night: stay overlaps the period if check_in <= period_end AND check_out >= period_start.
+        // Per-slot/per-hour: booking_date falls within the period.
+        $periodFilter = function ($q) use ($fromStr, $toStr) {
+            $q->where(function ($qn) use ($fromStr, $toStr) {
+                // Per-night overlap (booking_date is NULL for nightly bookings)
+                $qn->whereNull('booking_date')
+                   ->where('check_in_date',  '<=', $toStr)
+                   ->where('check_out_date', '>=', $fromStr);
+            })->orWhere(function ($qs) use ($fromStr, $toStr) {
+                // Per-slot / per-hour: booking_date within period
+                $qs->whereNotNull('booking_date')
+                   ->whereBetween('booking_date', [$fromStr, $toStr]);
+            });
+        };
+
+        $roomStats      = Room::withCount(['bookings' => $periodFilter])->get();
+        $bookingsByType = Booking::with('room')->where($periodFilter)->get()
+            ->groupBy('room.type')->map(fn($g) => $g->count());
         return view('admin.reports.occupancy', compact('roomStats', 'totalRooms', 'bookingsByType', 'from', 'to'));
     }
 
