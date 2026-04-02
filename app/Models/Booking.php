@@ -63,7 +63,7 @@ class Booking extends Model
 
     public function timeSlot()
     {
-        return $this->belongsTo(HotelTimeSlot::class, 'time_slot_id');
+        return $this->belongsTo(HotelTimeSlot::class, 'time_slot_id')->withoutGlobalScopes();
     }
 
     public function bookingAddOns()

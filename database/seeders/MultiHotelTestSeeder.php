@@ -184,7 +184,7 @@ class MultiHotelTestSeeder extends Seeder
             ['slug' => 'payment_links',     'name' => 'Payment Links',             'description' => 'Generate UPI QR codes and payment links.',   'is_enabled' => false],
             ['slug' => 'pathik',            'name' => 'Pathik Autofill',           'description' => 'Gujarat Pathik portal autofill.',             'is_enabled' => false],
             ['slug' => 'channel_manager',   'name' => 'OTA Channel Manager',       'description' => 'Sync with OTA platforms.',                   'is_enabled' => false],
-            ['slug' => 'time-slot-pricing', 'name' => 'Time Slot & Hourly Pricing','description' => 'Enable time-slot and hourly room pricing.',   'is_enabled' => false],
+            ['slug' => 'time-slot-pricing', 'name' => 'Time Slot & Hourly Pricing','description' => 'Enable time-slot and hourly room pricing.',   'is_enabled' => true],
         ];
         foreach ($modules as $m) {
             Module::withoutGlobalScope(\App\Models\Scopes\HotelScope::class)

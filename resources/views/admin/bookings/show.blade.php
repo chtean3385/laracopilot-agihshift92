@@ -35,9 +35,25 @@
                 </div>
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-sm text-gray-500">Booking #</span><span class="text-sm font-mono font-bold text-cyan-600">{{ $booking->booking_number }}</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-500">Check-In</span><span class="text-sm font-semibold">{{ $booking->check_in_date->format('d M Y') }}</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-500">Check-Out</span><span class="text-sm font-semibold">{{ $booking->check_out_date->format('d M Y') }}</span></div>
-                    <div class="flex justify-between"><span class="text-sm text-gray-500">Nights</span><span class="text-sm font-semibold">{{ $booking->nights }}</span></div>
+                    @php $rm = $booking->room; $pType = $rm?->pricing_type ?? 'per_night'; @endphp
+                    @if($pType === 'per_slot' && $booking->booking_date)
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Booking Date</span><span class="text-sm font-semibold">{{ $booking->booking_date->format('d M Y') }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Time Slot</span>
+                            <span class="text-sm font-semibold text-violet-600">
+                                @if($booking->timeSlot)
+                                    {{ $booking->timeSlot->name }} ({{ $booking->timeSlot->start_time }}–{{ $booking->timeSlot->end_time }})
+                                @else — @endif
+                            </span>
+                        </div>
+                    @elseif($pType === 'per_hour' && $booking->booking_date)
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Booking Date</span><span class="text-sm font-semibold">{{ $booking->booking_date->format('d M Y') }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Start Time</span><span class="text-sm font-semibold text-amber-600">{{ $booking->slot_start_time ?? '—' }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Duration</span><span class="text-sm font-semibold text-amber-600">{{ $booking->hours_booked ?? '—' }} hrs</span></div>
+                    @else
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Check-In</span><span class="text-sm font-semibold">{{ $booking->check_in_date?->format('d M Y') ?? '—' }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Check-Out</span><span class="text-sm font-semibold">{{ $booking->check_out_date?->format('d M Y') ?? '—' }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Nights</span><span class="text-sm font-semibold">{{ $booking->nights }}</span></div>
+                    @endif
                     <div class="flex justify-between"><span class="text-sm text-gray-500">Guests</span><span class="text-sm font-semibold">{{ $booking->adults }} Adults @if($booking->children > 0), {{ $booking->children }} Children @endif</span></div>
                 </div>
                 @if($booking->special_requests)

@@ -100,6 +100,20 @@
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50">
             <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-plus text-cyan-500 mr-2"></i>Booking Details</h3>
         </div>
+        {{-- Validation error banner --}}
+        @if($errors->any())
+        <div class="mx-6 mt-5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
+            <i class="fas fa-exclamation-circle text-red-500 mt-0.5 flex-shrink-0"></i>
+            <div class="text-sm text-red-700">
+                <p class="font-semibold mb-1">Please fix the following errors:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        @endif
         <form action="{{ route('bookings.store') }}" method="POST" class="p-6" id="bookingForm">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -451,7 +465,7 @@
         const perSlotEl  = document.getElementById('perSlotFields');
         const perHourEl  = document.getElementById('perHourFields');
 
-        // Show/hide sections
+        // Show/hide per-night section and set required on those date inputs
         if (perNightEl) {
             if (pt === 'per_night') {
                 perNightEl.classList.remove('hidden'); perNightEl.classList.add('contents');
@@ -463,8 +477,28 @@
                 document.getElementById('checkOut').required = false;
             }
         }
-        if (perSlotEl)  perSlotEl.classList.toggle('hidden',  pt !== 'per_slot');
-        if (perHourEl)  perHourEl.classList.toggle('hidden',  pt !== 'per_hour');
+
+        // Show/hide slot section
+        if (perSlotEl) {
+            const showSlot = pt === 'per_slot';
+            perSlotEl.classList.toggle('hidden', !showSlot);
+            const sd = document.getElementById('slotBookingDate');
+            const st = document.getElementById('timeSlotSelect');
+            if (sd) sd.required = showSlot;
+            if (st) st.required = showSlot;
+        }
+
+        // Show/hide hour section
+        if (perHourEl) {
+            const showHour = pt === 'per_hour';
+            perHourEl.classList.toggle('hidden', !showHour);
+            const hd = document.getElementById('hourBookingDate');
+            const hs = document.getElementById('slotStartTime');
+            const hb = document.getElementById('hoursBooked');
+            if (hd) hd.required = showHour;
+            if (hs) hs.required = showHour;
+            if (hb) hb.required = showHour;
+        }
 
         // Show/hide price summary
         const summaryEl = document.getElementById('priceNightSummary');
@@ -474,6 +508,18 @@
         const hrTag = document.getElementById('hourlyRateTag');
         if (hrTag && opt) hrTag.textContent = '₹' + parseFloat(opt.dataset.hourlyRate || 0).toLocaleString('en-IN') + '/hr';
     }
+
+    // Restore pricing section on page reload (e.g. after validation error redirect)
+    (function initPricingUI() {
+        const roomEl = document.getElementById('roomSelect');
+        if (roomEl && roomEl.value) {
+            updatePricingUI();
+            updateMealOptions();
+            calculateTotal();
+            calculateSlotTotal();
+            calculateHourTotal();
+        }
+    })();
 
     function calculateSlotTotal() {
         const slotSel = document.getElementById('timeSlotSelect');
@@ -569,6 +615,15 @@
 
     document.getElementById('checkIn').addEventListener('change', calculateTotal);
     document.getElementById('checkOut').addEventListener('change', calculateTotal);
+
+    // ── Booking form submit: show loading state ────────────────────────────
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating...';
+        }
+    });
 
     // ── Quick Add Guest Modal ─────────────────────────────────────────────
     function openQuickGuestModal() {

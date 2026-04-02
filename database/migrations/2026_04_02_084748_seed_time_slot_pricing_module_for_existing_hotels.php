@@ -21,7 +21,7 @@ return new class extends Migration
                     'slug'        => 'time-slot-pricing',
                     'name'        => 'Time Slot & Hourly Pricing',
                     'description' => 'Enable time-slot and hourly room pricing modes.',
-                    'is_enabled'  => false,
+                    'is_enabled'  => true,
                     'created_at'  => now(),
                     'updated_at'  => now(),
                 ]);

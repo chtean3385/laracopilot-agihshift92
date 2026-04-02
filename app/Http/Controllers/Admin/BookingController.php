@@ -49,7 +49,13 @@ class BookingController extends Controller
 
         $room         = Room::findOrFail($request->input('room_id'));
         $pricingType  = $room->pricing_type ?? 'per_night';
-        $slotModuleOn = \App\Models\Module::isEnabled('time-slot-pricing');
+        // Check module using room's own hotel_id — bypasses HotelContext so
+        // superadmin "All Hotels" mode doesn't accidentally force per_night.
+        $slotModuleOn = \App\Models\Module::withoutGlobalScopes()
+            ->where('hotel_id', $room->hotel_id)
+            ->where('slug', 'time-slot-pricing')
+            ->where('is_enabled', true)
+            ->exists();
         if (!$slotModuleOn) $pricingType = 'per_night';
 
         // Validate based on pricing type
@@ -215,7 +221,7 @@ class BookingController extends Controller
     public function show($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests'])->findOrFail($id);
+        $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests', 'timeSlot', 'bookingAddOns'])->findOrFail($id);
         return view('admin.bookings.show', compact('booking'));
     }
 
