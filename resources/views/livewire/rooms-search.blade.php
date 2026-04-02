@@ -123,11 +123,37 @@
                         {{ $room->view }}
                     </div>
                     @endif
+                    @if($room->pricing_type === 'per_hour')
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-hourglass-half text-blue-400 w-4"></i>
+                        <span class="text-lg font-bold text-gray-800">₹{{ number_format($room->hourly_rate) }}</span>
+                        <span class="text-xs text-gray-400">/hr</span>
+                    </div>
+                    @elseif($room->pricing_type === 'per_slot')
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-clock text-violet-400 w-4"></i>
+                        @php
+                            $slotPrices = $room->timeSlots;
+                            $minSlot = $slotPrices->first();
+                            $maxSlot = $slotPrices->last();
+                        @endphp
+                        @if($slotPrices->isEmpty())
+                            <span class="text-sm font-semibold text-gray-500">Slot pricing</span>
+                        @elseif($minSlot->base_price == $maxSlot->base_price)
+                            <span class="text-lg font-bold text-gray-800">₹{{ number_format($minSlot->base_price) }}</span>
+                            <span class="text-xs text-gray-400">/slot</span>
+                        @else
+                            <span class="text-base font-bold text-gray-800">₹{{ number_format($minSlot->base_price) }}–{{ number_format($maxSlot->base_price) }}</span>
+                            <span class="text-xs text-gray-400">/slot</span>
+                        @endif
+                    </div>
+                    @else
                     <div class="flex items-center gap-2">
                         <i class="fas fa-rupee-sign text-emerald-400 w-4"></i>
                         <span class="text-lg font-bold text-gray-800">₹{{ number_format($room->price_per_night) }}</span>
                         <span class="text-xs text-gray-400">/night</span>
                     </div>
+                    @endif
                 </div>
                 @if($room->amenities)
                 <p class="text-xs text-gray-400 mb-2 line-clamp-2">{{ $room->amenities }}</p>

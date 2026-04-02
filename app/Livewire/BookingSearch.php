@@ -64,7 +64,7 @@ class BookingSearch extends Component
 
     public function render()
     {
-        $query = Booking::with(['customer', 'room']);
+        $query = Booking::with(['customer', 'room', 'timeSlot']);
 
         if ($this->status) {
             $query->where('status', $this->status);
@@ -79,11 +79,19 @@ class BookingSearch extends Component
         }
 
         if ($this->dateFrom) {
-            $query->whereDate('check_in_date', '>=', $this->dateFrom);
+            $df = $this->dateFrom;
+            $query->where(function ($q) use ($df) {
+                $q->whereDate('check_in_date', '>=', $df)
+                  ->orWhereDate('booking_date', '>=', $df);
+            });
         }
 
         if ($this->dateTo) {
-            $query->whereDate('check_out_date', '<=', $this->dateTo);
+            $dt = $this->dateTo;
+            $query->where(function ($q) use ($dt) {
+                $q->whereDate('check_out_date', '<=', $dt)
+                  ->orWhereDate('booking_date', '<=', $dt);
+            });
         }
 
         if ($this->roomType) {

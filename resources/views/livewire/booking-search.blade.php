@@ -133,7 +133,17 @@
                             <a href="{{ route('bookings.show', $booking->id) }}" class="lv-mono" style="color:#0891b2;text-decoration:none;">
                                 {{ $booking->booking_number }}
                             </a>
-                            <div class="lv-secondary">{{ $booking->nights }} night{{ $booking->nights != 1 ? 's' : '' }}</div>
+                            @if($booking->isSlotBooking())
+                                <div class="lv-secondary" style="color:#7c3aed;">
+                                    <i class="fas fa-clock" style="font-size:10px;"></i> Slot
+                                </div>
+                            @elseif($booking->isHourlyBooking())
+                                <div class="lv-secondary" style="color:#0891b2;">
+                                    <i class="fas fa-hourglass-half" style="font-size:10px;"></i> Hourly
+                                </div>
+                            @else
+                                <div class="lv-secondary">{{ $booking->nights }} night{{ $booking->nights != 1 ? 's' : '' }}</div>
+                            @endif
                         </td>
                         <td class="lv-td">
                             <div style="display:flex;align-items:center;gap:10px;">
@@ -159,10 +169,34 @@
                             </div>
                             <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room->type) }}</div>
                         </td>
+                        {{-- Dates cell — varies by pricing type --}}
+                        @if($booking->isSlotBooking())
+                        <td class="lv-td">
+                            <div style="font-size:13px;font-weight:600;color:#374151;">
+                                {{ optional($booking->booking_date)->format('d M Y') }}
+                            </div>
+                            <div class="lv-secondary" style="color:#7c3aed;">
+                                <i class="fas fa-clock" style="font-size:10px;"></i>
+                                {{ $booking->timeSlot?->name ?? '—' }}
+                            </div>
+                        </td>
+                        @elseif($booking->isHourlyBooking())
+                        <td class="lv-td">
+                            <div style="font-size:13px;font-weight:600;color:#374151;">
+                                {{ optional($booking->booking_date)->format('d M Y') }}
+                            </div>
+                            <div class="lv-secondary" style="color:#0891b2;">
+                                <i class="fas fa-hourglass-half" style="font-size:10px;"></i>
+                                {{ $booking->slot_start_time ? \Carbon\Carbon::parse($booking->slot_start_time)->format('g:i A') : '—' }}
+                                · {{ $booking->hours_booked }} hr{{ $booking->hours_booked != 1 ? 's' : '' }}
+                            </div>
+                        </td>
+                        @else
                         <td class="lv-td">
                             <div style="font-size:13px;font-weight:600;color:#374151;">{{ $booking->check_in_date->format('d M') }}</div>
                             <div class="lv-secondary">→ {{ $booking->check_out_date->format('d M Y') }}</div>
                         </td>
+                        @endif
                         <td class="lv-td">
                             <span class="lv-badge {{ $sCls }}">
                                 <i class="fas {{ $sIcon }}"></i>

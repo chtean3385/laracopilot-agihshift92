@@ -49,7 +49,7 @@ class RoomsSearch extends Component
             });
         }
 
-        $rooms = $query->orderBy('room_number')->paginate(20);
+        $rooms = $query->with(['timeSlots'])->orderBy('room_number')->paginate(20);
 
         $stats = [
             'available'   => Room::where('status', 'available')->count(),

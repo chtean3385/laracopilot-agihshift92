@@ -49,6 +49,14 @@ class Room extends Model
         return $this->hasMany(Booking::class);
     }
 
+    public function timeSlots()
+    {
+        return $this->hasMany(HotelTimeSlot::class, 'hotel_id', 'hotel_id')
+                    ->withoutGlobalScopes()
+                    ->where('is_active', true)
+                    ->orderBy('base_price');
+    }
+
     public function addOns()
     {
         return $this->hasMany(RoomAddOn::class)->where(function ($q) {

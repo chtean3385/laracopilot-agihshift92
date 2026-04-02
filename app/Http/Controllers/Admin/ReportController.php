@@ -45,9 +45,16 @@ class ReportController extends Controller
         $from      = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->startOfMonth();
         $to        = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::now()->endOfMonth();
         $totalRooms = Room::count();
-        $roomStats  = Room::withCount(['bookings' => fn($q) => $q->whereBetween('check_in_date', [$from, $to])])->get();
-        $bookingsByType = Booking::with('room')->whereBetween('check_in_date', [$from, $to])->get()
-            ->groupBy('room.type')->map(fn($g) => $g->count());
+        $fromStr    = $from->toDateString();
+        $toStr      = $to->toDateString();
+        $roomStats  = Room::withCount(['bookings' => fn($q) => $q->where(function ($q2) use ($fromStr, $toStr) {
+            $q2->whereBetween('check_in_date', [$fromStr, $toStr])
+               ->orWhereBetween('booking_date',  [$fromStr, $toStr]);
+        })])->get();
+        $bookingsByType = Booking::with('room')->where(function ($q) use ($fromStr, $toStr) {
+            $q->whereBetween('check_in_date', [$fromStr, $toStr])
+              ->orWhereBetween('booking_date', [$fromStr, $toStr]);
+        })->get()->groupBy('room.type')->map(fn($g) => $g->count());
         return view('admin.reports.occupancy', compact('roomStats', 'totalRooms', 'bookingsByType', 'from', 'to'));
     }
 
