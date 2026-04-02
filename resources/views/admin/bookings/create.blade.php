@@ -151,7 +151,7 @@
                             data-dinner-price="{{ $room->dinner_price ?? 0 }}"
                             data-has-extra-bed="{{ $room->has_extra_bed ? '1' : '0' }}"
                             data-extra-bed-price="{{ $room->extra_bed_price ?? 0 }}"
-                            {{ old('room_id') == $room->id ? 'selected' : '' }}>
+                            {{ old('room_id', request('room_id')) == $room->id ? 'selected' : '' }}>
                             @php
                                 $pType = $room->pricing_type ?? 'per_night';
                                 $label = match($pType) {
@@ -170,7 +170,7 @@
                 <div id="perNightFields" class="contents">
                 <div>
                     <label class="form-label">Check-In Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date') }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateTotal()">
+                    <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateTotal()">
                     @error('check_in_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
@@ -191,7 +191,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="booking_date" id="slotBookingDate" value="{{ old('booking_date') }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateSlotTotal()">
+                                <input type="date" name="booking_date" id="slotBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateSlotTotal()">
                             </div>
                             <div>
                                 <label class="form-label">Time Slot <span class="text-red-500">*</span></label>
@@ -239,7 +239,7 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="booking_date" id="hourBookingDate" value="{{ old('booking_date') }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateHourTotal()">
+                                <input type="date" name="booking_date" id="hourBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateHourTotal()">
                             </div>
                             <div>
                                 <label class="form-label">Start Time <span class="text-red-500">*</span></label>
