@@ -160,10 +160,17 @@
                     @if($room->has_extra_bed)<span class="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5"><i class="fas fa-bed mr-0.5"></i>+Bed</span>@endif
                 </div>
                 @endif
+                @php $isOccupied = $room->status === 'occupied'; @endphp
                 @if(\App\Services\PermissionService::check('rooms.edit'))
+                @if($isOccupied)
+                <span class="w-full text-center block bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold mb-2 cursor-not-allowed" title="Cannot edit an occupied room">
+                    <i class="fas fa-edit mr-1"></i>Edit Room
+                </span>
+                @else
                 <a href="{{ route('rooms.edit', $room->id) }}" class="w-full text-center block bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
                     <i class="fas fa-edit mr-1"></i>Edit Room
                 </a>
+                @endif
                 @endif
                 <div class="flex gap-2">
                     @if(\App\Services\PermissionService::check('rooms.edit'))
@@ -171,6 +178,11 @@
                     <button onclick="confirmActivate({{ $room->id }}, '{{ $room->room_number }}')"
                         class="flex-1 text-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-2 rounded-xl text-xs font-semibold transition-all">
                         <i class="fas fa-toggle-on mr-1"></i>Activate
+                    </button>
+                    @elseif($isOccupied)
+                    <button disabled title="Cannot deactivate an occupied room"
+                        class="flex-1 text-center bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold cursor-not-allowed">
+                        <i class="fas fa-toggle-off mr-1"></i>Deactivate
                     </button>
                     @else
                     <button onclick="confirmDeactivate({{ $room->id }}, '{{ $room->room_number }}')"
@@ -180,10 +192,17 @@
                     @endif
                     @endif
                     @if(\App\Services\PermissionService::check('rooms.delete'))
+                    @if($isOccupied)
+                    <button disabled title="Cannot delete an occupied room"
+                        class="flex-1 text-center bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold cursor-not-allowed">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                    </button>
+                    @else
                     <button onclick="confirmDelete({{ $room->id }}, '{{ $room->room_number }}')"
                         class="flex-1 text-center bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-xl text-xs font-semibold transition-all">
                         <i class="fas fa-trash mr-1"></i>Delete
                     </button>
+                    @endif
                     @endif
                 </div>
 
