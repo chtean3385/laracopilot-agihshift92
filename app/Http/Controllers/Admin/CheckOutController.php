@@ -45,7 +45,7 @@ class CheckOutController extends Controller
             $checkoutDate = Carbon::parse($booking->check_out_date)->startOfDay();
             $actualNights = $checkinDate->diffInDays($checkoutDate);
             // Same-day checkout counts as 1 night minimum
-            if ($actualNights < 1) $actualNights = max(1, (int) $booking->nights);
+            if ($actualNights < 1) $actualNights = 1;
             $roomCost     = $actualNights * $booking->room->price_per_night;
             $mealCost     = (float)($booking->meal_cost ?? 0);
             $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
