@@ -133,19 +133,13 @@
                     <div class="flex items-center gap-2">
                         <i class="fas fa-clock text-violet-400 w-4"></i>
                         @php
-                            $slotPrices = $room->timeSlots;
-                            $minSlot = $slotPrices->first();
-                            $maxSlot = $slotPrices->last();
+                            $cheapestSlot = $room->timeSlots->first();
+                            $slotDisplay  = $cheapestSlot
+                                ? (float) $cheapestSlot->base_price
+                                : (float) $room->price_per_night;
                         @endphp
-                        @if($slotPrices->isEmpty())
-                            <span class="text-sm font-semibold text-gray-500">Slot pricing</span>
-                        @elseif($minSlot->base_price == $maxSlot->base_price)
-                            <span class="text-lg font-bold text-gray-800">₹{{ number_format($minSlot->base_price) }}</span>
-                            <span class="text-xs text-gray-400">/slot</span>
-                        @else
-                            <span class="text-base font-bold text-gray-800">₹{{ number_format($minSlot->base_price) }}–{{ number_format($maxSlot->base_price) }}</span>
-                            <span class="text-xs text-gray-400">/slot</span>
-                        @endif
+                        <span class="text-lg font-bold text-gray-800">₹{{ number_format($slotDisplay) }}</span>
+                        <span class="text-xs text-gray-400">/slot</span>
                     </div>
                     @else
                     <div class="flex items-center gap-2">
