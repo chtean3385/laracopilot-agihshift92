@@ -16,7 +16,6 @@ MAIL_USERNAME = "support@dreamstechnology.in"
 MAIL_FROM_ADDRESS = "support@dreamstechnology.in"
 MAIL_FROM_NAME = "Hotel CRM"
 APP_NAME = "Hotel CRM"
-DB_CONNECTION = "pgsql"
 
 [userenv.development]
 APP_ENV = "local"

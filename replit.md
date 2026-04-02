@@ -5,8 +5,9 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 
 ## Architecture
 - **Framework**: Laravel 12 (PHP 8.2)
-- **Database (dev)**: SQLite (`database/database.sqlite`) — local file, excluded from deployments via `.gitignore`
-- **Database (production)**: PostgreSQL (Replit managed, `heliumdb`) — completely separate from dev; production env var `DB_CONNECTION=pgsql` activates it
+- **Database (dev)**: SQLite (`database/database.sqlite`) — used by the web workflow (php artisan serve). The `.env` has `DB_CONNECTION=sqlite`. Always run migrations/seeds without a DB_CONNECTION prefix for dev: `php artisan migrate --force` and `php artisan db:seed --force`.
+- **Database (production)**: Neon PostgreSQL (`resort.dreamstechnology.in`) — credentials stored as Replit deployment env vars (`DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_PORT`). Build command prefixes `DB_CONNECTION=pgsql php artisan app:safe-migrate`.
+- **Database (Replit heliumdb)**: The bash terminal / artisan CLI automatically connects to Replit's managed PostgreSQL (`heliumdb`) via system-injected env vars. This is SEPARATE from the dev SQLite used by the web process. Run CLI commands with `unset DB_CONNECTION && php artisan ...` to force SQLite (dev) in the terminal.
 - **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome + Livewire 4
 - **Authentication**: Custom session-based auth — two separate auth flows (Hotel CRM + Platform Admin)
 - **RBAC**: Dynamic DB-driven roles & permissions per hotel
@@ -21,7 +22,7 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 | Email | Password | Role |
 |-------|----------|------|
 | superadmin@gmail.com | Super@#3385 | Platform Super Admin |
-| admin@resort.com | admin123 | Hotel Admin (Default Hotel) |
+| admin@resort.com | admin123 | Hotel Admin (Demo Hotel + Beach Resort) |
 | admin2@hotel.com | admin123 | Hotel Admin (Beach Resort) |
 
 ---

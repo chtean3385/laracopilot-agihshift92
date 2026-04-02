@@ -14,12 +14,13 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Idempotent seeder for multi-hotel SaaS isolation verification.
  *
- * Hotel 1 (Default Hotel) — room 101 (Rs 2000/night) + guest "Test Guest"
- * Hotel 2 (Beach Resort)  — no rooms/guests, proves per-hotel data isolation
+ * Hotel 1 (Demo Hotel)   — rooms 101/102/103 (per-night/per-slot/per-hour) + guest "Test Guest"
+ * Hotel 2 (Beach Resort) — no rooms/guests, proves per-hotel data isolation
  *
  * Credentials:
- *   admin@resort.com  / admin123  → Hotel 1 + 2 (shows hotel picker)
- *   admin2@hotel.com  / admin123  → Hotel 2 only (auto-selects)
+ *   superadmin@gmail.com / Super@#3385 → Platform Super Admin (all hotels)
+ *   admin@resort.com     / admin123    → Demo Hotel + Beach Resort (hotel picker)
+ *   admin2@hotel.com     / admin123    → Beach Resort only (auto-selects)
  *
  * Run: php artisan db:seed --class=MultiHotelTestSeeder
  */
@@ -28,10 +29,10 @@ class MultiHotelTestSeeder extends Seeder
     public function run(): void
     {
         // 1. Hotels
-        $hotel1Id = DB::table('hotels')->where('slug', 'default-hotel')->value('id')
-            ?? DB::table('hotels')->where('id', 1)->value('id')
+        $hotel1Id = DB::table('hotels')->where('slug', 'demo-hotel')->value('id')
+            ?? DB::table('hotels')->where('slug', 'default-hotel')->value('id')
             ?? DB::table('hotels')->insertGetId([
-                'name' => 'Default Hotel', 'slug' => 'default-hotel',
+                'name' => 'Demo Hotel', 'slug' => 'demo-hotel',
                 'status' => 'active', 'plan' => 'basic',
                 'created_at' => now(), 'updated_at' => now(),
             ]);
@@ -42,18 +43,40 @@ class MultiHotelTestSeeder extends Seeder
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        // 2. Hotel 1 — sub-data + sample room + sample guest
+        // 2. Hotel 1 — sub-data + sample rooms + sample guest
         app(HotelContext::class)->setHotel($hotel1Id);
         $this->seedRoles($hotel1Id);
         $this->seedModules($hotel1Id);
-        $this->seedSettings($hotel1Id, 'Default Hotel', 'admin@resort.com');
+        $this->seedSettings($hotel1Id, 'Demo Hotel', 'admin@resort.com');
         $this->seedWhatsAppTemplates($hotel1Id);
 
+        // Room 101 — standard per-night
         if (!DB::table('rooms')->where('hotel_id', $hotel1Id)->where('room_number', '101')->exists()) {
             DB::table('rooms')->insert([
                 'hotel_id' => $hotel1Id, 'room_number' => '101', 'type' => 'standard',
-                'status' => 'available', 'price_per_night' => 2000, 'capacity' => 2,
+                'status' => 'available', 'price_per_night' => 1500, 'capacity' => 2,
                 'floor' => 1, 'amenities' => 'AC, TV, Wi-Fi', 'view' => 'Garden',
+                'pricing_type' => 'per_night',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        // Room 102 — cottage per-slot
+        if (!DB::table('rooms')->where('hotel_id', $hotel1Id)->where('room_number', '102')->exists()) {
+            DB::table('rooms')->insert([
+                'hotel_id' => $hotel1Id, 'room_number' => '102', 'type' => 'cottage',
+                'status' => 'available', 'price_per_night' => 2500, 'capacity' => 4,
+                'floor' => 0, 'amenities' => 'AC, TV, Kitchen, Parking', 'view' => 'Pool',
+                'pricing_type' => 'per_slot',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        // Room 103 — suite per-hour
+        if (!DB::table('rooms')->where('hotel_id', $hotel1Id)->where('room_number', '103')->exists()) {
+            DB::table('rooms')->insert([
+                'hotel_id' => $hotel1Id, 'room_number' => '103', 'type' => 'suite',
+                'status' => 'available', 'price_per_night' => 5000, 'capacity' => 2,
+                'floor' => 2, 'amenities' => 'AC, TV, Jacuzzi, Mini-bar', 'view' => 'Sea',
+                'pricing_type' => 'per_hour', 'hourly_rate' => 500,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
@@ -157,10 +180,11 @@ class MultiHotelTestSeeder extends Seeder
     private function seedModules(int $hotelId): void
     {
         $modules = [
-            ['slug' => 'whatsapp',        'name' => 'WhatsApp Automation',  'description' => 'Automated WhatsApp messages.',            'is_enabled' => true],
-            ['slug' => 'payment_links',   'name' => 'Payment Links',        'description' => 'Generate UPI QR codes and payment links.', 'is_enabled' => true],
-            ['slug' => 'pathik',          'name' => 'Pathik Autofill',      'description' => 'Gujarat Pathik portal autofill.',          'is_enabled' => true],
-            ['slug' => 'channel_manager', 'name' => 'OTA Channel Manager',  'description' => 'Sync with OTA platforms.',                 'is_enabled' => true],
+            ['slug' => 'whatsapp',          'name' => 'WhatsApp Automation',       'description' => 'Automated WhatsApp messages.',              'is_enabled' => false],
+            ['slug' => 'payment_links',     'name' => 'Payment Links',             'description' => 'Generate UPI QR codes and payment links.',   'is_enabled' => false],
+            ['slug' => 'pathik',            'name' => 'Pathik Autofill',           'description' => 'Gujarat Pathik portal autofill.',             'is_enabled' => false],
+            ['slug' => 'channel_manager',   'name' => 'OTA Channel Manager',       'description' => 'Sync with OTA platforms.',                   'is_enabled' => false],
+            ['slug' => 'time-slot-pricing', 'name' => 'Time Slot & Hourly Pricing','description' => 'Enable time-slot and hourly room pricing.',   'is_enabled' => false],
         ];
         foreach ($modules as $m) {
             Module::withoutGlobalScope(\App\Models\Scopes\HotelScope::class)
