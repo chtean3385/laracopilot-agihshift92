@@ -90,6 +90,7 @@ class CheckOutController extends Controller
             'final_payment'  => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string',
             'notes'          => 'nullable|string',
+            'override_hours' => 'nullable|integer|min:1|max:72',
         ]);
 
         $booking = Booking::with(['room', 'payments', 'customer'])->findOrFail($bookingId);
@@ -107,15 +108,18 @@ class CheckOutController extends Controller
             ]);
         }
 
-        // For per_hour rooms, recalculate total using actual elapsed hours (system clock)
+        // For per_hour rooms, use override_hours from form (admin-confirmed) or fall back to elapsed time
         if (($booking->room->pricing_type ?? 'per_night') === 'per_hour') {
-            $checkinAt     = $booking->actual_checkin_at
-                             ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
-            $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
-            $actualHours   = max(1, (int) ceil($actualMinutes / 60));
-            $addOnTotal    = $booking->bookingAddOns()->sum('price');
+            if ($request->filled('override_hours') && (int) $request->override_hours >= 1) {
+                $actualHours = (int) $request->override_hours;
+            } else {
+                $checkinAt     = $booking->actual_checkin_at
+                                 ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
+                $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
+                $actualHours   = max(1, (int) ceil($actualMinutes / 60));
+            }
+            $addOnTotal      = $booking->bookingAddOns()->sum('price');
             $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
-            // Persist the calculated total and hours back onto the booking
             $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             $booking->refresh();
         }

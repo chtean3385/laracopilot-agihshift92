@@ -61,8 +61,18 @@
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Balance Due</span>
+                    @if(($booking->room->pricing_type ?? 'per_night') === 'per_hour')
+                    <span class="font-bold text-violet-600"><i class="fas fa-clock mr-1 text-xs"></i>Billed at checkout</span>
+                    @else
                     <span class="font-bold {{ $booking->balance_due > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($booking->balance_due) }}</span>
+                    @endif
                 </div>
+                @if(($booking->room->pricing_type ?? 'per_night') === 'per_hour' && $booking->actual_checkin_at)
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Checked In At</span>
+                    <span class="font-semibold text-violet-600">{{ $booking->actual_checkin_at->format('h:i A') }}</span>
+                </div>
+                @endif
             </div>
             <a href="{{ route('checkout.show', $booking->id) }}" class="w-full text-center block bg-gradient-to-r from-amber-500 to-orange-600 text-white py-2.5 rounded-xl font-medium text-sm hover:from-amber-600 hover:to-orange-700 transition-all">
                 <i class="fas fa-sign-out-alt mr-2"></i>Process Check-Out

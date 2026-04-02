@@ -49,10 +49,23 @@ class InvoiceController extends Controller
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $invoice = Invoice::findOrFail($id);
+        $invoice = Invoice::with('booking')->findOrFail($id);
         $number  = $invoice->invoice_number;
-        ActivityLogger::log('Deleted', 'Invoice', 'Deleted invoice: ' . $number);
+        $booking = $invoice->booking;
+
+        ActivityLogger::log('Deleted', 'Invoice', 'Deleted invoice ' . $number . ' (₹' . number_format($invoice->total_amount, 2) . ') for Booking #' . ($booking->booking_number ?? '—'));
+
         $invoice->delete();
-        return redirect()->route('invoices.index')->with('success', 'Invoice deleted.');
+
+        // After invoice deletion, reset the booking's payment_status to reflect actual payments
+        if ($booking) {
+            $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
+            $booking->update([
+                'payment_status' => $totalPaid > 0 ? 'partial' : 'pending',
+                'balance_due'    => max(0, $booking->total_amount - $totalPaid),
+            ]);
+        }
+
+        return redirect()->route('invoices.index')->with('success', 'Invoice deleted. Booking balance restored to pending.');
     }
 }

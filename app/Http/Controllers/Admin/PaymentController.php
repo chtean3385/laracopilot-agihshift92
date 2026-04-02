@@ -101,10 +101,40 @@ class PaymentController extends Controller
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $payment = Payment::with('booking')->findOrFail($id);
-        $txn = $payment->transaction_id;
-        ActivityLogger::log('Deleted', 'Payment', 'Deleted payment transaction: ' . $txn);
+        $payment = Payment::with(['booking'])->findOrFail($id);
+        $txn     = $payment->transaction_id;
+        $amount  = $payment->amount;
+        $booking = $payment->booking;
+
+        ActivityLogger::log('Deleted', 'Payment', 'Deleted payment ₹' . number_format($amount, 2) . ' (TXN: ' . $txn . ') for Booking #' . ($booking->booking_number ?? '—'));
+
         $payment->delete();
-        return redirect()->route('payments.index')->with('success', 'Payment deleted.');
+
+        // Recalculate and sync booking + invoice after payment removal
+        if ($booking) {
+            $settings   = Setting::first();
+            $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
+            $gstAmount  = round($booking->total_amount * ($taxRate / 100), 2);
+            $grandTotal = $booking->total_amount + $gstAmount;
+            $totalPaid  = $booking->payments()->where('status', 'completed')->sum('amount');
+            $balance    = max(0, $grandTotal - $totalPaid);
+            $isPaid     = $totalPaid >= $grandTotal && $grandTotal > 0;
+
+            $booking->update([
+                'balance_due'    => $balance,
+                'payment_status' => $isPaid ? 'paid' : ($totalPaid > 0 ? 'partial' : 'pending'),
+            ]);
+
+            $invoice = Invoice::where('booking_id', $booking->id)->latest()->first();
+            if ($invoice) {
+                $invoice->update([
+                    'paid_amount' => $totalPaid,
+                    'balance'     => $balance,
+                    'status'      => $isPaid ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),
+                ]);
+            }
+        }
+
+        return redirect()->route('payments.index')->with('success', 'Payment deleted and balances updated.');
     }
 }

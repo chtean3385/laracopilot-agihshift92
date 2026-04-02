@@ -33,9 +33,20 @@
                     <span style="font-family:monospace;font-weight:700;color:#0891b2;">{{ $booking->booking_number }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid #f1f5f9;padding-top:10px;">
-                    <span style="color:#64748b;">Check-In Date</span>
-                    <span style="font-weight:700;">{{ \Carbon\Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->format('d M Y') }}</span>
+                    <span style="color:#64748b;">Check-In</span>
+                    <span style="font-weight:700;">
+                        {{ \Carbon\Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->format('d M Y') }}
+                        @if($pricingType === 'per_hour' && $booking->actual_checkin_at)
+                        <span style="color:#7c3aed;font-size:12px;margin-left:4px;">{{ \Carbon\Carbon::parse($booking->actual_checkin_at)->format('h:i A') }}</span>
+                        @endif
+                    </span>
                 </div>
+                @if($pricingType === 'per_hour' && $booking->actual_checkin_at)
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">Current Time</span>
+                    <span style="font-weight:700;color:#7c3aed;" id="liveClockCheckout">—</span>
+                </div>
+                @endif
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Check-Out Date</span>
                     <span style="font-weight:700;">{{ $booking->check_out_date->format('d M Y') }}</span>
@@ -150,10 +161,29 @@
         <h3 style="font-weight:800;color:#1e293b;margin-bottom:20px;font-size:15px;"><i class="fas fa-sign-out-alt" style="color:#f59e0b;margin-right:8px;"></i>Complete Check-Out</h3>
         <form id="checkoutForm" action="{{ route('checkout.process', $booking->id) }}" method="POST">
             @csrf
+            @if($pricingType === 'per_hour')
+            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:16px;margin-bottom:20px;">
+                <label class="form-label" style="color:#7c3aed;"><i class="fas fa-clock mr-1"></i>Actual Hours Stayed</label>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+                    <input type="number" name="override_hours" id="overrideHours"
+                        value="{{ $hoursBooked }}" min="1" step="1"
+                        style="width:100px;padding:10px 14px;border:2px solid #7c3aed;border-radius:10px;font-size:18px;font-weight:800;color:#7c3aed;text-align:center;">
+                    <div>
+                        <div style="font-size:12px;color:#64748b;">Check-in: <strong style="color:#7c3aed;">{{ $booking->actual_checkin_at ? \Carbon\Carbon::parse($booking->actual_checkin_at)->format('h:i A') : '—' }}</strong></div>
+                        <div style="font-size:12px;color:#64748b;margin-top:2px;">Rate: <strong>₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr</strong></div>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Adjust hours if needed — bill updates automatically.</div>
+                    </div>
+                </div>
+                <div style="margin-top:10px;font-size:13px;color:#64748b;">
+                    Estimated total: <span id="hoursTotal" style="font-weight:800;color:#7c3aed;font-size:16px;">₹{{ number_format($hoursBooked * ($booking->room->hourly_rate ?? 0)) }}</span>
+                    @if($taxRate > 0)<span style="font-size:11px;color:#94a3b8;"> + {{ $taxRate }}% GST</span>@endif
+                </div>
+            </div>
+            @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label class="form-label">Final Payment (Rs){{ $taxRate > 0 ? ' incl. GST' : '' }}</label>
-                    <input type="number" name="final_payment" value="{{ $gstBalanceDue }}" min="0" step="0.01" class="form-input">
+                    <label class="form-label">Final Payment (₹){{ $taxRate > 0 ? ' incl. GST' : '' }}</label>
+                    <input type="number" name="final_payment" value="{{ $gstBalanceDue }}" min="0" step="0.01" class="form-input" id="finalPaymentInput">
                     <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Pre-filled with balance due{{ $taxRate > 0 ? ' (incl. ' . $taxRate . '% GST)' : '' }}. Adjust if needed.</p>
                 </div>
                 <div>
@@ -313,6 +343,45 @@ function loadQrLib(cb) {
 document.getElementById('coUpiModal').addEventListener('click', function(e) {
     if (e.target === this) closeCoUpiModal();
 });
+</script>
+@endif
+@if($pricingType === 'per_hour')
+<script>
+// Live clock
+(function() {
+    function updateClock() {
+        var el = document.getElementById('liveClockCheckout');
+        if (!el) return;
+        var now = new Date();
+        var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        el.textContent = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+})();
+
+// Hours override → recalculate estimated total display
+var _hourlyRate = {{ (float)($booking->room->hourly_rate ?? 0) }};
+var _taxRate    = {{ $taxRate }};
+var _addonTotal = {{ $booking->bookingAddOns ? $booking->bookingAddOns->sum('price') : 0 }};
+
+function recalcHourlyTotal() {
+    var hoursEl  = document.getElementById('overrideHours');
+    var totalEl  = document.getElementById('hoursTotal');
+    var payEl    = document.getElementById('finalPaymentInput');
+    if (!hoursEl) return;
+    var hours    = parseInt(hoursEl.value) || 1;
+    var roomCost = hours * _hourlyRate + _addonTotal;
+    var gst      = _taxRate > 0 ? Math.round(roomCost * (_taxRate / 100) * 100) / 100 : 0;
+    var grand    = roomCost + gst;
+    if (totalEl) totalEl.textContent = '₹' + roomCost.toLocaleString('en-IN');
+    if (payEl) payEl.value = grand.toFixed(2);
+}
+
+var overrideEl = document.getElementById('overrideHours');
+if (overrideEl) overrideEl.addEventListener('input', recalcHourlyTotal);
 </script>
 @endif
 @endsection

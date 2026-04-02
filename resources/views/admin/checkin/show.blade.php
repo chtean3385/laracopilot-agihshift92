@@ -238,11 +238,18 @@
             <div class="ci-form-grid">
                 <div>
                     <label class="form-label">Payment at Check-In (₹)</label>
-                    <input type="number" name="additional_payment" value="0" min="0" step="0.01" class="form-input">
-                    @if($booking->balance_due > 0)
+                    @php $pricingType = $booking->room->pricing_type ?? 'per_night'; @endphp
+                    <input type="number" name="additional_payment"
+                        value="{{ $pricingType === 'per_night' && $booking->balance_due > 0 ? max(0, $booking->balance_due) : 0 }}"
+                        min="0" step="0.01" class="form-input">
+                    @if($pricingType === 'per_hour')
+                    <p style="font-size:11px;color:#7c3aed;margin-top:4px;font-weight:600;">
+                        <i class="fas fa-clock" style="margin-right:3px;"></i>Hourly room — billing calculated at check-out. Leave payment as 0 or collect a deposit.
+                    </p>
+                    @elseif($booking->balance_due > 0)
                     <p style="font-size:11px;color:#f59e0b;margin-top:4px;font-weight:600;">
                         <i class="fas fa-info-circle" style="margin-right:3px;"></i>
-                        Balance due: ₹{{ number_format($booking->balance_due) }}. Customer can pay now or at check-out.
+                        Balance due: ₹{{ number_format($booking->balance_due) }}. Adjust if collecting partial.
                     </p>
                     @else
                     <p style="font-size:11px;color:#16a34a;margin-top:4px;font-weight:600;">
