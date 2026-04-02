@@ -20,18 +20,44 @@
                 <div>
                     <label class="form-label">Room Type <span class="text-red-500">*</span></label>
                     <select name="type" class="form-input" required>
-                        @foreach(['standard', 'deluxe', 'suite', 'villa', 'penthouse'] as $type)
-                        <option value="{{ $type }}" {{ old('type', $room->type) == $type ? 'selected' : '' }}>{{ ucfirst($type) }}</option>
+                        @foreach(['standard'=>'Standard','deluxe'=>'Deluxe','suite'=>'Suite','villa'=>'Villa','penthouse'=>'Penthouse','cottage'=>'Cottage','bhk'=>'BHK'] as $val=>$lbl)
+                        <option value="{{ $val }}" {{ old('type', $room->type) == $val ? 'selected' : '' }}>{{ $lbl }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="form-label">Capacity</label>
-                    <input type="number" name="capacity" value="{{ old('capacity', $room->capacity) }}" min="1" class="form-input">
+                    <input type="number" name="capacity" value="{{ old('capacity', $room->capacity) }}" min="1" max="50" class="form-input">
                 </div>
-                <div>
+
+                @if($slotModuleOn)
+                <div class="md:col-span-2">
+                    <label class="form-label">Pricing Mode <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-3 gap-3">
+                        @foreach(['per_night'=>['icon'=>'fa-moon','label'=>'Per Night','sub'=>'Standard nightly rate'],'per_slot'=>['icon'=>'fa-clock','label'=>'Per Slot','sub'=>'Fixed time-block pricing'],'per_hour'=>['icon'=>'fa-hourglass-half','label'=>'Per Hour','sub'=>'Hourly rate pricing']] as $val=>$info)
+                        @php $cur = old('pricing_type', $room->pricing_type ?? 'per_night'); @endphp
+                        <label class="relative flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors pricing-mode-card {{ $cur === $val ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300' }}">
+                            <input type="radio" name="pricing_type" value="{{ $val }}" class="hidden pricing-mode-radio" {{ $cur === $val ? 'checked' : '' }} onchange="onPricingModeChange(this)">
+                            <i class="fas {{ $info['icon'] }} text-violet-500 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="font-semibold text-gray-800 text-sm">{{ $info['label'] }}</div>
+                                <div class="text-xs text-gray-400">{{ $info['sub'] }}</div>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @else
+                <input type="hidden" name="pricing_type" value="per_night">
+                @endif
+
+                <div id="pricePerNightWrap" class="{{ (old('pricing_type', $room->pricing_type ?? 'per_night') !== 'per_night' && $slotModuleOn) ? 'hidden' : '' }}">
                     <label class="form-label">Price per Night (₹)</label>
-                    <input type="number" name="price_per_night" value="{{ old('price_per_night', $room->price_per_night) }}" step="0.01" class="form-input">
+                    <input type="number" id="pricePerNight" name="price_per_night" value="{{ old('price_per_night', $room->price_per_night) }}" step="0.01" class="form-input">
+                </div>
+                <div id="hourlyRateWrap" class="{{ (old('pricing_type', $room->pricing_type ?? 'per_night') !== 'per_hour' || !$slotModuleOn) ? 'hidden' : '' }}">
+                    <label class="form-label">Hourly Rate (₹)</label>
+                    <input type="number" id="hourlyRate" name="hourly_rate" value="{{ old('hourly_rate', $room->hourly_rate) }}" step="0.01" class="form-input" placeholder="200">
                 </div>
                 <div>
                     <label class="form-label">Floor</label>
@@ -152,6 +178,23 @@
     </div>
 </div>
 <script>
+function onPricingModeChange(radio) {
+    document.querySelectorAll('.pricing-mode-card').forEach(c => {
+        c.classList.remove('border-violet-500', 'bg-violet-50');
+        c.classList.add('border-gray-200');
+    });
+    radio.closest('.pricing-mode-card').classList.add('border-violet-500', 'bg-violet-50');
+    radio.closest('.pricing-mode-card').classList.remove('border-gray-200');
+    const mode = radio.value;
+    const nightWrap  = document.getElementById('pricePerNightWrap');
+    const hourlyWrap = document.getElementById('hourlyRateWrap');
+    const priceInput = document.getElementById('pricePerNight');
+    const hourInput  = document.getElementById('hourlyRate');
+    if (nightWrap)  nightWrap.classList.toggle('hidden',  mode !== 'per_night');
+    if (hourlyWrap) hourlyWrap.classList.toggle('hidden', mode !== 'per_hour');
+    if (priceInput) priceInput.required = (mode === 'per_night');
+    if (hourInput)  hourInput.required  = (mode === 'per_hour');
+}
 function togglePrice(meal) {
     const cb = document.getElementById('cb_' + meal);
     const wrap = document.getElementById((meal === 'breakfast' ? 'bf' : meal) + '_price_wrap');

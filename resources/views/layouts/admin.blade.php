@@ -850,6 +850,13 @@
             </a>
             @endif
 
+            @if(\App\Models\Module::isEnabled('time-slot-pricing'))
+            <a href="{{ route('time-slots.index') }}" class="nav-link {{ request()->routeIs('time-slots.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-clock"></i></span>
+                Time Slots
+            </a>
+            @endif
+
             <div class="nav-section">System</div>
 
             @if(session('crm_user_role') === 'Super Admin')

@@ -12,6 +12,7 @@ class Room extends Model
     protected $fillable = [
         'hotel_id',
         'room_number', 'type', 'capacity', 'price_per_night',
+        'pricing_type', 'hourly_rate',
         'floor', 'view', 'amenities', 'description', 'status',
         'has_breakfast', 'breakfast_price',
         'has_lunch',     'lunch_price',
@@ -21,6 +22,7 @@ class Room extends Model
 
     protected $casts = [
         'price_per_night'  => 'decimal:2',
+        'hourly_rate'      => 'decimal:2',
         'capacity'         => 'integer',
         'floor'            => 'integer',
         'has_breakfast'    => 'boolean',
@@ -38,9 +40,20 @@ class Room extends Model
         return $this->has_breakfast || $this->has_lunch || $this->has_dinner;
     }
 
+    public function isPerSlot(): bool  { return $this->pricing_type === 'per_slot'; }
+    public function isPerHour(): bool  { return $this->pricing_type === 'per_hour'; }
+    public function isPerNight(): bool { return $this->pricing_type === 'per_night'; }
+
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function addOns()
+    {
+        return $this->hasMany(RoomAddOn::class)->where(function ($q) {
+            $q->where('room_id', $this->id)->orWhereNull('room_id');
+        })->where('is_active', true);
     }
 
     public function channelMapping()

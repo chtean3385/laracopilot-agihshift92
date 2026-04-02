@@ -7,6 +7,8 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Customer;
 use App\Models\Payment;
+use App\Models\HotelTimeSlot;
+use App\Models\Module;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -179,5 +181,53 @@ class DashboardController extends Controller
             'recentBookings', 'occupancyRate', 'weeklyRevenue',
             'calWeeks', 'calStart', 'prevMonth', 'nextMonth'
         ));
+    }
+
+    public function daySummary()
+    {
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
+
+        $date = request('date');
+        if (!$date) return response()->json(['error' => 'Date required'], 422);
+
+        try {
+            $d = Carbon::parse($date)->toDateString();
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid date'], 422);
+        }
+
+        $bookings = Booking::with(['customer', 'room', 'timeSlot'])
+            ->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
+            ->where(function ($q) use ($d) {
+                $q->whereDate('check_in_date', $d)
+                  ->orWhereDate('check_out_date', $d)
+                  ->orWhere(function ($q2) use ($d) {
+                      $q2->where('check_in_date', '<', $d)->where('check_out_date', '>', $d)->where('status', 'checked_in');
+                  });
+            })
+            ->get();
+
+        $checkins  = $bookings->filter(fn($b) => optional($b->check_in_date)->toDateString()  === $d && $b->status === 'confirmed');
+        $checkouts = $bookings->filter(fn($b) => optional($b->check_out_date)->toDateString() === $d && $b->status === 'checked_in');
+        $staying   = $bookings->filter(fn($b) => optional($b->check_in_date)->toDateString() < $d && optional($b->check_out_date)->toDateString() > $d && $b->status === 'checked_in');
+
+        $fmt = fn($col) => $col->map(fn($b) => [
+            'id'           => $b->id,
+            'guest'        => $b->customer->name ?? '—',
+            'room'         => $b->room->room_number ?? '—',
+            'type'         => $b->room ? ucfirst($b->room->type) : '',
+            'time_slot'    => $b->timeSlot?->name,
+            'slot_time'    => $b->timeSlot ? ($b->timeSlot->start_time . '–' . $b->timeSlot->end_time) : null,
+            'pricing_type' => $b->room?->pricing_type ?? 'per_night',
+            'status'       => $b->status,
+            'url'          => route('bookings.show', $b->id),
+        ])->values();
+
+        return response()->json([
+            'date'      => Carbon::parse($d)->format('D, d M Y'),
+            'checkins'  => $fmt($checkins),
+            'checkouts' => $fmt($checkouts),
+            'staying'   => $fmt($staying),
+        ]);
     }
 }

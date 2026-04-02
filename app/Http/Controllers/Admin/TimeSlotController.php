@@ -1,0 +1,129 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\HotelTimeSlot;
+use App\Models\Module;
+use App\Services\ActivityLogger;
+use Illuminate\Http\Request;
+
+class TimeSlotController extends Controller
+{
+    private function checkAccess(): bool
+    {
+        return session('crm_logged_in') && Module::isEnabled('time-slot-pricing');
+    }
+
+    public function index()
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        if (!Module::isEnabled('time-slot-pricing')) return redirect()->route('settings.index')->with('error', 'Time Slot Pricing module is not enabled.');
+        $slots = HotelTimeSlot::ordered()->get();
+        return view('admin.settings.time-slots', compact('slots'));
+    }
+
+    public function store(Request $request)
+    {
+        if (!$this->checkAccess()) return response()->json(['error' => 'Forbidden'], 403);
+
+        $validated = $request->validate([
+            'name'        => 'required|string|max:100',
+            'start_time'  => 'required|string|regex:/^\d{2}:\d{2}$/',
+            'end_time'    => 'required|string|regex:/^\d{2}:\d{2}$/',
+            'is_overnight'=> 'nullable|boolean',
+            'base_price'  => 'required|numeric|min:0',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        $count = HotelTimeSlot::count();
+        $slot  = HotelTimeSlot::create(array_merge($validated, [
+            'is_overnight' => $request->boolean('is_overnight'),
+            'sort_order'   => $count,
+            'is_active'    => true,
+        ]));
+
+        ActivityLogger::log('Created', 'TimeSlot', 'Created time slot: ' . $slot->name);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'slot' => $slot]);
+        }
+        return redirect()->route('time-slots.index')->with('success', 'Time slot added!');
+    }
+
+    public function update(Request $request, HotelTimeSlot $timeSlot)
+    {
+        if (!$this->checkAccess()) return response()->json(['error' => 'Forbidden'], 403);
+
+        $validated = $request->validate([
+            'name'        => 'required|string|max:100',
+            'start_time'  => 'required|string|regex:/^\d{2}:\d{2}$/',
+            'end_time'    => 'required|string|regex:/^\d{2}:\d{2}$/',
+            'is_overnight'=> 'nullable|boolean',
+            'base_price'  => 'required|numeric|min:0',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        $timeSlot->update(array_merge($validated, [
+            'is_overnight' => $request->boolean('is_overnight'),
+        ]));
+
+        ActivityLogger::log('Updated', 'TimeSlot', 'Updated time slot: ' . $timeSlot->name);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'slot' => $timeSlot->fresh()]);
+        }
+        return redirect()->route('time-slots.index')->with('success', 'Time slot updated!');
+    }
+
+    public function toggle(HotelTimeSlot $timeSlot)
+    {
+        $timeSlot->update(['is_active' => !$timeSlot->is_active]);
+        $status = $timeSlot->is_active ? 'enabled' : 'disabled';
+        ActivityLogger::log('Updated', 'TimeSlot', "Time slot '{$timeSlot->name}' {$status}");
+        return response()->json(['success' => true, 'is_active' => $timeSlot->is_active]);
+    }
+
+    public function reorder(Request $request)
+    {
+        if (!$this->checkAccess()) return response()->json(['error' => 'Forbidden'], 403);
+        $request->validate(['order' => 'required|array']);
+        foreach ($request->order as $index => $id) {
+            HotelTimeSlot::where('id', $id)->update(['sort_order' => $index]);
+        }
+        return response()->json(['success' => true]);
+    }
+
+    public function destroy(HotelTimeSlot $timeSlot)
+    {
+        if (!$this->checkAccess()) abort(403);
+        $name = $timeSlot->name;
+        $timeSlot->delete();
+        ActivityLogger::log('Deleted', 'TimeSlot', 'Deleted time slot: ' . $name);
+        if (request()->expectsJson()) return response()->json(['success' => true]);
+        return redirect()->route('time-slots.index')->with('success', 'Time slot deleted.');
+    }
+
+    public function addOnStore(Request $request)
+    {
+        if (!$this->checkAccess()) return response()->json(['error' => 'Forbidden'], 403);
+        $validated = $request->validate([
+            'name'    => 'required|string|max:100',
+            'price'   => 'required|numeric|min:0',
+            'room_id' => 'nullable|exists:rooms,id',
+        ]);
+        $addOn = \App\Models\RoomAddOn::create(array_merge($validated, ['is_active' => true]));
+        ActivityLogger::log('Created', 'AddOn', 'Created add-on: ' . $addOn->name);
+        return response()->json(['success' => true, 'addOn' => $addOn]);
+    }
+
+    public function addOnDestroy($id)
+    {
+        if (!$this->checkAccess()) abort(403);
+        $addOn = \App\Models\RoomAddOn::findOrFail($id);
+        $name  = $addOn->name;
+        $addOn->delete();
+        ActivityLogger::log('Deleted', 'AddOn', 'Deleted add-on: ' . $name);
+        return response()->json(['success' => true]);
+    }
+}

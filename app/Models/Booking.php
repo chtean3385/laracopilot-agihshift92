@@ -12,6 +12,7 @@ class Booking extends Model
     protected $fillable = [
         'hotel_id',
         'booking_number', 'customer_id', 'room_id',
+        'time_slot_id', 'booking_date', 'slot_start_time', 'slot_end_time', 'hours_booked',
         'check_in_date', 'check_out_date',
         'actual_checkin_at', 'actual_checkout_at',
         'nights', 'adults', 'children',
@@ -25,6 +26,7 @@ class Booking extends Model
     protected $casts = [
         'check_in_date'      => 'date',
         'check_out_date'     => 'date',
+        'booking_date'       => 'date',
         'actual_checkin_at'  => 'datetime',
         'actual_checkout_at' => 'datetime',
         'total_amount'       => 'decimal:2',
@@ -36,6 +38,7 @@ class Booking extends Model
         'meal_dinner'        => 'boolean',
         'extra_beds'         => 'integer',
         'extra_bed_cost'     => 'decimal:2',
+        'hours_booked'       => 'integer',
     ];
 
     public function customer()
@@ -58,10 +61,23 @@ class Booking extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function timeSlot()
+    {
+        return $this->belongsTo(HotelTimeSlot::class, 'time_slot_id');
+    }
+
+    public function bookingAddOns()
+    {
+        return $this->hasMany(BookingAddOn::class);
+    }
+
     public function bookingGuests()
     {
         return $this->hasMany(BookingGuest::class)->orderBy('id');
     }
+
+    public function isSlotBooking(): bool { return !is_null($this->time_slot_id); }
+    public function isHourlyBooking(): bool { return !is_null($this->hours_booked) && $this->hours_booked > 0; }
 
     public function getStatusColorAttribute()
     {

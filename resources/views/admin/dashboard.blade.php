@@ -306,7 +306,9 @@
                     @endphp
                     <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
                        class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
-                       @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif>
+                       @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif
+                       data-ds="{{ $cell['ds'] }}"
+                       onclick="if({{ $hasGuests ? 'true' : 'false' }}){event.preventDefault();openDaySummary('{{ $cell['ds'] }}')}">
                         <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
                         <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
                             @if($cell['checkins'] > 0)
@@ -591,6 +593,67 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(update);
     });
 });
+</script>
+
+{{-- Day Summary Modal --}}
+<div id="daySummaryModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.45);" onclick="if(event.target===this)closeDaySummary()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-2xl">
+            <div>
+                <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-day text-cyan-500 mr-2"></i><span id="dsmDate">—</span></h3>
+                <p class="text-xs text-gray-400 mt-0.5">Booking activity for this day</p>
+            </div>
+            <button onclick="closeDaySummary()" class="text-gray-400 hover:text-gray-600 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+        <div id="dsmBody" class="overflow-y-auto flex-1 p-5 space-y-4">
+            <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-cyan-400 text-2xl"></i></div>
+        </div>
+    </div>
+</div>
+<script>
+function openDaySummary(ds) {
+    document.getElementById('daySummaryModal').classList.remove('hidden');
+    document.getElementById('dsmDate').textContent = '...';
+    document.getElementById('dsmBody').innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-cyan-400 text-2xl"></i></div>';
+    fetch('{{ route("calendar.day_summary") }}?date=' + ds, { headers: {'X-Requested-With':'XMLHttpRequest'} })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('dsmDate').textContent = data.date || ds;
+            let html = '';
+            const section = (title, color, icon, items) => {
+                if (!items || !items.length) return '';
+                let rows = items.map(b => `
+                    <a href="${b.url}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                        <span class="w-8 h-8 rounded-full bg-${color}-100 flex items-center justify-center text-${color}-600 flex-shrink-0">
+                            <i class="fas fa-door-open text-xs"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-800 truncate">${b.guest}</div>
+                            <div class="text-xs text-gray-400">Room ${b.room} · ${b.type}${b.time_slot ? ' · <span class="text-violet-600 font-medium">'+b.time_slot+'</span>' : ''}</div>
+                        </div>
+                        <span class="text-xs bg-${color}-50 text-${color}-700 rounded-full px-2 py-0.5 capitalize font-medium">${b.status.replace('_',' ')}</span>
+                    </a>`).join('');
+                return `<div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-${color}-500 flex-shrink-0"></span>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">${title} (${items.length})</span>
+                    </div>
+                    <div class="space-y-1">${rows}</div>
+                </div>`;
+            };
+            html += section('Check-Ins',  'cyan',  'sign-in-alt', data.checkins);
+            html += section('Check-Outs', 'amber', 'sign-out-alt',data.checkouts);
+            html += section('In-House',   'green', 'home',        data.staying);
+            document.getElementById('dsmBody').innerHTML = html || '<p class="text-center text-gray-400 py-6 text-sm">No bookings for this day.</p>';
+        })
+        .catch(() => {
+            document.getElementById('dsmBody').innerHTML = '<p class="text-center text-red-400 py-6 text-sm">Failed to load data.</p>';
+        });
+}
+function closeDaySummary() { document.getElementById('daySummaryModal').classList.add('hidden'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDaySummary(); });
 </script>
 
 @endsection

@@ -35,73 +35,179 @@ class BookingController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $customers = Customer::orderBy('name')->get();
-        $rooms     = Room::where('status', 'available')->orderBy('room_number')->get();
-        return view('admin.bookings.create', compact('customers', 'rooms'));
+        $customers    = Customer::orderBy('name')->get();
+        $rooms        = Room::where('status', 'available')->orderBy('room_number')->get();
+        $slotModuleOn = \App\Models\Module::isEnabled('time-slot-pricing');
+        $timeSlots    = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
+        $addOns       = $slotModuleOn ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+        return view('admin.bookings.create', compact('customers', 'rooms', 'slotModuleOn', 'timeSlots', 'addOns'));
     }
 
     public function store(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $validated = $request->validate([
-            'customer_id'    => 'required|exists:customers,id',
-            'room_id'        => 'required|exists:rooms,id',
-            'check_in_date'  => 'required|date',
-            'check_out_date' => 'required|date|after:check_in_date',
-            'adults'         => 'required|integer|min:1',
-            'children'       => 'nullable|integer|min:0',
-            'advance_payment'=> 'nullable|numeric|min:0',
+
+        $room         = Room::findOrFail($request->input('room_id'));
+        $pricingType  = $room->pricing_type ?? 'per_night';
+        $slotModuleOn = \App\Models\Module::isEnabled('time-slot-pricing');
+        if (!$slotModuleOn) $pricingType = 'per_night';
+
+        // Validate based on pricing type
+        $baseRules = [
+            'customer_id'     => 'required|exists:customers,id',
+            'room_id'         => 'required|exists:rooms,id',
+            'adults'          => 'required|integer|min:1',
+            'children'        => 'nullable|integer|min:0',
+            'advance_payment' => 'nullable|numeric|min:0',
             'special_requests'=> 'nullable|string',
-        ]);
-        $room           = Room::findOrFail($validated['room_id']);
-        $nights         = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
-        $mealBreakfast  = $request->boolean('meal_breakfast') && $room->has_breakfast;
-        $mealLunch      = $request->boolean('meal_lunch')     && $room->has_lunch;
-        $mealDinner     = $request->boolean('meal_dinner')    && $room->has_dinner;
-        $mealCost       = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
-                        + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
-                        + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
-        $extraBeds      = ($room->has_extra_bed) ? max(0, (int) $request->input('extra_beds', 0)) : 0;
-        $extraBedCost   = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
-        $totalAmount    = $nights * $room->price_per_night + $mealCost + $extraBedCost;
-        $advancePayment = $validated['advance_payment'] ?? 0;
-        $booking = Booking::create([
-            'booking_number'  => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-BK-' . strtoupper(substr(uniqid(), -6)),
-            'customer_id'     => $validated['customer_id'],
-            'room_id'         => $validated['room_id'],
-            'check_in_date'   => $validated['check_in_date'],
-            'check_out_date'  => $validated['check_out_date'],
-            'nights'          => $nights,
-            'adults'          => $validated['adults'],
-            'children'        => $validated['children'] ?? 0,
-            'total_amount'    => $totalAmount,
-            'advance_payment' => $advancePayment,
-            'balance_due'     => $totalAmount - $advancePayment,
-            'special_requests'=> $validated['special_requests'] ?? null,
-            'status'          => 'confirmed',
-            'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
-            'meal_breakfast'  => $mealBreakfast,
-            'meal_lunch'      => $mealLunch,
-            'meal_dinner'     => $mealDinner,
-            'meal_cost'       => $mealCost,
-            'extra_beds'      => $extraBeds,
-            'extra_bed_cost'  => $extraBedCost,
-        ]);
+        ];
+        if ($pricingType === 'per_slot') {
+            $rules = array_merge($baseRules, [
+                'booking_date'   => 'required|date',
+                'time_slot_id'   => 'required|exists:hotel_time_slots,id',
+            ]);
+        } elseif ($pricingType === 'per_hour') {
+            $rules = array_merge($baseRules, [
+                'booking_date'   => 'required|date',
+                'slot_start_time'=> 'required|string|regex:/^\d{2}:\d{2}$/',
+                'hours_booked'   => 'required|integer|min:1|max:24',
+            ]);
+        } else {
+            $rules = array_merge($baseRules, [
+                'check_in_date'  => 'required|date',
+                'check_out_date' => 'required|date|after:check_in_date',
+            ]);
+        }
+        $validated = $request->validate($rules);
+
+        $bookingPrefix  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
+        $bookingNumber  = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
+
+        if ($pricingType === 'per_slot') {
+            $slot          = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
+            $totalAmount   = $slot->base_price;
+            $advancePayment= $validated['advance_payment'] ?? 0;
+            $bookingData   = [
+                'booking_number'  => $bookingNumber,
+                'customer_id'     => $validated['customer_id'],
+                'room_id'         => $validated['room_id'],
+                'check_in_date'   => $validated['booking_date'],
+                'check_out_date'  => $validated['booking_date'],
+                'booking_date'    => $validated['booking_date'],
+                'time_slot_id'    => $validated['time_slot_id'],
+                'nights'          => 0,
+                'adults'          => $validated['adults'],
+                'children'        => $validated['children'] ?? 0,
+                'total_amount'    => $totalAmount,
+                'advance_payment' => $advancePayment,
+                'balance_due'     => $totalAmount - $advancePayment,
+                'special_requests'=> $validated['special_requests'] ?? null,
+                'status'          => 'confirmed',
+                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+                'meal_breakfast'  => false, 'meal_lunch' => false, 'meal_dinner' => false,
+                'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
+            ];
+        } elseif ($pricingType === 'per_hour') {
+            $hours         = (int) $validated['hours_booked'];
+            $totalAmount   = $hours * ($room->hourly_rate ?? 0);
+            $advancePayment= $validated['advance_payment'] ?? 0;
+            $bookingData   = [
+                'booking_number'  => $bookingNumber,
+                'customer_id'     => $validated['customer_id'],
+                'room_id'         => $validated['room_id'],
+                'check_in_date'   => $validated['booking_date'],
+                'check_out_date'  => $validated['booking_date'],
+                'booking_date'    => $validated['booking_date'],
+                'slot_start_time' => $validated['slot_start_time'],
+                'hours_booked'    => $hours,
+                'nights'          => 0,
+                'adults'          => $validated['adults'],
+                'children'        => $validated['children'] ?? 0,
+                'total_amount'    => $totalAmount,
+                'advance_payment' => $advancePayment,
+                'balance_due'     => $totalAmount - $advancePayment,
+                'special_requests'=> $validated['special_requests'] ?? null,
+                'status'          => 'confirmed',
+                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+                'meal_breakfast'  => false, 'meal_lunch' => false, 'meal_dinner' => false,
+                'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
+            ];
+        } else {
+            // per_night — original flow
+            $nights        = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+            $mealBreakfast = $request->boolean('meal_breakfast') && $room->has_breakfast;
+            $mealLunch     = $request->boolean('meal_lunch')     && $room->has_lunch;
+            $mealDinner    = $request->boolean('meal_dinner')    && $room->has_dinner;
+            $mealCost      = ($mealBreakfast ? ($room->breakfast_price * $nights) : 0)
+                           + ($mealLunch     ? ($room->lunch_price     * $nights) : 0)
+                           + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
+            $extraBeds     = $room->has_extra_bed ? max(0, (int) $request->input('extra_beds', 0)) : 0;
+            $extraBedCost  = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
+            $totalAmount   = $nights * $room->price_per_night + $mealCost + $extraBedCost;
+            $advancePayment= $validated['advance_payment'] ?? 0;
+            $bookingData   = [
+                'booking_number'  => $bookingNumber,
+                'customer_id'     => $validated['customer_id'],
+                'room_id'         => $validated['room_id'],
+                'check_in_date'   => $validated['check_in_date'],
+                'check_out_date'  => $validated['check_out_date'],
+                'nights'          => $nights,
+                'adults'          => $validated['adults'],
+                'children'        => $validated['children'] ?? 0,
+                'total_amount'    => $totalAmount,
+                'advance_payment' => $advancePayment,
+                'balance_due'     => $totalAmount - $advancePayment,
+                'special_requests'=> $validated['special_requests'] ?? null,
+                'status'          => 'confirmed',
+                'payment_status'  => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+                'meal_breakfast'  => $mealBreakfast,
+                'meal_lunch'      => $mealLunch,
+                'meal_dinner'     => $mealDinner,
+                'meal_cost'       => $mealCost,
+                'extra_beds'      => $extraBeds,
+                'extra_bed_cost'  => $extraBedCost,
+            ];
+        }
+
+        $booking = Booking::create($bookingData);
+
+        // Save add-ons for slot/hourly bookings
+        if (in_array($pricingType, ['per_slot', 'per_hour']) && $request->filled('addon_ids')) {
+            $addOnTotal = 0;
+            foreach ($request->input('addon_ids', []) as $aoId) {
+                $ao = \App\Models\RoomAddOn::find($aoId);
+                if ($ao) {
+                    \App\Models\BookingAddOn::create(['booking_id' => $booking->id, 'room_add_on_id' => $ao->id, 'name' => $ao->name, 'price' => $ao->price]);
+                    $addOnTotal += $ao->price;
+                }
+            }
+            if ($addOnTotal > 0) {
+                $booking->increment('total_amount', $addOnTotal);
+                $booking->increment('balance_due', $addOnTotal);
+            }
+        }
+
+        $advancePayment = $bookingData['advance_payment'] ?? 0;
         if ($advancePayment > 0) {
             Payment::create([
                 'booking_id'     => $booking->id,
-                'customer_id'    => $validated['customer_id'],
+                'customer_id'    => $bookingData['customer_id'],
                 'amount'         => $advancePayment,
                 'payment_method' => $request->payment_method ?? 'cash',
                 'payment_type'   => 'advance',
                 'status'         => 'completed',
                 'notes'          => 'Advance at booking',
-                'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
+                'transaction_id' => $bookingPrefix . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
         }
-        $room->update(['status' => 'occupied']);
-        $customer = Customer::find($validated['customer_id']);
-        ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Room ' . $room->room_number);
+
+        // Only mark room occupied for per_night (slot rooms can be booked multiple times/day)
+        if ($pricingType === 'per_night') {
+            $room->update(['status' => 'occupied']);
+        }
+
+        $customer = Customer::find($bookingData['customer_id']);
+        ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Room ' . $room->room_number . ' (' . $pricingType . ')');
         WhatsAppService::sendForEvent('booking.created', $booking);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking created! #' . $booking->booking_number);
     }

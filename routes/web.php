@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\SaHotelFilterController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\PaymentLinksController;
+use App\Http\Controllers\Admin\TimeSlotController;
 
 // ── Installer (must be first, no auth middleware) ───────────────────────────
 Route::middleware(['not.installed'])->group(function () {
@@ -167,6 +168,23 @@ Route::post('/change-password', [UserController::class, 'changePassword'])->name
 // ── Modules (Super Admin only) ─────────────────────────────────────────────
 Route::get('/settings/modules',                  [ModuleController::class, 'index'] )->name('modules.index');
 Route::post('/settings/modules/{module}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+
+// ── Time Slot Pricing ──────────────────────────────────────────────────────
+Route::get('/settings/time-slots',                    [TimeSlotController::class, 'index']      )->name('time-slots.index');
+Route::post('/settings/time-slots',                   [TimeSlotController::class, 'store']      )->name('time-slots.store');
+Route::put('/settings/time-slots/{timeSlot}',         [TimeSlotController::class, 'update']     )->name('time-slots.update');
+Route::post('/settings/time-slots/{timeSlot}/toggle', [TimeSlotController::class, 'toggle']     )->name('time-slots.toggle');
+Route::post('/settings/time-slots/reorder',           [TimeSlotController::class, 'reorder']    )->name('time-slots.reorder');
+Route::delete('/settings/time-slots/{timeSlot}',      [TimeSlotController::class, 'destroy']    )->name('time-slots.destroy');
+Route::post('/settings/add-ons',                      [TimeSlotController::class, 'addOnStore'] )->name('add-ons.store');
+Route::delete('/settings/add-ons/{id}',               [TimeSlotController::class, 'addOnDestroy'])->name('add-ons.destroy');
+
+// ── Dashboard calendar day-summary ─────────────────────────────────────────
+Route::get('/calendar/day-summary', [DashboardController::class, 'daySummary'])->name('calendar.day_summary');
+
+// ── Slot Availability Report ────────────────────────────────────────────────
+Route::get('/reports/slot-availability',        [ReportController::class, 'slotAvailability']      )->middleware('permission:reports.view')->name('reports.slot_availability');
+Route::get('/reports/slot-availability/export', [ReportController::class, 'slotAvailabilityExport'])->middleware('permission:reports.view')->name('reports.slot_availability.export');
 
 // ── WhatsApp Automation ────────────────────────────────────────────────────
 Route::get('/whatsapp/config',                    [WhatsAppController::class, 'config']       )->name('whatsapp.config');

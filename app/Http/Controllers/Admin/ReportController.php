@@ -8,6 +8,8 @@ use App\Models\BookingGuest;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Room;
+use App\Models\HotelTimeSlot;
+use App\Models\Module;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -96,6 +98,75 @@ class ReportController extends Controller
         }
 
         return view('admin.reports.guest-register', compact('bookings', 'from', 'to', 'search'));
+    }
+
+    public function slotAvailability(Request $request)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        if (!Module::isEnabled('time-slot-pricing')) return redirect()->route('reports.index')->with('error', 'Time Slot Pricing module is not enabled.');
+
+        $from  = $request->date_from ? Carbon::parse($request->date_from) : Carbon::today();
+        $to    = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::today()->addDays(13);
+        $slots = HotelTimeSlot::where('is_active', true)->ordered()->get();
+        $rooms = Room::where('pricing_type', 'per_slot')->orderBy('room_number')->get();
+
+        $availability = [];
+        $cur = $from->copy();
+        while ($cur <= $to) {
+            $ds = $cur->toDateString();
+            $dayData = ['date' => $ds, 'label' => $cur->format('D, d M'), 'slots' => []];
+
+            foreach ($slots as $slot) {
+                $bookedRoomIds = Booking::whereDate('booking_date', $ds)
+                    ->where('time_slot_id', $slot->id)
+                    ->whereIn('status', ['confirmed', 'checked_in'])
+                    ->pluck('room_id')->toArray();
+
+                $available = $rooms->whereNotIn('id', $bookedRoomIds)->count();
+                $booked    = count($bookedRoomIds);
+
+                $dayData['slots'][] = [
+                    'slot_id'   => $slot->id,
+                    'slot_name' => $slot->name,
+                    'time'      => $slot->start_time . '–' . $slot->end_time,
+                    'available' => $available,
+                    'booked'    => $booked,
+                    'total'     => $rooms->count(),
+                ];
+            }
+            $availability[] = $dayData;
+            $cur->addDay();
+        }
+
+        if ($request->export === 'csv') {
+            return $this->exportSlotAvailabilityCsv($availability, $slots, $from, $to);
+        }
+
+        return view('admin.reports.slot-availability', compact('availability', 'slots', 'rooms', 'from', 'to'));
+    }
+
+    public function slotAvailabilityExport(Request $request)
+    {
+        return $this->slotAvailability($request->merge(['export' => 'csv']));
+    }
+
+    private function exportSlotAvailabilityCsv($availability, $slots, $from, $to)
+    {
+        $filename = 'slot-availability-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv';
+        $headers  = ['Content-Type' => 'text/csv', 'Content-Disposition' => "attachment; filename=\"$filename\""];
+        $callback = function () use ($availability, $slots) {
+            $out = fopen('php://output', 'w');
+            $header = ['Date'];
+            foreach ($slots as $s) { $header[] = $s->name . ' Available'; $header[] = $s->name . ' Booked'; }
+            fputcsv($out, $header);
+            foreach ($availability as $day) {
+                $row = [$day['label']];
+                foreach ($day['slots'] as $s) { $row[] = $s['available']; $row[] = $s['booked']; }
+                fputcsv($out, $row);
+            }
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
     }
 
     private function exportGuestRegisterCsv($bookings, $from, $to)

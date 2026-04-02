@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Room;
+use App\Models\Module;
+use App\Models\HotelTimeSlot;
 use App\Services\ActivityLogger;
 use App\Services\HotelContext;
 use Illuminate\Http\Request;
@@ -40,17 +42,23 @@ class RoomController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        return view('admin.rooms.create');
+        $slotModuleOn = Module::isEnabled('time-slot-pricing');
+        $addOns       = $slotModuleOn ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+        return view('admin.rooms.create', compact('slotModuleOn', 'addOns'));
     }
 
     public function store(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+        $slotModuleOn  = Module::isEnabled('time-slot-pricing');
+        $pricingType   = $slotModuleOn ? ($request->input('pricing_type', 'per_night')) : 'per_night';
+        $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())],
-            'type'           => 'required|in:standard,deluxe,suite,villa,penthouse',
-            'capacity'       => 'required|integer|min:1|max:20',
-            'price_per_night'=> 'required|numeric|min:0',
+            'type'           => 'required|in:standard,deluxe,suite,villa,penthouse,cottage,bhk',
+            'capacity'       => 'required|integer|min:1|max:50',
+            'price_per_night'=> $priceRequired,
+            'hourly_rate'    => 'nullable|numeric|min:0',
             'floor'          => 'nullable|integer',
             'view'           => 'nullable|string|max:100',
             'amenities'      => 'nullable|string',
@@ -61,16 +69,19 @@ class RoomController extends Controller
             'dinner_price'   => 'nullable|numeric|min:0',
             'extra_bed_price'=> 'nullable|numeric|min:0',
         ]);
-        $validated['has_breakfast'] = $request->boolean('has_breakfast');
-        $validated['has_lunch']     = $request->boolean('has_lunch');
-        $validated['has_dinner']    = $request->boolean('has_dinner');
-        $validated['has_extra_bed'] = $request->boolean('has_extra_bed');
+        $validated['pricing_type']   = $pricingType;
+        $validated['hourly_rate']    = ($pricingType === 'per_hour') ? ($request->input('hourly_rate') ?? 0) : null;
+        $validated['price_per_night']= ($pricingType === 'per_night') ? ($validated['price_per_night'] ?? 0) : 0;
+        $validated['has_breakfast']  = $request->boolean('has_breakfast');
+        $validated['has_lunch']      = $request->boolean('has_lunch');
+        $validated['has_dinner']     = $request->boolean('has_dinner');
+        $validated['has_extra_bed']  = $request->boolean('has_extra_bed');
         if (!$validated['has_breakfast']) $validated['breakfast_price'] = null;
         if (!$validated['has_lunch'])     $validated['lunch_price']     = null;
         if (!$validated['has_dinner'])    $validated['dinner_price']    = null;
         if (!$validated['has_extra_bed']) $validated['extra_bed_price'] = null;
         $room = Room::create($validated);
-        ActivityLogger::log('Created', 'Room', 'Created room: ' . $room->room_number . ' (' . ucfirst($room->type) . ')');
+        ActivityLogger::log('Created', 'Room', 'Created room: ' . $room->room_number . ' (' . ucfirst($room->type) . ', ' . $pricingType . ')');
         return redirect()->route('rooms.index')->with('success', 'Room added!');
     }
 
@@ -84,19 +95,25 @@ class RoomController extends Controller
     public function edit($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $room = Room::findOrFail($id);
-        return view('admin.rooms.edit', compact('room'));
+        $room         = Room::findOrFail($id);
+        $slotModuleOn = Module::isEnabled('time-slot-pricing');
+        $addOns       = $slotModuleOn ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
+        return view('admin.rooms.edit', compact('room', 'slotModuleOn', 'addOns'));
     }
 
     public function update(Request $request, $id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $room      = Room::findOrFail($id);
+        $room          = Room::findOrFail($id);
+        $slotModuleOn  = Module::isEnabled('time-slot-pricing');
+        $pricingType   = $slotModuleOn ? ($request->input('pricing_type', $room->pricing_type ?? 'per_night')) : 'per_night';
+        $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())->ignore($id)],
-            'type'           => 'required|in:standard,deluxe,suite,villa,penthouse',
-            'capacity'       => 'required|integer|min:1|max:20',
-            'price_per_night'=> 'required|numeric|min:0',
+            'type'           => 'required|in:standard,deluxe,suite,villa,penthouse,cottage,bhk',
+            'capacity'       => 'required|integer|min:1|max:50',
+            'price_per_night'=> $priceRequired,
+            'hourly_rate'    => 'nullable|numeric|min:0',
             'floor'          => 'nullable|integer',
             'view'           => 'nullable|string|max:100',
             'amenities'      => 'nullable|string',
@@ -107,16 +124,19 @@ class RoomController extends Controller
             'dinner_price'   => 'nullable|numeric|min:0',
             'extra_bed_price'=> 'nullable|numeric|min:0',
         ]);
-        $validated['has_breakfast'] = $request->boolean('has_breakfast');
-        $validated['has_lunch']     = $request->boolean('has_lunch');
-        $validated['has_dinner']    = $request->boolean('has_dinner');
-        $validated['has_extra_bed'] = $request->boolean('has_extra_bed');
+        $validated['pricing_type']   = $pricingType;
+        $validated['hourly_rate']    = ($pricingType === 'per_hour') ? ($request->input('hourly_rate') ?? 0) : null;
+        $validated['price_per_night']= ($pricingType === 'per_night') ? ($validated['price_per_night'] ?? 0) : 0;
+        $validated['has_breakfast']  = $request->boolean('has_breakfast');
+        $validated['has_lunch']      = $request->boolean('has_lunch');
+        $validated['has_dinner']     = $request->boolean('has_dinner');
+        $validated['has_extra_bed']  = $request->boolean('has_extra_bed');
         if (!$validated['has_breakfast']) $validated['breakfast_price'] = null;
         if (!$validated['has_lunch'])     $validated['lunch_price']     = null;
         if (!$validated['has_dinner'])    $validated['dinner_price']    = null;
         if (!$validated['has_extra_bed']) $validated['extra_bed_price'] = null;
         $room->update($validated);
-        ActivityLogger::log('Updated', 'Room', 'Updated room: ' . $room->room_number);
+        ActivityLogger::log('Updated', 'Room', 'Updated room: ' . $room->room_number . ' (' . $pricingType . ')');
         return redirect()->route('rooms.index')->with('success', 'Room updated!');
     }
 

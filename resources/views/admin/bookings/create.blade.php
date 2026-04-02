@@ -127,6 +127,8 @@
                         @foreach($rooms as $room)
                         <option value="{{ $room->id }}"
                             data-price="{{ $room->price_per_night }}"
+                            data-pricing-type="{{ $room->pricing_type ?? 'per_night' }}"
+                            data-hourly-rate="{{ $room->hourly_rate ?? 0 }}"
                             data-has-breakfast="{{ $room->has_breakfast ? '1' : '0' }}"
                             data-breakfast-price="{{ $room->breakfast_price ?? 0 }}"
                             data-has-lunch="{{ $room->has_lunch ? '1' : '0' }}"
@@ -136,22 +138,126 @@
                             data-has-extra-bed="{{ $room->has_extra_bed ? '1' : '0' }}"
                             data-extra-bed-price="{{ $room->extra_bed_price ?? 0 }}"
                             {{ old('room_id') == $room->id ? 'selected' : '' }}>
-                            Room {{ $room->room_number }} — {{ ucfirst($room->type) }} — ₹{{ number_format($room->price_per_night) }}/night
+                            @php
+                                $pType = $room->pricing_type ?? 'per_night';
+                                $label = match($pType) {
+                                    'per_slot' => '⏱ Slot-based',
+                                    'per_hour' => '⏰ ₹' . number_format($room->hourly_rate ?? 0) . '/hr',
+                                    default    => '₹' . number_format($room->price_per_night) . '/night',
+                                };
+                            @endphp
+                            Room {{ $room->room_number }} — {{ ucfirst($room->type) }} — {{ $label }}
                         </option>
                         @endforeach
                     </select>
                     @error('room_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+                {{-- Per Night date fields --}}
+                <div id="perNightFields" class="contents">
                 <div>
                     <label class="form-label">Check-In Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date') }}" min="{{ date('Y-m-d') }}" class="form-input" required onchange="calculateTotal()">
+                    <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date') }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateTotal()">
                     @error('check_in_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="form-label">Check-Out Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="check_out_date" id="checkOut" value="{{ old('check_out_date') }}" class="form-input" required onchange="calculateTotal()">
+                    <input type="date" name="check_out_date" id="checkOut" value="{{ old('check_out_date') }}" class="form-input" onchange="calculateTotal()">
                     @error('check_out_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+                </div>
+
+                @if($slotModuleOn)
+                {{-- Per Slot fields --}}
+                <div id="perSlotFields" class="md:col-span-2 hidden">
+                    <div class="border border-violet-100 bg-violet-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fas fa-clock text-violet-500"></i>
+                            <h4 class="font-bold text-gray-700">Slot Booking</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
+                                <input type="date" name="booking_date" id="slotBookingDate" value="{{ old('booking_date') }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateSlotTotal()">
+                            </div>
+                            <div>
+                                <label class="form-label">Time Slot <span class="text-red-500">*</span></label>
+                                <select name="time_slot_id" id="timeSlotSelect" class="form-input" onchange="calculateSlotTotal()">
+                                    <option value="">Select a time slot...</option>
+                                    @foreach($timeSlots as $slot)
+                                    <option value="{{ $slot->id }}" data-price="{{ $slot->base_price }}"
+                                        {{ old('time_slot_id') == $slot->id ? 'selected' : '' }}>
+                                        {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }}) — ₹{{ number_format($slot->base_price) }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        @if($addOns->isNotEmpty())
+                        <div>
+                            <label class="form-label">Add-Ons <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
+                            <div class="flex flex-wrap gap-3 mt-1">
+                                @foreach($addOns as $ao)
+                                <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-violet-300 transition-colors text-sm">
+                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded text-violet-500 addon-check" data-price="{{ $ao->price }}" onchange="calculateSlotTotal()">
+                                    <span class="font-medium text-gray-700">{{ $ao->name }}</span>
+                                    <span class="text-violet-600 font-bold">+₹{{ number_format($ao->price) }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        <div class="bg-white rounded-xl border border-violet-100 px-4 py-3 flex items-center gap-3">
+                            <i class="fas fa-rupee-sign text-violet-500"></i>
+                            <span class="text-sm text-gray-500">Slot Total:</span>
+                            <span id="slotTotalDisplay" class="text-xl font-bold text-violet-700">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Per Hour fields --}}
+                <div id="perHourFields" class="md:col-span-2 hidden">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fas fa-hourglass-half text-amber-500"></i>
+                            <h4 class="font-bold text-gray-700">Hourly Booking</h4>
+                            <span id="hourlyRateTag" class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold"></span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
+                                <input type="date" name="booking_date" id="hourBookingDate" value="{{ old('booking_date') }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateHourTotal()">
+                            </div>
+                            <div>
+                                <label class="form-label">Start Time <span class="text-red-500">*</span></label>
+                                <input type="time" name="slot_start_time" id="slotStartTime" value="{{ old('slot_start_time') }}" class="form-input" onchange="calculateHourTotal()">
+                            </div>
+                            <div>
+                                <label class="form-label">Hours <span class="text-red-500">*</span></label>
+                                <input type="number" name="hours_booked" id="hoursBooked" value="{{ old('hours_booked', 1) }}" min="1" max="24" class="form-input" onchange="calculateHourTotal()">
+                            </div>
+                        </div>
+                        @if($addOns->isNotEmpty())
+                        <div>
+                            <label class="form-label">Add-Ons <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
+                            <div class="flex flex-wrap gap-3 mt-1">
+                                @foreach($addOns as $ao)
+                                <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-amber-300 transition-colors text-sm">
+                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded text-amber-500 addon-check-hour" data-price="{{ $ao->price }}" onchange="calculateHourTotal()">
+                                    <span class="font-medium text-gray-700">{{ $ao->name }}</span>
+                                    <span class="text-amber-600 font-bold">+₹{{ number_format($ao->price) }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        <div class="bg-white rounded-xl border border-amber-100 px-4 py-3 flex items-center gap-3">
+                            <i class="fas fa-rupee-sign text-amber-500"></i>
+                            <span class="text-sm text-gray-500">Hour Total:</span>
+                            <span id="hourTotalDisplay" class="text-xl font-bold text-amber-700">—</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 <div>
                     <label class="form-label">Adults <span class="text-red-500">*</span></label>
                     <input type="number" name="adults" value="{{ old('adults', 1) }}" min="1" class="form-input" required>
@@ -215,7 +321,7 @@
                 </div>
 
                 <!-- Price Summary -->
-                <div class="md:col-span-2 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-5 border border-cyan-100">
+                <div id="priceNightSummary" class="md:col-span-2 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-5 border border-cyan-100">
                     <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-calculator text-cyan-500 mr-2"></i>Price Summary</h4>
                     <div class="grid grid-cols-3 gap-4 text-center">
                         <div>
@@ -333,8 +439,61 @@
         allowEmptyOption: false,
         placeholder: 'Search room by number or type...',
         maxOptions: 100,
-        onChange: function() { updateMealOptions(); calculateTotal(); }
+        onChange: function() { updatePricingUI(); updateMealOptions(); calculateTotal(); }
     });
+
+    function updatePricingUI() {
+        const roomEl = document.getElementById('roomSelect');
+        const opt    = roomEl.options[roomEl.selectedIndex];
+        const pt     = opt ? (opt.dataset.pricingType || 'per_night') : 'per_night';
+
+        const perNightEl = document.getElementById('perNightFields');
+        const perSlotEl  = document.getElementById('perSlotFields');
+        const perHourEl  = document.getElementById('perHourFields');
+
+        // Show/hide sections
+        if (perNightEl) {
+            if (pt === 'per_night') {
+                perNightEl.classList.remove('hidden'); perNightEl.classList.add('contents');
+                document.getElementById('checkIn').required  = true;
+                document.getElementById('checkOut').required = true;
+            } else {
+                perNightEl.classList.remove('contents'); perNightEl.classList.add('hidden');
+                document.getElementById('checkIn').required  = false;
+                document.getElementById('checkOut').required = false;
+            }
+        }
+        if (perSlotEl)  perSlotEl.classList.toggle('hidden',  pt !== 'per_slot');
+        if (perHourEl)  perHourEl.classList.toggle('hidden',  pt !== 'per_hour');
+
+        // Show/hide price summary
+        const summaryEl = document.getElementById('priceNightSummary');
+        if (summaryEl) summaryEl.classList.toggle('hidden', pt !== 'per_night');
+
+        // Hourly rate tag
+        const hrTag = document.getElementById('hourlyRateTag');
+        if (hrTag && opt) hrTag.textContent = '₹' + parseFloat(opt.dataset.hourlyRate || 0).toLocaleString('en-IN') + '/hr';
+    }
+
+    function calculateSlotTotal() {
+        const slotSel = document.getElementById('timeSlotSelect');
+        const slotOpt = slotSel ? slotSel.options[slotSel.selectedIndex] : null;
+        let total = slotOpt ? parseFloat(slotOpt.dataset.price || 0) : 0;
+        document.querySelectorAll('.addon-check:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
+        const el = document.getElementById('slotTotalDisplay');
+        if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
+    }
+
+    function calculateHourTotal() {
+        const roomEl = document.getElementById('roomSelect');
+        const opt    = roomEl.options[roomEl.selectedIndex];
+        const rate   = opt ? parseFloat(opt.dataset.hourlyRate || 0) : 0;
+        const hours  = parseInt(document.getElementById('hoursBooked')?.value || 1);
+        let total = rate * hours;
+        document.querySelectorAll('.addon-check-hour:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
+        const el = document.getElementById('hourTotalDisplay');
+        if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
+    }
 
     function updateMealOptions() {
         const roomEl = document.getElementById('roomSelect');
