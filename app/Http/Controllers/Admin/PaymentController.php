@@ -60,7 +60,7 @@ class PaymentController extends Controller
         $payment = Payment::create(array_merge($validated, [
             'customer_id'    => $booking->customer_id,
             'status'         => 'completed',
-            'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
+            'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
         ]));
 
         $totalPaid  = $booking->payments()->where('status', 'completed')->sum('amount');

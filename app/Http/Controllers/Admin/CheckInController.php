@@ -62,7 +62,7 @@ class CheckInController extends Controller
                 'payment_type'   => 'advance',
                 'status'         => 'completed',
                 'notes'          => 'Payment at check-in',
-                'transaction_id' => 'TXN' . strtoupper(substr(uniqid(), -8)),
+                'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
             $totalPaid = $booking->advance_payment + $request->additional_payment;
             $booking->update([

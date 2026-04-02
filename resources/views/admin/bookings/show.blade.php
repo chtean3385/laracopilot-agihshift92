@@ -22,6 +22,16 @@
                 <i class="fas fa-clipboard-list"></i> Fill Pathik Portal
             </button>
             @endif
+            @canDo('bookings.delete')
+            @if(in_array($booking->status, ['confirmed', 'checked_in']))
+            <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}" onsubmit="return confirm('Cancel this booking? This cannot be undone.')">
+                @csrf @method('DELETE')
+                <button type="submit" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#fee2e2;color:#dc2626;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #fecaca;">
+                    <i class="fas fa-times-circle"></i>Cancel Booking
+                </button>
+            </form>
+            @endif
+            @endCanDo
         </div>
     </div>
 

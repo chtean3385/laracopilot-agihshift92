@@ -36,25 +36,37 @@ class CheckOutController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
 
-        $booking = Booking::with(['customer', 'room', 'payments'])->findOrFail($bookingId);
+        $booking = Booking::with(['customer', 'room', 'payments', 'timeSlot'])->findOrFail($bookingId);
 
-        $checkinDate  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
-        $checkoutDate = Carbon::parse($booking->check_out_date)->startOfDay();
-        $actualNights = $checkinDate->diffInDays($checkoutDate);
+        $pricingType = $booking->room->pricing_type ?? 'per_night';
 
-        if ($actualNights < 1) {
-            $actualNights = $booking->nights;
+        if ($pricingType === 'per_night') {
+            $checkinDate  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+            $checkoutDate = Carbon::parse($booking->check_out_date)->startOfDay();
+            $actualNights = $checkinDate->diffInDays($checkoutDate);
+            // Same-day checkout counts as 1 night minimum
+            if ($actualNights < 1) $actualNights = max(1, (int) $booking->nights);
+            $roomCost     = $actualNights * $booking->room->price_per_night;
+            $mealCost     = (float)($booking->meal_cost ?? 0);
+            $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
+            $actualTotal  = $roomCost + $mealCost + $extraBedCost;
+            $hoursBooked  = null;
+        } else {
+            // per_hour / per_slot: total_amount is stored correctly at booking time
+            $actualNights = 0;
+            $hoursBooked  = $booking->hours_booked ?? null;
+            $roomCost     = (float) $booking->total_amount;
+            $mealCost     = 0;
+            $extraBedCost = 0;
+            $actualTotal  = $roomCost;
         }
 
-        $roomCost    = $actualNights * $booking->room->price_per_night;
-        $mealCost    = (float)($booking->meal_cost ?? 0);
-        $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
-        $actualTotal = $roomCost + $mealCost + $extraBedCost;
-        $totalPaid   = $booking->payments->where('status', 'completed')->sum('amount');
-        $balanceDue  = max(0, $actualTotal - $totalPaid);
+        $totalPaid  = $booking->payments->where('status', 'completed')->sum('amount');
+        $balanceDue = max(0, $actualTotal - $totalPaid);
 
         return view('admin.checkout.show', compact(
-            'booking', 'actualNights', 'actualTotal', 'roomCost', 'mealCost', 'extraBedCost', 'totalPaid', 'balanceDue'
+            'booking', 'pricingType', 'actualNights', 'hoursBooked',
+            'actualTotal', 'roomCost', 'mealCost', 'extraBedCost', 'totalPaid', 'balanceDue'
         ));
     }
 

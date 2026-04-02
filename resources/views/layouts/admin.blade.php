@@ -688,7 +688,6 @@
                         <select name="hotel_id"
                                 onchange="document.getElementById('sa-hotel-form').submit()"
                                 style="background:transparent;border:none;color:#c4b5fd;font-size:12px;font-weight:700;flex:1;min-width:0;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
-                            <option value="" {{ !$saFilterId ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">All Hotels</option>
                             @foreach($saHotels as $h)
                             <option value="{{ $h->id }}" {{ $saFilterId == $h->id ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">{{ $h->name }}</option>
                             @endforeach

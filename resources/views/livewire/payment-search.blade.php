@@ -155,10 +155,18 @@
                             <div style="font-weight:600;font-size:13px;color:#374151;">{{ $payment->created_at->format('d M Y') }}</div>
                             <div class="lv-secondary">{{ $payment->created_at->format('h:i A') }}</div>
                         </td>
-                        <td class="lv-td lv-td-right">
+                        <td class="lv-td lv-td-right" style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">
                             <a href="{{ route('payments.show', $payment->id) }}" class="lv-action-btn lv-action-btn-green" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            @canDo('payments.delete')
+                            <form method="POST" action="{{ route('payments.destroy', $payment->id) }}" onsubmit="return confirm('Delete this payment record? This cannot be undone.')" style="display:inline;">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="lv-action-btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            @endCanDo
                         </td>
                     </tr>
                     @empty

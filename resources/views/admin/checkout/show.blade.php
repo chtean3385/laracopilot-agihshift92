@@ -40,10 +40,22 @@
                     <span style="color:#64748b;">Check-Out Date</span>
                     <span style="font-weight:700;">{{ $booking->check_out_date->format('d M Y') }}</span>
                 </div>
+                @if($pricingType === 'per_night')
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
-                    <span style="color:#64748b;">Booked Nights</span>
+                    <span style="color:#64748b;">Nights Charged</span>
                     <span style="font-weight:800;font-size:20px;color:#0891b2;">{{ $actualNights }}</span>
                 </div>
+                @elseif($pricingType === 'per_hour')
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">Hours Booked</span>
+                    <span style="font-weight:800;font-size:20px;color:#7c3aed;">{{ $hoursBooked ?? $booking->hours_booked ?? '—' }}</span>
+                </div>
+                @else
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">Time Slot</span>
+                    <span style="font-weight:700;font-size:14px;color:#0891b2;">{{ $booking->timeSlot?->name ?? 'Slot booking' }}</span>
+                </div>
+                @endif
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Guests</span>
                     <span style="font-weight:600;">{{ $booking->adults }} Adults{{ $booking->children > 0 ? ', ' . $booking->children . ' Children' : '' }}</span>
@@ -61,45 +73,61 @@
         <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:22px;">
             <h3 style="font-weight:800;color:#1e293b;margin-bottom:16px;font-size:15px;"><i class="fas fa-receipt" style="color:#f59e0b;margin-right:8px;"></i>Bill Summary</h3>
             <div style="display:flex;flex-direction:column;gap:10px;">
+                @if($pricingType === 'per_night')
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
-                    <span style="color:#64748b;">{{ $actualNights }} nights × Rs{{ number_format($booking->room->price_per_night) }}</span>
-                    <span style="font-weight:700;">Rs{{ number_format($roomCost) }}</span>
+                    <span style="color:#64748b;">{{ $actualNights }} night{{ $actualNights != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->price_per_night) }}/night</span>
+                    <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>
+                @elseif($pricingType === 'per_hour')
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">
+                        {{ $hoursBooked ?? $booking->hours_booked ?? '' }} hr{{ ($hoursBooked ?? $booking->hours_booked ?? 0) != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr
+                    </span>
+                    <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
+                </div>
+                @else
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#64748b;">Slot: {{ $booking->timeSlot?->name ?? 'Fixed slot' }}
+                        @if($booking->timeSlot) ({{ $booking->timeSlot->start_time }}–{{ $booking->timeSlot->end_time }}) @endif
+                    </span>
+                    <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
+                </div>
+                @endif
                 @if($mealCost > 0)
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">🍽️ Meal Plan</span>
-                    <span style="font-weight:600;">Rs{{ number_format($mealCost) }}</span>
+                    <span style="font-weight:600;">₹{{ number_format($mealCost) }}</span>
                 </div>
                 @endif
                 @if($extraBedCost > 0)
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">🛏️ Extra Bed ({{ $booking->extra_beds }})</span>
-                    <span style="font-weight:600;">Rs{{ number_format($extraBedCost) }}</span>
+                    <span style="font-weight:600;">₹{{ number_format($extraBedCost) }}</span>
                 </div>
                 @endif
                 @if($mealCost > 0 || $extraBedCost > 0)
                 <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px dashed #e2e8f0;padding-top:8px;">
                     <span style="color:#64748b;">Subtotal</span>
-                    <span style="font-weight:700;">Rs{{ number_format($actualTotal) }}</span>
+                    <span style="font-weight:700;">₹{{ number_format($actualTotal) }}</span>
                 </div>
                 @endif
                 @if($taxRate > 0)
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">GST ({{ $taxRate }}%)</span>
-                    <span style="font-weight:600;">Rs{{ number_format($gstAmount) }}</span>
+                    <span style="font-weight:600;">₹{{ number_format($gstAmount) }}</span>
                 </div>
                 @endif
                 <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid #f1f5f9;padding-top:10px;">
                     <span style="color:#64748b;">Total Charges</span>
-                    <span style="font-weight:800;">Rs{{ number_format($grandTotal) }}</span>
+                    <span style="font-weight:800;">₹{{ number_format($grandTotal) }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Amount Paid</span>
-                    <span style="font-weight:700;color:#16a34a;">Rs{{ number_format($totalPaid) }}</span>
+                    <span style="font-weight:700;color:#16a34a;">₹{{ number_format($totalPaid) }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:2px solid #0f172a;padding-top:12px;margin-top:4px;">
                     <span>Balance Due</span>
-                    <span style="color:{{ $gstBalanceDue > 0 ? '#ef4444' : '#16a34a' }};font-size:26px;">Rs{{ number_format($gstBalanceDue) }}</span>
+                    <span style="color:{{ $gstBalanceDue > 0 ? '#ef4444' : '#16a34a' }};font-size:26px;">₹{{ number_format($gstBalanceDue) }}</span>
                 </div>
             </div>
 
@@ -109,7 +137,7 @@
                 @foreach($booking->payments->where('status','completed') as $pmt)
                 <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;">
                     <span style="color:#64748b;">{{ ucfirst($pmt->payment_type) }} ({{ ucfirst($pmt->payment_method) }}) — {{ $pmt->created_at->format('d M Y') }}</span>
-                    <span style="font-weight:700;color:#16a34a;">Rs{{ number_format($pmt->amount) }}</span>
+                    <span style="font-weight:700;color:#16a34a;">₹{{ number_format($pmt->amount) }}</span>
                 </div>
                 @endforeach
             </div>

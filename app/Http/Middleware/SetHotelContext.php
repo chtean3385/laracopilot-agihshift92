@@ -27,9 +27,17 @@ class SetHotelContext
             return $next($request);
         }
 
-        // Super Admin hotel-scoped view (optional filter stored in session)
+        // Super Admin hotel-scoped view: always resolve to a specific hotel.
+        // If no filter is chosen yet, default to the first available hotel.
         if (session('crm_user_role') === 'Super Admin') {
             $saFilter = session('crm_sa_hotel_filter');
+            if (!$saFilter) {
+                $firstHotel = \Illuminate\Support\Facades\DB::table('hotels')->orderBy('id')->first();
+                if ($firstHotel) {
+                    $saFilter = $firstHotel->id;
+                    session(['crm_sa_hotel_filter' => $saFilter]);
+                }
+            }
             if ($saFilter) {
                 app(HotelContext::class)->setHotel((int) $saFilter);
             }

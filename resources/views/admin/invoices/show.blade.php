@@ -19,6 +19,14 @@
             </a>
             @endif
             <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
+            @canDo('invoices.delete')
+            <form method="POST" action="{{ route('invoices.destroy', $invoice->id) }}" onsubmit="return confirm('Delete this invoice permanently? This cannot be undone.')">
+                @csrf @method('DELETE')
+                <button type="submit" class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all">
+                    <i class="fas fa-trash"></i>Delete Invoice
+                </button>
+            </form>
+            @endCanDo
         </div>
     </div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
