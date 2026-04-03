@@ -32,6 +32,8 @@ APP_DEBUG = "false"
 APP_URL = "https://resort.dreamstechnology.in"
 APP_KEY = "base64:kVaJPN8ttGlh6do80Hl7tcVmRq0LorbReoE9o0NsFxI="
 DB_CONNECTION = "pgsql"
+SESSION_DRIVER = "file"
+CACHE_STORE = "file"
 
 [workflows]
 runButton = "Project"
