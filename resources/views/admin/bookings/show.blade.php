@@ -109,7 +109,13 @@
                     <div class="mt-4 space-y-2">
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Floor</span><span class="font-medium">{{ $booking->room->floor }}</span></div>
                         <div class="flex justify-between text-sm"><span class="text-gray-500">View</span><span class="font-medium">{{ $booking->room->view }}</span></div>
+                        @if($pType === 'per_slot' && $booking->timeSlot)
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Slot Price</span><span class="font-bold text-violet-600">₹{{ number_format($booking->timeSlot->base_price) }}</span></div>
+                        @elseif($pType === 'per_hour')
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Hour</span><span class="font-bold text-amber-600">₹{{ number_format($booking->room->hourly_rate ?? 0) }}</span></div>
+                        @else
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room->price_per_night) }}</span></div>
+                        @endif
                     </div>
                 </div>
 
@@ -125,8 +131,21 @@
                         $bOverpaid   = max(0, $bTotalPaid - $bGrandTotal);
                     @endphp
                     <div class="space-y-2">
+                        @if($pType === 'per_slot' && $booking->timeSlot)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">
+                                <i class="fas fa-clock text-violet-400 mr-1"></i>{{ $booking->timeSlot->name }}
+                                <span class="text-xs text-gray-400">({{ $booking->timeSlot->start_time }}–{{ $booking->timeSlot->end_time }}{{ $booking->timeSlot->is_overnight ? ' next day' : '' }})</span>
+                            </span>
+                            <span class="font-medium">₹{{ number_format($booking->timeSlot->base_price) }}</span>
+                        </div>
+                        @elseif($pType === 'per_hour')
+                        @php $roomCost = $booking->total_amount; @endphp
+                        <div class="flex justify-between text-sm"><span class="text-gray-500"><i class="fas fa-hourglass-half text-amber-400 mr-1"></i>Hourly booking</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
+                        @else
                         @php $roomCost = $booking->nights * $booking->room->price_per_night; @endphp
                         <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room->price_per_night) }}</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
+                        @endif
                         @if($booking->meal_cost > 0)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500"><i class="fas fa-utensils text-amber-400 mr-1"></i>Meal Plan
