@@ -25,12 +25,17 @@ class SafeMigrate extends Command
 
             $trackedCount = DB::table('migrations')->count();
             $tablesExist  = Schema::hasTable('users');
+            $isProduction = app()->environment('production');
 
-            if ($trackedCount === 0 && $tablesExist) {
+            if ($trackedCount === 0 && $tablesExist && !$isProduction) {
                 $this->warn('Orphaned database state detected (tables exist but not tracked).');
                 $this->warn('Dropping all tables and running fresh migrations...');
                 $this->call('migrate:fresh', ['--force' => true]);
             } else {
+                if ($trackedCount === 0 && $tablesExist && $isProduction) {
+                    $this->warn('Orphaned state detected on PRODUCTION — skipping migrate:fresh to protect data.');
+                    $this->warn('Running incremental migrate instead.');
+                }
                 $this->call('migrate', ['--force' => true]);
             }
 
