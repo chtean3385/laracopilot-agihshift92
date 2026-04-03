@@ -16,7 +16,6 @@ MAIL_USERNAME = "support@dreamstechnology.in"
 MAIL_FROM_ADDRESS = "support@dreamstechnology.in"
 MAIL_FROM_NAME = "Hotel CRM"
 APP_NAME = "Hotel CRM"
-DB_PASSWORD = "password"
 
 [userenv.development]
 APP_ENV = "local"
@@ -74,7 +73,7 @@ externalPort = 3001
 deploymentTarget = "autoscale"
 run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
 publicDir = "public"
-build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && DB_CONNECTION=pgsql php artisan app:safe-migrate"]
+build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan app:safe-migrate"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
