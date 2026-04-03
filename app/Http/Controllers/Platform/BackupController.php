@@ -93,33 +93,42 @@ class BackupController extends Controller
                 $bookingIdMap[$oldId] = $newId;
             }
 
-            // ── 5. Payments (depends on bookings) ───────────────────────────
-            $oldBookingIds = array_keys($bookingIdMap);
-            if (!empty($oldBookingIds)) {
+            // ── 5. Payments (depends on bookings + customers) ────────────────
+            if (!empty($bookingIdMap)) {
                 DB::table('payments')->whereIn('booking_id', array_values($bookingIdMap))->delete();
             }
             foreach ((array)($raw['payments'] ?? []) as $row) {
-                $row = (array) $row;
+                $row    = (array) $row;
                 unset($row['id']);
                 $oldBId = $row['booking_id'] ?? null;
-                if ($oldBId !== null && isset($bookingIdMap[$oldBId])) {
-                    $row['booking_id'] = $bookingIdMap[$oldBId];
-                    DB::table('payments')->insert($row);
+                if ($oldBId === null || !isset($bookingIdMap[$oldBId])) {
+                    continue;
                 }
+                $row['booking_id'] = $bookingIdMap[$oldBId];
+                if (isset($row['customer_id']) && isset($customerIdMap[$row['customer_id']])) {
+                    $row['customer_id'] = $customerIdMap[$row['customer_id']];
+                }
+                $row['hotel_id'] = $hotelId;
+                DB::table('payments')->insert($row);
             }
 
-            // ── 6. Invoices (depends on bookings) ───────────────────────────
+            // ── 6. Invoices (depends on bookings + customers) ────────────────
             if (!empty($bookingIdMap)) {
                 DB::table('invoices')->whereIn('booking_id', array_values($bookingIdMap))->delete();
             }
             foreach ((array)($raw['invoices'] ?? []) as $row) {
-                $row = (array) $row;
+                $row    = (array) $row;
                 unset($row['id']);
                 $oldBId = $row['booking_id'] ?? null;
-                if ($oldBId !== null && isset($bookingIdMap[$oldBId])) {
-                    $row['booking_id'] = $bookingIdMap[$oldBId];
-                    DB::table('invoices')->insert($row);
+                if ($oldBId === null || !isset($bookingIdMap[$oldBId])) {
+                    continue;
                 }
+                $row['booking_id'] = $bookingIdMap[$oldBId];
+                if (isset($row['customer_id']) && isset($customerIdMap[$row['customer_id']])) {
+                    $row['customer_id'] = $customerIdMap[$row['customer_id']];
+                }
+                $row['hotel_id'] = $hotelId;
+                DB::table('invoices')->insert($row);
             }
         });
 
