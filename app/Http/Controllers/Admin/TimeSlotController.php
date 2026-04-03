@@ -115,7 +115,7 @@ class TimeSlotController extends Controller
 
     public function addOnStore(Request $request)
     {
-        if (!session('crm_logged_in')) return response()->json(['error' => 'Forbidden'], 403);
+        if (!session('crm_logged_in') || !$this->hasAnySlotModule()) return response()->json(['error' => 'Forbidden'], 403);
         $validated = $request->validate([
             'name'    => 'required|string|max:100',
             'price'   => 'required|numeric|min:0',
@@ -128,7 +128,7 @@ class TimeSlotController extends Controller
 
     public function addOnDestroy($id)
     {
-        if (!session('crm_logged_in')) abort(403);
+        if (!session('crm_logged_in') || !$this->hasAnySlotModule()) abort(403);
         $addOn = \App\Models\RoomAddOn::findOrFail($id);
         $name  = $addOn->name;
         $addOn->delete();
