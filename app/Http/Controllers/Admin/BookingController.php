@@ -36,14 +36,15 @@ class BookingController extends Controller
     {
         if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
 
-        $roomId = (int) $request->input('room_id');
-        $date   = $request->input('date');
+        $validated = $request->validate([
+            'room_id' => 'required|integer|exists:rooms,id',
+            'date'    => 'required|date_format:Y-m-d',
+        ]);
 
-        if (!$roomId || !$date) {
-            return response()->json(['available_slot_ids' => []]);
-        }
-
-        $available = (new \App\Services\SlotConflictService())->availableSlotIdsForRoom($roomId, $date);
+        $available = (new \App\Services\SlotConflictService())->availableSlotIdsForRoom(
+            (int) $validated['room_id'],
+            $validated['date']
+        );
 
         return response()->json(['available_slot_ids' => $available]);
     }

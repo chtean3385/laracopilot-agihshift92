@@ -531,6 +531,7 @@
         updateMealOptions();
         calculateTotal();
         calculateSlotTotal();
+        refreshAvailableSlots(); // check slot availability for any prefilled room+date
     })();
 
     function calculateSlotTotal() {
