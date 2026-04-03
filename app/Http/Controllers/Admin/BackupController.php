@@ -17,16 +17,8 @@ class BackupController extends Controller
         return session('crm_hotel_id');
     }
 
-    private function guard()
-    {
-        if (!session('crm_logged_in')) {
-            abort(redirect()->route('login'));
-        }
-    }
-
     public function index()
     {
-        $this->guard();
         $hotelId = $this->hotelId();
         $hotel   = Hotel::findOrFail($hotelId);
 
@@ -44,7 +36,6 @@ class BackupController extends Controller
 
     public function saveSettings(Request $request)
     {
-        $this->guard();
         $hotelId = $this->hotelId();
 
         $data = $request->validate([
@@ -67,7 +58,6 @@ class BackupController extends Controller
 
     public function store(Request $request)
     {
-        $this->guard();
         $hotelId = $this->hotelId();
         $hotel   = Hotel::findOrFail($hotelId);
 
@@ -81,7 +71,6 @@ class BackupController extends Controller
 
     public function destroy(int $id)
     {
-        $this->guard();
         $hotelId = $this->hotelId();
 
         $backup = HotelBackup::where('id', $id)->where('hotel_id', $hotelId)->firstOrFail();
