@@ -20,7 +20,11 @@ class BackupController extends Controller
     public function index()
     {
         $hotelId = $this->hotelId();
-        $hotel   = Hotel::findOrFail($hotelId);
+        if (!$hotelId) {
+            return redirect()->route('select.hotel');
+        }
+
+        $hotel = Hotel::findOrFail($hotelId);
 
         $setting = HotelBackupSetting::firstOrCreate(
             ['hotel_id' => $hotelId],
@@ -37,6 +41,9 @@ class BackupController extends Controller
     public function saveSettings(Request $request)
     {
         $hotelId = $this->hotelId();
+        if (!$hotelId) {
+            return redirect()->route('select.hotel');
+        }
 
         $data = $request->validate([
             'auto_backup_enabled' => 'nullable|boolean',
@@ -59,7 +66,10 @@ class BackupController extends Controller
     public function store(Request $request)
     {
         $hotelId = $this->hotelId();
-        $hotel   = Hotel::findOrFail($hotelId);
+        if (!$hotelId) {
+            return redirect()->route('select.hotel');
+        }
+        $hotel = Hotel::findOrFail($hotelId);
 
         $backup = BackupHotels::createBackup($hotel, 'manual', session('crm_user_id'));
 
@@ -72,6 +82,9 @@ class BackupController extends Controller
     public function destroy(int $id)
     {
         $hotelId = $this->hotelId();
+        if (!$hotelId) {
+            return redirect()->route('select.hotel');
+        }
 
         $backup = HotelBackup::where('id', $id)->where('hotel_id', $hotelId)->firstOrFail();
         $backup->delete();
