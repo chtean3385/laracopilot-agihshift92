@@ -107,7 +107,7 @@ class DashboardController extends Controller
         $dashboardSlotAvailability = [];
         $slotWeekStart = Carbon::today()->startOfWeek(Carbon::MONDAY);
 
-        if (Module::isEnabled('time-slot-pricing')) {
+        if (Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing')) {
             try {
                 if (request('slot_week')) {
                     $slotWeekStart = Carbon::parse(request('slot_week'))->startOfWeek(Carbon::MONDAY);

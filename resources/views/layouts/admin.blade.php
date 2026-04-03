@@ -849,10 +849,10 @@
             </a>
             @endif
 
-            @if(\App\Models\Module::isEnabled('time-slot-pricing'))
+            @if(\App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing'))
             <a href="{{ route('time-slots.index') }}" class="nav-link {{ request()->routeIs('time-slots.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-clock"></i></span>
-                Time Slots
+                Time Slots & Add-Ons
             </a>
             @endif
 

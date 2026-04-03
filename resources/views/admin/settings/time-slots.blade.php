@@ -1,12 +1,13 @@
 @extends('layouts.admin')
-@section('title', 'Time Slots')
+@section('title', 'Time Slots & Add-Ons')
 @section('page-title', 'Time Slots & Add-Ons')
 @section('page-subtitle', 'Manage time-slot pricing blocks and room add-ons')
 
 @section('content')
 <div class="max-w-4xl space-y-6">
 
-    {{-- ── Time Slots Card ─────────────────────────────────────── --}}
+    {{-- ── Time Slots Card (only if time-slot-pricing module is active) ── --}}
+    @if($showTimeSlots)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 flex items-center justify-between">
             <div>
@@ -68,8 +69,9 @@
         </div>
         @endif
     </div>
+    @endif {{-- end $showTimeSlots --}}
 
-    {{-- ── Add-Ons Card ─────────────────────────────────────────── --}}
+    {{-- ── Add-Ons Card (always visible when either module is active) ── --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 flex items-center justify-between">
             <div>

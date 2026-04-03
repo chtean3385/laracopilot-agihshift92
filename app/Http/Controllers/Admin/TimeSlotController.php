@@ -15,12 +15,21 @@ class TimeSlotController extends Controller
         return session('crm_logged_in') && Module::isEnabled('time-slot-pricing');
     }
 
+    private function hasAnySlotModule(): bool
+    {
+        return Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing');
+    }
+
     public function index()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        if (!Module::isEnabled('time-slot-pricing')) return redirect()->route('settings.index')->with('error', 'Time Slot Pricing module is not enabled.');
-        $slots = HotelTimeSlot::ordered()->get();
-        return view('admin.settings.time-slots', compact('slots'));
+        if (!$this->hasAnySlotModule()) {
+            return redirect()->route('settings.index')->with('error', 'Time Slot Pricing or Hourly Pricing module is not enabled.');
+        }
+        $slots              = HotelTimeSlot::ordered()->get();
+        $showTimeSlots      = Module::isEnabled('time-slot-pricing');
+        $showHourlyPricing  = Module::isEnabled('hourly-pricing');
+        return view('admin.settings.time-slots', compact('slots', 'showTimeSlots', 'showHourlyPricing'));
     }
 
     public function store(Request $request)
@@ -106,7 +115,7 @@ class TimeSlotController extends Controller
 
     public function addOnStore(Request $request)
     {
-        if (!$this->checkAccess()) return response()->json(['error' => 'Forbidden'], 403);
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Forbidden'], 403);
         $validated = $request->validate([
             'name'    => 'required|string|max:100',
             'price'   => 'required|numeric|min:0',
@@ -119,7 +128,7 @@ class TimeSlotController extends Controller
 
     public function addOnDestroy($id)
     {
-        if (!$this->checkAccess()) abort(403);
+        if (!session('crm_logged_in')) abort(403);
         $addOn = \App\Models\RoomAddOn::findOrFail($id);
         $name  = $addOn->name;
         $addOn->delete();

@@ -877,9 +877,20 @@ class HotelController extends Controller
             'whatsapp.send',
         ];
 
-        $managerExcluded = ['settings.view', 'roles.view', 'roles.edit', 'users.view', 'users.create', 'users.edit', 'users.delete'];
+        // Permissions excluded from Admin by default (must be granted manually)
+        $adminExcluded = ['whatsapp.send'];
 
-        $all       = $allSlugs;
+        // Permissions excluded from Manager by default
+        $managerExcluded = [
+            'settings.view', 'roles.view', 'roles.edit',
+            'users.view', 'users.create', 'users.edit', 'users.delete',
+            // Delete permissions — admin must grant manually
+            'guests.delete', 'rooms.delete', 'bookings.delete',
+            'payments.delete', 'invoices.delete',
+            'whatsapp.send',
+        ];
+
+        $all       = array_values(array_filter($allSlugs, fn($s) => !in_array($s, $adminExcluded)));
         $limited   = array_values(array_filter($allSlugs, fn($s) => !in_array($s, $managerExcluded)));
         $frontdesk = ['guests.view', 'guests.create', 'guests.edit', 'rooms.view',
                       'bookings.view', 'bookings.create', 'bookings.edit',
