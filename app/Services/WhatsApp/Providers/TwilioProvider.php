@@ -4,6 +4,7 @@ namespace App\Services\WhatsApp\Providers;
 
 use App\Models\WhatsAppConfig;
 use App\Services\WhatsApp\WhatsAppProviderInterface;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -34,10 +35,13 @@ class TwilioProvider implements WhatsAppProviderInterface
             if ($response->successful()) {
                 return true;
             }
+            $errMsg = $response->json('message') ?? $response->json('code') ?? $response->body();
             Log::warning('WhatsApp Twilio send failed', ['body' => $response->body()]);
+            WhatsAppService::setLastError('Twilio error (HTTP ' . $response->status() . '): ' . $errMsg);
             return false;
         } catch (\Throwable $e) {
             Log::error('WhatsApp Twilio exception: ' . $e->getMessage());
+            WhatsAppService::setLastError($e->getMessage());
             return false;
         }
     }

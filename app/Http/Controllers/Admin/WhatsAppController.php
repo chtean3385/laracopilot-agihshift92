@@ -65,9 +65,17 @@ class WhatsAppController extends Controller
 
         $sent = WhatsAppService::sendRaw($request->phone, $request->message);
 
-        return back()->with(
-            $sent ? 'success' : 'error',
-            $sent ? 'Test message sent successfully!' : 'Failed to send. Check your API credentials and logs.'
-        );
+        if ($sent) {
+            return back()->with('success', 'Test message sent successfully!');
+        }
+
+        $generic = 'Failed to send. Check your API credentials and logs.';
+        $detail  = WhatsAppService::getLastError();
+
+        $errorMsg = (config('app.debug') && $detail)
+            ? $generic . ' — ' . $detail
+            : $generic;
+
+        return back()->with('error', $errorMsg);
     }
 }

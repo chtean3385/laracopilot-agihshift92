@@ -15,6 +15,19 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
+    /** Last human-readable error from a failed send (cleared on each sendRaw call). */
+    public static string $lastError = '';
+
+    public static function setLastError(string $msg): void
+    {
+        static::$lastError = $msg;
+    }
+
+    public static function getLastError(): string
+    {
+        return static::$lastError;
+    }
+
     private static function provider(WhatsAppConfig $config): ?WhatsAppProviderInterface
     {
         return match ($config->provider) {
@@ -65,24 +78,30 @@ class WhatsAppService
 
     public static function sendRaw(string $phone, string $message): bool
     {
+        static::$lastError = '';
+
         try {
             if (!Module::isEnabled('whatsapp')) {
+                static::setLastError('WhatsApp module is not enabled for this hotel.');
                 return false;
             }
 
             $config = WhatsAppConfig::active();
             if (!$config) {
+                static::setLastError('No active WhatsApp configuration found. Save your credentials and tick "Active".');
                 return false;
             }
 
             $provider = static::provider($config);
             if (!$provider) {
+                static::setLastError('Unknown WhatsApp provider: ' . $config->provider);
                 return false;
             }
 
             return $provider->sendMessage($phone, $message);
         } catch (\Throwable $e) {
             Log::error('WhatsAppService::sendRaw error: ' . $e->getMessage());
+            static::setLastError($e->getMessage());
             return false;
         }
     }

@@ -4,6 +4,7 @@ namespace App\Services\WhatsApp\Providers;
 
 use App\Models\WhatsAppConfig;
 use App\Services\WhatsApp\WhatsAppProviderInterface;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -30,10 +31,14 @@ class MetaProvider implements WhatsAppProviderInterface
             if ($response->successful()) {
                 return true;
             }
+            $errMsg = $response->json('error.message') ?? $response->body();
+            $errCode = $response->json('error.code') ? ' (code ' . $response->json('error.code') . ')' : '';
             Log::warning('WhatsApp Meta send failed', ['body' => $response->body()]);
+            WhatsAppService::setLastError('Meta API error: ' . $errMsg . $errCode);
             return false;
         } catch (\Throwable $e) {
             Log::error('WhatsApp Meta exception: ' . $e->getMessage());
+            WhatsAppService::setLastError($e->getMessage());
             return false;
         }
     }

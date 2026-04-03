@@ -4,6 +4,7 @@ namespace App\Services\WhatsApp\Providers;
 
 use App\Models\WhatsAppConfig;
 use App\Services\WhatsApp\WhatsAppProviderInterface;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -30,10 +31,13 @@ class GupshupProvider implements WhatsAppProviderInterface
             if ($response->successful()) {
                 return true;
             }
+            $errMsg = $response->json('message') ?? $response->json('error') ?? $response->body();
             Log::warning('WhatsApp Gupshup send failed', ['body' => $response->body()]);
+            WhatsAppService::setLastError('Gupshup error (HTTP ' . $response->status() . '): ' . $errMsg);
             return false;
         } catch (\Throwable $e) {
             Log::error('WhatsApp Gupshup exception: ' . $e->getMessage());
+            WhatsAppService::setLastError($e->getMessage());
             return false;
         }
     }
