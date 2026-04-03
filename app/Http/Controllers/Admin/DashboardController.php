@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
+use App\Services\SlotConflictService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -118,6 +119,8 @@ class DashboardController extends Controller
 
                 if ($dashboardSlots->isNotEmpty() && $slotRoomCount > 0) {
                     $hasSlotModule = true;
+                    $conflictSvc   = new SlotConflictService();
+                    $slotRoomIds   = Room::where('pricing_type', 'per_slot')->pluck('id')->toArray();
                     $cur = $slotWeekStart->copy();
                     while ($cur <= $slotWeekEnd) {
                         $ds      = $cur->toDateString();
@@ -129,14 +132,12 @@ class DashboardController extends Controller
                             'slots'    => [],
                         ];
                         foreach ($dashboardSlots as $slot) {
-                            $booked    = Booking::whereDate('booking_date', $ds)
-                                ->where('time_slot_id', $slot->id)
-                                ->whereIn('status', ['confirmed', 'checked_in'])
-                                ->count();
-                            $total     = $slotRoomCount;
-                            $available = $total - $booked;
-                            $pct       = $total > 0 ? round($booked / $total * 100) : 0;
-                            $color     = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                            $conflicting = $conflictSvc->getConflictingRoomIds($slot, $ds);
+                            $booked      = count(array_intersect($conflicting, $slotRoomIds));
+                            $total       = $slotRoomCount;
+                            $available   = $total - $booked;
+                            $pct         = $total > 0 ? round($booked / $total * 100) : 0;
+                            $color       = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
                             $dayData['slots'][] = [
                                 'slot_name' => $slot->name,
                                 'time'      => $slot->start_time . '–' . $slot->end_time,

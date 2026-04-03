@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Room;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
+use App\Services\SlotConflictService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -128,6 +129,9 @@ class ReportController extends Controller
         $to    = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::today()->addDays(13);
         $slots = HotelTimeSlot::where('is_active', true)->ordered()->get();
         $rooms = Room::where('pricing_type', 'per_slot')->orderBy('room_number')->get();
+        $total = $rooms->count();
+
+        $conflictSvc = new SlotConflictService();
 
         $availability = [];
         $cur = $from->copy();
@@ -136,13 +140,9 @@ class ReportController extends Controller
             $dayData = ['date' => $ds, 'label' => $cur->format('D, d M'), 'slots' => []];
 
             foreach ($slots as $slot) {
-                $bookedRoomIds = Booking::whereDate('booking_date', $ds)
-                    ->where('time_slot_id', $slot->id)
-                    ->whereIn('status', ['confirmed', 'checked_in'])
-                    ->pluck('room_id')->toArray();
-
-                $available = $rooms->whereNotIn('id', $bookedRoomIds)->count();
-                $booked    = count($bookedRoomIds);
+                $conflictingRoomIds = $conflictSvc->getConflictingRoomIds($slot, $ds);
+                $booked    = count(array_intersect($conflictingRoomIds, $rooms->pluck('id')->toArray()));
+                $available = $total - $booked;
 
                 $dayData['slots'][] = [
                     'slot_id'   => $slot->id,
@@ -150,7 +150,7 @@ class ReportController extends Controller
                     'time'      => $slot->start_time . '–' . $slot->end_time,
                     'available' => $available,
                     'booked'    => $booked,
-                    'total'     => $rooms->count(),
+                    'total'     => $total,
                 ];
             }
             $availability[] = $dayData;

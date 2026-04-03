@@ -193,7 +193,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="booking_date" id="slotBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateSlotTotal()">
+                                <input type="date" name="booking_date" id="slotBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateSlotTotal(); refreshAvailableSlots();">
                             </div>
                             <div>
                                 <label class="form-label">Time Slot <span class="text-red-500">*</span></label>
@@ -452,7 +452,7 @@
         allowEmptyOption: false,
         placeholder: 'Search room by number or type...',
         maxOptions: 100,
-        onChange: function() { updatePricingUI(); updateMealOptions(); calculateTotal(); }
+        onChange: function() { updatePricingUI(); updateMealOptions(); calculateTotal(); refreshAvailableSlots(); }
     });
 
     // Disable/enable all form inputs inside a container so hidden ones
@@ -540,6 +540,55 @@
         document.querySelectorAll('.addon-check:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
         const el = document.getElementById('slotTotalDisplay');
         if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
+    }
+
+    // Fetch available slot IDs for the currently selected room + date and
+    // mark unavailable slots as disabled in the Time Slot dropdown.
+    function refreshAvailableSlots() {
+        const roomEl = document.getElementById('roomSelect');
+        const roomId = roomEl ? roomEl.value : '';
+        const dateEl = document.getElementById('slotBookingDate');
+        const date   = dateEl ? dateEl.value : '';
+        const slotSel = document.getElementById('timeSlotSelect');
+        if (!slotSel) return;
+
+        // Reset all options to enabled first
+        Array.from(slotSel.options).forEach(function(opt) {
+            opt.disabled = false;
+            opt.style.color = '';
+            opt.title = '';
+            if (opt.dataset.origText) {
+                opt.textContent = opt.dataset.origText;
+            }
+        });
+
+        if (!roomId || !date) return;
+
+        fetch('/bookings/available-time-slots?room_id=' + encodeURIComponent(roomId) + '&date=' + encodeURIComponent(date), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            const available = data.available_slot_ids || [];
+            Array.from(slotSel.options).forEach(function(opt) {
+                if (!opt.value) return; // placeholder
+                const slotId = parseInt(opt.value, 10);
+                if (!available.includes(slotId)) {
+                    // Preserve original text before modification
+                    if (!opt.dataset.origText) opt.dataset.origText = opt.textContent;
+                    opt.disabled = true;
+                    opt.style.color = '#9ca3af';
+                    opt.textContent = opt.dataset.origText + ' [Unavailable]';
+                    opt.title = 'This slot is unavailable due to an overlapping booking';
+                    // If the currently selected slot is now unavailable, deselect it
+                    if (slotSel.value == opt.value) {
+                        slotSel.value = '';
+                        calculateSlotTotal();
+                    }
+                }
+            });
+        })
+        .catch(function() { /* silently ignore network errors */ });
     }
 
     function updateMealOptions() {

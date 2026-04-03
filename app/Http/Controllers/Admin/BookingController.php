@@ -32,6 +32,22 @@ class BookingController extends Controller
         return view('admin.bookings.index', compact('bookings'));
     }
 
+    public function availableTimeSlots(Request $request)
+    {
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
+
+        $roomId = (int) $request->input('room_id');
+        $date   = $request->input('date');
+
+        if (!$roomId || !$date) {
+            return response()->json(['available_slot_ids' => []]);
+        }
+
+        $available = (new \App\Services\SlotConflictService())->availableSlotIdsForRoom($roomId, $date);
+
+        return response()->json(['available_slot_ids' => $available]);
+    }
+
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
@@ -106,6 +122,20 @@ class BookingController extends Controller
             ]);
         }
         $validated = $request->validate($rules);
+
+        // ── Per-slot overlap guard ──────────────────────────────────────────────
+        if ($pricingType === 'per_slot') {
+            $targetSlot = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
+            $conflicting = (new \App\Services\SlotConflictService())->getConflictingRoomIds(
+                $targetSlot,
+                $validated['booking_date']
+            );
+            if (in_array((int) $validated['room_id'], $conflicting)) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['time_slot_id' => 'This room is already booked for an overlapping time slot on this date.']);
+            }
+        }
 
         $bookingPrefix  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
         $bookingNumber  = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));

@@ -92,13 +92,14 @@ Route::post('/rooms/{id}/activate',  [RoomController::class, 'activate']  )->mid
 Route::get('/rooms/{id}',            [RoomController::class, 'show']      )->name('rooms.show');
 
 // ── Bookings ───────────────────────────────────────────────────────────────
-Route::get('/bookings',           [BookingController::class, 'index'])->name('bookings.index');
-Route::get('/bookings/create',    [BookingController::class, 'create'])->middleware('permission:bookings.create')->name('bookings.create');
-Route::post('/bookings',          [BookingController::class, 'store'] )->middleware('permission:bookings.create')->name('bookings.store');
-Route::get('/bookings/{id}/edit', [BookingController::class, 'edit']  )->middleware('permission:bookings.edit')->name('bookings.edit');
-Route::put('/bookings/{id}',      [BookingController::class, 'update'])->middleware('permission:bookings.edit')->name('bookings.update');
-Route::delete('/bookings/{id}',   [BookingController::class, 'destroy'])->middleware('permission:bookings.delete')->name('bookings.destroy');
-Route::get('/bookings/{id}',      [BookingController::class, 'show'] )->name('bookings.show');
+Route::get('/bookings',                      [BookingController::class, 'index']             )->name('bookings.index');
+Route::get('/bookings/create',               [BookingController::class, 'create']            )->middleware('permission:bookings.create')->name('bookings.create');
+Route::get('/bookings/available-time-slots', [BookingController::class, 'availableTimeSlots'])->name('bookings.available_time_slots');
+Route::post('/bookings',                     [BookingController::class, 'store']             )->middleware('permission:bookings.create')->name('bookings.store');
+Route::get('/bookings/{id}/edit',            [BookingController::class, 'edit']              )->middleware('permission:bookings.edit')->name('bookings.edit');
+Route::put('/bookings/{id}',                 [BookingController::class, 'update']            )->middleware('permission:bookings.edit')->name('bookings.update');
+Route::delete('/bookings/{id}',              [BookingController::class, 'destroy']           )->middleware('permission:bookings.delete')->name('bookings.destroy');
+Route::get('/bookings/{id}',                 [BookingController::class, 'show']              )->name('bookings.show');
 
 // ── Check-In ───────────────────────────────────────────────────────────────
 Route::get('/checkin',       [CheckInController::class, 'index']  )->name('checkin.index');
