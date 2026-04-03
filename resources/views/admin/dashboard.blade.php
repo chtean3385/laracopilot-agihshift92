@@ -6,10 +6,9 @@
 @section('content')
 <style>
 .kpi-grid { display: none !important; }
-.occ-rev-grid { display: none !important; }
 
 /* Reorder dashboard sections using flex order */
-.dashboard-main > :nth-child(4) { order: 4 !important; } /* Booking Calendar */
+.dashboard-main > :nth-child(4) { order: 4 !important; } /* Recent Bookings + Calendar (2-col grid) */
 .dashboard-main > :nth-child(5) { order: 1 !important; } /* Quick Actions */
 .dashboard-main > :nth-child(6) { order: 2 !important; } /* Slot Availability */
 .dashboard-main > :nth-child(7) { order: 3 !important; } /* Today's Arrivals */
@@ -167,10 +166,10 @@
 
     {{-- Occupancy + Revenue --}}
     @canDo('reports.view')
-    <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:stretch;" class="occ-rev-grid">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:stretch;" class="occ-rev-grid">
 
-        {{-- Occupancy Circle --}}
-        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;display:flex;flex-direction:column;align-items:center;">
+        {{-- Occupancy Circle (HIDDEN) --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;display:none;flex-direction:column;align-items:center;">
             <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:20px;align-self:flex-start;width:100%;">Room Occupancy</div>
             <div style="position:relative;width:200px;height:200px;flex-shrink:0;">
                 <svg viewBox="0 0 36 36" class="occ-svg" style="width:200px;height:200px;transform:rotate(-90deg);">
@@ -257,11 +256,9 @@
                 @endforelse
             </div>
         </div>
-    </div>
-    @endCanDo
 
-    {{-- Booking Calendar --}}
-    <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+        {{-- Booking Calendar --}}
+        <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
         <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);">
             <div style="display:flex;align-items:center;gap:14px;">
                 <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(6,182,212,.3);">
@@ -349,6 +346,7 @@
             </div>
         </div>
     </div>
+    @endCanDo
 
     {{-- Quick Actions --}}
     <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
