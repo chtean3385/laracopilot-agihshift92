@@ -45,8 +45,9 @@ class SlotConflictService
 
             [$bStart, $bEnd] = $this->slotRange($slot, $booking->booking_date->toDateString());
 
-            // Overlap check: A.start < B.end AND B.start < A.end
-            if ($tStart < $bEnd && $bStart < $tEnd) {
+            // Overlap check: closed-interval — touching boundaries ARE a conflict
+            // (a guest checking out at 09:00 and another checking in at 09:00 cannot coexist)
+            if ($tStart <= $bEnd && $bStart <= $tEnd) {
                 $conflicting[] = $booking->room_id;
             }
         }
