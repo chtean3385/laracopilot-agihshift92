@@ -21,6 +21,9 @@ class BackupController extends Controller
     {
         $hotelId = $this->hotelId();
         if (!$hotelId) {
+            if (session('crm_user_role') === 'Super Admin') {
+                return redirect()->route('platform.backups.index');
+            }
             return redirect()->route('select.hotel');
         }
 
@@ -42,7 +45,7 @@ class BackupController extends Controller
     {
         $hotelId = $this->hotelId();
         if (!$hotelId) {
-            return redirect()->route('select.hotel');
+            return redirect()->route(session('crm_user_role') === 'Super Admin' ? 'platform.backups.index' : 'select.hotel');
         }
 
         $data = $request->validate([
@@ -67,7 +70,7 @@ class BackupController extends Controller
     {
         $hotelId = $this->hotelId();
         if (!$hotelId) {
-            return redirect()->route('select.hotel');
+            return redirect()->route(session('crm_user_role') === 'Super Admin' ? 'platform.backups.index' : 'select.hotel');
         }
         $hotel = Hotel::findOrFail($hotelId);
 
@@ -83,7 +86,7 @@ class BackupController extends Controller
     {
         $hotelId = $this->hotelId();
         if (!$hotelId) {
-            return redirect()->route('select.hotel');
+            return redirect()->route(session('crm_user_role') === 'Super Admin' ? 'platform.backups.index' : 'select.hotel');
         }
 
         $backup = HotelBackup::where('id', $id)->where('hotel_id', $hotelId)->firstOrFail();
