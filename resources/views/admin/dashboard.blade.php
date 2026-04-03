@@ -8,6 +8,13 @@
 .kpi-grid { display: none !important; }
 .occ-rev-grid { display: none !important; }
 
+/* Reorder dashboard sections using flex order */
+.dashboard-main > :nth-child(4) { order: 4 !important; } /* Booking Calendar */
+.dashboard-main > :nth-child(5) { order: 1 !important; } /* Quick Actions */
+.dashboard-main > :nth-child(6) { order: 2 !important; } /* Slot Availability */
+.dashboard-main > :nth-child(7) { order: 3 !important; } /* Today's Arrivals */
+.dashboard-main > :nth-child(8) { display: none !important; } /* Hide Room Availability Checker */
+
 .kpi-card {
     border-radius: 20px;
     padding: 24px;
@@ -86,7 +93,7 @@
 .qa-btn:hover { transform: translateX(4px); }
 </style>
 
-<div style="display:flex;flex-direction:column;gap:24px;">
+<div class="dashboard-main" style="display:flex;flex-direction:column;gap:24px;">
 
     {{-- KPI Row 1 --}}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
