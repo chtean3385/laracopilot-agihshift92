@@ -8,7 +8,7 @@ class Hotel extends Model
 {
     protected $fillable = [
         'name', 'slug', 'address', 'phone', 'email', 'status', 'plan',
-        'trial_ends_at', 'plan_expires_at', 'max_rooms', 'max_users', 'admin_notes',
+        'trial_ends_at', 'plan_expires_at', 'max_rooms', 'max_users', 'admin_notes', 'backup_enabled',
     ];
 
     protected $casts = [
