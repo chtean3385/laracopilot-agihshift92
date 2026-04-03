@@ -320,6 +320,11 @@
             Plans
         </a>
 
+        <a href="{{ route('platform.backups.index') }}" class="nav-link {{ request()->routeIs('platform.backups.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-database"></i></span>
+            Hotel Backups
+        </a>
+
         <div class="nav-section">System</div>
 
         <a href="{{ route('activity_log.index') }}" class="nav-link">

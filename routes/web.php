@@ -138,6 +138,14 @@ Route::middleware('permission:settings.view')->group(function () {
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:settings.edit')->name('settings.update');
 });
 
+// ── Backup & Recovery (hotel-level) ───────────────────────────────────────
+Route::middleware('permission:settings.view')->group(function () {
+    Route::get('/settings/backup',               [\App\Http\Controllers\Admin\BackupController::class, 'index']       )->name('settings.backup');
+    Route::post('/settings/backup',              [\App\Http\Controllers\Admin\BackupController::class, 'store']       )->middleware('permission:settings.edit')->name('settings.backup.store');
+    Route::post('/settings/backup/save',         [\App\Http\Controllers\Admin\BackupController::class, 'saveSettings'])->middleware('permission:settings.edit')->name('settings.backup.save');
+    Route::delete('/settings/backup/{id}',       [\App\Http\Controllers\Admin\BackupController::class, 'destroy']     )->middleware('permission:settings.edit')->name('settings.backup.destroy');
+});
+
 // ── Activity Log ───────────────────────────────────────────────────────────
 Route::get('/activity-log', [ActivityLogController::class, 'index'])
     ->middleware('permission:activity_log.view')
@@ -295,4 +303,8 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::get('/settings/2fa',          [\App\Http\Controllers\Platform\AuthController::class, 'show2faSetup'])->name('platform.settings.2fa');
     Route::post('/settings/2fa/enable',  [\App\Http\Controllers\Platform\AuthController::class, 'enable2fa'])->name('platform.settings.2fa.enable');
     Route::post('/settings/2fa/disable', [\App\Http\Controllers\Platform\AuthController::class, 'disable2fa'])->name('platform.settings.2fa.disable');
+
+    // Hotel Backups
+    Route::get('/backups',                                 [\App\Http\Controllers\Platform\BackupController::class, 'index']  )->name('platform.backups.index');
+    Route::post('/backups/{id}/restore',                   [\App\Http\Controllers\Platform\BackupController::class, 'restore'])->name('platform.backups.restore');
 });

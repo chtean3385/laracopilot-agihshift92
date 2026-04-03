@@ -873,9 +873,13 @@
             @endif
 
             @canDo('settings.view')
-            <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+            <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-cog"></i></span>
                 Settings
+            </a>
+            <a href="{{ route('settings.backup') }}" class="nav-link {{ request()->routeIs('settings.backup*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-database"></i></span>
+                Backup & Recovery
             </a>
             @endCanDo
 
