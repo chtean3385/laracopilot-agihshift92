@@ -5,6 +5,9 @@
 
 @section('content')
 <style>
+.kpi-grid { display: none !important; }
+.occ-rev-grid { display: none !important; }
+
 .kpi-card {
     border-radius: 20px;
     padding: 24px;
