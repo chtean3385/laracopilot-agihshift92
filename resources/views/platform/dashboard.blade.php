@@ -10,99 +10,173 @@
     $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'color' => '#6d28d9', 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569', 'monthly_price' => 0, 'yearly_price' => 0];
 @endphp
 
-{{-- ── Expiry Reminder Modal (always in DOM when there are alerts; auto-opens on login) ── --}}
 @if($expiryAlerts->isNotEmpty())
-<div id="expiryPopupOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9990;display:{{ $showExpiryPopup ? 'flex' : 'none' }};align-items:center;justify-content:center;padding:16px;">
-    <div style="background:#fff;border-radius:22px;box-shadow:0 24px 80px rgba(0,0,0,.25);max-width:560px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
+@php
+    $expiredCount  = $expiryAlerts->where('urgency','expired')->count();
+    $todayCount    = $expiryAlerts->where('urgency','today')->count();
+    $criticalCount = $expiryAlerts->where('urgency','critical')->count();
+    $urgentTotal   = $expiredCount + $todayCount + $criticalCount;
+@endphp
 
-        {{-- Header --}}
-        <div style="padding:22px 24px 16px;border-bottom:1px solid #fee2e2;background:linear-gradient(135deg,#fef2f2,#fff0f0);flex-shrink:0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:44px;height:44px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fas fa-bell" style="color:#fff;font-size:18px;"></i>
-                    </div>
-                    <div>
-                        <div style="font-size:16px;font-weight:800;color:#991b1b;">Subscription Alert</div>
-                        <div style="font-size:12px;color:#b91c1c;margin-top:2px;">
-                            {{ $expiryAlerts->count() }} hotel{{ $expiryAlerts->count() !== 1 ? 's' : '' }} need{{ $expiryAlerts->count() === 1 ? 's' : '' }} attention
-                        </div>
+{{-- ════════════════════════════════════════════════════════════
+     PREMIUM EXPIRY ALERT POPUP
+     ════════════════════════════════════════════════════════════ --}}
+<style>
+@keyframes epOverlayIn  { from { opacity:0; } to { opacity:1; } }
+@keyframes epCardIn     { from { opacity:0; transform:scale(.9) translateY(24px); } to { opacity:1; transform:scale(1) translateY(0); } }
+@keyframes epBellRing   { 0%,100%{transform:rotate(0)} 10%{transform:rotate(18deg)} 20%{transform:rotate(-16deg)} 30%{transform:rotate(14deg)} 40%{transform:rotate(-10deg)} 50%{transform:rotate(6deg)} 60%{transform:rotate(0)} }
+@keyframes epPulseRed   { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)} 70%{box-shadow:0 0 0 10px rgba(239,68,68,0)} }
+@keyframes epStripPulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+#epOverlay { animation: epOverlayIn .25s ease; }
+#epCard    { animation: epCardIn .35s cubic-bezier(.22,1,.36,1); }
+#epBell    { animation: epBellRing 1.4s ease .4s 2; }
+.ep-row { transition: background .15s, transform .12s; }
+.ep-row:hover { background: rgba(255,255,255,.08) !important; transform: translateX(3px); }
+</style>
+
+<div id="epOverlay" style="position:fixed;inset:0;background:rgba(10,5,25,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:9990;display:{{ $showExpiryPopup ? 'flex' : 'none' }};align-items:center;justify-content:center;padding:20px;">
+    <div id="epCard" style="background:#0f0a1e;border:1px solid rgba(255,255,255,.1);border-radius:26px;max-width:600px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05);">
+
+        {{-- ── Gradient header ── --}}
+        <div style="background:linear-gradient(135deg,#1a0533 0%,#3b0764 40%,#7c1d1d 100%);padding:28px 28px 22px;flex-shrink:0;position:relative;overflow:hidden;">
+            {{-- Decorative orbs --}}
+            <div style="position:absolute;left:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(239,68,68,.25),transparent 70%);pointer-events:none;"></div>
+            <div style="position:absolute;right:-30px;bottom:-50px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.3),transparent 70%);pointer-events:none;"></div>
+            {{-- Close btn --}}
+            <button onclick="dismissEP()" style="position:absolute;right:20px;top:20px;width:34px;height:34px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;" onmouseenter="this.style.background='rgba(255,255,255,.2)'" onmouseleave="this.style.background='rgba(255,255,255,.1)'">
+                <i class="fas fa-times" style="color:rgba(255,255,255,.8);font-size:14px;"></i>
+            </button>
+            {{-- Icon + title --}}
+            <div style="display:flex;align-items:center;gap:18px;">
+                <div style="width:60px;height:60px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 4px rgba(239,68,68,.25);animation:epPulseRed 2s infinite;">
+                    <i id="epBell" class="fas fa-bell" style="color:#fff;font-size:26px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.2;">Subscription Alert</div>
+                    <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:5px;display:flex;align-items:center;gap:8px;">
+                        <span>{{ $expiryAlerts->count() }} hotel{{ $expiryAlerts->count()!==1?'s':'' }} require attention today</span>
+                        @if($urgentTotal)
+                        <span style="background:rgba(239,68,68,.25);color:#fca5a5;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid rgba(239,68,68,.3);">{{ $urgentTotal }} URGENT</span>
+                        @endif
                     </div>
                 </div>
-                <button onclick="dismissExpiryPopup()" style="width:32px;height:32px;border:none;background:#fee2e2;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fas fa-times" style="color:#b91c1c;font-size:14px;"></i>
-                </button>
+            </div>
+            {{-- Stat chips --}}
+            <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;">
+                @if($expiredCount)
+                <div style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:6px 14px;text-align:center;">
+                    <div style="font-size:18px;font-weight:900;color:#f87171;">{{ $expiredCount }}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Expired</div>
+                </div>
+                @endif
+                @if($todayCount)
+                <div style="background:rgba(234,88,12,.2);border:1px solid rgba(234,88,12,.3);border-radius:10px;padding:6px 14px;text-align:center;">
+                    <div style="font-size:18px;font-weight:900;color:#fb923c;">{{ $todayCount }}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Today</div>
+                </div>
+                @endif
+                @if($criticalCount)
+                <div style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:6px 14px;text-align:center;">
+                    <div style="font-size:18px;font-weight:900;color:#fbbf24;">{{ $criticalCount }}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Critical</div>
+                </div>
+                @endif
+                @php $soonCount = $expiryAlerts->where('urgency','soon')->count(); @endphp
+                @if($soonCount)
+                <div style="background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:6px 14px;text-align:center;">
+                    <div style="font-size:18px;font-weight:900;color:#34d399;">{{ $soonCount }}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Soon</div>
+                </div>
+                @endif
             </div>
         </div>
 
-        {{-- Alert list --}}
-        <div style="overflow-y:auto;padding:16px 24px;flex:1;">
-            <div style="display:flex;flex-direction:column;gap:10px;">
+        {{-- ── Hotel rows ── --}}
+        <div style="overflow-y:auto;padding:16px 20px;flex:1;background:#0f0a1e;">
+            <div style="display:flex;flex-direction:column;gap:8px;">
             @foreach($expiryAlerts as $alert)
             @php
-                $urgCfg = match($alert->urgency) {
-                    'expired'  => ['bg'=>'#fef2f2','border'=>'#fca5a5','badge_bg'=>'#fee2e2','badge_text'=>'#991b1b','icon'=>'fa-times-circle','icon_color'=>'#ef4444','label'=>'Expired'],
-                    'today'    => ['bg'=>'#fff7ed','border'=>'#fed7aa','badge_bg'=>'#ffedd5','badge_text'=>'#9a3412','icon'=>'fa-exclamation-triangle','icon_color'=>'#ea580c','label'=>'Expires Today'],
-                    'critical' => ['bg'=>'#fffbeb','border'=>'#fde68a','badge_bg'=>'#fef3c7','badge_text'=>'#92400e','icon'=>'fa-clock','icon_color'=>'#d97706','label'=>$alert->days_left.' day'.($alert->days_left===1?'':'s').' left'],
-                    default    => ['bg'=>'#f0fdf4','border'=>'#bbf7d0','badge_bg'=>'#dcfce7','badge_text'=>'#166534','icon'=>'fa-info-circle','icon_color'=>'#16a34a','label'=>$alert->days_left.' days left'],
+                $epR = match($alert->urgency) {
+                    'expired'  => ['bar'=>'#ef4444','badge_bg'=>'rgba(239,68,68,.2)','badge_border'=>'rgba(239,68,68,.35)','badge_text'=>'#f87171','label'=>'EXPIRED','icon'=>'fa-times-circle'],
+                    'today'    => ['bar'=>'#ea580c','badge_bg'=>'rgba(234,88,12,.2)','badge_border'=>'rgba(234,88,12,.35)','badge_text'=>'#fb923c','label'=>'TODAY','icon'=>'fa-exclamation-circle'],
+                    'critical' => ['bar'=>'#f59e0b','badge_bg'=>'rgba(245,158,11,.2)','badge_border'=>'rgba(245,158,11,.35)','badge_text'=>'#fbbf24','label'=>$alert->days_left.'d LEFT','icon'=>'fa-clock'],
+                    default    => ['bar'=>'#10b981','badge_bg'=>'rgba(16,185,129,.15)','badge_border'=>'rgba(16,185,129,.25)','badge_text'=>'#34d399','label'=>$alert->days_left.'d LEFT','icon'=>'fa-info-circle'],
                 };
-                $typeBadge = $alert->type === 'trial' ? 'Trial' : 'Paid Plan';
+                $typeBadge = $alert->type === 'trial' ? 'Trial' : 'Plan';
             @endphp
-            <div style="background:{{ $urgCfg['bg'] }};border:1px solid {{ $urgCfg['border'] }};border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
-                <i class="fas {{ $urgCfg['icon'] }}" style="color:{{ $urgCfg['icon_color'] }};font-size:20px;flex-shrink:0;"></i>
-                <div style="flex:1;min-width:0;">
-                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                        <span style="font-size:14px;font-weight:700;color:#1e293b;">{{ $alert->name }}</span>
-                        <span style="font-size:10px;font-weight:700;background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:10px;">{{ $typeBadge }}</span>
+            <div class="ep-row" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;overflow:hidden;position:relative;">
+                {{-- Urgency bar --}}
+                <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:{{ $epR['bar'] }};border-radius:4px 0 0 4px;"></div>
+                <div style="padding-left:6px;flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="font-size:14px;font-weight:800;color:#f1f5f9;letter-spacing:-.2px;">{{ $alert->name }}</span>
+                        <span style="font-size:10px;font-weight:700;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);padding:1px 8px;border-radius:8px;text-transform:uppercase;letter-spacing:.4px;">{{ $typeBadge }}</span>
                     </div>
-                    <div style="font-size:12px;color:#64748b;margin-top:2px;">
-                        {{ $alert->type === 'trial' ? 'Trial' : 'Plan' }} {{ $alert->days_left < 0 ? 'expired on' : 'expires' }} <strong>{{ $alert->expiry_date }}</strong>
+                    <div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:3px;">
+                        {{ $alert->type==='trial'?'Trial':'Plan' }} {{ $alert->days_left<0?'expired':'expires' }} · <span style="color:rgba(255,255,255,.6);font-weight:600;">{{ $alert->expiry_date }}</span>
                     </div>
                 </div>
-                <span style="font-size:11px;font-weight:700;background:{{ $urgCfg['badge_bg'] }};color:{{ $urgCfg['badge_text'] }};padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;">{{ $urgCfg['label'] }}</span>
+                <span style="font-size:11px;font-weight:800;background:{{ $epR['badge_bg'] }};color:{{ $epR['badge_text'] }};padding:4px 10px;border-radius:20px;border:1px solid {{ $epR['badge_border'] }};white-space:nowrap;flex-shrink:0;letter-spacing:.3px;">{{ $epR['label'] }}</span>
+                <a href="{{ route('platform.hotels.edit', $alert->id) }}"
+                   style="flex-shrink:0;padding:6px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:rgba(255,255,255,.8);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .15s;"
+                   onmouseenter="this.style.background='rgba(255,255,255,.16)'" onmouseleave="this.style.background='rgba(255,255,255,.08)'">
+                    Manage <i class="fas fa-external-link-alt" style="font-size:10px;margin-left:3px;"></i>
+                </a>
             </div>
             @endforeach
             </div>
         </div>
 
-        {{-- Footer --}}
-        <div style="padding:14px 24px;border-top:1px solid #f1f5f9;background:#fafafa;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;">
-            <span style="font-size:11px;color:#94a3b8;">Manage plans in the Tenant Directory below</span>
-            <button onclick="dismissExpiryPopup()" style="padding:9px 22px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
-                Got it — Dismiss
+        {{-- ── Footer ── --}}
+        <div style="padding:16px 20px;background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;">
+            <span style="font-size:12px;color:rgba(255,255,255,.35);">Scroll down to manage plans in Tenant Directory</span>
+            <button onclick="dismissEP()" style="padding:10px 24px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(239,68,68,.4);letter-spacing:.2px;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+                Acknowledged &nbsp;✓
             </button>
         </div>
 
     </div>
 </div>
+
 <script>
-function dismissExpiryPopup() {
-    var el = document.getElementById('expiryPopupOverlay');
-    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .2s'; setTimeout(function(){ el.style.display = 'none'; el.style.opacity = ''; }, 200); }
+function dismissEP() {
+    var o = document.getElementById('epOverlay');
+    if (!o) return;
+    o.style.transition = 'opacity .22s';
+    o.style.opacity = '0';
+    setTimeout(function(){ o.style.display = 'none'; o.style.opacity = ''; }, 230);
 }
-function showExpiryPopup() {
-    var el = document.getElementById('expiryPopupOverlay');
-    if (el) { el.style.display = 'flex'; }
+function showEP() {
+    var o = document.getElementById('epOverlay');
+    if (!o) return;
+    o.style.opacity = '0';
+    o.style.display = 'flex';
+    setTimeout(function(){ o.style.transition='opacity .22s'; o.style.opacity='1'; }, 10);
 }
-document.getElementById('expiryPopupOverlay').addEventListener('click', function(e) {
-    if (e.target === this) dismissExpiryPopup();
+document.getElementById('epOverlay').addEventListener('click', function(e) {
+    if (e.target === this) dismissEP();
 });
 </script>
 
-{{-- ── Inline expiry alert strip (always visible) ── --}}
-@php $urgentCount = $expiryAlerts->whereIn('urgency', ['expired','today','critical'])->count(); @endphp
-<div style="background:{{ $urgentCount ? '#fef2f2' : '#fffbeb' }};border:1px solid {{ $urgentCount ? '#fca5a5' : '#fde68a' }};border-radius:14px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <div style="display:flex;align-items:center;gap:10px;">
-        <i class="fas {{ $urgentCount ? 'fa-exclamation-triangle' : 'fa-clock' }}" style="color:{{ $urgentCount ? '#ef4444' : '#d97706' }};font-size:16px;flex-shrink:0;"></i>
-        <span style="font-size:13px;font-weight:700;color:{{ $urgentCount ? '#991b1b' : '#92400e' }};">
-            {{ $expiryAlerts->count() }} hotel{{ $expiryAlerts->count() !== 1 ? 's' : '' }} with expiring subscriptions
-            @if($urgentCount) — <strong>{{ $urgentCount }} urgent</strong>@endif
-        </span>
+{{-- ── Inline alert strip (persistent, always visible) ── --}}
+<div style="background:linear-gradient(135deg,{{ $urgentTotal ? 'rgba(127,20,20,.08),rgba(127,60,20,.05)' : 'rgba(109,40,217,.06),rgba(59,130,246,.04)' }});border:1px solid {{ $urgentTotal ? 'rgba(239,68,68,.25)' : 'rgba(109,40,217,.2)' }};border-radius:16px;padding:14px 20px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;animation:epStripPulse {{ $urgentTotal ? '2.5s ease infinite' : 'none' }};">
+    <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;background:{{ $urgentTotal ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,#8b5cf6,#6d28d9)' }};border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px {{ $urgentTotal ? 'rgba(239,68,68,.3)' : 'rgba(109,40,217,.3)' }};">
+            <i class="fas {{ $urgentTotal ? 'fa-exclamation-triangle' : 'fa-clock' }}" style="color:#fff;font-size:14px;"></i>
+        </div>
+        <div>
+            <div style="font-size:13px;font-weight:800;color:{{ $urgentTotal ? '#991b1b' : '#4c1d95' }};">
+                {{ $expiryAlerts->count() }} hotel{{ $expiryAlerts->count()!==1?'s':'' }} with expiring subscriptions
+                @if($urgentTotal)<span style="background:{{ $urgentTotal ? '#fee2e2' : '#ede9fe' }};color:{{ $urgentTotal ? '#b91c1c' : '#6d28d9' }};font-size:11px;padding:1px 8px;border-radius:10px;margin-left:6px;">{{ $urgentTotal }} urgent</span>@endif
+            </div>
+            <div style="font-size:11px;color:{{ $urgentTotal ? '#b91c1c' : '#6d28d9' }};opacity:.7;margin-top:2px;">Click View Details to see full breakdown</div>
+        </div>
     </div>
-    <button onclick="showExpiryPopup()" style="padding:6px 16px;background:{{ $urgentCount ? '#ef4444' : '#d97706' }};color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
-        View Details
+    <button onclick="showEP()" style="padding:9px 20px;background:{{ $urgentTotal ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,#8b5cf6,#6d28d9)' }};color:#fff;border:none;border-radius:11px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px {{ $urgentTotal ? 'rgba(239,68,68,.3)' : 'rgba(109,40,217,.3)' }};display:flex;align-items:center;gap:6px;">
+        <i class="fas fa-bell"></i> View Details
     </button>
 </div>
+
 @endif
 
 @php

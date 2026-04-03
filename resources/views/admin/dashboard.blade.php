@@ -350,7 +350,44 @@
 
                     {{-- Quick Actions --}}
                     <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
-                        <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:18px;">Quick Actions</div>
+                        <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:16px;">Quick Actions</div>
+
+                        {{-- Featured Slot Card (always on top) --}}
+                        @if($hasSlotModule)
+                        @canDo('reports.view')
+                        <a href="{{ route('reports.slot_availability') }}" id="qaSlotCard"
+                           style="display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#4c1d95,#6d28d9,#7c3aed);border-radius:16px;padding:18px 20px;margin-bottom:14px;text-decoration:none;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 28px rgba(109,40,217,.35);"
+                           onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 36px rgba(109,40,217,.45)'"
+                           onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(109,40,217,.35)'">
+                            {{-- Background orbs --}}
+                            <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,.07);border-radius:50%;pointer-events:none;"></div>
+                            <div style="position:absolute;right:40px;bottom:-30px;width:70px;height:70px;background:rgba(255,255,255,.05);border-radius:50%;pointer-events:none;"></div>
+                            {{-- Icon --}}
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.25);">
+                                <i class="fas fa-calendar-check" style="color:#fff;font-size:22px;"></i>
+                            </div>
+                            {{-- Text --}}
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;">Slot Availability</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;">Check real-time room slot status</div>
+                            </div>
+                            {{-- Live dot + arrow --}}
+                            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                                <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;">
+                                    <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:qaSlotPulse 1.6s ease-in-out infinite;"></span>Live
+                                </span>
+                                <i class="fas fa-arrow-right" style="color:rgba(255,255,255,.7);font-size:13px;"></i>
+                            </div>
+                        </a>
+                        <style>
+                        @keyframes qaSlotPulse {
+                            0%,100% { opacity:1; transform:scale(1); }
+                            50%      { opacity:.5; transform:scale(1.3); }
+                        }
+                        </style>
+                        @endCanDo
+                        @endif
+
                         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
                             @canDo('bookings.create')
                             <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
@@ -398,18 +435,6 @@
                                     <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
                                 </div>
                                 <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
-                            </a>
-                            @endCanDo
-                            @canDo('reports.view')
-                            <a href="{{ route('reports.slot_availability') }}" class="qa-btn" style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#f5f3ff,#ede9fe)'">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(124,58,237,.3);flex-shrink:0;">
-                                    <i class="fas fa-clock" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:700;color:#4c1d95;font-size:14px;">Slot Availability</div>
-                                    <div style="font-size:12px;color:#a78bfa;">View slot report</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color:#a78bfa;font-size:11px;margin-left:auto;"></i>
                             </a>
                             @endCanDo
                         </div>
