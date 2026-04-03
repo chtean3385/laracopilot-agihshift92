@@ -92,10 +92,10 @@ class BackupHotels extends Command
         $setting->update(['last_backup_at' => now()]);
 
         $retention = $setting->retention_count ?? 10;
-        $oldIds = HotelBackup::where('hotel_id', $hotel->id)
+        $allIds = HotelBackup::where('hotel_id', $hotel->id)
             ->orderByDesc('created_at')
-            ->skip($retention)
             ->pluck('id');
+        $oldIds = $allIds->slice($retention);
         if ($oldIds->isNotEmpty()) {
             HotelBackup::whereIn('id', $oldIds)->delete();
         }
