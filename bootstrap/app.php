@@ -7,7 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 // Copy OS-level env vars (injected by Replit) into $_ENV before phpdotenv runs.
 // phpdotenv (createImmutable) checks $_ENV for existing vars — not getenv() —
 // so without this, it silently overwrites Replit's injected vars with .env values.
-foreach (['DB_CONNECTION','DATABASE_URL','APP_ENV','APP_DEBUG','APP_URL','APP_KEY'] as $_k) {
+foreach (['DB_CONNECTION','DATABASE_URL','DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD','DB_SSLMODE','APP_ENV','APP_DEBUG','APP_URL','APP_KEY'] as $_k) {
     if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
         $_ENV[$_k] = $_SERVER[$_k] = $v;
     }

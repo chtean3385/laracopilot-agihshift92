@@ -21,6 +21,10 @@ APP_NAME = "Hotel CRM"
 APP_ENV = "local"
 APP_DEBUG = "true"
 APP_URL = "http://0.0.0.0:5000"
+DB_HOST = "helium"
+DB_PORT = "5432"
+DB_DATABASE = "heliumdb"
+DB_USERNAME = "postgres"
 
 [userenv.production]
 APP_ENV = "production"
