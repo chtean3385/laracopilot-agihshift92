@@ -6,13 +6,11 @@
 @section('content')
 <style>
 .kpi-grid { display: none !important; }
-
-/* Reorder dashboard sections using flex order */
-.dashboard-main > :nth-child(3) { order: 5 !important; } /* Recent Bookings + Calendar (2-col grid) — LAST */
-.dashboard-main > :nth-child(4) { order: 1 !important; } /* Quick Actions */
-.dashboard-main > :nth-child(5) { order: 2 !important; } /* Slot Availability */
-.dashboard-main > :nth-child(6) { order: 3 !important; } /* Today's Arrivals */
-.dashboard-main > :nth-child(7) { order: 4 !important; } /* Room Availability Checker */
+.dash-s1 { order: 1; }
+.dash-s2 { order: 2; }
+.dash-s3 { order: 3; }
+.dash-s4 { order: 4; }
+.dash-s5 { order: 5; }
 
 .kpi-card {
     border-radius: 20px;
@@ -164,7 +162,8 @@
         </a>
     </div>
 
-    {{-- Occupancy + Revenue --}}
+    {{-- SECTION 5: Recent Bookings + Calendar --}}
+    <div class="dash-s5">
     @canDo('reports.view')
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:stretch;" class="occ-rev-grid">
 
@@ -347,8 +346,10 @@
         </div>
     </div>
     @endCanDo
+    </div>{{-- end dash-s5 --}}
 
-    {{-- Quick Actions --}}
+    {{-- SECTION 1: Quick Actions --}}
+    <div class="dash-s1">
     <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
         <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:18px;">Quick Actions</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
@@ -414,8 +415,10 @@
             @endCanDo
         </div>
     </div>
+    </div>{{-- end dash-s1 --}}
 
-    {{-- Slot Availability Widget --}}
+    {{-- SECTION 2: Slot Availability --}}
+    <div class="dash-s2">
     @if($hasSlotModule)
     <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
         <div style="padding:16px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#ede9fe);flex-wrap:wrap;gap:12px;">
@@ -502,8 +505,10 @@
         </div>
     </div>
     @endif
+    </div>{{-- end dash-s2 --}}
 
-    {{-- Today's Arrivals & Departures --}}
+    {{-- SECTION 3: Today's Arrivals & Departures --}}
+    <div class="dash-s3">
     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
         @if($todayCheckins->count() > 0)
@@ -557,8 +562,10 @@
         @endif
     </div>
     @endif
+    </div>{{-- end dash-s3 --}}
 
-    {{-- Room Availability Checker --}}
+    {{-- SECTION 4: Room Availability --}}
+    <div class="dash-s4">
     <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
         <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0fdf4,#dcfce7);flex-wrap:wrap;gap:12px;">
             <div style="display:flex;align-items:center;gap:14px;">
@@ -584,6 +591,7 @@
             <div class="text-center" style="color:#94a3b8;padding:16px 0;font-size:14px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
         </div>
     </div>
+    </div>{{-- end dash-s4 --}}
 
 </div>
 
