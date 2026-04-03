@@ -12,6 +12,9 @@
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,.07);
     transition: transform .2s, box-shadow .2s;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
 }
 .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,.12); }
 .kpi-card .kpi-shine {
@@ -85,71 +88,71 @@
     {{-- KPI Row 1 --}}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
         {{-- Check-Ins --}}
-        <div class="kpi-card" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
+        <a href="{{ route('checkin.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-sign-in-alt kpi-icon"></i>
             <div class="kpi-label">Today's Check-Ins</div>
             <div class="kpi-num" data-count="{{ $todayCheckins->count() }}">{{ $todayCheckins->count() }}</div>
-            <div class="kpi-sub">Pending arrival</div>
-        </div>
+            <div class="kpi-sub">Pending arrival <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
         {{-- Check-Outs --}}
-        <div class="kpi-card" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
+        <a href="{{ route('checkout.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-sign-out-alt kpi-icon"></i>
             <div class="kpi-label">Today's Check-Outs</div>
             <div class="kpi-num" data-count="{{ $todayCheckouts->count() }}">{{ $todayCheckouts->count() }}</div>
-            <div class="kpi-sub">Pending departure</div>
-        </div>
+            <div class="kpi-sub">Pending departure <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
         {{-- Available Rooms --}}
-        <div class="kpi-card" style="background:linear-gradient(135deg,#10b981,#059669);">
+        <a href="{{ route('rooms.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#10b981,#059669);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-door-open kpi-icon"></i>
             <div class="kpi-label">Available Rooms</div>
             <div class="kpi-num" data-count="{{ $availableRooms }}">{{ $availableRooms }}</div>
-            <div class="kpi-sub">of {{ $totalRooms }} total</div>
-        </div>
+            <div class="kpi-sub">of {{ $totalRooms }} total <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
         {{-- Occupied Rooms --}}
-        <div class="kpi-card" style="background:linear-gradient(135deg,#f43f5e,#be185d);">
+        <a href="{{ route('rooms.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#f43f5e,#be185d);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-bed kpi-icon"></i>
             <div class="kpi-label">Occupied Rooms</div>
             <div class="kpi-num" data-count="{{ $occupiedRooms }}">{{ $occupiedRooms }}</div>
-            <div class="kpi-sub">{{ $occupancyRate }}% occupancy</div>
-        </div>
+            <div class="kpi-sub">{{ $occupancyRate }}% occupancy <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
     </div>
 
     {{-- KPI Row 2: Financial + Operational --}}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
         @canDo('reports.view')
-        <div class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+        <a href="{{ route('reports.revenue') }}" class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-rupee-sign kpi-icon"></i>
             <div class="kpi-label">Today's Revenue</div>
             <div class="kpi-num" data-count="{{ $todayRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($todayRevenue) }}</div>
-            <div class="kpi-sub">Collected today</div>
-        </div>
-        <div class="kpi-card" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
+            <div class="kpi-sub">Collected today <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
+        <a href="{{ route('reports.revenue') }}" class="kpi-card" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-chart-line kpi-icon"></i>
             <div class="kpi-label">Month Revenue</div>
             <div class="kpi-num" data-count="{{ $monthRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($monthRevenue) }}</div>
-            <div class="kpi-sub">{{ now()->format('F Y') }}</div>
-        </div>
+            <div class="kpi-sub">{{ now()->format('F Y') }} <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
         @endCanDo
-        <div class="kpi-card" style="background:linear-gradient(135deg,#d97706,#b45309);">
+        <a href="{{ route('bookings.index', ['payment_status' => 'pending']) }}" class="kpi-card" style="background:linear-gradient(135deg,#d97706,#b45309);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-exclamation-triangle kpi-icon"></i>
             <div class="kpi-label">Pending Payments</div>
             <div class="kpi-num" data-count="{{ $pendingPayments }}">{{ $pendingPayments }}</div>
-            <div class="kpi-sub">Needs attention</div>
-        </div>
-        <div class="kpi-card" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
+            <div class="kpi-sub">Needs attention <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
+        <a href="{{ route('customers.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
             <i class="fas fa-users kpi-icon"></i>
             <div class="kpi-label">Total Guests</div>
             <div class="kpi-num" data-count="{{ $totalCustomers }}">{{ $totalCustomers }}</div>
-            <div class="kpi-sub">+{{ $newCustomersMonth }} this month</div>
-        </div>
+            <div class="kpi-sub">+{{ $newCustomersMonth }} this month <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+        </a>
     </div>
 
     {{-- Occupancy + Revenue --}}
@@ -213,45 +216,35 @@
             </div>
         </div>
 
-        {{-- Weekly Revenue Chart --}}
-        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
-            @php $weekTotal = array_sum(array_column($weeklyRevenue, 'amount')); @endphp
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-                <div>
-                    <div style="font-weight:800;color:#1e293b;font-size:15px;">7-Day Revenue Overview</div>
-                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Payments collected over the last 7 days</div>
-                </div>
-                <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);padding:6px 14px;border-radius:20px;">
-                    <span style="font-weight:800;color:#059669;font-size:14px;">₹{{ number_format($weekTotal) }} total</span>
-                </div>
+        {{-- Recent Bookings --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                <div style="font-weight:800;color:#1e293b;font-size:15px;">Recent Bookings</div>
+                <a href="{{ route('bookings.index') }}" style="color:#0891b2;font-size:13px;font-weight:600;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
             </div>
-            @php $maxRevenue = max(array_column($weeklyRevenue, 'amount')) ?: 1; @endphp
-            <div style="display:flex;align-items:flex-end;gap:8px;height:160px;margin-top:24px;">
-                @foreach($weeklyRevenue as $day)
-                    @php $pct = $day['amount'] > 0 ? max(8, round(($day['amount']/$maxRevenue)*100)) : 3; @endphp
-                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;" class="bar-col">
-                        <div style="font-size:11px;font-weight:700;color:{{ $day['amount']>0 ? '#475569' : '#cbd5e1' }};white-space:nowrap;opacity:0;" class="bar-label">
-                            {{ $day['amount']>0 ? '₹'.number_format($day['amount']) : '—' }}
-                        </div>
-                        <div class="rev-bar" style="width:100%;border-radius:10px 10px 4px 4px;
-                            background:{{ $day['isToday'] ? 'linear-gradient(to top,#0891b2,#22d3ee)' : 'linear-gradient(to top,#3b82f6,#93c5fd)' }};
-                            height:{{ $pct }}%;box-shadow:{{ $day['isToday'] ? '0 4px 14px rgba(6,182,212,.35)' : 'none' }};"
-                            onmouseenter="this.previousElementSibling.style.opacity=1"
-                            onmouseleave="this.previousElementSibling.style.opacity=0">
-                        </div>
-                        <div style="text-align:center;">
-                            <div style="font-size:12px;font-weight:700;color:{{ $day['isToday'] ? '#0891b2' : '#64748b' }};">{{ $day['day'] }}</div>
-                            <div style="font-size:11px;color:{{ $day['isToday'] ? '#22d3ee' : '#cbd5e1' }};">{{ $day['date'] }}</div>
-                        </div>
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+                @forelse($recentBookings as $booking)
+                <a href="{{ route('bookings.show', $booking->id) }}" style="display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:14px;background:#f8fafc;transition:background .15s;text-decoration:none;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
+                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:800;font-size:14px;flex-shrink:0;">
+                        {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
                     </div>
-                @endforeach
-            </div>
-            <div style="margin-top:16px;border-top:1px solid #f8fafc;padding-top:12px;display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
-                @foreach($weeklyRevenue as $day)
-                <div style="text-align:center;font-size:11px;font-weight:{{ $day['amount']>0 ? '700' : '400' }};color:{{ $day['amount']>0 ? '#475569' : '#cbd5e1' }};">
-                    {{ $day['amount']>0 ? '₹'.number_format($day['amount']/1000,1).'k' : '—' }}
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;color:#1e293b;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
+                        <div style="font-size:11px;color:#94a3b8;">Room {{ $booking->room->room_number ?? '—' }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                        @canDo('reports.view')
+                        <div style="font-weight:800;color:#1e293b;font-size:13px;">₹{{ number_format($booking->total_amount) }}</div>
+                        @endCanDo
+                        <span class="badge-{{ $booking->status_color }}" style="font-size:10px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
+                    </div>
+                </a>
+                @empty
+                <div style="text-align:center;padding:32px;color:#94a3b8;">
+                    <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+                    <p style="font-size:14px;">No recent bookings</p>
                 </div>
-                @endforeach
+                @endforelse
             </div>
         </div>
     </div>
@@ -347,96 +340,160 @@
         </div>
     </div>
 
-    {{-- Quick Actions + Recent Bookings --}}
-    <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;" class="qa-recent-grid">
+    {{-- Quick Actions --}}
+    <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+        <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:18px;">Quick Actions</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+            @canDo('bookings.create')
+            <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3);flex-shrink:0;">
+                    <i class="fas fa-plus" style="color:#fff;font-size:14px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;color:#1e40af;font-size:14px;">New Booking</div>
+                    <div style="font-size:12px;color:#93c5fd;">Create reservation</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#93c5fd;font-size:11px;margin-left:auto;"></i>
+            </a>
+            @endCanDo
+            @canDo('checkin.process')
+            <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);" onmouseenter="this.style.background='linear-gradient(135deg,#dcfce7,#bbf7d0)'" onmouseleave="this.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(16,185,129,.3);flex-shrink:0;">
+                    <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;color:#065f46;font-size:14px;">Process Check-In</div>
+                    <div style="font-size:12px;color:#6ee7b7;">{{ $todayCheckins->count() }} pending</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#6ee7b7;font-size:11px;margin-left:auto;"></i>
+            </a>
+            @endCanDo
+            @canDo('checkout.process')
+            <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);" onmouseenter="this.style.background='linear-gradient(135deg,#fef3c7,#fde68a)'" onmouseleave="this.style.background='linear-gradient(135deg,#fffbeb,#fef3c7)'">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(245,158,11,.3);flex-shrink:0;">
+                    <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;color:#92400e;font-size:14px;">Process Check-Out</div>
+                    <div style="font-size:12px;color:#fcd34d;">{{ $todayCheckouts->count() }} pending</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#fcd34d;font-size:11px;margin-left:auto;"></i>
+            </a>
+            @endCanDo
+            @canDo('guests.create')
+            <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#faf5ff,#ede9fe)'">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(139,92,246,.3);flex-shrink:0;">
+                    <i class="fas fa-user-plus" style="color:#fff;font-size:14px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;color:#4c1d95;font-size:14px;">Add Guest</div>
+                    <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
+            </a>
+            @endCanDo
+            @canDo('reports.view')
+            <a href="{{ route('reports.slot_availability') }}" class="qa-btn" style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#f5f3ff,#ede9fe)'">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(124,58,237,.3);flex-shrink:0;">
+                    <i class="fas fa-clock" style="color:#fff;font-size:14px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;color:#4c1d95;font-size:14px;">Slot Availability</div>
+                    <div style="font-size:12px;color:#a78bfa;">View slot report</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#a78bfa;font-size:11px;margin-left:auto;"></i>
+            </a>
+            @endCanDo
+        </div>
+    </div>
 
-        {{-- Quick Actions --}}
-        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
-            <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:18px;">Quick Actions</div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
-                @canDo('bookings.create')
-                <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
-                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3);flex-shrink:0;">
-                        <i class="fas fa-plus" style="color:#fff;font-size:14px;"></i>
-                    </div>
-                    <div>
-                        <div style="font-weight:700;color:#1e40af;font-size:14px;">New Booking</div>
-                        <div style="font-size:12px;color:#93c5fd;">Create reservation</div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color:#93c5fd;font-size:11px;margin-left:auto;"></i>
+    {{-- Slot Availability Widget --}}
+    @if($hasSlotModule)
+    <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+        <div style="padding:16px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#ede9fe);flex-wrap:wrap;gap:12px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,.3);">
+                    <i class="fas fa-clock" style="color:#fff;font-size:16px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:800;color:#1e293b;font-size:16px;">Slot Availability — This Week</div>
+                    <div style="font-size:12px;color:#6d28d9;">{{ $slotWeekStart->format('d M') }} – {{ $slotWeekStart->copy()->addDays(6)->format('d M Y') }}</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                {{-- Week navigation --}}
+                <a href="{{ route('dashboard', array_merge(request()->query(), ['slot_week'=>$slotWeekStart->copy()->subWeek()->toDateString()])) }}"
+                   style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #ddd6fe;color:#7c3aed;text-decoration:none;background:#fff;transition:all .15s;" onmouseenter="this.style.background='#f5f3ff'" onmouseleave="this.style.background='#fff'">
+                    <i class="fas fa-chevron-left" style="font-size:11px;"></i>
                 </a>
-                @endCanDo
-                @canDo('checkin.process')
-                <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);" onmouseenter="this.style.background='linear-gradient(135deg,#dcfce7,#bbf7d0)'" onmouseleave="this.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'">
-                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(16,185,129,.3);flex-shrink:0;">
-                        <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
-                    </div>
-                    <div>
-                        <div style="font-weight:700;color:#065f46;font-size:14px;">Process Check-In</div>
-                        <div style="font-size:12px;color:#6ee7b7;">{{ $todayCheckins->count() }} pending</div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color:#6ee7b7;font-size:11px;margin-left:auto;"></i>
+                <a href="{{ route('dashboard', array_merge(request()->except('slot_week'), [])) }}"
+                   style="padding:0 12px;height:34px;display:flex;align-items:center;border-radius:10px;border:1px solid #ddd6fe;color:#7c3aed;font-size:13px;font-weight:600;text-decoration:none;background:#fff;transition:all .15s;" onmouseenter="this.style.background='#f5f3ff'" onmouseleave="this.style.background='#fff'">This Week</a>
+                <a href="{{ route('dashboard', array_merge(request()->query(), ['slot_week'=>$slotWeekStart->copy()->addWeek()->toDateString()])) }}"
+                   style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #ddd6fe;color:#7c3aed;text-decoration:none;background:#fff;transition:all .15s;" onmouseenter="this.style.background='#f5f3ff'" onmouseleave="this.style.background='#fff'">
+                    <i class="fas fa-chevron-right" style="font-size:11px;"></i>
                 </a>
-                @endCanDo
-                @canDo('checkout.process')
-                <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);" onmouseenter="this.style.background='linear-gradient(135deg,#fef3c7,#fde68a)'" onmouseleave="this.style.background='linear-gradient(135deg,#fffbeb,#fef3c7)'">
-                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(245,158,11,.3);flex-shrink:0;">
-                        <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
-                    </div>
-                    <div>
-                        <div style="font-weight:700;color:#92400e;font-size:14px;">Process Check-Out</div>
-                        <div style="font-size:12px;color:#fcd34d;">{{ $todayCheckouts->count() }} pending</div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color:#fcd34d;font-size:11px;margin-left:auto;"></i>
+                <a href="{{ route('reports.slot_availability') }}"
+                   style="padding:0 14px;height:34px;display:flex;align-items:center;gap:6px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 8px rgba(124,58,237,.3);">
+                    <i class="fas fa-external-link-alt" style="font-size:10px;"></i> Full Report
                 </a>
-                @endCanDo
-                @canDo('guests.create')
-                <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#faf5ff,#ede9fe)'">
-                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(139,92,246,.3);flex-shrink:0;">
-                        <i class="fas fa-user-plus" style="color:#fff;font-size:14px;"></i>
-                    </div>
-                    <div>
-                        <div style="font-weight:700;color:#4c1d95;font-size:14px;">Add Guest</div>
-                        <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
-                </a>
-                @endCanDo
             </div>
         </div>
-
-        {{-- Recent Bookings --}}
-        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-                <div style="font-weight:800;color:#1e293b;font-size:15px;">Recent Bookings</div>
-                <a href="{{ route('bookings.index') }}" style="color:#0891b2;font-size:13px;font-weight:600;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-                @forelse($recentBookings as $booking)
-                <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:#f8fafc;transition:background .15s;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
-                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:800;font-size:15px;flex-shrink:0;">
-                        {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:700;color:#1e293b;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                        <div style="font-size:12px;color:#94a3b8;">Room {{ $booking->room->room_number }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }} &bull; {{ $booking->nights }} nights</div>
-                    </div>
-                    <div style="text-align:right;flex-shrink:0;">
-                        @canDo('reports.view')
-                        <div style="font-weight:800;color:#1e293b;font-size:14px;">₹{{ number_format($booking->total_amount) }}</div>
-                        @endCanDo
-                        <span class="badge-{{ $booking->status_color }}" style="font-size:11px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
-                    </div>
-                </div>
-                @empty
-                <div style="text-align:center;padding:32px;color:#94a3b8;">
-                    <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
-                    <p style="font-size:14px;">No recent bookings</p>
-                </div>
-                @endforelse
+        <div style="padding:20px;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:520px;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:8px 12px;font-size:12px;font-weight:700;color:#64748b;white-space:nowrap;border-bottom:2px solid #f1f5f9;">Time Slot</th>
+                        @foreach($dashboardSlotAvailability as $day)
+                        <th style="text-align:center;padding:8px 8px;font-size:12px;font-weight:700;color:{{ $day['isToday'] ? '#7c3aed' : '#64748b' }};white-space:nowrap;border-bottom:2px solid {{ $day['isToday'] ? '#a78bfa' : '#f1f5f9' }};background:{{ $day['isToday'] ? 'linear-gradient(180deg,#f5f3ff,transparent)' : 'transparent' }};">
+                            <div>{{ $day['label'] }}</div>
+                            <div style="font-size:10px;font-weight:500;color:{{ $day['isToday'] ? '#8b5cf6' : '#94a3b8' }};">{{ $day['sublabel'] }}</div>
+                        </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($dashboardSlots as $slotIdx => $slot)
+                    <tr style="border-bottom:1px solid #f8fafc;">
+                        <td style="padding:10px 12px;white-space:nowrap;">
+                            <div style="font-weight:700;color:#1e293b;font-size:13px;">{{ $slot->name }}</div>
+                            <div style="font-size:11px;color:#94a3b8;">{{ $slot->start_time }}–{{ $slot->end_time }}</div>
+                        </td>
+                        @foreach($dashboardSlotAvailability as $day)
+                        @php
+                            $sd = $day['slots'][$slotIdx] ?? null;
+                            $sdColor = $sd ? $sd['color'] : 'green';
+                            $sdPct = $sd ? $sd['pct'] : 0;
+                            $bgMap = ['green'=>'#f0fdf4','amber'=>'#fffbeb','red'=>'#fff1f2'];
+                            $txtMap = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
+                            $barMap = ['green'=>'#22c55e','amber'=>'#f59e0b','red'=>'#ef4444'];
+                        @endphp
+                        <td style="padding:8px;text-align:center;background:{{ $day['isToday'] ? '#faf5ff' : 'transparent' }};">
+                            @if($sd)
+                            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:10px;background:{{ $bgMap[$sdColor] }};min-width:56px;">
+                                <span style="font-weight:800;color:{{ $txtMap[$sdColor] }};font-size:14px;line-height:1;">{{ $sd['available'] }}/{{ $sd['total'] }}</span>
+                                <span style="font-size:10px;color:#94a3b8;">{{ $sd['booked'] }} booked</span>
+                                @if($sd['total'] > 0)
+                                <div style="width:44px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
+                                    <div style="height:100%;background:{{ $barMap[$sdColor] }};border-radius:2px;width:{{ $sdPct }}%;"></div>
+                                </div>
+                                @endif
+                            </div>
+                            @endif
+                        </td>
+                        @endforeach
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Available (&lt;60% booked)</span></div>
+                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Filling up (60–99%)</span></div>
+                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Fully booked (100%)</span></div>
+                <div style="margin-left:auto;"><span style="font-size:12px;color:#94a3b8;">Numbers show available/total slot rooms</span></div>
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Today's Arrivals & Departures --}}
     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)

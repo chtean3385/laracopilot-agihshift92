@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -100,6 +101,61 @@ class DashboardController extends Controller
             ];
         }
 
+        // --- Slot Availability Widget ---
+        $hasSlotModule = false;
+        $dashboardSlots = collect();
+        $dashboardSlotAvailability = [];
+        $slotWeekStart = Carbon::today()->startOfWeek(Carbon::MONDAY);
+
+        if (Module::isEnabled('time-slot-pricing')) {
+            try {
+                if (request('slot_week')) {
+                    $slotWeekStart = Carbon::parse(request('slot_week'))->startOfWeek(Carbon::MONDAY);
+                }
+                $slotWeekEnd = $slotWeekStart->copy()->addDays(6);
+                $dashboardSlots = HotelTimeSlot::where('is_active', true)->ordered()->get();
+                $slotRoomCount  = Room::where('pricing_type', 'per_slot')->count();
+
+                if ($dashboardSlots->isNotEmpty() && $slotRoomCount > 0) {
+                    $hasSlotModule = true;
+                    $cur = $slotWeekStart->copy();
+                    while ($cur <= $slotWeekEnd) {
+                        $ds      = $cur->toDateString();
+                        $dayData = [
+                            'date'     => $ds,
+                            'label'    => $cur->format('D'),
+                            'sublabel' => $cur->format('d M'),
+                            'isToday'  => $cur->isToday(),
+                            'slots'    => [],
+                        ];
+                        foreach ($dashboardSlots as $slot) {
+                            $booked    = Booking::whereDate('booking_date', $ds)
+                                ->where('time_slot_id', $slot->id)
+                                ->whereIn('status', ['confirmed', 'checked_in'])
+                                ->count();
+                            $total     = $slotRoomCount;
+                            $available = $total - $booked;
+                            $pct       = $total > 0 ? round($booked / $total * 100) : 0;
+                            $color     = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                            $dayData['slots'][] = [
+                                'slot_name' => $slot->name,
+                                'time'      => $slot->start_time . '–' . $slot->end_time,
+                                'available' => $available,
+                                'booked'    => $booked,
+                                'total'     => $total,
+                                'pct'       => $pct,
+                                'color'     => $color,
+                            ];
+                        }
+                        $dashboardSlotAvailability[] = $dayData;
+                        $cur->addDay();
+                    }
+                }
+            } catch (\Exception $e) {
+                $hasSlotModule = false;
+            }
+        }
+
         // --- Booking Calendar ---
         $calWeeks  = [];
         $calStart  = $today->copy()->startOfMonth();
@@ -179,7 +235,8 @@ class DashboardController extends Controller
             'maintenanceRooms', 'totalRooms', 'monthRevenue', 'todayRevenue',
             'pendingPayments', 'totalCustomers', 'newCustomersMonth',
             'recentBookings', 'occupancyRate', 'weeklyRevenue',
-            'calWeeks', 'calStart', 'prevMonth', 'nextMonth'
+            'calWeeks', 'calStart', 'prevMonth', 'nextMonth',
+            'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart'
         ));
     }
 
