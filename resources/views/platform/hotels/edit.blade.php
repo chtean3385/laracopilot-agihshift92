@@ -298,7 +298,7 @@
                 <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">Backup Frequency</label>
                 <div style="display:flex;gap:10px;">
                     @foreach(['24' => 'Daily', '168' => 'Weekly', '720' => 'Monthly'] as $hours => $label)
-                    @php $checked = (string)old('backup_interval', $backupSetting->interval_hours) === $hours; @endphp
+                    @php $checked = (string)old('backup_interval', $backupSetting->interval_hours) === (string)$hours; @endphp
                     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:9px 16px;border:2px solid {{ $checked ? '#0ea5e9' : '#e2e8f0' }};border-radius:10px;flex:1;font-size:13px;font-weight:600;color:#1e293b;">
                         <input type="radio" name="backup_interval" value="{{ $hours }}" {{ $checked ? 'checked' : '' }} style="accent-color:#0ea5e9;">
                         {{ $label }}
