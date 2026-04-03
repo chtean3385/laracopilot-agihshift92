@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -77,12 +78,69 @@ class DashboardController extends Controller
         // Merged plans (all DB plans + config fallback) for display/badge rendering
         $plans = $this->mergePlans($dbPlansAll, $configPlans);
 
+        // ── Expiry Alert popup ─────────────────────────────────────────────
+        $today = Carbon::today();
+        $in7   = Carbon::today()->addDays(7);
+
+        $expiryAlerts = DB::table('hotels')
+            ->whereIn('status', ['active', 'suspended'])
+            ->where(function ($q) use ($in7) {
+                $q->where(function ($q2) use ($in7) {
+                    // Trial ending within 7 days (or already past)
+                    $q2->whereNotNull('trial_ends_at')
+                       ->where('plan', 'trial')
+                       ->where('trial_ends_at', '<=', $in7->toDateTimeString());
+                })->orWhere(function ($q2) use ($in7) {
+                    // Paid plan expiring within 7 days (or already past)
+                    $q2->whereNotNull('plan_expires_at')
+                       ->where('plan_expires_at', '<=', $in7->toDateTimeString());
+                });
+            })
+            ->select('id', 'name', 'slug', 'plan', 'status', 'trial_ends_at', 'plan_expires_at')
+            ->orderByRaw("LEAST(COALESCE(trial_ends_at, '9999-01-01'), COALESCE(plan_expires_at, '9999-01-01')) ASC")
+            ->get()
+            ->map(function ($h) use ($today) {
+                $expiryDate = null;
+                $type       = null;
+                if ($h->plan === 'trial' && $h->trial_ends_at) {
+                    $expiryDate = Carbon::parse($h->trial_ends_at);
+                    $type       = 'trial';
+                } elseif ($h->plan_expires_at) {
+                    $expiryDate = Carbon::parse($h->plan_expires_at);
+                    $type       = 'plan';
+                }
+                if (!$expiryDate) return null;
+
+                $daysLeft = (int) $today->diffInDays($expiryDate, false);
+                $urgency  = $daysLeft < 0 ? 'expired' : ($daysLeft === 0 ? 'today' : ($daysLeft <= 3 ? 'critical' : 'soon'));
+
+                return (object) [
+                    'id'          => $h->id,
+                    'name'        => $h->name,
+                    'slug'        => $h->slug,
+                    'plan'        => $h->plan,
+                    'status'      => $h->status,
+                    'type'        => $type,
+                    'expiry_date' => $expiryDate->format('d M Y'),
+                    'days_left'   => $daysLeft,
+                    'urgency'     => $urgency,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        // Show the popup once per login — cleared after first dashboard load
+        $showExpiryPopup = session('platform_show_expiry_popup', false) && $expiryAlerts->isNotEmpty();
+        session(['platform_show_expiry_popup' => false]);
+
         return view('platform.dashboard', compact(
             'totalHotels', 'activeHotels', 'suspendedHotels', 'trialHotels',
             'mrr', 'arr', 'nextMonthRevenue', 'activeSubscriptions',
             'totalUsers',
             'plans',
-            'hotelStats'
+            'hotelStats',
+            'expiryAlerts',
+            'showExpiryPopup'
         ));
     }
 

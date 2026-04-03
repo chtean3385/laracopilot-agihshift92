@@ -139,6 +139,7 @@ class AuthController extends Controller
             'crm_user_role'               => 'Super Admin',
             'crm_is_super_admin'          => true,
             'platform_reminder_dismissed' => false,
+            'platform_show_expiry_popup'  => true,
             'crm_hotel_id'                => null,
             'crm_hotel_name'              => null,
             'crm_permissions'             => ['*'],

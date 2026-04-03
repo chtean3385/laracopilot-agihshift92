@@ -8,6 +8,104 @@
 
 @php
     $planCfg = fn($slug) => $plans[$slug] ?? ['label' => ucfirst($slug), 'color' => '#6d28d9', 'badge_bg' => '#f1f5f9', 'badge_text' => '#475569', 'monthly_price' => 0, 'yearly_price' => 0];
+@endphp
+
+{{-- ── Expiry Reminder Modal (always in DOM when there are alerts; auto-opens on login) ── --}}
+@if($expiryAlerts->isNotEmpty())
+<div id="expiryPopupOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9990;display:{{ $showExpiryPopup ? 'flex' : 'none' }};align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:22px;box-shadow:0 24px 80px rgba(0,0,0,.25);max-width:560px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
+
+        {{-- Header --}}
+        <div style="padding:22px 24px 16px;border-bottom:1px solid #fee2e2;background:linear-gradient(135deg,#fef2f2,#fff0f0);flex-shrink:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:44px;height:44px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-bell" style="color:#fff;font-size:18px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:16px;font-weight:800;color:#991b1b;">Subscription Alert</div>
+                        <div style="font-size:12px;color:#b91c1c;margin-top:2px;">
+                            {{ $expiryAlerts->count() }} hotel{{ $expiryAlerts->count() !== 1 ? 's' : '' }} need{{ $expiryAlerts->count() === 1 ? 's' : '' }} attention
+                        </div>
+                    </div>
+                </div>
+                <button onclick="dismissExpiryPopup()" style="width:32px;height:32px;border:none;background:#fee2e2;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-times" style="color:#b91c1c;font-size:14px;"></i>
+                </button>
+            </div>
+        </div>
+
+        {{-- Alert list --}}
+        <div style="overflow-y:auto;padding:16px 24px;flex:1;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+            @foreach($expiryAlerts as $alert)
+            @php
+                $urgCfg = match($alert->urgency) {
+                    'expired'  => ['bg'=>'#fef2f2','border'=>'#fca5a5','badge_bg'=>'#fee2e2','badge_text'=>'#991b1b','icon'=>'fa-times-circle','icon_color'=>'#ef4444','label'=>'Expired'],
+                    'today'    => ['bg'=>'#fff7ed','border'=>'#fed7aa','badge_bg'=>'#ffedd5','badge_text'=>'#9a3412','icon'=>'fa-exclamation-triangle','icon_color'=>'#ea580c','label'=>'Expires Today'],
+                    'critical' => ['bg'=>'#fffbeb','border'=>'#fde68a','badge_bg'=>'#fef3c7','badge_text'=>'#92400e','icon'=>'fa-clock','icon_color'=>'#d97706','label'=>$alert->days_left.' day'.($alert->days_left===1?'':'s').' left'],
+                    default    => ['bg'=>'#f0fdf4','border'=>'#bbf7d0','badge_bg'=>'#dcfce7','badge_text'=>'#166534','icon'=>'fa-info-circle','icon_color'=>'#16a34a','label'=>$alert->days_left.' days left'],
+                };
+                $typeBadge = $alert->type === 'trial' ? 'Trial' : 'Paid Plan';
+            @endphp
+            <div style="background:{{ $urgCfg['bg'] }};border:1px solid {{ $urgCfg['border'] }};border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+                <i class="fas {{ $urgCfg['icon'] }}" style="color:{{ $urgCfg['icon_color'] }};font-size:20px;flex-shrink:0;"></i>
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span style="font-size:14px;font-weight:700;color:#1e293b;">{{ $alert->name }}</span>
+                        <span style="font-size:10px;font-weight:700;background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:10px;">{{ $typeBadge }}</span>
+                    </div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px;">
+                        {{ $alert->type === 'trial' ? 'Trial' : 'Plan' }} {{ $alert->days_left < 0 ? 'expired on' : 'expires' }} <strong>{{ $alert->expiry_date }}</strong>
+                    </div>
+                </div>
+                <span style="font-size:11px;font-weight:700;background:{{ $urgCfg['badge_bg'] }};color:{{ $urgCfg['badge_text'] }};padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;">{{ $urgCfg['label'] }}</span>
+            </div>
+            @endforeach
+            </div>
+        </div>
+
+        {{-- Footer --}}
+        <div style="padding:14px 24px;border-top:1px solid #f1f5f9;background:#fafafa;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;">
+            <span style="font-size:11px;color:#94a3b8;">Manage plans in the Tenant Directory below</span>
+            <button onclick="dismissExpiryPopup()" style="padding:9px 22px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                Got it — Dismiss
+            </button>
+        </div>
+
+    </div>
+</div>
+<script>
+function dismissExpiryPopup() {
+    var el = document.getElementById('expiryPopupOverlay');
+    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .2s'; setTimeout(function(){ el.style.display = 'none'; el.style.opacity = ''; }, 200); }
+}
+function showExpiryPopup() {
+    var el = document.getElementById('expiryPopupOverlay');
+    if (el) { el.style.display = 'flex'; }
+}
+document.getElementById('expiryPopupOverlay').addEventListener('click', function(e) {
+    if (e.target === this) dismissExpiryPopup();
+});
+</script>
+
+{{-- ── Inline expiry alert strip (always visible) ── --}}
+@php $urgentCount = $expiryAlerts->whereIn('urgency', ['expired','today','critical'])->count(); @endphp
+<div style="background:{{ $urgentCount ? '#fef2f2' : '#fffbeb' }};border:1px solid {{ $urgentCount ? '#fca5a5' : '#fde68a' }};border-radius:14px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:10px;">
+        <i class="fas {{ $urgentCount ? 'fa-exclamation-triangle' : 'fa-clock' }}" style="color:{{ $urgentCount ? '#ef4444' : '#d97706' }};font-size:16px;flex-shrink:0;"></i>
+        <span style="font-size:13px;font-weight:700;color:{{ $urgentCount ? '#991b1b' : '#92400e' }};">
+            {{ $expiryAlerts->count() }} hotel{{ $expiryAlerts->count() !== 1 ? 's' : '' }} with expiring subscriptions
+            @if($urgentCount) — <strong>{{ $urgentCount }} urgent</strong>@endif
+        </span>
+    </div>
+    <button onclick="showExpiryPopup()" style="padding:6px 16px;background:{{ $urgentCount ? '#ef4444' : '#d97706' }};color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        View Details
+    </button>
+</div>
+@endif
+
+@php
 
     // MRR breakdown per plan for the banner — ACTIVE tenants only, using effective prices
     $activePlanCounts = $hotelStats->where('status', 'active')->groupBy('plan');

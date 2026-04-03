@@ -58,6 +58,8 @@ class CheckTrialStatus
                 session()->forget('crm_plan_locked');
                 if ($daysLeft <= 1) {
                     session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
+                } elseif ($daysLeft <= 7) {
+                    session(['trial_warning' => 'soon', 'trial_days_left' => $daysLeft]);
                 } else {
                     session()->forget(['trial_warning', 'trial_days_left']);
                 }
@@ -82,6 +84,8 @@ class CheckTrialStatus
             session()->forget('crm_plan_locked');
             if ($daysLeft <= 1) {
                 session(['trial_warning' => 'urgent', 'trial_days_left' => $daysLeft]);
+            } elseif ($daysLeft <= 7) {
+                session(['trial_warning' => 'soon', 'trial_days_left' => $daysLeft]);
             } else {
                 session()->forget(['trial_warning', 'trial_days_left']);
             }

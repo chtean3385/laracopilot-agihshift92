@@ -983,19 +983,20 @@
         @if(session('trial_warning'))
         @php
             $twDays    = session('trial_days_left', 0);
-            $twUrgent  = session('trial_warning') === 'urgent';
+            $twLevel   = session('trial_warning'); // 'urgent' (0-1 day) | 'soon' (2-7 days)
+            $twUrgent  = $twLevel === 'urgent';
             $twBg      = $twUrgent ? '#fef2f2' : '#fffbeb';
             $twBorder  = $twUrgent ? '#fecaca' : '#fde68a';
             $twColor   = $twUrgent ? '#b91c1c' : '#92400e';
             $twIcon    = $twUrgent ? 'fa-exclamation-triangle' : 'fa-clock';
             $twIconClr = $twUrgent ? '#ef4444' : '#d97706';
             // Hindi + English warning text
-            if ($twDays === 0) {
-                $twHindi = 'आपका ट्रायल आज समाप्त हो रहा है!';
-                $twEng   = 'Your trial expires today! Upgrade now.';
+            if ($twDays <= 0) {
+                $twHindi = 'आपका ट्रायल/प्लान आज समाप्त हो रहा है!';
+                $twEng   = 'Your subscription expires today! Upgrade now to avoid losing access.';
             } else {
-                $twHindi = "आपका ट्रायल {$twDays} दिन में समाप्त हो रहा है!";
-                $twEng   = "Your trial expires in {$twDays} day" . ($twDays === 1 ? '' : 's') . '. Upgrade to keep your data safe.';
+                $twHindi = "आपका ट्रायल/प्लान {$twDays} दिन में समाप्त हो रहा है!";
+                $twEng   = "Your subscription expires in {$twDays} day" . ($twDays === 1 ? '' : 's') . '. Upgrade to keep your data safe.';
             }
         @endphp
         <div style="padding:14px 24px 0;">
