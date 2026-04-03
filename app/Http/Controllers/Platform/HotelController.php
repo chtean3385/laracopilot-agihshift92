@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Mail\HotelWelcomeMail;
+use App\Models\HotelBackupSetting;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -147,6 +148,7 @@ class HotelController extends Controller
 
             $this->provisionRoles($hotelId);
             $this->seedWhatsAppTemplates($hotelId);
+            HotelBackupSetting::create(['hotel_id' => $hotelId, 'auto_backup_enabled' => true, 'interval_hours' => 168, 'retention_count' => 3]);
 
             if ($existingUser) {
                 // User already exists — link them to the new hotel as admin
@@ -256,7 +258,12 @@ class HotelController extends Controller
                 ->get();
         }
 
-        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin', 'hotelUsers', 'relatedHotels'));
+        $backupSetting = HotelBackupSetting::firstOrCreate(
+            ['hotel_id' => $id],
+            ['auto_backup_enabled' => true, 'interval_hours' => 168, 'retention_count' => 3]
+        );
+
+        return view('platform.hotels.edit', compact('hotel', 'plans', 'hotelAdmin', 'hotelUsers', 'relatedHotels', 'backupSetting'));
     }
 
     // ── Add Related Hotel (same admin, no new credentials needed) ────────────
@@ -346,6 +353,7 @@ class HotelController extends Controller
 
             $this->provisionRoles($newHotelId);
             $this->seedWhatsAppTemplates($newHotelId);
+            HotelBackupSetting::create(['hotel_id' => $newHotelId, 'auto_backup_enabled' => true, 'interval_hours' => 168, 'retention_count' => 3]);
 
             DB::table('hotel_users')->insert([
                 'hotel_id'       => $newHotelId,
@@ -395,6 +403,8 @@ class HotelController extends Controller
             'status'               => 'required|in:active,suspended',
             'admin_notes'          => 'nullable|string|max:1000',
             'new_admin_user_id'    => 'nullable|integer',
+            'backup_auto_enabled'  => 'nullable|boolean',
+            'backup_interval'      => 'nullable|in:24,168,720',
         ]);
 
         DB::table('hotels')->where('id', $id)->update([
@@ -412,6 +422,16 @@ class HotelController extends Controller
             'admin_notes'          => $data['admin_notes'] ?? null,
             'updated_at'           => now(),
         ]);
+
+        // Save backup settings
+        HotelBackupSetting::updateOrCreate(
+            ['hotel_id' => $id],
+            [
+                'auto_backup_enabled' => $request->boolean('backup_auto_enabled'),
+                'interval_hours'      => (int) ($data['backup_interval'] ?? 168),
+                'retention_count'     => 3,
+            ]
+        );
 
         // Handle hotel admin reassignment
         if (!empty($data['new_admin_user_id'])) {

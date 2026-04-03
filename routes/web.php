@@ -138,13 +138,6 @@ Route::middleware('permission:settings.view')->group(function () {
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:settings.edit')->name('settings.update');
 });
 
-// ── Backup & Recovery (hotel-level) ───────────────────────────────────────
-Route::middleware('permission:settings.view')->group(function () {
-    Route::get('/settings/backup',               [\App\Http\Controllers\Admin\BackupController::class, 'index']       )->name('settings.backup');
-    Route::post('/settings/backup',              [\App\Http\Controllers\Admin\BackupController::class, 'store']       )->middleware('permission:settings.edit')->name('settings.backup.store');
-    Route::post('/settings/backup/save',         [\App\Http\Controllers\Admin\BackupController::class, 'saveSettings'])->middleware('permission:settings.edit')->name('settings.backup.save');
-    Route::delete('/settings/backup/{id}',       [\App\Http\Controllers\Admin\BackupController::class, 'destroy']     )->middleware('permission:settings.edit')->name('settings.backup.destroy');
-});
 
 // ── Activity Log ───────────────────────────────────────────────────────────
 Route::get('/activity-log', [ActivityLogController::class, 'index'])

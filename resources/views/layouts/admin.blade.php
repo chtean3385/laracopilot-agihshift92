@@ -877,10 +877,7 @@
                 <span class="icon"><i class="fas fa-cog"></i></span>
                 Settings
             </a>
-            <a href="{{ route('settings.backup') }}" class="nav-link {{ request()->routeIs('settings.backup*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-database"></i></span>
-                Backup & Recovery
-            </a>
+
             @endCanDo
 
             @canDo('activity_log.view')

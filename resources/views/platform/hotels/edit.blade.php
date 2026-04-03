@@ -272,6 +272,42 @@
                 placeholder="Private notes visible only to platform admins...">{{ old('admin_notes', $hotel->admin_notes) }}</textarea>
         </div>
 
+        {{-- Backup Settings --}}
+        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;margin-bottom:24px;">
+            <h2 style="font-size:15px;font-weight:800;color:#1e293b;margin:0 0 6px;display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-database" style="color:#fff;font-size:12px;"></i>
+                </span>
+                Automatic Backup
+            </h2>
+            <p style="font-size:12px;color:#94a3b8;margin:0 0 18px;">Silently backs up hotel data on a schedule. Hotel staff cannot see this.</p>
+
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:14px 18px;border:2px solid {{ old('backup_auto_enabled', $backupSetting->auto_backup_enabled) ? '#0ea5e9' : '#e2e8f0' }};border-radius:12px;margin-bottom:16px;transition:border-color .2s;" id="backup-toggle-label">
+                <input type="hidden" name="backup_auto_enabled" value="0">
+                <input type="checkbox" name="backup_auto_enabled" value="1"
+                    {{ old('backup_auto_enabled', $backupSetting->auto_backup_enabled) ? 'checked' : '' }}
+                    onchange="document.getElementById('backup-toggle-label').style.borderColor=this.checked?'#0ea5e9':'#e2e8f0'"
+                    style="width:18px;height:18px;accent-color:#0ea5e9;cursor:pointer;">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#1e293b;">Enable Auto-Backup</div>
+                    <div style="font-size:11px;color:#64748b;">Automatically backs up hotel data on the selected schedule</div>
+                </div>
+            </label>
+
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">Backup Frequency</label>
+                <div style="display:flex;gap:10px;">
+                    @foreach(['24' => 'Daily', '168' => 'Weekly', '720' => 'Monthly'] as $hours => $label)
+                    @php $checked = (string)old('backup_interval', $backupSetting->interval_hours) === $hours; @endphp
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:9px 16px;border:2px solid {{ $checked ? '#0ea5e9' : '#e2e8f0' }};border-radius:10px;flex:1;font-size:13px;font-weight:600;color:#1e293b;">
+                        <input type="radio" name="backup_interval" value="{{ $hours }}" {{ $checked ? 'checked' : '' }} style="accent-color:#0ea5e9;">
+                        {{ $label }}
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         {{-- Submit --}}
         <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;">
             <div style="display:flex;gap:12px;align-items:center;">
