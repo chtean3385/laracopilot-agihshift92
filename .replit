@@ -66,7 +66,7 @@ externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["php", "-S", "0.0.0.0:5000", "-t", "public", "public/router.php"]
+run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
 publicDir = "public"
 build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && DB_CONNECTION=pgsql php artisan app:safe-migrate"]
 
