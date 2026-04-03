@@ -5,9 +5,10 @@ Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi
 
 ## Architecture
 - **Framework**: Laravel 12 (PHP 8.2)
-- **Database (dev)**: SQLite (`database/database.sqlite`) — used by the web workflow (php artisan serve). The `.env` has `DB_CONNECTION=sqlite`. Always run migrations/seeds without a DB_CONNECTION prefix for dev: `php artisan migrate --force` and `php artisan db:seed --force`.
-- **Database (production)**: Neon PostgreSQL (`resort.dreamstechnology.in`) — credentials stored as Replit deployment env vars (`DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_PORT`). Build command prefixes `DB_CONNECTION=pgsql php artisan app:safe-migrate`.
-- **Database (Replit heliumdb)**: The bash terminal / artisan CLI automatically connects to Replit's managed PostgreSQL (`heliumdb`) via system-injected env vars. This is SEPARATE from the dev SQLite used by the web process. Run CLI commands with `unset DB_CONNECTION && php artisan ...` to force SQLite (dev) in the terminal.
+- **Database (dev)**: Replit managed PostgreSQL (`heliumdb` on host `helium:5432`) — credentials set as Replit dev env vars (`DB_HOST=helium`, `DB_DATABASE=heliumdb`, `DB_USERNAME=postgres`, `DB_PASSWORD=password`, `DB_PORT=5432`). The `.env` has `DB_CONNECTION=pgsql`. Run migrations with `php artisan migrate --force`.
+- **Database (production)**: Replit managed PostgreSQL for production (host `ep-fancy-scene-anzx2eyx.c...`, database `neondb`) — credentials stored as Replit production secrets (`PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `DATABASE_URL`). Build command: `php artisan app:safe-migrate`.
+- **bootstrap/app.php**: Copies DB env vars from `getenv()` into `$_ENV` before phpdotenv runs — this bridges Replit's secret injection (process env) into Laravel's `env()` function. List includes: `DB_CONNECTION`, `DATABASE_URL`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SSLMODE`.
+- **config/database.php pgsql**: Falls back to `getenv('PGHOST')`, `getenv('PGDATABASE')` etc. if `DB_HOST`/`DB_DATABASE` env vars are not set — covers production where secrets use PG* naming.
 - **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome + Livewire 4
 - **Authentication**: Custom session-based auth — two separate auth flows (Hotel CRM + Platform Admin)
 - **RBAC**: Dynamic DB-driven roles & permissions per hotel
