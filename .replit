@@ -72,7 +72,7 @@ localPort = 5002
 externalPort = 3001
 
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
 run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
 publicDir = "public"
 build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan app:safe-migrate"]
