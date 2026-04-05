@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — Grand Paradise Resort CRM</title>
+    <title>Admin Login — Hotel & Resort CRM | Property Management System</title>
+    <meta name="description" content="Hotel admin login — manage rooms, bookings, guests, check-ins, time-slot pricing, housekeeping and revenue reports from a single powerful CRM.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -20,9 +23,8 @@
         <!-- Left panel -->
         <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 p-10 flex flex-col justify-between">
             <div>
-                <div class="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl">
-                    <i class="fas fa-hotel text-white text-2xl"></i>
-                </div>
+                <img src="/hotel-crm-logo.png" alt="Hotel CRM Logo"
+                     class="w-16 h-16 rounded-2xl mb-6 shadow-xl object-cover" style="box-shadow:0 8px 24px rgba(0,0,0,.4);">
                 <h1 class="text-3xl font-bold text-white mb-2">Grand Paradise Resort</h1>
                 <p class="text-amber-400 font-medium mb-6">Property Management System</p>
                 <p class="text-slate-400 text-sm leading-relaxed">Complete resort operations at your fingertips. Manage bookings, guests, rooms, check-ins, payments and generate reports — all in one powerful platform.</p>

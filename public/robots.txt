@@ -1,2 +1,20 @@
 User-agent: *
-Disallow:
+# Allow the public login page for SEO (hotel & resort CRM search)
+Allow: /
+Allow: /login
+Allow: /hotel-crm-logo.png
+
+# Block internal CRM pages (behind authentication)
+Disallow: /dashboard
+Disallow: /bookings
+Disallow: /rooms
+Disallow: /guests
+Disallow: /checkin
+Disallow: /checkout
+Disallow: /reports
+Disallow: /settings
+Disallow: /users
+Disallow: /payments
+Disallow: /housekeeping
+Disallow: /platform/
+Disallow: /admin/

@@ -4,7 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Resort CRM') — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
+    <title>@yield('title', 'Dashboard') — {{ $settings->resort_name ?? 'Hotel CRM' }} | Hotel & Resort Management System</title>
+
+    {{-- ── SEO Meta Tags ── --}}
+    <meta name="description" content="@yield('meta_description', 'Complete hotel and resort CRM — manage bookings, guest check-ins, room availability, time-slot pricing, housekeeping, payments, and business reports all in one platform.')">
+    <meta name="keywords" content="hotel CRM, resort management software, hotel booking system, hotel property management system, resort CRM, hotel check-in software, hotel guest management, hotel PMS, resort booking management, hotel room management, time slot hotel booking, hotel revenue management">
+    <meta name="author" content="{{ $settings->resort_name ?? 'Hotel CRM' }}">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0f172a">
+
+    {{-- ── Favicon ── --}}
+    <link rel="icon" type="image/png" href="{{ asset('hotel-crm-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('hotel-crm-logo.png') }}">
+
+    {{-- ── Open Graph (social sharing) ── --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ $settings->resort_name ?? 'Hotel CRM' }}">
+    <meta property="og:title" content="@yield('title', 'Dashboard') — {{ $settings->resort_name ?? 'Hotel CRM' }}">
+    <meta property="og:description" content="Complete hotel and resort management — bookings, check-ins, rooms, guests, payments, and reports.">
+    <meta property="og:image" content="{{ asset('hotel-crm-logo.png') }}">
+
+    {{-- ── Twitter Card ── --}}
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ $settings->resort_name ?? 'Hotel CRM' }} — Hotel & Resort Management System">
+    <meta name="twitter:description" content="Complete hotel CRM — bookings, check-ins, rooms, guests, and reports.">
+    <meta name="twitter:image" content="{{ asset('hotel-crm-logo.png') }}">
+
+    {{-- ── Structured Data (JSON-LD) ── --}}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "{{ $settings->resort_name ?? 'Hotel CRM' }}",
+        "description": "Complete hotel and resort property management system — manage bookings, guests, check-ins, room availability, time-slot pricing, housekeeping, and revenue reports.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "category": "Hotel & Resort Management" },
+        "featureList": [
+            "Hotel Booking Management",
+            "Guest Check-in & Check-out",
+            "Room Availability & Pricing",
+            "Time-Slot & Hourly Room Booking",
+            "Housekeeping Management",
+            "Payment & Invoice Tracking",
+            "Business Reports & Analytics",
+            "Multi-user Staff Roles",
+            "WhatsApp Notifications",
+            "Guest CRM"
+        ]
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @livewireStyles

@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
+    <title>Forgot Password — {{ $settings->resort_name ?? 'Hotel CRM' }}</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -17,11 +19,10 @@
             <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->resort_name }}"
                 style="width:72px;height:72px;border-radius:20px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,.4);margin-bottom:16px;">
             @else
-            <div style="width:72px;height:72px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 24px rgba(6,182,212,.4);">
-                <i class="fas fa-hotel" style="font-size:28px;color:#fff;"></i>
-            </div>
+            <img src="/hotel-crm-logo.png" alt="Hotel CRM"
+                 style="width:72px;height:72px;border-radius:20px;object-fit:cover;margin:0 auto 16px;display:block;box-shadow:0 8px 24px rgba(6,182,212,.35);">
             @endif
-            <h1 style="color:#fff;font-size:24px;font-weight:800;margin:0;">{{ $settings->resort_name ?? 'Resort CRM' }}</h1>
+            <h1 style="color:#fff;font-size:24px;font-weight:800;margin:0;">{{ $settings->resort_name ?? 'Hotel CRM' }}</h1>
             @if($settings && $settings->tagline)
             <p style="color:#06b6d4;font-size:13px;margin:4px 0 0;">{{ $settings->tagline }} • Staff Portal</p>
             @endif

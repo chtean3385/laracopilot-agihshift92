@@ -3,7 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — {{ $settings->resort_name ?? 'Resort CRM' }}</title>
+    <title>{{ $settings->resort_name ?? 'Hotel CRM' }} — Hotel & Resort Property Management System</title>
+    <meta name="description" content="{{ $settings->resort_name ?? 'Hotel CRM' }} — Powerful hotel and resort management system. Manage bookings, guest check-ins, room availability, time-slot pricing, housekeeping, payments, and business reports all in one place.">
+    <meta name="keywords" content="hotel CRM, resort management software, hotel booking system, hotel property management, resort CRM, hotel PMS, hotel check-in system, hotel guest management, resort booking software, hotel room management">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ url('/') }}">
+    <link rel="icon" type="image/png" href="{{ asset('hotel-crm-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('hotel-crm-logo.png') }}">
+    <meta name="theme-color" content="#0f172a">
+    {{-- Open Graph --}}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $settings->resort_name ?? 'Hotel CRM' }} — Hotel & Resort Management System">
+    <meta property="og:description" content="Complete hotel and resort management — bookings, check-ins, rooms, guests, payments, and reports.">
+    <meta property="og:image" content="{{ asset('hotel-crm-logo.png') }}">
+    <meta property="og:url" content="{{ url('/') }}">
+    {{-- Twitter --}}
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ $settings->resort_name ?? 'Hotel CRM' }} — Hotel & Resort Management System">
+    <meta name="twitter:description" content="Complete hotel CRM — bookings, check-ins, rooms, guests, and reports.">
+    <meta name="twitter:image" content="{{ asset('hotel-crm-logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -18,10 +36,10 @@
     <div class="relative w-full max-w-md">
         <!-- Logo Card -->
         <div class="text-center mb-8">
-            <div class="inline-flex w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-3xl items-center justify-center shadow-2xl mb-4">
-                <i class="fas fa-hotel text-white text-3xl"></i>
-            </div>
-            <h1 class="text-3xl font-bold text-white">Hotel CRM</h1>
+            <img src="{{ asset('hotel-crm-logo.png') }}" alt="{{ $settings->resort_name ?? 'Hotel CRM' }}"
+                 class="w-20 h-20 rounded-3xl shadow-2xl mb-4 mx-auto object-cover"
+                 style="box-shadow:0 8px 32px rgba(6,182,212,.35);">
+            <h1 class="text-3xl font-bold text-white">{{ $settings->resort_name ?? 'Hotel CRM' }}</h1>
             <p class="text-cyan-300 text-sm mt-1">Staff Portal</p>
         </div>
 

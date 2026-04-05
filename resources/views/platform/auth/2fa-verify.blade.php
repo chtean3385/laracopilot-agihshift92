@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Two-Factor Authentication — Platform Admin</title>
+    <title>Two-Factor Authentication — Hotel CRM Platform Admin</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,13 +28,13 @@
         }
         .brand { text-align: center; margin-bottom: 32px; }
         .brand-icon {
-            width: 64px; height: 64px;
-            background: linear-gradient(135deg,#8b5cf6,#4c1d95);
+            width: 72px; height: 72px;
             border-radius: 20px;
-            display: flex; align-items: center; justify-content: center;
             margin: 0 auto 16px;
+            overflow: hidden;
             box-shadow: 0 8px 32px rgba(139,92,246,.4);
         }
+        .brand-icon img { width:100%; height:100%; object-fit:cover; }
         .brand h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
         .brand p { font-size: 13px; color: #a78bfa; font-weight: 500; }
         .info-box {
@@ -98,7 +100,7 @@
 <div class="box">
     <div class="brand">
         <div class="brand-icon">
-            <i class="fas fa-shield-halved" style="color:#fff;font-size:26px;"></i>
+            <img src="/hotel-crm-logo.png" alt="Hotel CRM">
         </div>
         <h1>Two-Factor Auth</h1>
         <p>Enter the code from your authenticator app</p>

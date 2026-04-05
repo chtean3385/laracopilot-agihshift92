@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Platform Admin') — SaaS Management</title>
+    <title>@yield('title', 'Dashboard') — Hotel CRM Platform Admin | SaaS Management Console</title>
+    <meta name="description" content="Hotel CRM SaaS platform admin — manage tenants, hotel subscriptions, plans, billing, and multi-tenant hotel property management deployments.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="{{ asset('hotel-crm-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('hotel-crm-logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @stack('styles')
