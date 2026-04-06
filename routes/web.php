@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ForgotPasswordController;
 use App\Http\Controllers\Admin\HotelSwitchController;
 use App\Http\Controllers\Admin\SaHotelFilterController;
 use App\Http\Controllers\Admin\ModuleController;
+use App\Http\Controllers\Admin\BookingExtraChargeController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\PaymentLinksController;
 use App\Http\Controllers\Admin\TimeSlotController;
@@ -100,6 +101,8 @@ Route::get('/bookings/{id}/edit',            [BookingController::class, 'edit'] 
 Route::put('/bookings/{id}',                 [BookingController::class, 'update']            )->middleware('permission:bookings.edit')->name('bookings.update');
 Route::delete('/bookings/{id}',              [BookingController::class, 'destroy']           )->middleware('permission:bookings.delete')->name('bookings.destroy');
 Route::get('/bookings/{id}',                 [BookingController::class, 'show']              )->name('bookings.show');
+Route::post('/bookings/{booking}/extra-charges',                [BookingExtraChargeController::class, 'store']  )->name('bookings.extra_charges.store');
+Route::delete('/bookings/{booking}/extra-charges/{charge}',    [BookingExtraChargeController::class, 'destroy'])->name('bookings.extra_charges.destroy');
 
 // ── Check-In ───────────────────────────────────────────────────────────────
 Route::get('/checkin',       [CheckInController::class, 'index']  )->name('checkin.index');

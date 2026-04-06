@@ -33,7 +33,7 @@ class InvoiceController extends Controller
     public function show($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $invoice  = Invoice::with(['booking.room', 'booking.payments', 'customer'])->findOrFail($id);
+        $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
         $settings = Setting::first();
         return view('admin.invoices.show', compact('invoice', 'settings'));
     }
@@ -41,7 +41,7 @@ class InvoiceController extends Controller
     public function print($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $invoice  = Invoice::with(['booking.room', 'booking.payments', 'customer'])->findOrFail($id);
+        $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
         $settings = Setting::first();
         return view('admin.invoices.print', compact('invoice', 'settings'));
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BookingExtraCharge;
 
 class Booking extends Model
 {
@@ -69,6 +70,11 @@ class Booking extends Model
     public function bookingAddOns()
     {
         return $this->hasMany(BookingAddOn::class);
+    }
+
+    public function extraCharges()
+    {
+        return $this->hasMany(BookingExtraCharge::class)->orderBy('created_at');
     }
 
     public function bookingGuests()

@@ -88,6 +88,17 @@
                         <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invoice->booking->extra_bed_cost) }}</td>
                     </tr>
                     @endif
+                    @foreach($invoice->booking->extraCharges as $xCharge)
+                    <tr class="border-t border-gray-100">
+                        <td class="px-4 py-3 text-sm">
+                            {{ $xCharge->name }}
+                            @if($xCharge->notes)<span class="text-gray-400 text-xs ml-1">({{ $xCharge->notes }})</span>@endif
+                        </td>
+                        <td class="px-4 py-3 text-sm text-right">{{ number_format($xCharge->quantity, ($xCharge->quantity == intval($xCharge->quantity) ? 0 : 2)) }}</td>
+                        <td class="px-4 py-3 text-sm text-right">₹{{ number_format($xCharge->unit_price) }}</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($xCharge->total_price) }}</td>
+                    </tr>
+                    @endforeach
                 </tbody>
             </table>
             @php

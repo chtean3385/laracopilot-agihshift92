@@ -136,7 +136,8 @@ class HotelController extends Controller
                 ['slug' => 'pathik',            'name' => 'Pathik Autofill',           'description' => 'Gujarat Pathik portal autofill.',                 'is_enabled' => false],
                 ['slug' => 'channel_manager',   'name' => 'OTA Channel Manager',       'description' => 'Sync with OTA platforms.',                        'is_enabled' => false],
                 ['slug' => 'time-slot-pricing', 'name' => 'Time Slot Pricing',  'description' => 'Enable fixed time-block (per-slot) room pricing and booking.', 'is_enabled' => false],
-                ['slug' => 'hourly-pricing',   'name' => 'Hourly Pricing',     'description' => 'Enable per-hour room pricing and booking.',                    'is_enabled' => false],
+                ['slug' => 'hourly-pricing',    'name' => 'Hourly Pricing',    'description' => 'Enable per-hour room pricing and booking.',                    'is_enabled' => false],
+                ['slug' => 'extra-billing',     'name' => 'Extra Billing',     'description' => 'Add post-booking charges (food, laundry, services, etc.) to occupied or confirmed bookings and reflect them on the final bill.', 'is_enabled' => false],
             ];
             foreach ($modules as $m) {
                 DB::table('modules')->insert(array_merge($m, [
@@ -345,8 +346,9 @@ class HotelController extends Controller
                 ['slug' => 'payment_links',     'name' => 'Payment Links',             'description' => 'Generate UPI QR codes and payment links.',        'is_enabled' => false],
                 ['slug' => 'pathik',            'name' => 'Pathik Autofill',           'description' => 'Gujarat Pathik portal autofill.',                 'is_enabled' => false],
                 ['slug' => 'channel_manager',   'name' => 'OTA Channel Manager',       'description' => 'Sync with OTA platforms.',                        'is_enabled' => false],
-                ['slug' => 'time-slot-pricing', 'name' => 'Time Slot Pricing', 'description' => 'Enable fixed time-block (per-slot) room pricing and booking.', 'is_enabled' => false],
-                ['slug' => 'hourly-pricing',   'name' => 'Hourly Pricing',  'description' => 'Enable per-hour room pricing and booking.',                    'is_enabled' => false],
+                ['slug' => 'time-slot-pricing', 'name' => 'Time Slot Pricing',  'description' => 'Enable fixed time-block (per-slot) room pricing and booking.', 'is_enabled' => false],
+                ['slug' => 'hourly-pricing',    'name' => 'Hourly Pricing',     'description' => 'Enable per-hour room pricing and booking.',                    'is_enabled' => false],
+                ['slug' => 'extra-billing',     'name' => 'Extra Billing',      'description' => 'Add post-booking charges (food, laundry, services, etc.) to occupied or confirmed bookings and reflect them on the final bill.', 'is_enabled' => false],
             ] as $m) {
                 DB::table('modules')->insert(array_merge($m, ['hotel_id' => $newHotelId, 'created_at' => now(), 'updated_at' => now()]));
             }
