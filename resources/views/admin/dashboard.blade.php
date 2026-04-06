@@ -438,6 +438,7 @@
                             </a>
                             @endCanDo
                             @if(\App\Models\Module::isEnabled('extra-billing'))
+                            @canDo('bookings.view')
                             <a href="{{ route('bookings.index', ['status' => 'checked_in']) }}" class="qa-btn" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);" onmouseenter="this.style.background='linear-gradient(135deg,#ffe4e6,#fecdd3)'" onmouseleave="this.style.background='linear-gradient(135deg,#fff1f2,#ffe4e6)'">
                                 <div style="width:42px;height:42px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(244,63,94,.3);flex-shrink:0;">
                                     <i class="fas fa-receipt" style="color:#fff;font-size:14px;"></i>
@@ -448,6 +449,7 @@
                                 </div>
                                 <i class="fas fa-chevron-right" style="color:#fda4af;font-size:11px;margin-left:auto;"></i>
                             </a>
+                            @endCanDo
                             @endif
                         </div>
                     </div>
