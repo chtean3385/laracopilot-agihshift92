@@ -29,9 +29,9 @@ class BookingExtraChargeController extends Controller
         ]);
 
         abort_unless(
-            in_array($booking->status, ['confirmed', 'checked_in']),
+            $booking->status === 'checked_in',
             422,
-            'Extra charges can only be added to confirmed or checked-in bookings.'
+            'Extra charges can only be added to checked-in bookings.'
         );
 
         $totalPrice = round($data['quantity'] * $data['unit_price'], 2);
@@ -67,9 +67,9 @@ class BookingExtraChargeController extends Controller
         abort_unless($charge->booking_id === $booking->id, 404);
 
         abort_unless(
-            in_array($booking->status, ['confirmed', 'checked_in']),
+            $booking->status === 'checked_in',
             422,
-            'Cannot remove charges from a checked-out or cancelled booking.'
+            'Cannot remove charges from a booking that is not checked in.'
         );
 
         DB::transaction(function () use ($booking, $charge) {

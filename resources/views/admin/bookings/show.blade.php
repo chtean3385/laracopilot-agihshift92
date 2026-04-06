@@ -217,7 +217,7 @@
 
 {{-- ── Extra Billing Module ─────────────────────────────────────────────── --}}
 @if(\App\Models\Module::isEnabled('extra-billing'))
-<div class="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+<div id="extra-charges" class="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
     <div class="px-6 py-4 border-b border-rose-100 flex items-center justify-between" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">
@@ -267,7 +267,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <div class="font-bold text-rose-600 text-sm">₹{{ number_format($charge->total_price) }}</div>
-                @if(in_array($booking->status, ['confirmed', 'checked_in']))
+                @if($booking->status === 'checked_in')
                 <form method="POST" action="{{ route('bookings.extra_charges.destroy', [$booking, $charge]) }}" onsubmit="return confirm('Remove this extra charge? This will reduce the booking total by ₹{{ number_format($charge->total_price) }}.')">
                     @csrf @method('DELETE')
                     <button type="submit" class="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center">
@@ -283,8 +283,8 @@
     <div class="px-6 py-5 text-center text-gray-400 text-sm">No extra charges added yet</div>
     @endif
 
-    {{-- Add new charge form (only for active bookings) --}}
-    @if(in_array($booking->status, ['confirmed', 'checked_in']))
+    {{-- Add new charge form (only for checked-in bookings) --}}
+    @if($booking->status === 'checked_in')
     <div class="px-6 pb-6 pt-4 border-t border-gray-100">
         <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Add Extra Charge</p>
         <form method="POST" action="{{ route('bookings.extra_charges.store', $booking) }}" class="space-y-3">

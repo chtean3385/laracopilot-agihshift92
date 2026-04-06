@@ -160,7 +160,19 @@
                     @if($room->has_extra_bed)<span class="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5"><i class="fas fa-bed mr-0.5"></i>+Bed</span>@endif
                 </div>
                 @endif
-                @php $isOccupied = $room->status === 'occupied'; @endphp
+                @php
+                    $isOccupied = $room->status === 'occupied';
+                    $activeBooking = $isOccupied ? $room->bookings->first() : null;
+                @endphp
+                @if(\App\Models\Module::isEnabled('extra-billing') && $isOccupied && $activeBooking)
+                <a href="{{ route('bookings.show', $activeBooking->id) }}#extra-charges"
+                   class="w-full text-center block py-2 rounded-xl text-xs font-semibold mb-2 transition-all"
+                   style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);color:#9f1239;"
+                   onmouseenter="this.style.background='linear-gradient(135deg,#ffe4e6,#fecdd3)'"
+                   onmouseleave="this.style.background='linear-gradient(135deg,#fff1f2,#ffe4e6)'">
+                    <i class="fas fa-receipt mr-1"></i>Post Charge
+                </a>
+                @endif
                 @if(\App\Services\PermissionService::check('rooms.edit'))
                 @if($isOccupied)
                 <span class="w-full text-center block bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold mb-2 cursor-not-allowed" title="Cannot edit an occupied room">
