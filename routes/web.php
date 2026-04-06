@@ -193,12 +193,17 @@ Route::get('/reports/slot-availability',        [ReportController::class, 'slotA
 Route::get('/reports/slot-availability/export', [ReportController::class, 'slotAvailabilityExport'])->middleware('permission:reports.view')->name('reports.slot_availability.export');
 
 // ── WhatsApp Automation ────────────────────────────────────────────────────
-Route::get('/whatsapp/config',                    [WhatsAppController::class, 'config']       )->name('whatsapp.config');
-Route::post('/whatsapp/config',                   [WhatsAppController::class, 'configSave']   )->name('whatsapp.config.save');
-Route::get('/whatsapp/templates',                 [WhatsAppController::class, 'templates']    )->name('whatsapp.templates');
-Route::get('/whatsapp/templates/{template}/edit', [WhatsAppController::class, 'templateEdit'] )->name('whatsapp.template.edit');
-Route::put('/whatsapp/templates/{template}',      [WhatsAppController::class, 'templateSave'] )->name('whatsapp.template.save');
-Route::post('/whatsapp/test-send',                [WhatsAppController::class, 'testSend']     )->name('whatsapp.test.send');
+Route::get('/whatsapp/config',                          [WhatsAppController::class, 'config']          )->name('whatsapp.config');
+Route::post('/whatsapp/config',                         [WhatsAppController::class, 'configSave']      )->name('whatsapp.config.save');
+Route::get('/whatsapp/templates',                       [WhatsAppController::class, 'templates']       )->name('whatsapp.templates');
+Route::get('/whatsapp/templates/create',                [WhatsAppController::class, 'templateCreate']  )->name('whatsapp.template.create');
+Route::post('/whatsapp/templates',                      [WhatsAppController::class, 'templateStore']   )->name('whatsapp.template.store');
+Route::get('/whatsapp/templates/{template}/edit',       [WhatsAppController::class, 'templateEdit']    )->name('whatsapp.template.edit');
+Route::put('/whatsapp/templates/{template}',            [WhatsAppController::class, 'templateSave']    )->name('whatsapp.template.save');
+Route::delete('/whatsapp/templates/{template}',         [WhatsAppController::class, 'templateDestroy'] )->name('whatsapp.template.destroy');
+Route::post('/whatsapp/templates/{template}/toggle',    [WhatsAppController::class, 'templateToggle']  )->name('whatsapp.template.toggle');
+Route::post('/whatsapp/templates/sync-wati',            [WhatsAppController::class, 'syncWati']        )->name('whatsapp.templates.sync_wati');
+Route::post('/whatsapp/test-send',                      [WhatsAppController::class, 'testSend']        )->name('whatsapp.test.send');
 
 // ── Payment Links ──────────────────────────────────────────────────────────
 Route::get('/payment-links/config',                           [PaymentLinksController::class, 'config']          )->name('payment_links.config');

@@ -18,9 +18,12 @@ class WhatsAppTemplate extends Model
         'message_body',
         'variables_hint',
         'is_active',
+        'approval_status',
     ];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
     public static function forEvent(string $event): ?static
     {
@@ -36,6 +39,15 @@ class WhatsAppTemplate extends Model
             'payment.received'   => 'Payment Received',
             'checkout.done'      => 'Check-Out Thank You + Bill',
             'feedback.request'   => 'Feedback Request (2 Days After Stay)',
+        ];
+    }
+
+    public static function approvalStatuses(): array
+    {
+        return [
+            'pending'  => 'Pending',
+            'approved' => 'Approved',
+            'rejected' => 'Rejected',
         ];
     }
 }
