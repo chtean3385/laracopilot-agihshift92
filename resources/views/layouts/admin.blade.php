@@ -33,13 +33,13 @@
     {{-- ── Structured Data (JSON-LD) ── --}}
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
+        "@@context": "https://schema.org",
+        "@@type": "SoftwareApplication",
         "name": "{{ $settings->resort_name ?? 'Hotel CRM' }}",
         "description": "Complete hotel and resort property management system — manage bookings, guests, check-ins, room availability, time-slot pricing, housekeeping, and revenue reports.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "offers": { "@type": "Offer", "category": "Hotel & Resort Management" },
+        "offers": { "@@type": "Offer", "category": "Hotel & Resort Management" },
         "featureList": [
             "Hotel Booking Management",
             "Guest Check-in & Check-out",
