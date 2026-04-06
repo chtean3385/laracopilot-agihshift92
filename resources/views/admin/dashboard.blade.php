@@ -599,28 +599,25 @@
 
                     {{-- Room Availability Checker --}}
                     <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
-                        <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0fdf4,#dcfce7);flex-wrap:wrap;gap:12px;">
-                            <div style="display:flex;align-items:center;gap:14px;">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,.3);">
-                                    <i class="fas fa-search" style="color:#fff;font-size:16px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:16px;">Room Availability</div>
-                                    <div style="font-size:12px;color:#64748b;">Check which rooms are free on any date</div>
-                                </div>
-                            </div>
+                        <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i>
+                                </div>
+                                <div style="font-weight:800;color:#1e293b;font-size:14px;">Room Availability</div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
                                 <input type="date" id="availDatePicker" value="{{ now()->toDateString() }}"
-                                    style="border:1.5px solid #d1fae5;border-radius:10px;padding:8px 14px;font-size:14px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
+                                    style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
                                     onchange="loadAvailability(this.value)">
                                 <button onclick="loadAvailability(document.getElementById('availDatePicker').value)"
-                                    style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(16,185,129,.3);">
-                                    <i class="fas fa-search" style="margin-right:6px;"></i>Check
+                                    style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                    <i class="fas fa-search" style="margin-right:5px;"></i>Check
                                 </button>
                             </div>
                         </div>
-                        <div id="availBody" style="padding:20px;">
-                            <div class="text-center" style="color:#94a3b8;padding:16px 0;font-size:14px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
+                        <div id="availBody" style="padding:14px 16px;max-height:270px;overflow-y:auto;">
+                            <div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:13px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
                         </div>
                     </div>
 
@@ -821,66 +818,80 @@
                 <script>
                 function loadAvailability(date) {
                     var body = document.getElementById('availBody');
-                    body.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px 0;font-size:14px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>';
+                    body.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:13px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>';
                     fetch(availabilityRoute + '?date=' + date, { headers: {'X-Requested-With':'XMLHttpRequest'} })
                         .then(r => r.json())
                         .then(data => {
-                            if (data.error) { body.innerHTML = '<p style="text-align:center;color:#ef4444;padding:16px 0;font-size:14px;">'+data.error+'</p>'; return; }
+                            if (data.error) { body.innerHTML = '<p style="text-align:center;color:#ef4444;padding:12px 0;font-size:13px;">'+data.error+'</p>'; return; }
                             var avail = data.available || [], occ = data.occupied || [];
                             var pricingLabel = function(pt) { return pt === 'per_slot' ? 'Slot' : (pt === 'per_hour' ? 'Hourly' : 'Nightly'); };
-                            var html = '';
 
                             if (avail.length === 0 && occ.length === 0) {
-                                body.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:16px 0;font-size:14px;">No rooms found.</p>';
+                                body.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:12px 0;font-size:13px;">No rooms found.</p>';
                                 return;
                             }
 
-                            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="avail-grid">';
+                            /* ── summary bar ── */
+                            var summary = '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">';
+                            summary += '<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#065f46;">'
+                                     + '<span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;"></span>'
+                                     + avail.length + ' Available</span>';
+                            summary += '<span style="display:inline-flex;align-items:center;gap:5px;background:#fff1f2;border:1px solid #fecdd3;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#9f1239;">'
+                                     + '<span style="width:7px;height:7px;border-radius:50%;background:#f43f5e;display:inline-block;"></span>'
+                                     + occ.length + ' Occupied</span>';
+                            summary += '</div>';
 
-                            html += '<div>';
-                            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
-                            html += '<span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span>';
-                            html += '<span style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Available (' + avail.length + ')</span>';
-                            html += '</div>';
-                            if (avail.length === 0) {
-                                html += '<p style="font-size:13px;color:#94a3b8;">No rooms available.</p>';
-                            } else {
-                                avail.forEach(function(r) {
-                                    html += '<a href="' + r.booking_url + '" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);margin-bottom:6px;text-decoration:none;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow=\'0 4px 12px rgba(16,185,129,.2)\'" onmouseleave="this.style.boxShadow=\'none\'">';
-                                    html += '<div style="width:36px;height:36px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i></div>';
-                                    html += '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#1e293b;font-size:14px;">Room ' + r.room_number + '</div><div style="font-size:11px;color:#64748b;">' + r.type + ' · ' + pricingLabel(r.pricing_type) + '</div></div>';
-                                    html += '<span style="font-size:11px;background:#d1fae5;color:#065f46;border-radius:20px;padding:3px 10px;font-weight:700;white-space:nowrap;">Book →</span>';
-                                    html += '</a>';
-                                });
+                            /* ── chip builder ── */
+                            var chipWrap = function(chips) {
+                                return '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + chips + '</div>';
+                            };
+
+                            /* ── available chips ── */
+                            var availChips = '';
+                            avail.forEach(function(r) {
+                                availChips += '<a href="' + r.booking_url + '" title="' + r.type + ' · ' + pricingLabel(r.pricing_type) + ' — click to book"'
+                                    + ' style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:20px;text-decoration:none;font-size:12px;font-weight:700;color:#065f46;transition:all .15s;white-space:nowrap;"'
+                                    + ' onmouseenter="this.style.background=\'linear-gradient(135deg,#dcfce7,#bbf7d0)\';this.style.boxShadow=\'0 2px 8px rgba(16,185,129,.2)\'"'
+                                    + ' onmouseleave="this.style.background=\'linear-gradient(135deg,#f0fdf4,#dcfce7)\';this.style.boxShadow=\'none\'">'
+                                    + '<i class="fas fa-door-open" style="font-size:10px;color:#10b981;"></i>'
+                                    + '<span>' + r.room_number + '</span>'
+                                    + '<span style="font-size:10px;color:#6ee7b7;font-weight:500;">' + r.type + '</span>'
+                                    + '</a>';
+                            });
+
+                            /* ── occupied chips ── */
+                            var occChips = '';
+                            occ.forEach(function(r) {
+                                var isIn = r.status === 'checked_in';
+                                occChips += '<a href="' + r.booking_url + '" title="' + r.guest + ' · ' + r.type + ' · ' + r.status.replace('_',' ') + '"'
+                                    + ' style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1px solid #fecdd3;border-radius:20px;text-decoration:none;font-size:12px;font-weight:700;color:#9f1239;transition:all .15s;white-space:nowrap;"'
+                                    + ' onmouseenter="this.style.background=\'linear-gradient(135deg,#ffe4e6,#fecdd3)\';this.style.boxShadow=\'0 2px 8px rgba(244,63,94,.2)\'"'
+                                    + ' onmouseleave="this.style.background=\'linear-gradient(135deg,#fff1f2,#ffe4e6)\';this.style.boxShadow=\'none\'">'
+                                    + '<i class="fas fa-bed" style="font-size:10px;color:#f43f5e;"></i>'
+                                    + '<span>' + r.room_number + '</span>'
+                                    + '<span style="font-size:10px;color:#fda4af;font-weight:500;">' + (r.guest ? r.guest.split(' ')[0] : r.type) + '</span>'
+                                    + (isIn ? '<span style="width:5px;height:5px;border-radius:50%;background:#10b981;display:inline-block;flex-shrink:0;" title="Checked In"></span>' : '')
+                                    + '</a>';
+                            });
+
+                            var html = summary;
+                            if (avail.length > 0) {
+                                html += '<div style="margin-bottom:10px;">'
+                                      + '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Available — tap to book</div>'
+                                      + chipWrap(availChips)
+                                      + '</div>';
                             }
-                            html += '</div>';
-
-                            html += '<div>';
-                            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
-                            html += '<span style="width:10px;height:10px;border-radius:50%;background:#f43f5e;display:inline-block;"></span>';
-                            html += '<span style="font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Occupied (' + occ.length + ')</span>';
-                            html += '</div>';
-                            if (occ.length === 0) {
-                                html += '<p style="font-size:13px;color:#94a3b8;">No occupied rooms.</p>';
-                            } else {
-                                occ.forEach(function(r) {
-                                    var statusColor = r.status === 'checked_in' ? '#10b981' : '#3b82f6';
-                                    var statusBg    = r.status === 'checked_in' ? '#d1fae5' : '#dbeafe';
-                                    var statusTxt   = r.status === 'checked_in' ? '#065f46' : '#1e40af';
-                                    html += '<a href="' + r.booking_url + '" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,#fff1f2,#ffe4e6);margin-bottom:6px;text-decoration:none;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow=\'0 4px 12px rgba(244,63,94,.2)\'" onmouseleave="this.style.boxShadow=\'none\'">';
-                                    html += '<div style="width:36px;height:36px;background:linear-gradient(135deg,#f43f5e,#be185d);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-bed" style="color:#fff;font-size:13px;"></i></div>';
-                                    html += '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#1e293b;font-size:14px;">Room ' + r.room_number + '</div><div style="font-size:11px;color:#64748b;">' + r.guest + ' · ' + r.type + '</div></div>';
-                                    html += '<span style="font-size:11px;background:'+statusBg+';color:'+statusTxt+';border-radius:20px;padding:3px 10px;font-weight:700;white-space:nowrap;">' + r.status.replace('_',' ') + '</span>';
-                                    html += '</a>';
-                                });
+                            if (occ.length > 0) {
+                                html += '<div>'
+                                      + '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Occupied</div>'
+                                      + chipWrap(occChips)
+                                      + '</div>';
                             }
-                            html += '</div>';
 
-                            html += '</div>';
                             body.innerHTML = html;
                         })
                         .catch(function() {
-                            body.innerHTML = '<p style="text-align:center;color:#ef4444;padding:16px 0;font-size:14px;">Failed to load availability.</p>';
+                            body.innerHTML = '<p style="text-align:center;color:#ef4444;padding:12px 0;font-size:13px;">Failed to load availability.</p>';
                         });
                 }
 
