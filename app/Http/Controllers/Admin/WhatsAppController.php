@@ -85,7 +85,7 @@ class WhatsAppController extends Controller
             'is_active'       => 'nullable|boolean',
         ]);
         $data['is_active']       = $request->boolean('is_active');
-        $data['approval_status'] = $data['approval_status'] ?? 'pending';
+        $data['approval_status'] = $data['approval_status'] ?? $template->approval_status;
         $template->update($data);
         return redirect()->route('whatsapp.templates')->with('success', 'Template saved.');
     }
@@ -145,7 +145,7 @@ class WhatsAppController extends Controller
             return back()->with('success', "Synced {$synced} template(s) from WATI. Approval statuses updated.");
         } catch (\Throwable $e) {
             Log::error('WATI sync exception: ' . $e->getMessage());
-            return back()->with('error', 'WATI sync failed: ' . $e->getMessage());
+            return back()->with('error', 'WATI sync failed. Check your credentials and try again.');
         }
     }
 
