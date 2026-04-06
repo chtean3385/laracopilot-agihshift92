@@ -39,7 +39,7 @@
             <img src="{{ asset('hotel-crm-logo.png') }}" alt="{{ $settings->resort_name ?? 'Hotel CRM' }}"
                  class="w-20 h-20 rounded-3xl shadow-2xl mb-4 mx-auto object-cover"
                  style="box-shadow:0 8px 32px rgba(6,182,212,.35);">
-            <h1 class="text-3xl font-bold text-white">{{ $settings->resort_name ?? 'Hotel CRM' }}</h1>
+            <h1 class="text-2xl font-bold text-white">All in One Hotel / Resort CRM</h1>
             <p class="text-cyan-300 text-sm mt-1">Staff Portal</p>
         </div>
 
