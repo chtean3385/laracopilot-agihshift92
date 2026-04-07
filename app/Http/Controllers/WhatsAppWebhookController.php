@@ -33,6 +33,11 @@ class WhatsAppWebhookController extends Controller
 
     public function receive(Request $request)
     {
+        if (!$this->verifySignature($request)) {
+            Log::warning('WhatsApp webhook: invalid signature — request rejected');
+            return response()->json(['status' => 'forbidden'], 403);
+        }
+
         try {
             $payload = $request->all();
             Log::info('WhatsApp webhook received', ['payload' => $payload]);
@@ -107,5 +112,26 @@ class WhatsAppWebhookController extends Controller
                 'text' => $message['text']['body'] ?? null,
             ]);
         }
+    }
+
+    protected function verifySignature(Request $request): bool
+    {
+        $platform  = PlatformWhatsAppSetting::instance();
+        $appSecret = $platform?->meta_app_secret;
+
+        if (!$appSecret) {
+            Log::warning('WhatsApp webhook: no app secret configured — signature check skipped');
+            return true;
+        }
+
+        $signature = $request->header('X-Hub-Signature-256');
+        if (!$signature) {
+            return false;
+        }
+
+        $rawBody   = $request->getContent();
+        $expected  = 'sha256=' . hash_hmac('sha256', $rawBody, $appSecret);
+
+        return hash_equals($expected, $signature);
     }
 }

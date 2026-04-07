@@ -383,6 +383,23 @@ function hideEmbeddedSignup() {
     document.getElementById('modeCards').style.display = 'grid';
 }
 
+// Listen for WABA/phone IDs delivered via postMessage from Meta popup
+(function() {
+    window.addEventListener('message', function(event) {
+        var origin = event.origin || '';
+        if (origin !== 'https://www.facebook.com' && origin !== 'https://web.facebook.com') return;
+        try {
+            var data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            if (data && data.type === 'WA_EMBEDDED_SIGNUP') {
+                if (data.event === 'FINISH' && data.data) {
+                    embeddedWabaId  = data.data.waba_id || null;
+                    embeddedPhoneId = data.data.phone_number_id || null;
+                }
+            }
+        } catch (e) {}
+    });
+})();
+
 function launchEmbeddedSignup() {
     if (!META_APP_ID || !META_CONFIG_ID) {
         showError('WhatsApp is not fully configured by the platform. Please contact support.', null);
@@ -399,21 +416,19 @@ function launchEmbeddedSignup() {
         return;
     }
 
+    embeddedCode    = null;
+    embeddedWabaId  = null;
+    embeddedPhoneId = null;
+
     FB.login(function(response) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fab fa-whatsapp" style="font-size:20px;"></i> Connect WhatsApp Business Account';
 
         if (response.authResponse && response.authResponse.code) {
-            embeddedCode    = response.authResponse.code;
-            embeddedWabaId  = response.authResponse.waba_id || null;
-            embeddedPhoneId = response.authResponse.phone_number_id || null;
-
-            if (!embeddedWabaId && response.authResponse.businesses?.length) {
-                embeddedWabaId = response.authResponse.businesses[0]?.id || null;
-            }
+            embeddedCode = response.authResponse.code;
 
             if (!embeddedWabaId || !embeddedPhoneId) {
-                showError('The WhatsApp account details were not returned. Please try again and make sure to complete all steps in the popup.', null);
+                showError('Your WhatsApp account details were not returned. Make sure you completed all steps in the popup, then try again.', null);
                 return;
             }
 
