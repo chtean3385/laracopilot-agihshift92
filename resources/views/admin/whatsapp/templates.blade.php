@@ -204,7 +204,7 @@ function toggleTemplate(id, checkbox) {
     track.style.background = active ? '#25d366' : '#e2e8f0';
     thumb.style.left = active ? '22px' : '2px';
 
-    fetch('/whatsapp/templates/' + id + '/toggle', {
+    fetch('/whatsapp/automations/' + id + '/toggle', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

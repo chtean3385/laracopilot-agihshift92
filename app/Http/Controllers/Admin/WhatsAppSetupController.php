@@ -55,6 +55,13 @@ class WhatsAppSetupController extends Controller
 
     public function resumeSetup(Request $request)
     {
+        $hotel    = Hotel::find(session('crm_hotel_id'));
+        $plan     = $hotel?->plan ?? 'basic';
+        $canOwn   = in_array($plan, ['pro', 'enterprise', 'premium', 'business']);
+        if (!$canOwn) {
+            return response()->json(['success' => false, 'error' => 'Your current plan does not include the own-number WhatsApp option. Upgrade to Pro or higher to use this feature.']);
+        }
+
         $config = WhatsAppConfig::first();
         if (!$config || $config->setup_step < 1) {
             return response()->json(['success' => false, 'step' => 1, 'error' => 'Setup state was lost. Please start over by clicking "Start Setup" again.']);
@@ -85,6 +92,12 @@ class WhatsAppSetupController extends Controller
 
     public function embeddedComplete(Request $request)
     {
+        $hotel  = Hotel::find(session('crm_hotel_id'));
+        $plan   = $hotel?->plan ?? 'basic';
+        if (!in_array($plan, ['pro', 'enterprise', 'premium', 'business'])) {
+            return response()->json(['success' => false, 'error' => 'Your current plan does not include the own-number WhatsApp option. Upgrade to Pro or higher to use this feature.']);
+        }
+
         $request->validate([
             'code'            => 'required|string',
             'waba_id'         => 'required|string|not_in:pending,resume',

@@ -120,8 +120,8 @@ class WhatsAppWebhookController extends Controller
         $appSecret = $platform?->meta_app_secret;
 
         if (!$appSecret) {
-            Log::warning('WhatsApp webhook: no app secret configured — signature check skipped');
-            return true;
+            Log::error('WhatsApp webhook: no app secret configured — rejecting request');
+            return false;
         }
 
         $signature = $request->header('X-Hub-Signature-256');
