@@ -8,6 +8,7 @@ use App\Models\Module;
 use App\Models\PlatformWhatsAppSetting;
 use App\Models\WhatsAppConfig;
 use App\Models\WhatsAppTemplate;
+use App\Services\HotelContext;
 use App\Services\WhatsApp\WhatsAppSetupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,7 @@ class WhatsAppSetupController extends Controller
         $embeddedSignupReady  = PlatformWhatsAppSetting::isEmbeddedSignupReady();
         $config               = WhatsAppConfig::first() ?? new WhatsAppConfig(['mode' => 'shared', 'setup_step' => 0, 'setup_completed' => false]);
 
-        $hotel      = Hotel::find(session('crm_hotel_id'));
+        $hotel      = Hotel::find(app(HotelContext::class)->getHotel());
         $hotelPlan  = $hotel?->plan ?? 'basic';
         $canUseOwn  = in_array($hotelPlan, ['pro', 'pro_ai', 'standard', 'enterprise', 'premium', 'business']);
 
@@ -55,7 +56,7 @@ class WhatsAppSetupController extends Controller
 
     public function resumeSetup(Request $request)
     {
-        $hotel    = Hotel::find(session('crm_hotel_id'));
+        $hotel    = Hotel::find(app(HotelContext::class)->getHotel());
         $plan     = $hotel?->plan ?? 'basic';
         $canOwn   = in_array($plan, ['pro', 'pro_ai', 'standard', 'enterprise', 'premium', 'business']);
         if (!$canOwn) {
@@ -92,7 +93,7 @@ class WhatsAppSetupController extends Controller
 
     public function embeddedComplete(Request $request)
     {
-        $hotel  = Hotel::find(session('crm_hotel_id'));
+        $hotel  = Hotel::find(app(HotelContext::class)->getHotel());
         $plan   = $hotel?->plan ?? 'basic';
         if (!in_array($plan, ['pro', 'pro_ai', 'standard', 'enterprise', 'premium', 'business'])) {
             return response()->json(['success' => false, 'error' => 'Your current plan does not include the own-number WhatsApp option. Upgrade to Pro or higher to use this feature.']);
