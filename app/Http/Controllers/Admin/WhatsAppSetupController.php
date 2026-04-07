@@ -24,7 +24,7 @@ class WhatsAppSetupController extends Controller
 
         $hotel      = Hotel::find(session('crm_hotel_id'));
         $hotelPlan  = $hotel?->plan ?? 'basic';
-        $canUseOwn  = in_array($hotelPlan, ['pro', 'enterprise', 'premium', 'business']);
+        $canUseOwn  = in_array($hotelPlan, ['pro', 'pro_ai', 'standard', 'enterprise', 'premium', 'business']);
 
         return view('admin.whatsapp.setup', compact(
             'moduleActive', 'platform', 'saasReady', 'embeddedSignupReady', 'config', 'hotelPlan', 'canUseOwn'
@@ -57,7 +57,7 @@ class WhatsAppSetupController extends Controller
     {
         $hotel    = Hotel::find(session('crm_hotel_id'));
         $plan     = $hotel?->plan ?? 'basic';
-        $canOwn   = in_array($plan, ['pro', 'enterprise', 'premium', 'business']);
+        $canOwn   = in_array($plan, ['pro', 'pro_ai', 'standard', 'enterprise', 'premium', 'business']);
         if (!$canOwn) {
             return response()->json(['success' => false, 'error' => 'Your current plan does not include the own-number WhatsApp option. Upgrade to Pro or higher to use this feature.']);
         }
@@ -94,7 +94,7 @@ class WhatsAppSetupController extends Controller
     {
         $hotel  = Hotel::find(session('crm_hotel_id'));
         $plan   = $hotel?->plan ?? 'basic';
-        if (!in_array($plan, ['pro', 'enterprise', 'premium', 'business'])) {
+        if (!in_array($plan, ['pro', 'pro_ai', 'standard', 'enterprise', 'premium', 'business'])) {
             return response()->json(['success' => false, 'error' => 'Your current plan does not include the own-number WhatsApp option. Upgrade to Pro or higher to use this feature.']);
         }
 
