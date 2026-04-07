@@ -17,8 +17,11 @@
 @endif
 
 @php
-$providerConnected = $config && $config->is_active && $config->api_key;
-$providerName      = $providerConnected ? strtoupper($config->provider) : null;
+$providerConnected = $config && $config->setup_completed &&
+    (($config->mode === 'shared') || ($config->mode === 'own'));
+$providerName = $providerConnected
+    ? ($config->mode === 'shared' ? 'CRM Shared Number' : 'Own Hotel Number')
+    : null;
 
 $eventMeta = [
     'booking.created'    => ['fas fa-calendar-check', 'linear-gradient(135deg,#06b6d4,#3b82f6)', 'Sent when a new booking is created or confirmed'],
