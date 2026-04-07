@@ -11,18 +11,23 @@ class WhatsAppWebhookController extends Controller
 {
     public function verify(Request $request)
     {
-        $mode      = $request->query('hub_mode');
-        $challenge = $request->query('hub_challenge');
-        $token     = $request->query('hub_verify_token');
+        $mode      = $request->query('hub_mode')      ?? $request->query('hub.mode');
+        $challenge = $request->query('hub_challenge')  ?? $request->query('hub.challenge');
+        $token     = $request->query('hub_verify_token') ?? $request->query('hub.verify_token');
 
         $platform = PlatformWhatsAppSetting::instance();
-        $expected = $platform?->webhook_verify_token ?? config('app.key');
+        $expected = $platform?->webhook_verify_token;
+
+        if (!$expected) {
+            Log::warning('WhatsApp webhook: no verify token configured on platform');
+            return response('Webhook verify token not configured', 500);
+        }
 
         if ($mode === 'subscribe' && $token === $expected) {
             return response($challenge, 200)->header('Content-Type', 'text/plain');
         }
 
-        Log::warning('WhatsApp webhook verification failed', ['mode' => $mode, 'token' => $token]);
+        Log::warning('WhatsApp webhook verification failed', ['mode' => $mode]);
         return response('Forbidden', 403);
     }
 
@@ -84,7 +89,7 @@ class WhatsAppWebhookController extends Controller
                 'approval_status' => $approvalStatus,
             ]);
 
-        Log::info("WhatsApp template status updated", [
+        Log::info('WhatsApp template status updated', [
             'meta_template_id' => $templateId,
             'event'            => $event,
             'meta_status'      => $metaStatus,

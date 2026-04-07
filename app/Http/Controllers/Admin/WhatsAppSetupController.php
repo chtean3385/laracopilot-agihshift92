@@ -52,39 +52,67 @@ class WhatsAppSetupController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function resumeSetup(Request $request)
+    {
+        $config = WhatsAppConfig::first();
+        if (!$config || $config->setup_step < 1) {
+            return response()->json(['success' => false, 'step' => 1, 'error' => 'Setup state was lost. Please start over by clicking "Start Setup" again.']);
+        }
+
+        $service = app(WhatsAppSetupService::class);
+
+        if ($config->setup_step < 2) {
+            $webhookResult = $service->subscribeWebhook($config->waba_id, $config->access_token);
+            if (!$webhookResult['success']) {
+                return response()->json(['success' => false, 'step' => 2, 'error' => $webhookResult['error'], 'step1_done' => true]);
+            }
+            $config->update(['setup_step' => 2]);
+        }
+
+        if ($config->setup_step < 3) {
+            $templateResult = $service->submitAllTemplates($config);
+            if (!$templateResult['success'] && ($templateResult['submitted'] ?? 0) === 0) {
+                return response()->json(['success' => false, 'step' => 3, 'error' => $templateResult['error'] ?? 'Could not submit message templates. Please try again.', 'step1_done' => true, 'step2_done' => true]);
+            }
+            $config->update(['setup_step' => 3]);
+        }
+
+        $config->update(['setup_step' => 5, 'setup_completed' => true, 'is_active' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function embeddedComplete(Request $request)
     {
         $request->validate([
             'code'            => 'required|string',
-            'waba_id'         => 'required|string',
-            'phone_number_id' => 'required|string',
+            'waba_id'         => 'required|string|not_in:pending,resume',
+            'phone_number_id' => 'required|string|not_in:pending,resume',
         ]);
 
         $config = WhatsAppConfig::firstOrNew([]);
         $config->fill([
-            'mode'            => 'own',
-            'provider'        => 'meta',
-            'waba_id'         => $request->waba_id,
+            'mode'                => 'own',
+            'provider'            => 'meta',
+            'waba_id'             => $request->waba_id,
             'business_account_id' => $request->waba_id,
-            'phone_number_id' => $request->phone_number_id,
-            'is_active'       => false,
+            'phone_number_id'     => $request->phone_number_id,
+            'is_active'           => false,
         ]);
+        if (!$config->exists || $config->setup_step < 1) {
+            $config->setup_step = 0;
+        }
         $config->save();
 
         $service = new WhatsAppSetupService();
-        $results = [
-            'step1' => null,
-            'step2' => null,
-            'step3' => null,
-        ];
 
         if ($config->setup_step < 1) {
             $tokenResult = $service->exchangeCode($request->code);
             if (!$tokenResult['success']) {
                 return response()->json([
-                    'success'   => false,
-                    'step'      => 1,
-                    'error'     => $tokenResult['error'],
+                    'success'            => false,
+                    'step'               => 1,
+                    'error'              => $tokenResult['error'],
                     'is_number_conflict' => ($tokenResult['error'] === 'number_already_registered'),
                 ]);
             }
@@ -93,37 +121,36 @@ class WhatsAppSetupController extends Controller
                 'api_key'      => $tokenResult['access_token'],
                 'setup_step'   => 1,
             ]);
-            $results['step1'] = true;
-        } else {
-            $results['step1'] = true;
         }
 
         if ($config->setup_step < 2) {
             $webhookResult = $service->subscribeWebhook($config->waba_id, $config->access_token);
             if (!$webhookResult['success']) {
                 return response()->json([
-                    'success'     => false,
-                    'step'        => 2,
-                    'error'       => $webhookResult['error'],
-                    'step1_done'  => true,
+                    'success'    => false,
+                    'step'       => 2,
+                    'error'      => $webhookResult['error'],
+                    'step1_done' => true,
                 ]);
             }
             $config->update(['setup_step' => 2]);
-            $results['step2'] = true;
-        } else {
-            $results['step2'] = true;
         }
 
         if ($config->setup_step < 3) {
             $templateResult = $service->submitAllTemplates($config);
-            $config->update(['setup_step' => 3]);
-            $results['step3'] = ['submitted' => $templateResult['submitted'] ?? 0];
 
-            if (!$templateResult['success']) {
-                Log::warning('WhatsApp template submission partially failed', $templateResult);
+            if (!$templateResult['success'] && ($templateResult['submitted'] ?? 0) === 0) {
+                return response()->json([
+                    'success'    => false,
+                    'step'       => 3,
+                    'error'      => $templateResult['error'] ?? 'Could not submit message templates. Please try again.',
+                    'step1_done' => true,
+                    'step2_done' => true,
+                ]);
             }
-        } else {
-            $results['step3'] = true;
+
+            $config->update(['setup_step' => 3]);
+            Log::info('WhatsApp templates submitted', ['submitted' => $templateResult['submitted'] ?? 0]);
         }
 
         $config->update([
@@ -133,9 +160,8 @@ class WhatsAppSetupController extends Controller
         ]);
 
         return response()->json([
-            'success'          => true,
-            'steps_completed'  => $results,
-            'templates_submitted' => is_array($results['step3']) ? $results['step3']['submitted'] : 0,
+            'success'             => true,
+            'templates_submitted' => $config->fresh() ? WhatsAppTemplate::where('meta_status', 'submitted')->count() : 0,
         ]);
     }
 
@@ -150,28 +176,28 @@ class WhatsAppSetupController extends Controller
 
         $config->update(['setup_step' => $request->step - 1]);
 
-        return response()->json(['success' => true, 'message' => 'Ready to retry from step ' . $request->step]);
+        return response()->json(['success' => true]);
     }
 
     public function reset()
     {
         $config = WhatsAppConfig::first();
         if ($config) {
-            $config->update([
-                'mode'            => 'shared',
-                'setup_step'      => 0,
-                'setup_completed' => false,
-                'is_active'       => false,
-                'access_token'    => null,
-                'api_key'         => null,
-                'waba_id'         => null,
-                'phone_number_id' => null,
-                'business_account_id' => null,
-            ]);
-
             WhatsAppTemplate::where('hotel_id', $config->hotel_id)->update([
                 'meta_status'      => 'not_submitted',
                 'meta_template_id' => null,
+            ]);
+
+            $config->update([
+                'mode'                => 'shared',
+                'setup_step'          => 0,
+                'setup_completed'     => false,
+                'is_active'           => false,
+                'access_token'        => null,
+                'api_key'             => null,
+                'waba_id'             => null,
+                'phone_number_id'     => null,
+                'business_account_id' => null,
             ]);
         }
 

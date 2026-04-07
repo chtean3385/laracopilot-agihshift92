@@ -204,6 +204,7 @@ Route::get('/reports/slot-availability/export', [ReportController::class, 'slotA
 Route::get('/whatsapp/setup',                           [WhatsAppSetupController::class, 'index']            )->name('whatsapp.setup');
 Route::post('/whatsapp/setup/activate-shared',          [WhatsAppSetupController::class, 'activateShared']   )->name('whatsapp.setup.activate-shared');
 Route::post('/whatsapp/setup/embedded-complete',        [WhatsAppSetupController::class, 'embeddedComplete'] )->name('whatsapp.setup.embedded-complete');
+Route::post('/whatsapp/setup/resume',                   [WhatsAppSetupController::class, 'resumeSetup']      )->name('whatsapp.setup.resume');
 Route::post('/whatsapp/setup/retry-step',               [WhatsAppSetupController::class, 'retryStep']        )->name('whatsapp.setup.retry-step');
 Route::post('/whatsapp/setup/reset',                    [WhatsAppSetupController::class, 'reset']            )->name('whatsapp.setup.reset');
 

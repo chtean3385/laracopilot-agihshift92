@@ -162,22 +162,21 @@ class WhatsAppSetupService
 
         if ($context === 'template_submit') {
             if (str_contains($msg, 'Duplicate') || $code === 2388085) {
-                return "Template \"{$templateName}\" already exists in Meta — it will be updated automatically.";
+                return "The template \"{$templateName}\" already exists in Meta — it will be reused and updated automatically.";
             }
             if ($code === 2388059 || str_contains($msg, 'variable') || str_contains($msg, 'parameter')) {
-                return "Template \"{$templateName}\" has a formatting issue. Edit the template and try again.";
+                return "The template \"{$templateName}\" has a formatting issue with its variables. Please edit the template and resubmit.";
             }
-            return "Template \"{$templateName}\" could not be submitted. Meta said: " . ($msg ?: 'Unknown error') . '. Edit the template and resubmit.';
+            if (str_contains($msg, 'phone') || str_contains($msg, 'URL') || str_contains($msg, 'url')) {
+                return "The template \"{$templateName}\" was rejected because it contains phone numbers or links, which are not allowed. Please edit and resubmit.";
+            }
+            return "The template \"{$templateName}\" could not be submitted. Please check the template content and try again.";
         }
 
         if ($context === 'webhook_subscribe') {
-            return 'Could not configure the webhook. Please try the setup again. If the problem continues, contact support.';
+            return 'Could not configure delivery notifications. Please try the setup again. If the problem continues, contact support.';
         }
 
-        if (!$msg) {
-            return 'An unexpected error occurred. Please try again. If the problem continues, contact support.';
-        }
-
-        return 'Meta error: ' . $msg . ($code ? " (code {$code})" : '');
+        return 'An unexpected error occurred. Please try again. If the problem continues, contact your support team.';
     }
 }
