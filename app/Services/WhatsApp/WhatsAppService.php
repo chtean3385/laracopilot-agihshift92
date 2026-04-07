@@ -4,6 +4,7 @@ namespace App\Services\WhatsApp;
 
 use App\Models\Booking;
 use App\Models\Module;
+use App\Models\PlatformWhatsAppSetting;
 use App\Models\WhatsAppConfig;
 use App\Models\WhatsAppTemplate;
 use App\Services\WhatsApp\Providers\MetaProvider;
@@ -15,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
-    /** Last human-readable error from a failed send (cleared on each sendRaw call). */
     public static string $lastError = '';
 
     public static function setLastError(string $msg): void
@@ -28,8 +28,22 @@ class WhatsAppService
         return static::$lastError;
     }
 
-    private static function provider(WhatsAppConfig $config): ?WhatsAppProviderInterface
+    private static function providerForConfig(WhatsAppConfig $config): ?WhatsAppProviderInterface
     {
+        if ($config->isSharedMode()) {
+            $platform = PlatformWhatsAppSetting::instance();
+            if (!$platform || !$platform->is_saas_active) {
+                static::setLastError('The shared CRM WhatsApp number is not active. Contact support.');
+                return null;
+            }
+            $sharedConfig = new WhatsAppConfig([
+                'provider'        => 'meta',
+                'api_key'         => $platform->saas_token,
+                'phone_number_id' => $platform->saas_phone_number_id,
+            ]);
+            return new MetaProvider($sharedConfig);
+        }
+
         return match ($config->provider) {
             'meta'      => new MetaProvider($config),
             'wati'      => new WatiProvider($config),
@@ -48,7 +62,7 @@ class WhatsAppService
             }
 
             $config = WhatsAppConfig::active();
-            if (!$config) {
+            if (!$config || !$config->isSetupComplete()) {
                 return false;
             }
 
@@ -64,7 +78,7 @@ class WhatsAppService
             }
 
             $message  = MessageBuilder::build($template->message_body, $booking);
-            $provider = static::provider($config);
+            $provider = static::providerForConfig($config);
             if (!$provider) {
                 return false;
             }
@@ -88,13 +102,13 @@ class WhatsAppService
 
             $config = WhatsAppConfig::active();
             if (!$config) {
-                static::setLastError('No active WhatsApp configuration found. Save your credentials and tick "Active".');
+                static::setLastError('No active WhatsApp configuration found. Complete the WhatsApp setup first.');
                 return false;
             }
 
-            $provider = static::provider($config);
+            $provider = static::providerForConfig($config);
             if (!$provider) {
-                static::setLastError('Unknown WhatsApp provider: ' . $config->provider);
+                static::setLastError(static::$lastError ?: 'WhatsApp provider could not be initialised.');
                 return false;
             }
 

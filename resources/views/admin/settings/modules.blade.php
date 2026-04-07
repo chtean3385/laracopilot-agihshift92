@@ -61,7 +61,7 @@ $icons = [
                         </button>
                     </form>
                     @if($module->is_enabled && $module->slug === 'whatsapp')
-                    <a href="{{ route('whatsapp.config') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
+                    <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
                     @endif
@@ -100,7 +100,7 @@ $icons = [
                 </form>
                 @if($module->is_enabled)
                     @if($module->slug === 'whatsapp')
-                    <a href="{{ route('whatsapp.config') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
+                    <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
                     @endif

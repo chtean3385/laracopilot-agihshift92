@@ -329,6 +329,11 @@
             Hotel Backups
         </a>
 
+        <a href="{{ route('platform.whatsapp.settings') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fab fa-whatsapp"></i></span>
+            WhatsApp
+        </a>
+
         <div class="nav-section">System</div>
 
         <a href="{{ route('activity_log.index') }}" class="nav-link">

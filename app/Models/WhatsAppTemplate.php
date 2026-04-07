@@ -19,6 +19,8 @@ class WhatsAppTemplate extends Model
         'variables_hint',
         'is_active',
         'approval_status',
+        'meta_template_id',
+        'meta_status',
     ];
 
     protected $casts = [
@@ -27,7 +29,10 @@ class WhatsAppTemplate extends Model
 
     public static function forEvent(string $event): ?static
     {
-        return static::where('trigger_event', $event)->where('is_active', true)->first();
+        return static::where('trigger_event', $event)
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
+            ->first();
     }
 
     public static function allEvents(): array
@@ -49,5 +54,25 @@ class WhatsAppTemplate extends Model
             'approved' => 'Approved',
             'rejected' => 'Rejected',
         ];
+    }
+
+    public static function metaStatuses(): array
+    {
+        return [
+            'not_submitted' => 'Not Submitted',
+            'submitted'     => 'Submitted',
+            'approved'      => 'Approved',
+            'rejected'      => 'Rejected',
+        ];
+    }
+
+    public function convertBodyForMeta(): string
+    {
+        $body = $this->message_body;
+        $counter = 1;
+        $body = preg_replace_callback('/\{\{(\w+)\}\}/', function ($m) use (&$counter) {
+            return '{{' . $counter++ . '}}';
+        }, $body);
+        return $body;
     }
 }

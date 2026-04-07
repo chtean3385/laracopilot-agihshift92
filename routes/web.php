@@ -22,6 +22,8 @@ use App\Http\Controllers\Admin\SaHotelFilterController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\BookingExtraChargeController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\WhatsAppSetupController;
+use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\Admin\PaymentLinksController;
 use App\Http\Controllers\Admin\TimeSlotController;
 
@@ -34,6 +36,12 @@ Route::middleware(['not.installed'])->group(function () {
 
 // ── Healthcheck ────────────────────────────────────────────────────────────
 Route::get('/health', fn() => response('OK', 200));
+
+// ── WhatsApp Webhook (public — no auth, no CSRF) ────────────────────────────
+Route::withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
+    Route::get('/webhook/whatsapp',  [WhatsAppWebhookController::class, 'verify'] )->name('whatsapp.webhook.verify');
+    Route::post('/webhook/whatsapp', [WhatsAppWebhookController::class, 'receive'])->name('whatsapp.webhook.receive');
+});
 
 // ── Root ───────────────────────────────────────────────────────────────────
 Route::get('/', [AdminAuthController::class, 'showLogin'])->name('home');
@@ -192,18 +200,26 @@ Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvai
 Route::get('/reports/slot-availability',        [ReportController::class, 'slotAvailability']      )->middleware('permission:reports.view')->name('reports.slot_availability');
 Route::get('/reports/slot-availability/export', [ReportController::class, 'slotAvailabilityExport'])->middleware('permission:reports.view')->name('reports.slot_availability.export');
 
-// ── WhatsApp Automation ────────────────────────────────────────────────────
-Route::get('/whatsapp/config',                          [WhatsAppController::class, 'config']          )->name('whatsapp.config');
-Route::post('/whatsapp/config',                         [WhatsAppController::class, 'configSave']      )->name('whatsapp.config.save');
-Route::get('/whatsapp/templates',                       [WhatsAppController::class, 'templates']       )->name('whatsapp.templates');
-Route::get('/whatsapp/templates/create',                [WhatsAppController::class, 'templateCreate']  )->name('whatsapp.template.create');
-Route::post('/whatsapp/templates',                      [WhatsAppController::class, 'templateStore']   )->name('whatsapp.template.store');
-Route::get('/whatsapp/templates/{template}/edit',       [WhatsAppController::class, 'templateEdit']    )->name('whatsapp.template.edit');
-Route::put('/whatsapp/templates/{template}',            [WhatsAppController::class, 'templateSave']    )->name('whatsapp.template.save');
-Route::delete('/whatsapp/templates/{template}',         [WhatsAppController::class, 'templateDestroy'] )->name('whatsapp.template.destroy');
-Route::post('/whatsapp/templates/{template}/toggle',    [WhatsAppController::class, 'templateToggle']  )->name('whatsapp.template.toggle');
-Route::post('/whatsapp/templates/sync-wati',            [WhatsAppController::class, 'syncWati']        )->name('whatsapp.templates.sync_wati');
+// ── WhatsApp — Setup Wizard ────────────────────────────────────────────────
+Route::get('/whatsapp/setup',                           [WhatsAppSetupController::class, 'index']            )->name('whatsapp.setup');
+Route::post('/whatsapp/setup/activate-shared',          [WhatsAppSetupController::class, 'activateShared']   )->name('whatsapp.setup.activate-shared');
+Route::post('/whatsapp/setup/embedded-complete',        [WhatsAppSetupController::class, 'embeddedComplete'] )->name('whatsapp.setup.embedded-complete');
+Route::post('/whatsapp/setup/retry-step',               [WhatsAppSetupController::class, 'retryStep']        )->name('whatsapp.setup.retry-step');
+Route::post('/whatsapp/setup/reset',                    [WhatsAppSetupController::class, 'reset']            )->name('whatsapp.setup.reset');
+
+// ── WhatsApp — Templates & Automations ────────────────────────────────────
+Route::get('/whatsapp/automations',                     [WhatsAppController::class, 'templates']       )->name('whatsapp.templates');
+Route::get('/whatsapp/automations/create',              [WhatsAppController::class, 'templateCreate']  )->name('whatsapp.template.create');
+Route::post('/whatsapp/automations',                    [WhatsAppController::class, 'templateStore']   )->name('whatsapp.template.store');
+Route::get('/whatsapp/automations/{template}/edit',     [WhatsAppController::class, 'templateEdit']    )->name('whatsapp.template.edit');
+Route::put('/whatsapp/automations/{template}',          [WhatsAppController::class, 'templateSave']    )->name('whatsapp.template.save');
+Route::delete('/whatsapp/automations/{template}',       [WhatsAppController::class, 'templateDestroy'] )->name('whatsapp.template.destroy');
+Route::post('/whatsapp/automations/{template}/toggle',  [WhatsAppController::class, 'templateToggle']  )->name('whatsapp.template.toggle');
 Route::post('/whatsapp/test-send',                      [WhatsAppController::class, 'testSend']        )->name('whatsapp.test.send');
+
+// Legacy config redirect (keep old URLs working)
+Route::get('/whatsapp/config',   fn() => redirect()->route('whatsapp.setup'))->name('whatsapp.config');
+Route::post('/whatsapp/config',  fn() => redirect()->route('whatsapp.setup'))->name('whatsapp.config.save');
 
 // ── Payment Links ──────────────────────────────────────────────────────────
 Route::get('/payment-links/config',                           [PaymentLinksController::class, 'config']          )->name('payment_links.config');
@@ -309,4 +325,9 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     // Hotel Backups
     Route::get('/backups',                                 [\App\Http\Controllers\Platform\BackupController::class, 'index']  )->name('platform.backups.index');
     Route::post('/backups/{id}/restore',                   [\App\Http\Controllers\Platform\BackupController::class, 'restore'])->name('platform.backups.restore');
+
+    // WhatsApp Platform Settings
+    Route::get('/whatsapp',           [\App\Http\Controllers\Platform\WhatsAppController::class, 'settings']       )->name('platform.whatsapp.settings');
+    Route::post('/whatsapp',          [\App\Http\Controllers\Platform\WhatsAppController::class, 'saveSettings']   )->name('platform.whatsapp.save');
+    Route::post('/whatsapp/test',     [\App\Http\Controllers\Platform\WhatsAppController::class, 'testSharedNumber'])->name('platform.whatsapp.test');
 });

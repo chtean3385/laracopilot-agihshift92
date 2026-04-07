@@ -872,7 +872,7 @@
             <div class="nav-section">Automation</div>
 
             @if(\App\Models\Module::isEnabled('whatsapp'))
-            <a href="{{ route('whatsapp.config') }}" class="nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
+            <a href="{{ route('whatsapp.setup') }}" class="nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fab fa-whatsapp"></i></span>
                 WhatsApp
             </a>

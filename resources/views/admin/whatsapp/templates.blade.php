@@ -48,7 +48,7 @@ foreach($allEvents as $event => $label) {
                     Connected via <strong style="color:#1e293b;">{{ $providerName }}</strong> ·
                     <span style="color:{{ $readyCount > 0 ? '#15803d' : '#92400e' }};font-weight:700;">{{ $readyCount }} of {{ count($allEvents) }} automations ready</span>
                 @else
-                    <span style="color:#92400e;">No provider connected — <a href="{{ route('whatsapp.config') }}" style="color:#1877f2;text-decoration:none;">Configure WhatsApp →</a></span>
+                    <span style="color:#92400e;">WhatsApp not connected — <a href="{{ route('whatsapp.setup') }}" style="color:#1877f2;text-decoration:none;">Set up WhatsApp →</a></span>
                 @endif
             </div>
         </div>
@@ -65,8 +65,8 @@ foreach($allEvents as $event => $label) {
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
                 <i class="fas fa-plus"></i> Add Template
             </a>
-            <a href="{{ route('whatsapp.config') }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
-                <i class="fas fa-cog"></i> Provider Settings
+            <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
+                <i class="fas fa-cog"></i> WhatsApp Setup
             </a>
         </div>
     </div>
