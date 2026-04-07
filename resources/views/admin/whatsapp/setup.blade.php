@@ -236,18 +236,18 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
                 <li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;"><i class="fas fa-check-circle" style="color:#7c3aed;"></i> Automated template approval</li>
                 <li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;"><i class="fas fa-check-circle" style="color:#7c3aed;"></i> No external dashboards</li>
             </ul>
-            @if($canUseOwn && $saasReady)
+            @if($canUseOwn && $embeddedSignupReady)
             <button onclick="showEmbeddedSignup()" id="btn-own"
                 style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">
                 Start Setup
             </button>
-            @elseif(!$canUseOwn)
-            <div style="width:100%;padding:12px;background:#fef3c7;color:#92400e;border-radius:10px;font-weight:600;font-size:13px;text-align:center;">
-                <i class="fas fa-lock"></i> Upgrade to Pro to unlock
+            @elseif($canUseOwn && !$embeddedSignupReady)
+            <div style="width:100%;padding:12px;background:#f3f4f6;color:#9ca3af;border-radius:10px;font-weight:600;font-size:13px;text-align:center;">
+                <i class="fas fa-clock"></i> Coming Soon — Contact Support
             </div>
             @else
-            <div style="width:100%;padding:12px;background:#f3f4f6;color:#9ca3af;border-radius:10px;font-weight:600;font-size:13px;text-align:center;">
-                <i class="fas fa-clock"></i> Contact Support to Enable
+            <div style="width:100%;padding:12px;background:#fef3c7;color:#92400e;border-radius:10px;font-weight:600;font-size:13px;text-align:center;">
+                <i class="fas fa-lock"></i> Upgrade to Pro to unlock
             </div>
             @endif
         </div>

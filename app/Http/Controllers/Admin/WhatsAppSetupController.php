@@ -17,16 +17,17 @@ class WhatsAppSetupController extends Controller
     public function index()
     {
         $moduleActive = Module::isEnabled('whatsapp');
-        $platform     = PlatformWhatsAppSetting::instance();
-        $saasReady    = PlatformWhatsAppSetting::isFullyConfigured();
-        $config       = WhatsAppConfig::first() ?? new WhatsAppConfig(['mode' => 'shared', 'setup_step' => 0, 'setup_completed' => false]);
+        $platform             = PlatformWhatsAppSetting::instance();
+        $saasReady            = PlatformWhatsAppSetting::isFullyConfigured();
+        $embeddedSignupReady  = PlatformWhatsAppSetting::isEmbeddedSignupReady();
+        $config               = WhatsAppConfig::first() ?? new WhatsAppConfig(['mode' => 'shared', 'setup_step' => 0, 'setup_completed' => false]);
 
         $hotel      = Hotel::find(session('crm_hotel_id'));
         $hotelPlan  = $hotel?->plan ?? 'basic';
         $canUseOwn  = in_array($hotelPlan, ['pro', 'enterprise', 'premium', 'business']);
 
         return view('admin.whatsapp.setup', compact(
-            'moduleActive', 'platform', 'saasReady', 'config', 'hotelPlan', 'canUseOwn'
+            'moduleActive', 'platform', 'saasReady', 'embeddedSignupReady', 'config', 'hotelPlan', 'canUseOwn'
         ));
     }
 

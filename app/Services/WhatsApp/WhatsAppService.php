@@ -8,10 +8,6 @@ use App\Models\PlatformWhatsAppSetting;
 use App\Models\WhatsAppConfig;
 use App\Models\WhatsAppTemplate;
 use App\Services\WhatsApp\Providers\MetaProvider;
-use App\Services\WhatsApp\Providers\WatiProvider;
-use App\Services\WhatsApp\Providers\InteraktProvider;
-use App\Services\WhatsApp\Providers\GupshupProvider;
-use App\Services\WhatsApp\Providers\TwilioProvider;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
@@ -44,14 +40,13 @@ class WhatsAppService
             return new MetaProvider($sharedConfig);
         }
 
-        return match ($config->provider) {
-            'meta'      => new MetaProvider($config),
-            'wati'      => new WatiProvider($config),
-            'interakt'  => new InteraktProvider($config),
-            'gupshup'   => new GupshupProvider($config),
-            'twilio'    => new TwilioProvider($config),
-            default     => null,
-        };
+        if ($config->provider !== 'meta') {
+            static::setLastError('Only Meta WhatsApp Business API is supported. Please reconfigure your WhatsApp setup.');
+            Log::error('WhatsApp: non-Meta provider blocked', ['provider' => $config->provider]);
+            return null;
+        }
+
+        return new MetaProvider($config);
     }
 
     public static function sendForEvent(string $event, Booking $booking): bool

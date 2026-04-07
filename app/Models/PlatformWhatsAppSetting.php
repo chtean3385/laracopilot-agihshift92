@@ -40,4 +40,10 @@ class PlatformWhatsAppSetting extends Model
             && $s->saas_waba_id
             && $s->is_saas_active;
     }
+
+    public static function isEmbeddedSignupReady(): bool
+    {
+        $s = static::first();
+        return $s && $s->meta_app_id && $s->meta_app_secret && $s->meta_config_id;
+    }
 }
