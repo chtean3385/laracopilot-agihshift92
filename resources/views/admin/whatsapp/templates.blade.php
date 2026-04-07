@@ -53,14 +53,6 @@ foreach($allEvents as $event => $label) {
             </div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            @if($config && $config->provider === 'wati')
-            <form action="{{ route('whatsapp.templates.sync_wati') }}" method="POST" style="display:inline;">
-                @csrf
-                <button type="submit" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;">
-                    <i class="fas fa-sync-alt"></i> Sync Approvals from WATI
-                </button>
-            </form>
-            @endif
             <a href="{{ route('whatsapp.template.create') }}"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
                 <i class="fas fa-plus"></i> Add Template

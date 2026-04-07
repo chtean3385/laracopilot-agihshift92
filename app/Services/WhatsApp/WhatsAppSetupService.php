@@ -52,13 +52,17 @@ class WhatsAppSetupService
             return ['success' => false, 'error' => 'Platform WhatsApp App ID is not configured. Please contact support.'];
         }
 
+        if (!$this->platform->webhook_verify_token) {
+            return ['success' => false, 'error' => 'The webhook verification token has not been set up yet. Please contact support to complete platform configuration.'];
+        }
+
         try {
             $response = Http::timeout(20)
                 ->withToken($token)
                 ->post("https://graph.facebook.com/v19.0/{$wabaId}/subscribed_apps", [
                     'override_callback_and_verify_token' => true,
                     'callback_url'                        => route('whatsapp.webhook.receive'),
-                    'verify_token'                        => $this->platform->webhook_verify_token ?? config('app.key'),
+                    'verify_token'                        => $this->platform->webhook_verify_token,
                 ]);
 
             if (!$response->successful()) {
