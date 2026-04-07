@@ -41,6 +41,17 @@ foreach($allEvents as $event => $label) {
 }
 @endphp
 
+{{-- Plan restriction notice for basic plan hotel admins --}}
+@if($isBasicPlan && !$isSaasAdmin)
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;font-size:13px;color:#1e40af;">
+    <i class="fas fa-info-circle" style="font-size:16px;flex-shrink:0;"></i>
+    <div>
+        <strong>Basic Plan:</strong> Your templates are managed by the platform. You can toggle automations on or off, but template content is set by the CRM administrator.
+        <a href="{{ route('upgrade') }}" style="color:#2563eb;font-weight:700;margin-left:6px;">Upgrade to Pro to customise your own templates →</a>
+    </div>
+</div>
+@endif
+
 {{-- Automation Status Dashboard --}}
 <div style="background:#fff;border-radius:20px;padding:22px 26px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;margin-bottom:22px;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px;">
@@ -56,10 +67,12 @@ foreach($allEvents as $event => $label) {
             </div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            @if($canEdit)
             <a href="{{ route('whatsapp.template.create') }}"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
                 <i class="fas fa-plus"></i> Add Template
             </a>
+            @endif
             <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
                 <i class="fas fa-cog"></i> WhatsApp Setup
             </a>
@@ -112,6 +125,7 @@ foreach($allEvents as $event => $label) {
             'rejected' => ['#fee2e2','#b91c1c'],
             default    => ['#fef3c7','#92400e'],
         };
+        $metaStatus = $t?->meta_status ?? 'not_submitted';
     @endphp
     <div style="background:#fff;border-radius:18px;padding:20px 22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;">
         <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
@@ -126,6 +140,11 @@ foreach($allEvents as $event => $label) {
                         <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:{{ $approvalColor[0] }};color:{{ $approvalColor[1] }};">
                             {{ ucfirst($approvalStatus) }}
                         </span>
+                        @if($metaStatus === 'submitted')
+                        <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#f0fdf4;color:#15803d;">
+                            <i class="fas fa-paper-plane" style="font-size:9px;"></i> Submitted to Meta
+                        </span>
+                        @endif
                     @else
                         <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#f1f5f9;color:#64748b;">No template</span>
                     @endif
@@ -145,7 +164,7 @@ foreach($allEvents as $event => $label) {
 
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;">
                 @if($t)
-                    {{-- Active toggle --}}
+                    {{-- Toggle: available to all plans --}}
                     <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" title="{{ $t->is_active ? 'Active — click to deactivate' : 'Inactive — click to activate' }}">
                         <input type="checkbox" {{ $t->is_active ? 'checked' : '' }}
                             onchange="toggleTemplate({{ $t->id }}, this)"
@@ -154,11 +173,14 @@ foreach($allEvents as $event => $label) {
                         <span id="thumb-{{ $t->id }}" style="position:absolute;left:{{ $t->is_active ? '22px' : '2px' }};top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;"></span>
                     </label>
 
+                    @if($canEdit)
+                    {{-- Edit: SaaS Admin or Pro+ plan only --}}
                     <a href="{{ route('whatsapp.template.edit', $t) }}"
                         style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;">
                         <i class="fas fa-edit"></i> Edit
                     </a>
 
+                    {{-- Delete: SaaS Admin or Pro+ plan only --}}
                     <form action="{{ route('whatsapp.template.destroy', $t) }}" method="POST" style="display:inline;"
                         onsubmit="return confirm('Delete this template? This cannot be undone.')">
                         @csrf @method('DELETE')
@@ -167,14 +189,37 @@ foreach($allEvents as $event => $label) {
                             <i class="fas fa-trash"></i>
                         </button>
                     </form>
+                    @endif
+
+                    @if($canEdit && $approvalStatus !== 'approved')
+                    {{-- Submit to Meta: SaaS Admin or Pro+ plan --}}
+                    <button onclick="submitToMeta({{ $t->id }}, this)"
+                        id="submit-meta-{{ $t->id }}"
+                        style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#1877F2,#0d65d9);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                        <i class="fab fa-meta"></i> Submit to Meta
+                    </button>
+                    @elseif($canEdit && $approvalStatus === 'approved')
+                    <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
+                        <i class="fas fa-check-circle"></i> Approved
+                    </span>
+                    @endif
+
                 @else
+                    @if($canEdit)
+                    {{-- Set Up template: SaaS Admin or Pro+ plan only --}}
                     <a href="{{ route('whatsapp.template.create') }}?event={{ $event }}"
                         style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;">
                         <i class="fas fa-plus"></i> Set Up
                     </a>
+                    @else
+                    <span style="font-size:12px;color:#94a3b8;font-style:italic;">Not configured</span>
+                    @endif
                 @endif
             </div>
         </div>
+
+        {{-- Submit to Meta result message --}}
+        <div id="meta-result-{{ $t?->id }}" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;"></div>
     </div>
     @endforeach
 </div>
@@ -209,6 +254,45 @@ function toggleTemplate(id, checkbox) {
         checkbox.checked = !active;
         track.style.background = !active ? '#25d366' : '#e2e8f0';
         thumb.style.left = !active ? '22px' : '2px';
+    });
+}
+
+function submitToMeta(templateId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    fetch('/whatsapp/automations/' + templateId + '/submit-meta', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const resultEl = document.getElementById('meta-result-' + templateId);
+        if (data.success) {
+            resultEl.style.display = 'block';
+            resultEl.style.background = '#dcfce7';
+            resultEl.style.color = '#15803d';
+            resultEl.style.border = '1px solid #86efac';
+            resultEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + (data.meta_id ? ' (Meta ID: ' + data.meta_id + ')' : '');
+            btn.innerHTML = '<i class="fas fa-check"></i> Submitted';
+            btn.style.background = '#dcfce7';
+            btn.style.color = '#15803d';
+        } else {
+            resultEl.style.display = 'block';
+            resultEl.style.background = '#fee2e2';
+            resultEl.style.color = '#b91c1c';
+            resultEl.style.border = '1px solid #fca5a5';
+            resultEl.innerHTML = '<i class="fas fa-times-circle"></i> ' + (data.error || 'Submission failed.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fab fa-meta"></i> Submit to Meta';
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-meta"></i> Submit to Meta';
     });
 }
 </script>

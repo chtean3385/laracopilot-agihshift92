@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Hotel;
+use App\Models\PlatformWhatsAppSetting;
 use App\Models\WhatsAppConfig;
 use App\Models\WhatsAppTemplate;
+use App\Services\HotelContext;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -39,10 +42,19 @@ class WhatsAppController extends Controller
 
     public function templates()
     {
-        $templates  = WhatsAppTemplate::orderBy('id')->get()->keyBy('trigger_event');
-        $allEvents  = WhatsAppTemplate::allEvents();
-        $config     = WhatsAppConfig::first();
-        return view('admin.whatsapp.templates', compact('templates', 'allEvents', 'config'));
+        $templates    = WhatsAppTemplate::orderBy('id')->get()->keyBy('trigger_event');
+        $allEvents    = WhatsAppTemplate::allEvents();
+        $config       = WhatsAppConfig::first();
+        $hotel        = Hotel::find(app(HotelContext::class)->getHotel());
+        $isSaasAdmin  = session('crm_user_role') === 'Super Admin';
+        $isBasicPlan  = in_array($hotel?->plan ?? 'basic', ['basic', 'trial']);
+        $platform     = PlatformWhatsAppSetting::instance();
+        $canEdit      = $isSaasAdmin || !$isBasicPlan;
+
+        return view('admin.whatsapp.templates', compact(
+            'templates', 'allEvents', 'config',
+            'hotel', 'isSaasAdmin', 'isBasicPlan', 'canEdit', 'platform'
+        ));
     }
 
     public function templateCreate()
@@ -100,6 +112,62 @@ class WhatsAppController extends Controller
     {
         $template->update(['is_active' => !$template->is_active]);
         return response()->json(['is_active' => $template->is_active]);
+    }
+
+    public function submitToMeta(WhatsAppTemplate $template)
+    {
+        $config   = WhatsAppConfig::first();
+        $platform = PlatformWhatsAppSetting::instance();
+
+        $wabaId = ($config?->mode === 'own' && $config?->business_account_id)
+            ? $config->business_account_id
+            : $platform->saas_waba_id;
+        $token  = $platform->saas_token;
+
+        if (!$wabaId || !$token) {
+            return response()->json(['success' => false, 'error' => 'WhatsApp Business Account ID or access token is not configured in platform settings.']);
+        }
+
+        $body     = $template->message_body;
+        $varMap   = [];
+        $counter  = 0;
+        $metaBody = preg_replace_callback('/\{\{(\w+)\}\}/', function ($m) use (&$varMap, &$counter) {
+            if (!isset($varMap[$m[1]])) {
+                $varMap[$m[1]] = ++$counter;
+            }
+            return '{{' . $varMap[$m[1]] . '}}';
+        }, $body);
+
+        $templateName = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $template->template_name), '_'));
+
+        $bodyComponent = ['type' => 'BODY', 'text' => $metaBody];
+        if (!empty($varMap)) {
+            $bodyComponent['example'] = ['body_text' => [array_fill(0, count($varMap), 'sample_value')]];
+        }
+
+        $response = Http::withToken($token)
+            ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", [
+                'name'       => $templateName,
+                'language'   => 'en_US',
+                'category'   => 'UTILITY',
+                'components' => [$bodyComponent],
+            ]);
+
+        $result = $response->json();
+
+        if ($response->successful() && isset($result['id'])) {
+            $template->update([
+                'meta_template_id' => $result['id'],
+                'meta_status'      => 'submitted',
+                'approval_status'  => 'pending',
+                'template_name'    => $templateName,
+            ]);
+            return response()->json(['success' => true, 'message' => 'Template submitted to Meta for review. Status will update once Meta approves it.', 'meta_id' => $result['id']]);
+        }
+
+        $errMsg = $result['error']['message'] ?? 'Meta API returned an error.';
+        Log::warning('Meta template submission failed', ['template' => $template->id, 'response' => $result]);
+        return response()->json(['success' => false, 'error' => $errMsg]);
     }
 
     public function syncWati()
