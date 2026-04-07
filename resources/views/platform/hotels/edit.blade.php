@@ -87,9 +87,27 @@
                 Plan & Limits
             </h2>
 
+            @php
+                $hotelOnTrial   = ($hotel->plan === 'trial' || $hotel->plan === null);
+                $trialEndsAt    = $hotel->trial_ends_at ? \Carbon\Carbon::parse($hotel->trial_ends_at) : null;
+                $effectivePlan  = old('plan', $hotelOnTrial ? array_key_first($plans) : $hotel->plan);
+            @endphp
+
+            @if($hotelOnTrial)
+            <div style="display:flex;align-items:center;gap:10px;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+                <i class="fas fa-clock" style="color:#d97706;font-size:15px;"></i>
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#92400e;">Trial Active
+                        @if($trialEndsAt) — ends {{ $trialEndsAt->format('d M Y') }} ({{ $trialEndsAt->diffForHumans() }}) @endif
+                    </div>
+                    <div style="font-size:11px;color:#b45309;margin-top:2px;">Select the plan that will activate when the trial ends.</div>
+                </div>
+            </div>
+            @endif
+
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
                 @foreach($plans as $slug => $plan)
-                @php $isCurrent = old('plan', $hotel->plan) === $slug; @endphp
+                @php $isCurrent = $effectivePlan === $slug; @endphp
                 <label style="cursor:pointer;">
                     <input type="radio" name="plan" value="{{ $slug }}" {{ $isCurrent ? 'checked' : '' }} style="position:absolute;opacity:0;" class="plan-radio" data-max-rooms="{{ $plan['max_rooms'] == PHP_INT_MAX ? 999 : $plan['max_rooms'] }}" data-max-users="{{ $plan['max_users'] == PHP_INT_MAX ? 999 : $plan['max_users'] }}">
                     <div class="plan-card" data-plan="{{ $slug }}" style="border:2px solid {{ $isCurrent ? $plan['color'] : '#e2e8f0' }};border-radius:14px;padding:16px;transition:border-color .2s;background:{{ $isCurrent ? 'rgba(139,92,246,.04)' : '#fff' }};">

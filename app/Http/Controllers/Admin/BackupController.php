@@ -50,7 +50,7 @@ class BackupController extends Controller
 
         $data = $request->validate([
             'auto_backup_enabled' => 'nullable|boolean',
-            'interval_hours'      => 'required|integer|in:6,12,24,48,72,168',
+            'interval_hours'      => 'required|integer|in:6,12,24,48,72,168,720',
             'retention_count'     => 'required|integer|min:3|max:30',
         ]);
 
