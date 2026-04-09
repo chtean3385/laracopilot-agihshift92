@@ -20,9 +20,18 @@ class FcmTokenController extends Controller
             'device_id' => 'nullable|string|max:200',
         ]);
 
-        $userId  = auth()->id();
-        $hotelId = $request->session()->get('crm_hotel_id')
-            ?? optional(DB::table('hotel_users')->where('user_id', $userId)->first())->hotel_id;
+        // Hotel CRM uses custom session keys (not standard Laravel Auth guard)
+        $userId  = $request->session()->get('crm_user_id');
+        $hotelId = $request->session()->get('crm_hotel_id');
+
+        // Fallback: find hotel from hotel_users if session missing
+        if (!$hotelId && $userId) {
+            $hotelId = DB::table('hotel_users')->where('user_id', $userId)->value('hotel_id');
+        }
+
+        if (!$userId) {
+            return response()->json(['ok' => false, 'error' => 'Not authenticated'], 401);
+        }
 
         // Upsert by user + device_id or token
         $existing = DB::table('fcm_tokens')
@@ -67,10 +76,11 @@ class FcmTokenController extends Controller
      */
     public function destroy(Request $request)
     {
-        $token = $request->input('token');
-        if ($token) {
+        $userId = $request->session()->get('crm_user_id');
+        $token  = $request->input('token');
+        if ($token && $userId) {
             DB::table('fcm_tokens')
-                ->where('user_id', auth()->id())
+                ->where('user_id', $userId)
                 ->where('token', $token)
                 ->delete();
         }
@@ -82,7 +92,7 @@ class FcmTokenController extends Controller
      */
     public function unread(Request $request)
     {
-        $userId  = auth()->id();
+        $userId  = $request->session()->get('crm_user_id');
         $hotelId = $request->session()->get('crm_hotel_id');
 
         $query = DB::table('platform_notification_deliveries as d')
@@ -105,9 +115,10 @@ class FcmTokenController extends Controller
      */
     public function markRead(Request $request, int $deliveryId)
     {
+        $userId = $request->session()->get('crm_user_id');
         DB::table('platform_notification_deliveries')
             ->where('id', $deliveryId)
-            ->where('user_id', auth()->id())
+            ->where('user_id', $userId)
             ->update(['is_read' => true, 'read_at' => now()]);
 
         return response()->json(['ok' => true]);

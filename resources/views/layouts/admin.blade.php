@@ -995,6 +995,22 @@
                     <i class="fas fa-clock" style="color:#06b6d4;font-size:12px;"></i>
                     <span style="font-size:12px;color:#475569;font-weight:500;" id="liveClock"></span>
                 </div>
+                <!-- Push Enable Button (shows when not yet granted) -->
+                <div id="push-enable-wrap" style="display:none;position:relative;">
+                    <button id="push-enable-btn" onclick="window.requestPushPermission && window.requestPushPermission()"
+                        title="Enable push notifications"
+                        style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:#fdf4ff;border:1.5px solid #d8b4fe;border-radius:10px;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;"
+                        onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#fdf4ff'">
+                        <i class="fas fa-bell-slash" id="push-enable-icon" style="font-size:12px;"></i>
+                        <span id="push-enable-label">Enable Notifications</span>
+                    </button>
+                    <div id="push-denied-tip" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:260px;background:#1e293b;color:#fff;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;z-index:300;box-shadow:0 8px 20px rgba(0,0,0,.3);">
+                        <i class="fas fa-lock" style="color:#f59e0b;margin-right:6px;"></i><strong>Notifications are blocked.</strong><br>
+                        Click the <strong>🔒 lock icon</strong> in your browser address bar → <strong>Notifications → Allow</strong>, then reload the page.
+                        <div style="margin-top:8px;color:#94a3b8;font-size:11px;">⚠ Does not work in Incognito mode.</div>
+                    </div>
+                </div>
+
                 <!-- Push Notification Bell -->
                 <div style="position:relative;" id="notif-bell-wrap">
                     <button onclick="toggleNotifPanel()" title="Notifications"
@@ -1605,8 +1621,10 @@
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
                 console.warn('[CRM Push] Notification permission denied by user.');
+                showPushEnableBtn('denied');
                 return;
             }
+            hidePushEnableBtn();
 
             // Step 2: Register service worker BEFORE calling getToken()
             if (!('serviceWorker' in navigator)) {
@@ -1650,6 +1668,7 @@
             const saveJson = await saveRes.json().catch(() => ({}));
             if (saveJson.ok) {
                 console.info('[CRM Push] Device registered successfully for push notifications.');
+                hidePushEnableBtn();
             } else {
                 console.warn('[CRM Push] Token save response:', saveJson);
             }
@@ -1673,8 +1692,45 @@
 
         } catch (e) {
             console.warn('[CRM Push] Firebase init skipped:', e.message);
+            showPushEnableBtn('error');
         }
     }
+
+    // ── Push permission UI helpers ────────────────────────────────────────
+    function showPushEnableBtn(state) {
+        const wrap  = document.getElementById('push-enable-wrap');
+        const icon  = document.getElementById('push-enable-icon');
+        const label = document.getElementById('push-enable-label');
+        const tip   = document.getElementById('push-denied-tip');
+        if (!wrap) return;
+        wrap.style.display = 'block';
+
+        if (state === 'denied') {
+            icon.className  = 'fas fa-bell-slash';
+            label.textContent = 'Notifications Blocked';
+            wrap.querySelector('button').style.borderColor = '#fca5a5';
+            wrap.querySelector('button').style.color       = '#ef4444';
+            wrap.querySelector('button').style.background  = '#fef2f2';
+            wrap.querySelector('button').onclick = () => {
+                tip.style.display = tip.style.display === 'none' ? 'block' : 'none';
+            };
+        } else {
+            icon.className  = 'fas fa-bell-slash';
+            label.textContent = 'Enable Notifications';
+        }
+    }
+
+    function hidePushEnableBtn() {
+        const wrap = document.getElementById('push-enable-wrap');
+        if (wrap) wrap.style.display = 'none';
+    }
+
+    // Expose manual trigger (called by button or external code)
+    window.requestPushPermission = async function () {
+        const tip = document.getElementById('push-denied-tip');
+        if (tip) tip.style.display = 'none';
+        await initFirebase();
+    };
 
     function showPushToast(title, body, url) {
         const toast = document.createElement('div');
@@ -1685,9 +1741,17 @@
         setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity .4s'; setTimeout(() => toast.remove(), 400); }, 5000);
     }
 
+    // Show permission button state immediately on load (before initFirebase runs)
+    function checkPermissionState() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'denied')  showPushEnableBtn('denied');
+        if (Notification.permission === 'default') showPushEnableBtn('default');
+        // if granted: button stays hidden, initFirebase will register/refresh token
+    }
+
     // Init Firebase after page is ready
-    if (document.readyState === 'complete') { initFirebase(); }
-    else { window.addEventListener('load', initFirebase); }
+    if (document.readyState === 'complete') { checkPermissionState(); initFirebase(); }
+    else { window.addEventListener('load', () => { checkPermissionState(); initFirebase(); }); }
 })();
 </script>
 <style>
