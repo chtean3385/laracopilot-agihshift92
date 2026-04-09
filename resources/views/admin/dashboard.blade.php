@@ -901,4 +901,3 @@
                 </script>
 
                 @endsection
-1/2
