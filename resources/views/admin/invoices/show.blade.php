@@ -18,7 +18,7 @@
                 <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }} Outstanding
             </a>
             @endif
-            <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
+            <a href="{{ route('invoices.print', $invoice->id) }}" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
             @canDo('invoices.delete')
             <form method="POST" action="{{ route('invoices.destroy', $invoice->id) }}" onsubmit="return confirm('Delete this invoice permanently? This cannot be undone.')">
                 @csrf @method('DELETE')
@@ -30,8 +30,8 @@
         </div>
     </div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-6 text-white">
-            <div class="flex items-start justify-between">
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-4 sm:px-8 sm:py-6 text-white">
+            <div class="flex items-start justify-between flex-wrap gap-3">
                 <div class="flex items-center gap-4">
                     @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
                     <div class="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-1 flex-shrink-0">
@@ -52,8 +52,8 @@
                 </div>
             </div>
         </div>
-        <div class="p-8">
-            <div class="grid grid-cols-2 gap-8 mb-8">
+        <div class="p-4 sm:p-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-8">
                 <div>
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Bill To</p>
                     <p class="font-bold text-gray-800 text-lg">{{ $invoice->customer?->name ?? '(Deleted Guest)' }}</p>
@@ -61,7 +61,7 @@
                     <p class="text-gray-500 text-sm">{{ $invoice->customer->email }}</p>
                     <p class="text-gray-500 text-sm">{{ $invoice->customer->city }}, {{ $invoice->customer->country }}</p>
                 </div>
-                <div class="text-right">
+                <div class="sm:text-right">
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Booking Details</p>
                     <p class="font-mono text-cyan-600 font-bold">{{ $invoice->booking->booking_number }}</p>
                     <p class="text-gray-600 text-sm">Room {{ $invoice->booking->room->room_number ?? '' }}</p>
@@ -69,7 +69,8 @@
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->nights }} night(s)</p>
                 </div>
             </div>
-            <table class="w-full mb-6">
+            <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <table class="w-full mb-6 min-w-[480px]">
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Description</th>
@@ -122,6 +123,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>{{-- /overflow-x:auto --}}
             @php
                 $gstAmount    = ($settings && $settings->gst_number) ? $invoice->total_amount * ($settings->tax_rate / 100) : 0;
                 $grandTotal   = $invoice->total_amount + $gstAmount;
@@ -131,7 +133,7 @@
                 $overpayment = max(0, $invoice->paid_amount - $grandTotal);
             @endphp
             <div class="flex justify-end">
-                <div class="w-64 space-y-2">
+                <div class="w-full sm:w-64 space-y-2">
                     <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($invoice->total_amount) }}</span></div>
                     @if($settings && $settings->gst_number)
                     <div class="flex justify-between text-sm"><span class="text-gray-500">GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($gstAmount) }}</span></div>
