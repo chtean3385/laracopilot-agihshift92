@@ -1596,33 +1596,49 @@
                 import('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js'),
             ]);
 
-            const fbApp   = initializeApp({ apiKey: cfg.apiKey, projectId: cfg.projectId, messagingSenderId: cfg.messagingSenderId, appId: cfg.appId });
+            if (!cfg.vapidKey) {
+                console.error('[CRM Push] VAPID key is missing — save it in Platform Admin → Push Settings.');
+                return;
+            }
+
+            // Step 1: Request browser permission first
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.warn('[CRM Push] Notification permission denied by user.');
+                return;
+            }
+
+            // Step 2: Register service worker BEFORE calling getToken()
+            if (!('serviceWorker' in navigator)) {
+                console.error('[CRM Push] Service workers not supported in this browser.');
+                return;
+            }
+            const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            await navigator.serviceWorker.ready;
+            console.info('[CRM Push] Service worker registered.');
+
+            // Step 3: Init Firebase with the SW registration
+            const fbConfig = { apiKey: cfg.apiKey, projectId: cfg.projectId, messagingSenderId: cfg.messagingSenderId, appId: cfg.appId };
+            const fbApp    = initializeApp(fbConfig);
             const messaging = getMessaging(fbApp);
 
-            // Request permission & get token
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') return;
+            // Send Firebase config to the SW so it can handle background messages
+            swReg.active?.postMessage({ type: 'FIREBASE_CONFIG', config: fbConfig });
 
-            if (!cfg.vapidKey) {
-                console.error('[CRM Push] VAPID key is missing — save it in Platform Admin → Push Settings. No token will be registered.');
-                return;
-            }
+            // Step 4: Get FCM token (with SW registration passed explicitly)
+            const token = await getToken(messaging, {
+                vapidKey: cfg.vapidKey,
+                serviceWorkerRegistration: swReg,
+            });
 
-            const token = await getToken(messaging, { vapidKey: cfg.vapidKey });
             if (!token) {
-                console.error('[CRM Push] getToken() returned null — check VAPID key and Firebase project configuration.');
+                console.error('[CRM Push] getToken() returned null. Check VAPID key and Firebase project configuration.');
                 return;
             }
-            console.info('[CRM Push] FCM token registered:', token.slice(0, 30) + '...');
+            console.info('[CRM Push] FCM token obtained:', token.slice(0, 30) + '...');
 
-            // Register service worker and send config
-            if ('serviceWorker' in navigator) {
-                const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-                navigator.serviceWorker.controller?.postMessage({ type: 'FIREBASE_CONFIG', config: { apiKey: cfg.apiKey, projectId: cfg.projectId, messagingSenderId: cfg.messagingSenderId, appId: cfg.appId } });
-            }
-
-            // Save token to server
-            await fetch('{{ route('fcm.token.store') }}', {
+            // Step 5: Save token to server
+            const saveRes = await fetch('{{ route('fcm.token.store') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1631,6 +1647,12 @@
                 },
                 body: JSON.stringify({ token, platform: 'web', device_id: navigator.userAgent.slice(0, 200) })
             });
+            const saveJson = await saveRes.json().catch(() => ({}));
+            if (saveJson.ok) {
+                console.info('[CRM Push] Device registered successfully for push notifications.');
+            } else {
+                console.warn('[CRM Push] Token save response:', saveJson);
+            }
 
             // Foreground message handler
             onMessage(messaging, (payload) => {
