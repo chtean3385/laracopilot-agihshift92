@@ -51,14 +51,20 @@ self.addEventListener('push', event => {
     const url     = notification.click_action || data.click_url || '/';
 
     event.waitUntil(
-        self.registration.showNotification(title, {
-            body,
-            icon: iconUrl,
-            badge: '/icon-72.png',
-            data: { url },
-            requireInteraction: false,
-            tag: 'crm-push',
-        })
+        Promise.all([
+            self.registration.showNotification(title, {
+                body,
+                icon: iconUrl,
+                badge: '/icon-72.png',
+                data: { url },
+                requireInteraction: false,
+                tag: 'crm-push',
+            }),
+            // Tell any open tabs to play the notification sound
+            clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+                list.forEach(client => client.postMessage({ type: 'PLAY_NOTIFICATION_SOUND' }));
+            }),
+        ])
     );
 });
 

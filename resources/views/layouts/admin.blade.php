@@ -1683,6 +1683,9 @@
                     window.onCrmNotification(JSON.stringify(payload));
                 }
 
+                // Play notification sound
+                playNotificationSound();
+
                 // Show in-app toast
                 showPushToast(n.title || d.title || 'Notification', n.body || d.body || '', d.click_url || '/');
 
@@ -1690,9 +1693,45 @@
                 loadNotifications();
             });
 
+            // Background push → service worker tells us to play sound
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
+                        playNotificationSound();
+                    }
+                });
+            }
+
         } catch (e) {
             console.warn('[CRM Push] Firebase init skipped:', e.message);
             showPushEnableBtn('error');
+        }
+    }
+
+    // ── Notification sound (Web Audio API — no file needed) ──────────────
+    function playNotificationSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // Two-note "ding": C5 → E5
+            const notes = [523.25, 659.25];
+            let startTime = ctx.currentTime;
+            notes.forEach(freq => {
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, startTime);
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(0.35, startTime + 0.01);  // quick attack
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45); // natural decay
+                osc.start(startTime);
+                osc.stop(startTime + 0.45);
+                startTime += 0.2; // gap between notes
+            });
+            setTimeout(() => ctx.close(), 1200);
+        } catch (e) {
+            // Audio not supported or blocked — silently skip
         }
     }
 
