@@ -219,7 +219,7 @@ $eventMeta = [
                     <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Message Body <span style="color:#e11d48;">*</span></label>
                     <textarea name="message_body" id="create-body" required rows="9"
                         style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;resize:vertical;box-sizing:border-box;color:#1e293b;"
-                        placeholder="Hi {{guest_name}}, welcome to {{hotel_name}}! ..."></textarea>
+                        placeholder="Hi @{{guest_name}}, welcome to @{{hotel_name}}! ..."></textarea>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <label style="font-size:13px;font-weight:700;color:#374151;">Active</label>
