@@ -15,6 +15,7 @@ class PlatformFirebaseSetting extends Model
         'firebase_app_id',
         'firebase_vapid_key',
         'fcm_server_key',
+        'service_account_json',
         'push_enabled',
     ];
 

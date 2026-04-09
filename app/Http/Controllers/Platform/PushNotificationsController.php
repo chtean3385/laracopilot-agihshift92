@@ -26,8 +26,28 @@ class PushNotificationsController extends Controller
             'firebase_app_id'              => 'nullable|string|max:300',
             'firebase_vapid_key'           => 'nullable|string|max:500',
             'fcm_server_key'               => 'nullable|string|max:500',
+            'service_account_json'         => 'nullable|string',
             'push_enabled'                 => 'nullable|boolean',
         ]);
+
+        // Validate service account JSON structure if provided
+        $saJson = $data['service_account_json'] ?? null;
+        if (!empty(trim((string)$saJson))) {
+            $decoded = json_decode($saJson, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return back()->withErrors(['service_account_json' => 'Invalid JSON — paste the full service account key file.'])->withInput();
+            }
+            if (!isset($decoded['client_email'], $decoded['private_key'], $decoded['project_id'])) {
+                return back()->withErrors(['service_account_json' => 'JSON is missing required fields (client_email, private_key, project_id). Download the correct file from Firebase → Service Accounts.'])->withInput();
+            }
+        } else {
+            $saJson = null;
+        }
+
+        // Clear cached OAuth token if service account changed
+        if ($saJson !== null) {
+            \Illuminate\Support\Facades\Cache::forget('fcm_v1_access_token');
+        }
 
         $config = PlatformFirebaseSetting::firstOrNew(['id' => 1]);
         $config->fill([
@@ -37,12 +57,18 @@ class PushNotificationsController extends Controller
             'firebase_app_id'              => $data['firebase_app_id'] ?? null,
             'firebase_vapid_key'           => $data['firebase_vapid_key'] ?? null,
             'fcm_server_key'               => $data['fcm_server_key'] ?? null,
+            'service_account_json'         => $saJson,
             'push_enabled'                 => isset($data['push_enabled']),
         ]);
         $config->save();
 
-        return redirect()->route('platform.notifications.settings')
-            ->with('success', 'Firebase settings saved.');
+        $method = app(\App\Services\FcmService::class)->activeMethod();
+        $msg = 'Firebase settings saved.';
+        if ($method === 'v1')     $msg .= ' ✓ Using FCM HTTP v1 API (Service Account).';
+        if ($method === 'legacy') $msg .= ' ✓ Using Legacy Server Key.';
+        if (!$method && $config->push_enabled) $msg .= ' ⚠ Push is enabled but no send method configured (add Service Account JSON or Server Key).';
+
+        return redirect()->route('platform.notifications.settings')->with('success', $msg);
     }
 
     public function send()
