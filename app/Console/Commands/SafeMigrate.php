@@ -14,6 +14,7 @@ class SafeMigrate extends Command
 
     public function handle(): int
     {
+        $this->call('view:clear');
         $this->info('Checking database state...');
 
         try {

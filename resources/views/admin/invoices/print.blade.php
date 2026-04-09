@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Invoice {{ $invoice->invoice_number }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         @media print {
             .no-print { display: none !important; }
@@ -28,15 +30,15 @@
                     style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
                     🖨️ Print
                 </button>
-                <button id="btn-download" onclick="downloadPDF()" title="Opens print dialog — choose 'Save as PDF' in your browser"
+                <button id="btn-download" onclick="downloadPDF()" title="Download invoice as a PDF file"
                     style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-                    ⬇️ Save as PDF
+                    ⬇️ Download PDF
                 </button>
             </div>
         </div>
         {{-- WebView tip (shown only in WebView) --}}
         <div id="webview-tip" style="display:none;" class="max-w-3xl mx-auto mt-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700">
-            📱 Tap <strong>Save as PDF</strong> then choose "Save as PDF" in the dialog, or use your browser's share menu.
+            📱 Tap <strong>Download PDF</strong> to save the invoice to your device.
         </div>
     </div>
 
@@ -213,8 +215,48 @@ function isNativeWebView() {
     return false;
 }
 
-function downloadPDF() {
-    window.print();
+async function downloadPDF() {
+    const btn = document.getElementById('btn-download');
+    const actionBar = document.querySelector('.no-print');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generating…';
+    if (actionBar) actionBar.style.visibility = 'hidden';
+    try {
+        const invoice = document.querySelector('.invoice-wrap');
+        const canvas = await html2canvas(invoice, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdfW  = pdf.internal.pageSize.getWidth();
+        const pdfH  = pdf.internal.pageSize.getHeight();
+        const imgH  = (canvas.height * pdfW) / canvas.width;
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        if (imgH <= pdfH) {
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, imgH);
+        } else {
+            let yRemain = imgH;
+            let yPos    = 0;
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, imgH);
+            yRemain -= pdfH;
+            while (yRemain > 0) {
+                yPos -= pdfH;
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, yPos, pdfW, imgH);
+                yRemain -= pdfH;
+            }
+        }
+        pdf.save('Invoice-{{ $invoice->invoice_number }}.pdf');
+    } catch (e) {
+        alert('PDF generation failed. Please use Print → Save as PDF instead.');
+    } finally {
+        if (actionBar) actionBar.style.visibility = '';
+        btn.disabled = false;
+        btn.innerHTML = '⬇️ Save as PDF';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

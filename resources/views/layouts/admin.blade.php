@@ -543,8 +543,11 @@
         @media (max-width: 1024px) {
             #sidebar { transform: translateX(-100%); }
             #sidebar.open { transform: translateX(0); }
-            #main-wrap { margin-left: 0; }
+            #main-wrap { margin-left: 0; overflow-x: hidden; }
             #sidebar-overlay.show { display: block; }
+        }
+        @media (max-width: 768px) {
+            body { overflow-x: hidden; }
         }
 
         /* ── Mobile topbar fixes ── */

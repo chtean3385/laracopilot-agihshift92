@@ -195,10 +195,15 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
 
 @else
 {{-- Fresh start: mode selection --}}
+<style>
+@media (max-width: 640px) {
+    .mode-cards-grid { grid-template-columns: 1fr !important; }
+}
+</style>
 <div style="max-width:780px;margin:0 auto;">
     <p style="color:#6b7280;font-size:15px;margin-bottom:28px;">Choose how you want to use WhatsApp. You can change this later.</p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;" id="modeCards">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;" id="modeCards" class="mode-cards-grid">
 
         {{-- Option 1: Shared --}}
         <div style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px;position:relative;transition:border-color .2s;" id="card-shared">
