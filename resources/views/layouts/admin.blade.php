@@ -555,6 +555,9 @@
             .topbar-title p  { display: none !important; }
             #main-wrap > header { padding: 0 12px !important; }
             #main-wrap > main  { padding: 14px 12px !important; }
+            /* Push button — icon only on mobile */
+            #push-enable-label { display: none !important; }
+            #push-enable-btn   { padding: 7px 9px !important; }
         }
         @media (max-width: 400px) {
             .topbar-title h1 { font-size: 13px !important; }
@@ -1735,8 +1738,21 @@
         }
     }
 
+    // ── Flutter / native WebView detection ───────────────────────────────
+    // In Flutter WebView browser push doesn't work; Flutter handles FCM natively.
+    // Hide the permission UI but still allow FCM token registration to proceed.
+    function isNativeWebView() {
+        if (window.flutter_inappwebview) return true;               // flutter_inappwebview package
+        if (window.ReactNativeWebView)   return true;               // React Native WebView
+        const ua = navigator.userAgent || '';
+        if (/Android/.test(ua) && /wv\)/.test(ua))  return true;   // Android WebView "wv" flag
+        if (/Android/.test(ua) && !/Chrome\//.test(ua)) return true; // Android without Chrome = WebView
+        return false;
+    }
+
     // ── Push permission UI helpers ────────────────────────────────────────
     function showPushEnableBtn(state) {
+        if (isNativeWebView()) return; // Flutter manages push natively — hide browser UI
         const wrap  = document.getElementById('push-enable-wrap');
         const icon  = document.getElementById('push-enable-icon');
         const label = document.getElementById('push-enable-label');
@@ -1782,7 +1798,8 @@
 
     // Show permission button state immediately on load (before initFirebase runs)
     function checkPermissionState() {
-        if (!('Notification' in window)) return;
+        if (isNativeWebView()) return;           // Flutter handles push — no browser UI needed
+        if (!('Notification' in window)) return; // Browser doesn't support push
         if (Notification.permission === 'denied')  showPushEnableBtn('denied');
         if (Notification.permission === 'default') showPushEnableBtn('default');
         // if granted: button stays hidden, initFirebase will register/refresh token
