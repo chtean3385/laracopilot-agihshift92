@@ -307,14 +307,32 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
 {{-- ── Tenant Directory ─────────────────────────────────────────────────────── --}}
 <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f1f5f9;overflow:hidden;">
 
-    <div style="padding:20px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
-        <div>
-            <h2 style="font-size:16px;font-weight:800;color:#1e293b;margin:0;">Tenant Directory</h2>
-            <p style="font-size:12px;color:#94a3b8;margin:3px 0 0;">{{ $hotelStats->count() }} tenant{{ $hotelStats->count() !== 1 ? 's' : '' }} — subscription overview</p>
+    <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div>
+                <h2 style="font-size:16px;font-weight:800;color:#1e293b;margin:0;">Tenant Directory</h2>
+                <p id="tenantDirCount" style="font-size:12px;color:#94a3b8;margin:3px 0 0;">{{ $hotelStats->count() }} tenant{{ $hotelStats->count() !== 1 ? 's' : '' }} — subscription overview</p>
+            </div>
+            <a href="{{ route('platform.hotels.create') }}" class="btn-primary" style="font-size:12px;padding:8px 16px;">
+                <i class="fas fa-plus"></i> New Hotel
+            </a>
         </div>
-        <a href="{{ route('platform.hotels.create') }}" class="btn-primary" style="font-size:12px;padding:8px 16px;">
-            <i class="fas fa-plus"></i> New Hotel
-        </a>
+        {{-- Live search + filter --}}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="position:relative;flex:1;min-width:180px;">
+                <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px;pointer-events:none;"></i>
+                <input type="text" id="tenantSearch" placeholder="Search hotel name or slug…"
+                    oninput="filterTenants()"
+                    style="width:100%;padding:8px 12px 8px 32px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;background:#fff;"
+                    autocomplete="off">
+            </div>
+            <select id="tenantStatusFilter" onchange="filterTenants()"
+                style="padding:8px 30px 8px 12px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 9px center;">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+            </select>
+        </div>
     </div>
 
     @if($hotelStats->isEmpty())
@@ -350,7 +368,10 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
                     $isCustom     = $hotel->custom_monthly_price > 0 || $hotel->custom_yearly_price > 0;
                     $cycle        = $hotel->billing_cycle ?? 'monthly';
                 @endphp
-                <tr style="border-bottom:1px solid #f8fafc;transition:background .15s;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'">
+                <tr class="tenant-row"
+                    data-name="{{ strtolower($hotel->name . ' ' . $hotel->slug) }}"
+                    data-status="{{ $hotel->status }}"
+                    style="border-bottom:1px solid #f8fafc;transition:background .15s;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'">
 
                     {{-- Hotel name + slug --}}
                     <td style="padding:14px 20px;">
@@ -459,5 +480,39 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
     @endif
 
 </div>
+
+@push('scripts')
+<script>
+function filterTenants() {
+    var term   = (document.getElementById('tenantSearch').value || '').toLowerCase().trim();
+    var status = (document.getElementById('tenantStatusFilter').value || '').toLowerCase();
+    var rows   = document.querySelectorAll('.tenant-row');
+    var shown  = 0;
+    var total  = rows.length;
+
+    rows.forEach(function(row) {
+        var name      = (row.getAttribute('data-name') || '').toLowerCase();
+        var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+        var matchTerm = term === '' || name.indexOf(term) !== -1;
+        var matchStat = status === '' || rowStatus === status;
+        if (matchTerm && matchStat) {
+            row.style.display = '';
+            shown++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    var countEl = document.getElementById('tenantDirCount');
+    if (countEl) {
+        if (shown === total) {
+            countEl.textContent = total + ' tenant' + (total !== 1 ? 's' : '') + ' — subscription overview';
+        } else {
+            countEl.textContent = shown + ' of ' + total + ' tenant' + (total !== 1 ? 's' : '') + ' shown';
+        }
+    }
+}
+</script>
+@endpush
 
 @endsection

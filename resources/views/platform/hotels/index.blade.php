@@ -12,26 +12,71 @@
 @endphp
 
 {{-- Header action --}}
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
     <div>
-        <span style="font-size:13px;color:#64748b;">{{ $hotels->count() }} hotel{{ $hotels->count() !== 1 ? 's' : '' }} registered on platform</span>
+        <span style="font-size:13px;color:#64748b;">
+            @if($hotels->total() !== $totalCount)
+                {{ $hotels->total() }} result{{ $hotels->total() !== 1 ? 's' : '' }} of {{ $totalCount }} hotel{{ $totalCount !== 1 ? 's' : '' }}
+            @else
+                {{ $totalCount }} hotel{{ $totalCount !== 1 ? 's' : '' }} registered on platform
+            @endif
+        </span>
     </div>
     <a href="{{ route('platform.hotels.create') }}" class="btn-primary">
         <i class="fas fa-plus"></i> New Hotel
     </a>
 </div>
 
+{{-- Search & Filter bar --}}
+<form method="GET" action="{{ route('platform.hotels.index') }}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+    <div style="position:relative;flex:1;min-width:200px;">
+        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;pointer-events:none;"></i>
+        <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, email, phone…"
+            style="width:100%;padding:9px 14px 9px 36px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;background:#fff;"
+            autocomplete="off">
+    </div>
+    <select name="status"
+        style="padding:9px 32px 9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+        <option value="">All Statuses</option>
+        <option value="active"    {{ $status === 'active'    ? 'selected' : '' }}>Active</option>
+        <option value="suspended" {{ $status === 'suspended' ? 'selected' : '' }}>Suspended</option>
+    </select>
+    <select name="plan"
+        style="padding:9px 32px 9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
+        <option value="">All Plans</option>
+        @foreach($plans as $slug => $planData)
+        <option value="{{ $slug }}" {{ $planFilter === $slug ? 'selected' : '' }}>{{ $planData['label'] }}</option>
+        @endforeach
+    </select>
+    <button type="submit" style="padding:9px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        <i class="fas fa-filter"></i> Filter
+    </button>
+    @if($search !== '' || $status !== '' || $planFilter !== '')
+    <a href="{{ route('platform.hotels.index') }}" style="padding:9px 14px;background:#f1f5f9;color:#64748b;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;">
+        <i class="fas fa-times"></i> Clear
+    </a>
+    @endif
+</form>
+
 {{-- Table card --}}
 <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f1f5f9;overflow:hidden;">
 
     @if($hotels->isEmpty())
     <div style="padding:80px 24px;text-align:center;">
-        <i class="fas fa-building" style="font-size:48px;color:#e2e8f0;display:block;margin-bottom:16px;"></i>
+        <i class="fas fa-{{ ($search !== '' || $status !== '' || $planFilter !== '') ? 'search' : 'building' }}" style="font-size:48px;color:#e2e8f0;display:block;margin-bottom:16px;"></i>
+        @if($search !== '' || $status !== '' || $planFilter !== '')
+        <p style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 8px;">No hotels match your filters</p>
+        <p style="color:#94a3b8;margin:0 0 20px;">Try different search terms or clear your filters.</p>
+        <a href="{{ route('platform.hotels.index') }}" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:#f1f5f9;color:#475569;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+            <i class="fas fa-times"></i> Clear Filters
+        </a>
+        @else
         <p style="font-size:18px;font-weight:700;color:#1e293b;margin:0 0 8px;">No hotels yet</p>
         <p style="color:#94a3b8;margin:0 0 20px;">Create the first hotel tenant to get started.</p>
         <a href="{{ route('platform.hotels.create') }}" class="btn-primary">
             <i class="fas fa-plus"></i> Create First Hotel
         </a>
+        @endif
     </div>
     @else
     <div style="overflow-x:auto;">
@@ -217,6 +262,37 @@
             </tbody>
         </table>
     </div>
+
+    {{-- Pagination --}}
+    @if($hotels->hasPages())
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:12px;color:#94a3b8;">
+            Showing {{ $hotels->firstItem() }}–{{ $hotels->lastItem() }} of {{ $hotels->total() }} hotels
+        </span>
+        <div style="display:flex;align-items:center;gap:4px;">
+            @if($hotels->onFirstPage())
+            <span style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#cbd5e1;background:#f8fafc;">← Prev</span>
+            @else
+            <a href="{{ $hotels->previousPageUrl() }}" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;text-decoration:none;background:#fff;">← Prev</a>
+            @endif
+
+            @foreach($hotels->getUrlRange(max(1, $hotels->currentPage()-2), min($hotels->lastPage(), $hotels->currentPage()+2)) as $page => $url)
+                @if($page == $hotels->currentPage())
+                <span style="padding:6px 12px;border:1px solid #7c3aed;border-radius:8px;font-size:13px;font-weight:700;color:#fff;background:#7c3aed;">{{ $page }}</span>
+                @else
+                <a href="{{ $url }}" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;text-decoration:none;background:#fff;">{{ $page }}</a>
+                @endif
+            @endforeach
+
+            @if($hotels->hasMorePages())
+            <a href="{{ $hotels->nextPageUrl() }}" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#475569;text-decoration:none;background:#fff;">Next →</a>
+            @else
+            <span style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#cbd5e1;background:#f8fafc;">Next →</span>
+            @endif
+        </div>
+    </div>
+    @endif
+
     @endif
 
 </div>

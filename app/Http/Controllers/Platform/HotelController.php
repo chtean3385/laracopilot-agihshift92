@@ -17,9 +17,13 @@ class HotelController extends Controller
 {
     // ── Index ────────────────────────────────────────────────────────────────
 
-    public function index()
+    public function index(Request $request)
     {
-        $hotels = DB::table('hotels')
+        $search    = trim($request->input('search', ''));
+        $status    = $request->input('status', '');
+        $planFilter = $request->input('plan', '');
+
+        $query = DB::table('hotels')
             ->select(
                 'hotels.id', 'hotels.name', 'hotels.slug', 'hotels.email',
                 'hotels.phone', 'hotels.plan', 'hotels.status',
@@ -30,14 +34,35 @@ class HotelController extends Controller
             ->selectRaw('(SELECT COUNT(*) FROM rooms WHERE rooms.hotel_id = hotels.id) as room_count')
             ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.hotel_id = hotels.id) as booking_count')
             ->selectRaw("(SELECT COUNT(*) FROM hotel_users WHERE hotel_users.hotel_id = hotels.id AND hotel_users.status = 'active') as user_count")
-            ->orderByDesc('hotels.created_at')
-            ->get();
+            ->orderByDesc('hotels.created_at');
 
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('hotels.name',  'ilike', "%{$search}%")
+                  ->orWhere('hotels.slug',  'ilike', "%{$search}%")
+                  ->orWhere('hotels.email', 'ilike', "%{$search}%")
+                  ->orWhere('hotels.phone', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($status !== '') {
+            $query->where('hotels.status', $status);
+        }
+
+        if ($planFilter !== '') {
+            $query->where('hotels.plan', $planFilter);
+        }
+
+        $hotels = $query->paginate(15)->withQueryString();
+
+        $totalCount     = DB::table('hotels')->count();
         $currencySymbol = DB::table('settings')->value('currency_symbol') ?? 'Rs';
-        // Use ALL plans for display/badge rendering (including inactive)
-        $plans = $this->getAllPlansForDisplay();
+        $plans          = $this->getAllPlansForDisplay();
 
-        return view('platform.hotels.index', compact('hotels', 'currencySymbol', 'plans'));
+        return view('platform.hotels.index', compact(
+            'hotels', 'currencySymbol', 'plans',
+            'search', 'status', 'planFilter', 'totalCount'
+        ));
     }
 
     // ── Create ───────────────────────────────────────────────────────────────
