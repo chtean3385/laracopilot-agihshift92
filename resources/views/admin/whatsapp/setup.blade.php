@@ -66,10 +66,18 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
         </div>
     </div>
 
-    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        @if($canUseOwn)
         <a href="{{ route('whatsapp.templates') }}" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#25D366;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;">
             <i class="fas fa-robot"></i> Manage Automations
         </a>
+        @else
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:13px;color:#15803d;">
+            <i class="fas fa-info-circle"></i>
+            Message templates for your plan are managed by the CRM Administrator.
+            <a href="{{ route('upgrade') }}" style="color:#0d9488;font-weight:700;margin-left:4px;white-space:nowrap;">Upgrade to Pro →</a>
+        </div>
+        @endif
         <form method="POST" action="{{ route('whatsapp.setup.reset') }}" onsubmit="return confirm('This will disconnect WhatsApp and delete all setup progress. Are you sure?')">
             @csrf
             <button type="submit" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;color:#6b7280;border:1px solid #d1d5db;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;">
