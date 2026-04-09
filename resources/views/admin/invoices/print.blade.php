@@ -28,15 +28,15 @@
                     style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
                     🖨️ Print
                 </button>
-                <button id="btn-download" onclick="downloadPDF()"
+                <button id="btn-download" onclick="downloadPDF()" title="Opens print dialog — choose 'Save as PDF' in your browser"
                     style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-                    ⬇️ Download PDF
+                    ⬇️ Save as PDF
                 </button>
             </div>
         </div>
         {{-- WebView tip (shown only in WebView) --}}
         <div id="webview-tip" style="display:none;" class="max-w-3xl mx-auto mt-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700">
-            📱 Tap <strong>Download PDF</strong> to save this invoice, or use your browser's share menu.
+            📱 Tap <strong>Save as PDF</strong> then choose "Save as PDF" in the dialog, or use your browser's share menu.
         </div>
     </div>
 
