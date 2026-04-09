@@ -112,13 +112,14 @@ class PushNotificationsController extends Controller
         $tokens = array_unique(array_filter($tokens));
 
         $notif = PlatformNotification::create([
-            'title'      => $data['title'],
-            'body'       => $data['body'],
-            'action_url' => $data['action_url'] ?? null,
-            'target'     => $data['target'],
-            'target_ids' => $targetIds,
-            'sent_by'    => session('platform_admin_email') ?? 'SaaS Admin',
-            'sent_at'    => now(),
+            'title'       => $data['title'],
+            'body'        => $data['body'],
+            'action_url'  => $data['action_url'] ?? null,
+            'target'      => $data['target'],
+            'target_ids'  => $targetIds,
+            'token_count' => count($tokens),
+            'sent_by'     => session('platform_admin_email') ?? 'SaaS Admin',
+            'sent_at'     => now(),
         ]);
 
         $result = $fcm->sendToTokens($tokens, $data['title'], $data['body'], [
@@ -126,9 +127,12 @@ class PushNotificationsController extends Controller
             'notif_id' => $notif->id,
         ]);
 
+        $sendLog = $result['log'] ?? 'Send completed.';
+
         $notif->update([
             'sent_count'      => count($tokens),
             'delivered_count' => $result['success'],
+            'send_log'        => $sendLog,
         ]);
 
         // Save delivery records for in-app bell
@@ -155,8 +159,14 @@ class PushNotificationsController extends Controller
             }
         }
 
+        // Redirect with proper message based on result
+        if ($result['success'] > 0) {
+            return redirect()->route('platform.notifications.history')
+                ->with('success', "Delivered to {$result['success']} device(s)." . ($result['failure'] > 0 ? " {$result['failure']} failed." : ''));
+        }
+
         return redirect()->route('platform.notifications.history')
-            ->with('success', "Notification sent to {$result['success']} device(s).");
+            ->with('warning', "Sent to 0 devices. Reason: {$sendLog}");
     }
 
     public function history()

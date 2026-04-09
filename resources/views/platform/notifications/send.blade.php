@@ -22,10 +22,57 @@
     <i class="fas fa-check-circle" style="margin-right:7px;"></i>{{ session('success') }}
 </div>
 @endif
+@if(session('warning'))
+<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:11px;padding:13px 16px;margin-bottom:18px;color:#92400e;font-size:14px;font-weight:600;">
+    <i class="fas fa-exclamation-triangle" style="margin-right:7px;"></i>{{ session('warning') }}
+</div>
+@endif
 
 @if($errors->any())
 <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:11px;padding:13px 16px;margin-bottom:18px;">
     <ul style="margin:0;padding-left:16px;font-size:13px;color:#b91c1c;">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+</div>
+@endif
+
+@php
+$totalTokens = DB::table('fcm_tokens')->count();
+$cfg = DB::table('platform_firebase_settings')->first();
+$hasVapid  = !empty($cfg?->firebase_vapid_key);
+$hasSA     = !empty($cfg?->service_account_json);
+$hasLegacy = !empty($cfg?->fcm_server_key);
+@endphp
+
+@if($totalTokens === 0 || !$hasVapid || (!$hasSA && !$hasLegacy))
+<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:13px;padding:16px 18px;margin-bottom:18px;">
+    <div style="font-size:13px;font-weight:800;color:#b91c1c;margin-bottom:10px;"><i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>Cannot deliver — fix these issues first:</div>
+    <div style="display:flex;flex-direction:column;gap:7px;">
+        @if(!$hasVapid)
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#7f1d1d;">
+            <span style="background:#ef4444;color:#fff;padding:2px 7px;border-radius:4px;font-weight:700;font-size:10px;">MISSING</span>
+            <strong>VAPID Key not saved</strong> — hotel browsers can't register for push without it.
+            <a href="{{ route('platform.notifications.settings') }}" style="color:#7c3aed;font-weight:700;margin-left:4px;">→ Add it in Settings</a>
+        </div>
+        @endif
+        @if(!$hasSA && !$hasLegacy)
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#7f1d1d;">
+            <span style="background:#ef4444;color:#fff;padding:2px 7px;border-radius:4px;font-weight:700;font-size:10px;">MISSING</span>
+            <strong>No send method</strong> — add Service Account JSON (recommended) or Server Key.
+            <a href="{{ route('platform.notifications.settings') }}" style="color:#7c3aed;font-weight:700;margin-left:4px;">→ Settings</a>
+        </div>
+        @endif
+        @if($totalTokens === 0)
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#92400e;">
+            <span style="background:#f59e0b;color:#fff;padding:2px 7px;border-radius:4px;font-weight:700;font-size:10px;">0 DEVICES</span>
+            <strong>No FCM tokens registered.</strong> Save the VAPID key, then a hotel user needs to log in and grant notification permission in their browser.
+        </div>
+        @endif
+    </div>
+</div>
+@else
+<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:11px;padding:11px 16px;margin-bottom:18px;font-size:13px;color:#15803d;font-weight:600;display:flex;align-items:center;gap:8px;">
+    <i class="fas fa-check-circle"></i>
+    <span>Ready to send — <strong>{{ $totalTokens }}</strong> device(s) registered.</span>
+    @if($hasSA)<span style="background:#7c3aed;color:#fff;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:700;margin-left:6px;">FCM v1 API</span>@elseif($hasLegacy)<span style="background:#f59e0b;color:#fff;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:700;margin-left:6px;">Legacy API</span>@endif
 </div>
 @endif
 

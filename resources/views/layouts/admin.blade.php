@@ -1603,8 +1603,17 @@
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') return;
 
+            if (!cfg.vapidKey) {
+                console.error('[CRM Push] VAPID key is missing — save it in Platform Admin → Push Settings. No token will be registered.');
+                return;
+            }
+
             const token = await getToken(messaging, { vapidKey: cfg.vapidKey });
-            if (!token) return;
+            if (!token) {
+                console.error('[CRM Push] getToken() returned null — check VAPID key and Firebase project configuration.');
+                return;
+            }
+            console.info('[CRM Push] FCM token registered:', token.slice(0, 30) + '...');
 
             // Register service worker and send config
             if ('serviceWorker' in navigator) {

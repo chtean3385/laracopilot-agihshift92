@@ -11,7 +11,7 @@ class PlatformNotification extends Model
     protected $fillable = [
         'title', 'body', 'icon_url', 'action_url',
         'target', 'target_ids',
-        'sent_count', 'delivered_count', 'sent_by', 'sent_at',
+        'sent_count', 'delivered_count', 'send_log', 'token_count', 'sent_by', 'sent_at',
     ];
 
     protected $casts = [

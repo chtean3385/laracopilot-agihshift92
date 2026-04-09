@@ -48,13 +48,41 @@ class FcmService
      */
     public function sendToTokens(array $tokens, string $title, string $body, array $extra = []): array
     {
-        if (!$this->isEnabled() || empty($tokens)) {
-            return ['success' => 0, 'failure' => 0];
+        if (!$this->config?->push_enabled) {
+            $msg = 'Push notifications are disabled. Enable them in Firebase Settings.';
+            Log::warning('[FCM] ' . $msg);
+            return ['success' => 0, 'failure' => 0, 'log' => $msg];
         }
 
-        return $this->hasV1Auth()
+        if (!$this->hasV1Auth() && empty($this->config->fcm_server_key)) {
+            $msg = 'No send method configured. Add a Service Account JSON (recommended) or Legacy Server Key in Firebase Settings.';
+            Log::warning('[FCM] ' . $msg);
+            return ['success' => 0, 'failure' => 0, 'log' => $msg];
+        }
+
+        if (empty($tokens)) {
+            $total = DB::table('fcm_tokens')->count();
+            $msg = $total === 0
+                ? 'No FCM tokens registered. No hotel user has subscribed to push notifications yet. Ensure the VAPID key is saved in settings and users have granted browser notification permission.'
+                : 'Token list was empty for the selected target (hotel/plan has no registered devices).';
+            Log::warning('[FCM] ' . $msg . ' (total in DB: ' . $total . ')');
+            return ['success' => 0, 'failure' => 0, 'log' => $msg];
+        }
+
+        $result = $this->hasV1Auth()
             ? $this->sendViaV1($tokens, $title, $body, $extra)
             : $this->sendViaLegacy($tokens, $title, $body, $extra);
+
+        $result['log'] = $result['log'] ?? sprintf(
+            'Sent via %s to %d token(s). Delivered: %d, Failed: %d.',
+            $this->hasV1Auth() ? 'FCM v1 API' : 'Legacy API',
+            count($tokens),
+            $result['success'],
+            $result['failure']
+        );
+
+        Log::info('[FCM] ' . $result['log']);
+        return $result;
     }
 
     public function getTokensForHotel(int $hotelId): array
