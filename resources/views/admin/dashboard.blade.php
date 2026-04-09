@@ -90,6 +90,73 @@
                 /* Quick actions */
                 .qa-btn { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all .18s; }
                 .qa-btn:hover { transform: translateX(4px); }
+
+                /* ── Dashboard card ── */
+                .db-card {
+                    background: #fff;
+                    border-radius: 20px;
+                    padding: 24px;
+                    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+                    border: 1px solid #f1f5f9;
+                }
+                .db-card-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 14px;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                }
+                .db-card-title { font-weight: 800; color: #1e293b; font-size: 15px; }
+                .db-card-link  { color: #0891b2; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+
+                /* ── Booking list item ── */
+                .booking-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 10px 12px;
+                    border-radius: 14px;
+                    background: #f8fafc;
+                    text-decoration: none;
+                    transition: background .15s;
+                }
+                .booking-row:hover { background: #f1f5f9; }
+                .booking-avatar {
+                    width: 38px; height: 38px;
+                    background: linear-gradient(135deg,#e2e8f0,#cbd5e1);
+                    border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    color: #475569; font-weight: 800; font-size: 14px;
+                    flex-shrink: 0;
+                }
+                .booking-info { flex: 1; min-width: 0; }
+                .booking-name {
+                    font-weight: 700; color: #1e293b; font-size: 13px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+                .booking-sub  { font-size: 11px; color: #94a3b8; }
+                .booking-meta { text-align: right; flex-shrink: 0; }
+                .booking-amount { font-weight: 800; color: #1e293b; font-size: 13px; }
+
+                /* ── Arrivals / departures 2-col grid ── */
+                .arrivals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+                /* ── Responsive: narrow screens ── */
+                @media (max-width: 480px) {
+                    .db-card { padding: 14px; border-radius: 16px; }
+                    .booking-row { gap: 10px; padding: 8px 10px; }
+                    .arrivals-grid { grid-template-columns: 1fr; gap: 14px; }
+                }
+                @media (max-width: 360px) {
+                    .db-card { padding: 12px; border-radius: 14px; }
+                    .booking-row { flex-wrap: wrap; }
+                    .booking-meta {
+                        order: 3; width: 100%;
+                        display: flex; justify-content: space-between;
+                        align-items: center; flex-direction: row-reverse;
+                    }
+                }
                 </style>
 
                 <div class="dashboard-main" style="display:flex;flex-direction:column;gap:24px;">
@@ -226,24 +293,24 @@
                         </div>
 
                         {{-- Recent Bookings --}}
-                        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;display:flex;flex-direction:column;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-                                <div style="font-weight:800;color:#1e293b;font-size:15px;">Recent Bookings</div>
-                                <a href="{{ route('bookings.index') }}" style="color:#0891b2;font-size:13px;font-weight:600;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
+                        <div class="db-card" style="display:flex;flex-direction:column;">
+                            <div class="db-card-header">
+                                <span class="db-card-title">Recent Bookings</span>
+                                <a href="{{ route('bookings.index') }}" class="db-card-link">View All <i class="fas fa-arrow-right"></i></a>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
                                 @forelse($recentBookings as $booking)
-                                <a href="{{ route('bookings.show', $booking->id) }}" style="display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:14px;background:#f8fafc;transition:background .15s;text-decoration:none;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:800;font-size:14px;flex-shrink:0;">
+                                <a href="{{ route('bookings.show', $booking->id) }}" class="booking-row">
+                                    <div class="booking-avatar">
                                         {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
                                     </div>
-                                    <div style="flex:1;min-width:0;">
-                                        <div style="font-weight:700;color:#1e293b;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                                        <div style="font-size:11px;color:#94a3b8;">Room {{ $booking->room->room_number ?? '—' }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
+                                    <div class="booking-info">
+                                        <div class="booking-name">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
+                                        <div class="booking-sub">Room {{ $booking->room->room_number ?? '—' }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
                                     </div>
-                                    <div style="text-align:right;flex-shrink:0;">
+                                    <div class="booking-meta">
                                         @canDo('reports.view')
-                                        <div style="font-weight:800;color:#1e293b;font-size:13px;">₹{{ number_format($booking->total_amount) }}</div>
+                                        <div class="booking-amount">₹{{ number_format($booking->total_amount) }}</div>
                                         @endCanDo
                                         <span class="badge-{{ $booking->status_color }}" style="font-size:10px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
                                     </div>
@@ -349,8 +416,8 @@
                     @endCanDo
 
                     {{-- Quick Actions --}}
-                    <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
-                        <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:16px;">Quick Actions</div>
+                    <div class="db-card">
+                        <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
 
                         {{-- Featured Slot Card (always on top) --}}
                         @if($hasSlotModule)
@@ -544,9 +611,9 @@
 
                     {{-- Today's Arrivals & Departures --}}
                     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
+                    <div class="arrivals-grid">
                         @if($todayCheckins->count() > 0)
-                        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+                        <div class="db-card">
                             <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
                                 <div style="width:38px;height:38px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
@@ -570,7 +637,7 @@
                         @endif
 
                         @if($todayCheckouts->count() > 0)
-                        <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+                        <div class="db-card">
                             <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
                                 <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
@@ -598,7 +665,7 @@
                     @endif
 
                     {{-- Room Availability Checker --}}
-                    <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+                    <div class="db-card" style="overflow:hidden;padding:0;">
                         <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
