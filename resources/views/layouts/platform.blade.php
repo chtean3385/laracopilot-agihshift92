@@ -338,6 +338,32 @@
             Message Templates
         </a>
 
+        <div class="nav-section">Analytics</div>
+
+        <a href="{{ route('platform.analytics.index') }}" class="nav-link {{ request()->routeIs('platform.analytics.index') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-chart-line"></i></span>
+            Analytics Dashboard
+        </a>
+        <a href="{{ route('platform.analytics.campaigns') }}" class="nav-link {{ request()->routeIs('platform.analytics.campaigns') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-bullhorn" style="font-size:12px;"></i></span>
+            Send Campaign
+        </a>
+
+        <div class="nav-section">Push Notifications</div>
+
+        <a href="{{ route('platform.notifications.settings') }}" class="nav-link {{ request()->routeIs('platform.notifications.settings') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-cog"></i></span>
+            Firebase Settings
+        </a>
+        <a href="{{ route('platform.notifications.send') }}" class="nav-link {{ request()->routeIs('platform.notifications.send') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-paper-plane" style="font-size:12px;"></i></span>
+            Send Notification
+        </a>
+        <a href="{{ route('platform.notifications.history') }}" class="nav-link {{ request()->routeIs('platform.notifications.history') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-history" style="font-size:12px;"></i></span>
+            History
+        </a>
+
         <div class="nav-section">System</div>
 
         <a href="{{ route('activity_log.index') }}" class="nav-link">

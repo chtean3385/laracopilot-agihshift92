@@ -223,6 +223,13 @@ Route::post('/whatsapp/test-send',                      [WhatsAppController::cla
 Route::get('/whatsapp/config',   fn() => redirect()->route('whatsapp.setup'))->name('whatsapp.config');
 Route::post('/whatsapp/config',  fn() => redirect()->route('whatsapp.setup'))->name('whatsapp.config.save');
 
+// ── Push Notification FCM Tokens (Hotel CRM users) ────────────────────────
+Route::post('/notifications/fcm-token',         [\App\Http\Controllers\Admin\FcmTokenController::class, 'store']     )->name('fcm.token.store');
+Route::delete('/notifications/fcm-token',       [\App\Http\Controllers\Admin\FcmTokenController::class, 'destroy']   )->name('fcm.token.destroy');
+Route::get('/notifications/unread',             [\App\Http\Controllers\Admin\FcmTokenController::class, 'unread']    )->name('fcm.notifications.unread');
+Route::post('/notifications/{id}/read',         [\App\Http\Controllers\Admin\FcmTokenController::class, 'markRead']  )->name('fcm.notifications.read');
+Route::get('/api/crm/firebase-config',          [\App\Http\Controllers\Admin\FcmTokenController::class, 'firebaseConfig'])->name('fcm.config');
+
 // ── Payment Links ──────────────────────────────────────────────────────────
 Route::get('/payment-links/config',                           [PaymentLinksController::class, 'config']          )->name('payment_links.config');
 Route::post('/payment-links/config',                          [PaymentLinksController::class, 'configSave']      )->name('payment_links.config.save');
@@ -338,4 +345,16 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::delete('/whatsapp/templates/{id}',                 [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateDestroy'] )->name('platform.whatsapp.template.destroy');
     Route::post('/whatsapp/templates/{id}/toggle',            [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateToggle']  )->name('platform.whatsapp.template.toggle');
     Route::post('/whatsapp/templates/{id}/submit-meta',       [\App\Http\Controllers\Platform\WhatsAppController::class, 'submitToMeta']    )->name('platform.whatsapp.template.submit-meta');
+
+    // Analytics & Campaigns
+    Route::get('/analytics',           [\App\Http\Controllers\Platform\AnalyticsController::class, 'index']        )->name('platform.analytics.index');
+    Route::get('/analytics/campaigns', [\App\Http\Controllers\Platform\AnalyticsController::class, 'campaigns']    )->name('platform.analytics.campaigns');
+    Route::post('/analytics/campaigns',[\App\Http\Controllers\Platform\AnalyticsController::class, 'sendCampaign'] )->name('platform.analytics.campaigns.send');
+
+    // Push Notifications (Platform Admin)
+    Route::get('/notifications/settings',  [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settings']    )->name('platform.notifications.settings');
+    Route::post('/notifications/settings', [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settingsSave'])->name('platform.notifications.settings.save');
+    Route::get('/notifications/send',      [\App\Http\Controllers\Platform\PushNotificationsController::class, 'send']        )->name('platform.notifications.send');
+    Route::post('/notifications/send',     [\App\Http\Controllers\Platform\PushNotificationsController::class, 'sendPost']    )->name('platform.notifications.send.post');
+    Route::get('/notifications/history',   [\App\Http\Controllers\Platform\PushNotificationsController::class, 'history']     )->name('platform.notifications.history');
 });

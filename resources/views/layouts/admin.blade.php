@@ -995,6 +995,24 @@
                     <i class="fas fa-clock" style="color:#06b6d4;font-size:12px;"></i>
                     <span style="font-size:12px;color:#475569;font-weight:500;" id="liveClock"></span>
                 </div>
+                <!-- Push Notification Bell -->
+                <div style="position:relative;" id="notif-bell-wrap">
+                    <button onclick="toggleNotifPanel()" title="Notifications"
+                        style="position:relative;width:36px;height:36px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#64748b;cursor:pointer;transition:all .15s;flex-shrink:0;"
+                        onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                        <i class="fas fa-bell" style="font-size:15px;"></i>
+                        <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;"></span>
+                    </button>
+                    <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:#fff;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.13);border:1px solid #f1f5f9;z-index:200;overflow:hidden;">
+                        <div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#1e293b;display:flex;justify-content:space-between;align-items:center;">
+                            <span><i class="fas fa-bell" style="color:#7c3aed;margin-right:6px;"></i>Notifications</span>
+                            <button onclick="markAllRead()" style="font-size:11px;color:#7c3aed;border:none;background:none;cursor:pointer;font-weight:700;">Mark all read</button>
+                        </div>
+                        <div id="notif-list" style="max-height:320px;overflow-y:auto;">
+                            <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Loading...</div>
+                        </div>
+                    </div>
+                </div>
                 <!-- WhatsApp Support — header -->
                 <a href="#" id="header-wa-btn" title="Get Support on WhatsApp"
                    style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 3px 10px rgba(37,211,102,.3);transition:all .18s;flex-shrink:0;"
@@ -1437,5 +1455,215 @@
 </script>
 
 @livewireScripts
+
+{{-- ── Firebase Push Notifications ────────────────────────────────────── --}}
+<script>
+(function () {
+    // ── In-app bell polling (no Firebase needed) ──────────────────────────
+    let notifPanelOpen = false;
+    let notifItems     = [];
+
+    function toggleNotifPanel() {
+        notifPanelOpen = !notifPanelOpen;
+        const panel = document.getElementById('notif-panel');
+        if (panel) panel.style.display = notifPanelOpen ? 'block' : 'none';
+        if (notifPanelOpen) loadNotifications();
+        document.addEventListener('click', onDocClick, { once: true });
+    }
+
+    function onDocClick(e) {
+        const wrap = document.getElementById('notif-bell-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            notifPanelOpen = false;
+            const panel = document.getElementById('notif-panel');
+            if (panel) panel.style.display = 'none';
+        }
+    }
+
+    async function loadNotifications() {
+        try {
+            const res  = await fetch('{{ route('fcm.notifications.unread') }}', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            });
+            if (!res.ok) return;
+            notifItems = await res.json();
+            renderNotifications();
+            updateBadge();
+        } catch (e) {}
+    }
+
+    function renderNotifications() {
+        const list = document.getElementById('notif-list');
+        if (!list) return;
+
+        if (!notifItems.length) {
+            list.innerHTML = '<div style="padding:28px;text-align:center;color:#94a3b8;font-size:13px;"><i class="fas fa-bell-slash" style="font-size:20px;margin-bottom:8px;display:block;"></i>No new notifications</div>';
+            return;
+        }
+
+        list.innerHTML = notifItems.map(n => `
+            <div onclick="openNotif(${n.delivery_id},'${n.action_url || ''}',${n.id})"
+                style="padding:12px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .12s;"
+                onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:2px;">${escHtml(n.title)}</div>
+                <div style="font-size:12px;color:#64748b;line-height:1.4;">${escHtml(n.body)}</div>
+                <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${timeAgo(n.sent_at)}</div>
+            </div>
+        `).join('');
+    }
+
+    function escHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function timeAgo(ts) {
+        if (!ts) return '';
+        const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return Math.floor(diff/86400) + 'd ago';
+    }
+
+    function updateBadge() {
+        const badge = document.getElementById('notif-badge');
+        if (!badge) return;
+        if (notifItems.length > 0) {
+            badge.textContent = notifItems.length > 9 ? '9+' : notifItems.length;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    async function openNotif(deliveryId, url, notifId) {
+        try {
+            await fetch(`{{ url('/notifications') }}/${deliveryId}/read`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            notifItems = notifItems.filter(n => n.delivery_id !== deliveryId);
+            updateBadge();
+            renderNotifications();
+        } catch (e) {}
+
+        if (url && url !== 'null' && url !== 'undefined') {
+            window.open(url, '_blank');
+        }
+    }
+
+    async function markAllRead() {
+        for (const n of notifItems) {
+            try {
+                await fetch(`{{ url('/notifications') }}/${n.delivery_id}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+            } catch(e) {}
+        }
+        notifItems = [];
+        updateBadge();
+        renderNotifications();
+    }
+
+    // Poll every 60 seconds
+    loadNotifications();
+    setInterval(loadNotifications, 60000);
+
+    // Expose to window for inline onclick
+    window.toggleNotifPanel = toggleNotifPanel;
+    window.markAllRead      = markAllRead;
+    window.openNotif        = openNotif;
+
+    // ── Firebase Push Subscription (browser only, graceful fallback) ──────
+    async function initFirebase() {
+        try {
+            const cfgRes = await fetch('{{ route('fcm.config') }}', { headers: { 'Accept': 'application/json' } });
+            const cfg    = await cfgRes.json();
+            if (!cfg.enabled) return;
+
+            // Dynamically load Firebase SDK
+            const [{ initializeApp }, { getMessaging, getToken, onMessage }] = await Promise.all([
+                import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js'),
+                import('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js'),
+            ]);
+
+            const fbApp   = initializeApp({ apiKey: cfg.apiKey, projectId: cfg.projectId, messagingSenderId: cfg.messagingSenderId, appId: cfg.appId });
+            const messaging = getMessaging(fbApp);
+
+            // Request permission & get token
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') return;
+
+            const token = await getToken(messaging, { vapidKey: cfg.vapidKey });
+            if (!token) return;
+
+            // Register service worker and send config
+            if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                navigator.serviceWorker.controller?.postMessage({ type: 'FIREBASE_CONFIG', config: { apiKey: cfg.apiKey, projectId: cfg.projectId, messagingSenderId: cfg.messagingSenderId, appId: cfg.appId } });
+            }
+
+            // Save token to server
+            await fetch('{{ route('fcm.token.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ token, platform: 'web', device_id: navigator.userAgent.slice(0, 200) })
+            });
+
+            // Foreground message handler
+            onMessage(messaging, (payload) => {
+                const n = payload.notification || {};
+                const d = payload.data || {};
+
+                // Call native JS bridge if Flutter WebView
+                if (window.onCrmNotification) {
+                    window.onCrmNotification(JSON.stringify(payload));
+                }
+
+                // Show in-app toast
+                showPushToast(n.title || d.title || 'Notification', n.body || d.body || '', d.click_url || '/');
+
+                // Reload notification list
+                loadNotifications();
+            });
+
+        } catch (e) {
+            console.warn('[CRM Push] Firebase init skipped:', e.message);
+        }
+    }
+
+    function showPushToast(title, body, url) {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;border-radius:14px;padding:14px 18px;max-width:320px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer;animation:slideInUp .3s ease;';
+        toast.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:4px;">${escHtml(title)}</div><div style="font-size:12px;opacity:.8;line-height:1.4;">${escHtml(body)}</div>`;
+        toast.onclick = () => { window.open(url,'_blank'); toast.remove(); };
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity .4s'; setTimeout(() => toast.remove(), 400); }, 5000);
+    }
+
+    // Init Firebase after page is ready
+    if (document.readyState === 'complete') { initFirebase(); }
+    else { window.addEventListener('load', initFirebase); }
+})();
+</script>
+<style>
+@keyframes slideInUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+</style>
 </body>
 </html>
