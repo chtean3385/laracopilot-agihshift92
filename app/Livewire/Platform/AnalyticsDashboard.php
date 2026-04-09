@@ -2,31 +2,218 @@
 
 namespace App\Livewire\Platform;
 
+use App\Models\PlatformWhatsAppSetting;
+use App\Services\FcmService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class AnalyticsDashboard extends Component
 {
+    // ── Filters ──────────────────────────────────────────────────────────
     public string $filterPlan    = '';
     public string $filterStatus  = '';
     public string $filterInactive = '0';
+
+    // ── Drill-down ───────────────────────────────────────────────────────
     public int    $selectedHotelId = 0;
 
-    protected $listeners = ['closePanel' => 'clearSelected'];
+    // ── Quick Action modal ───────────────────────────────────────────────
+    public bool   $showQuickModal     = false;
+    public int    $quickModalHotelId  = 0;
+    public string $quickModalHotelName = '';
+    public string $quickModalChannel  = 'whatsapp'; // whatsapp | push
+    public string $quickMessage       = '';
+    public string $quickPushTitle     = '';
+    public string $quickActionResult  = '';
 
-    public function clearSelected(): void
+    // ── Active Sessions tab ──────────────────────────────────────────────
+    public string $activeTab = 'hotels'; // hotels | active
+
+    public function clearSelected(): void  { $this->selectedHotelId = 0; }
+    public function updatedFilterPlan():     void { $this->selectedHotelId = 0; }
+    public function updatedFilterStatus():   void { $this->selectedHotelId = 0; }
+    public function updatedFilterInactive(): void { $this->selectedHotelId = 0; }
+
+    // ── Open quick-action modal ───────────────────────────────────────────
+    public function openQuickModal(int $hotelId, string $channel = 'whatsapp'): void
     {
-        $this->selectedHotelId = 0;
+        $hotel = DB::table('hotels')->where('id', $hotelId)->first();
+        $this->quickModalHotelId   = $hotelId;
+        $this->quickModalHotelName = $hotel?->name ?? 'Hotel';
+        $this->quickModalChannel   = $channel;
+        $this->quickMessage        = '';
+        $this->quickPushTitle      = '';
+        $this->quickActionResult   = '';
+        $this->showQuickModal      = true;
     }
 
+    public function closeQuickModal(): void { $this->showQuickModal = false; $this->quickActionResult = ''; }
+
+    // ── Send quick WhatsApp message ───────────────────────────────────────
+    public function sendQuickWhatsApp(): void
+    {
+        if (!$this->quickMessage) return;
+
+        $hotel    = DB::table('hotels')->where('id', $this->quickModalHotelId)->first();
+        $platform = PlatformWhatsAppSetting::instance();
+
+        if (!$hotel?->phone || !$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            $this->quickActionResult = '❌ WhatsApp not configured or hotel has no phone.';
+            return;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
+        if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
+            $phone = '91' . $phone;
+        }
+
+        try {
+            Http::withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to'   => $phone,
+                    'type' => 'text',
+                    'text' => ['body' => $this->quickMessage],
+                ]);
+            $this->quickActionResult = '✅ WhatsApp sent to ' . $hotel->name;
+        } catch (\Throwable $e) {
+            $this->quickActionResult = '❌ Failed: ' . $e->getMessage();
+        }
+    }
+
+    // ── Send quick push notification ──────────────────────────────────────
+    public function sendQuickPush(): void
+    {
+        if (!$this->quickPushTitle && !$this->quickMessage) return;
+
+        $fcm    = app(FcmService::class);
+        $tokens = $fcm->getTokensForHotel($this->quickModalHotelId);
+
+        if (!$fcm->isEnabled()) {
+            $this->quickActionResult = '❌ Firebase not enabled.';
+            return;
+        }
+        if (empty($tokens)) {
+            $this->quickActionResult = '⚠️ No devices registered for this hotel.';
+            return;
+        }
+
+        $result = $fcm->sendToTokens($tokens, $this->quickPushTitle ?: 'Platform Alert', $this->quickMessage);
+        $this->quickActionResult = "✅ Push sent to {$result['success']} device(s) (failed: {$result['failure']})";
+    }
+
+    // ── Linear regression prediction ──────────────────────────────────────
+    private function revenuePrediction(): array
+    {
+        $revenueRows = DB::table('payments')
+            ->select(
+                DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"),
+                DB::raw('SUM(amount) as total')
+            )
+            ->where('status', 'completed')
+            ->where('created_at', '>=', Carbon::now()->subMonths(6)->startOfMonth())
+            ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM')")
+            ->get()
+            ->keyBy('month');
+
+        $months = collect(range(5, 0))->map(fn($i) => Carbon::now()->subMonths($i)->format('Y-m'))->values()->toArray();
+        $values = array_map(fn($k) => (float)($revenueRows[$k]?->total ?? 0), $months);
+
+        $n    = count($values);
+        $xArr = range(0, $n - 1);
+        $sumX = array_sum($xArr);
+        $sumY = array_sum($values);
+        $sumXY = 0;
+        $sumX2 = 0;
+        foreach ($xArr as $i => $xi) {
+            $sumXY += $xi * $values[$i];
+            $sumX2 += $xi * $xi;
+        }
+
+        $denom = ($n * $sumX2 - $sumX * $sumX);
+        $slope = $denom != 0 ? ($n * $sumXY - $sumX * $sumY) / $denom : 0;
+        $intercept = ($sumY - $slope * $sumX) / $n;
+
+        $nextMonth = max(0, round($intercept + $slope * $n));
+        $nextYear  = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $nextYear += max(0, $intercept + $slope * ($n + $i));
+        }
+        $nextYear = round($nextYear);
+
+        $avgRevenue = $n > 0 && $sumY > 0 ? ($sumY / $n) : 1;
+        $trendPct   = round(($slope / max(1, $avgRevenue)) * 100, 1);
+
+        // Confidence: how well does linear fit?
+        $predicted = array_map(fn($i) => $intercept + $slope * $i, $xArr);
+        $ssRes = 0; $ssTot = 0; $mean = $sumY / max(1, $n);
+        foreach ($values as $i => $v) {
+            $ssRes += ($v - $predicted[$i]) ** 2;
+            $ssTot += ($v - $mean) ** 2;
+        }
+        $r2 = $ssTot > 0 ? round(1 - ($ssRes / $ssTot), 2) : 0;
+
+        return [
+            'nextMonth'    => $nextMonth,
+            'nextYear'     => $nextYear,
+            'trend'        => $slope > 100 ? 'up' : ($slope < -100 ? 'down' : 'flat'),
+            'trendPct'     => $trendPct,
+            'confidence'   => max(0, min(100, (int) ($r2 * 100))),
+            'currentMonth' => (float)($revenueRows[Carbon::now()->format('Y-m')]?->total ?? 0),
+        ];
+    }
+
+    // ── Active logins in last 30 minutes ─────────────────────────────────
+    private function activeSessions(): array
+    {
+        $cutoff = Carbon::now()->subMinutes(30);
+
+        $sessions = DB::table('activity_logs')
+            ->where('created_at', '>=', $cutoff)
+            ->select('hotel_id', 'user_name', 'user_role', 'action', 'module', DB::raw('MAX(created_at) as last_seen'))
+            ->groupBy('hotel_id', 'user_name', 'user_role', 'action', 'module')
+            ->orderByDesc('last_seen')
+            ->limit(20)
+            ->get();
+
+        // Unique users
+        $uniqueUsers = $sessions->unique(fn($s) => $s->hotel_id . '|' . $s->user_name)->count();
+
+        // Hotels with active users
+        $hotelIds = $sessions->pluck('hotel_id')->unique()->filter()->values();
+        $hotelNames = DB::table('hotels')->whereIn('id', $hotelIds)->pluck('name', 'id');
+
+        $grouped = $sessions->map(fn($s) => (object) [
+            'hotel_name' => $hotelNames[$s->hotel_id] ?? 'Unknown',
+            'hotel_id'   => $s->hotel_id,
+            'user_name'  => $s->user_name,
+            'user_role'  => $s->user_role,
+            'action'     => $s->action,
+            'module'     => $s->module,
+            'last_seen'  => Carbon::parse($s->last_seen)->diffForHumans(),
+        ]);
+
+        return [
+            'sessions'    => $grouped,
+            'total_users' => $uniqueUsers,
+            'total_hotels'=> $hotelIds->count(),
+        ];
+    }
+
+    // ── Hotel engagement with performance score ───────────────────────────
     private function hotelEngagement(): \Illuminate\Support\Collection
     {
-        $now = Carbon::now();
+        $now       = Carbon::now();
+        $thisMonth = $now->copy()->startOfMonth();
+        $lastMonth = $now->copy()->subMonth()->startOfMonth();
+        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
 
-        // Last activity per hotel from activity_logs
+        // Last activity per hotel
         $lastActivity = DB::table('activity_logs')
-            ->select('hotel_id', DB::raw('MAX(created_at) as last_at'))
+            ->select('hotel_id', DB::raw('MAX(created_at) as last_at'), DB::raw('COUNT(*) as activity_count'))
             ->groupBy('hotel_id')
             ->get()
             ->keyBy('hotel_id');
@@ -42,11 +229,7 @@ class AnalyticsDashboard extends Component
             ->get()
             ->keyBy('hotel_id');
 
-        // Bookings this month per hotel
-        $thisMonth   = $now->copy()->startOfMonth();
-        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
-        $lastMonthEnd   = $now->copy()->subMonth()->endOfMonth();
-
+        // Bookings this + last month
         $bookingsThisMonth = DB::table('bookings')
             ->select('hotel_id',
                 DB::raw('COUNT(*) as total'),
@@ -58,7 +241,14 @@ class AnalyticsDashboard extends Component
             ->get()
             ->keyBy('hotel_id');
 
-        // Revenue this month per hotel
+        $bookingsLastMonth = DB::table('bookings')
+            ->select('hotel_id', DB::raw('COUNT(*) as total'))
+            ->whereBetween('created_at', [$lastMonth, $lastMonthEnd])
+            ->groupBy('hotel_id')
+            ->get()
+            ->keyBy('hotel_id');
+
+        // Revenue this + last month
         $revenueThisMonth = DB::table('payments')
             ->select('hotel_id', DB::raw('SUM(amount) as total_revenue'))
             ->where('created_at', '>=', $thisMonth)
@@ -67,7 +257,21 @@ class AnalyticsDashboard extends Component
             ->get()
             ->keyBy('hotel_id');
 
-        // Hotels query with optional filters
+        $revenueLastMonth = DB::table('payments')
+            ->select('hotel_id', DB::raw('SUM(amount) as total_revenue'))
+            ->whereBetween('created_at', [$lastMonth, $lastMonthEnd])
+            ->where('status', 'completed')
+            ->groupBy('hotel_id')
+            ->get()
+            ->keyBy('hotel_id');
+
+        // FCM device counts per hotel
+        $deviceCounts = DB::table('fcm_tokens')
+            ->select('hotel_id', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('hotel_id')
+            ->get()
+            ->keyBy('hotel_id');
+
         $query = DB::table('hotels')->select(
             'id', 'name', 'slug', 'plan', 'status', 'email', 'phone',
             'trial_ends_at', 'plan_expires_at', 'created_at'
@@ -82,98 +286,150 @@ class AnalyticsDashboard extends Component
 
         $hotels = $query->orderBy('name')->get();
 
-        return $hotels->map(function ($hotel) use ($lastActivity, $roomStats, $bookingsThisMonth, $revenueThisMonth, $now) {
+        return $hotels->map(function ($hotel) use (
+            $lastActivity, $roomStats, $bookingsThisMonth, $bookingsLastMonth,
+            $revenueThisMonth, $revenueLastMonth, $deviceCounts, $now
+        ) {
             $la = $lastActivity[$hotel->id] ?? null;
             $lastAt = $la ? Carbon::parse($la->last_at) : null;
             $daysSince = $lastAt ? (int) $lastAt->diffInDays($now) : 999;
 
-            $activityBadge = match(true) {
-                $daysSince <= 1   => 'active',
-                $daysSince <= 7   => 'idle',
-                default           => 'dormant',
+            $rs  = $roomStats[$hotel->id] ?? null;
+            $bm  = $bookingsThisMonth[$hotel->id] ?? null;
+            $blm = $bookingsLastMonth[$hotel->id] ?? null;
+            $rm  = $revenueThisMonth[$hotel->id] ?? null;
+            $rlm = $revenueLastMonth[$hotel->id] ?? null;
+            $dev = $deviceCounts[$hotel->id] ?? null;
+
+            $revThis = (float)($rm?->total_revenue ?? 0);
+            $revLast = (float)($rlm?->total_revenue ?? 0);
+            $bkThis  = (int)($bm?->total ?? 0);
+            $bkLast  = (int)($blm?->total ?? 0);
+
+            $revGrowth = $revLast > 0 ? round((($revThis - $revLast) / $revLast) * 100, 1) : ($revThis > 0 ? 100 : 0);
+            $bkGrowth  = $bkLast > 0  ? round((($bkThis - $bkLast) / $bkLast) * 100, 1) : ($bkThis > 0 ? 100 : 0);
+
+            $totalRooms    = (int)($rs?->total_rooms ?? 0);
+            $occupiedRooms = (int)($rs?->occupied_rooms ?? 0);
+            $occupancyPct  = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
+
+            // Performance score (0–100)
+            $score = 0;
+            $score += min(40, $occupancyPct * 0.4);               // 0-40: occupancy
+            $score += min(25, max(0, 12.5 + $revGrowth * 0.25));  // 0-25: revenue growth
+            $score += match(true) {
+                $daysSince <= 1  => 20,
+                $daysSince <= 7  => 15,
+                $daysSince <= 14 => 8,
+                $daysSince <= 30 => 3,
+                default          => 0,
+            };                                                      // 0-20: activity
+            $score += min(15, $bkThis * 1.5);                      // 0-15: bookings
+
+            $score = (int) min(100, max(0, $score));
+            $grade = match(true) {
+                $score >= 80 => ['A', '#22c55e', '#dcfce7'],
+                $score >= 60 => ['B', '#3b82f6', '#dbeafe'],
+                $score >= 40 => ['C', '#f59e0b', '#fef3c7'],
+                $score >= 20 => ['D', '#f97316', '#fff7ed'],
+                default      => ['F', '#ef4444', '#fee2e2'],
             };
 
-            $rs = $roomStats[$hotel->id]     ?? null;
-            $bm = $bookingsThisMonth[$hotel->id] ?? null;
-            $rm = $revenueThisMonth[$hotel->id]  ?? null;
+            $activityBadge = match(true) {
+                $daysSince <= 0 => ['Live', '#15803d', '#dcfce7'],
+                $daysSince <= 1 => ['Active', '#0891b2', '#e0f2fe'],
+                $daysSince <= 7 => ['Idle', '#d97706', '#fef3c7'],
+                default         => ['Dormant', '#b91c1c', '#fee2e2'],
+            };
 
             return (object) [
-                'id'             => $hotel->id,
-                'name'           => $hotel->name,
-                'plan'           => $hotel->plan,
-                'status'         => $hotel->status,
-                'email'          => $hotel->email,
-                'phone'          => $hotel->phone,
-                'last_activity'  => $lastAt?->format('d M Y H:i') ?? 'Never',
-                'days_since'     => $daysSince,
-                'activity_badge' => $activityBadge,
-                'total_rooms'    => $rs?->total_rooms ?? 0,
-                'occupied_rooms' => $rs?->occupied_rooms ?? 0,
-                'available_rooms'=> $rs?->available_rooms ?? 0,
-                'bookings_month' => $bm?->total ?? 0,
-                'checkins_month' => $bm?->checkins ?? 0,
-                'checkouts_month'=> $bm?->checkouts ?? 0,
-                'revenue_month'  => (float)($rm?->total_revenue ?? 0),
-                'created_at'     => $hotel->created_at,
-                'trial_ends_at'  => $hotel->trial_ends_at,
+                'id'              => $hotel->id,
+                'name'            => $hotel->name,
+                'plan'            => $hotel->plan,
+                'status'          => $hotel->status,
+                'email'           => $hotel->email,
+                'phone'           => $hotel->phone,
+                'last_activity'   => $lastAt?->format('d M y, H:i') ?? 'Never',
+                'days_since'      => $daysSince,
+                'activity_badge'  => $activityBadge,
+                'total_rooms'     => $totalRooms,
+                'occupied_rooms'  => $occupiedRooms,
+                'available_rooms' => (int)($rs?->available_rooms ?? 0),
+                'occupancy_pct'   => $occupancyPct,
+                'bookings_month'  => $bkThis,
+                'bk_growth'       => $bkGrowth,
+                'revenue_month'   => $revThis,
+                'rev_last'        => $revLast,
+                'rev_growth'      => $revGrowth,
+                'score'           => $score,
+                'grade'           => $grade,
+                'devices'         => (int)($dev?->cnt ?? 0),
+                'created_at'      => $hotel->created_at,
             ];
         })->when($this->filterInactive !== '0', function ($col) {
             $days = (int) $this->filterInactive;
             return $col->filter(fn($h) => $h->days_since >= $days);
-        });
+        })->sortByDesc('score');
     }
 
-    public function getKpiData(iterable $hotels): array
+    private function getKpiData(): array
     {
-        $all = collect($hotels);
-        $allHotels = DB::table('hotels');
+        $now            = Carbon::now();
+        $thisMonth      = $now->copy()->startOfMonth();
+        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
+        $lastMonthEnd   = $now->copy()->subMonth()->endOfMonth();
 
-        $now       = Carbon::now();
-        $thisMonth = $now->copy()->startOfMonth();
-        $lastMonth = $now->copy()->subMonth()->startOfMonth();
-        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
-
-        $totalHotels     = $allHotels->count();
+        $totalHotels     = DB::table('hotels')->count();
         $activeHotels    = DB::table('hotels')->where('status', 'active')->count();
         $suspendedHotels = DB::table('hotels')->where('status', 'suspended')->count();
         $trialHotels     = DB::table('hotels')->whereNotNull('trial_ends_at')->where('trial_ends_at', '>=', $now)->count();
-        $inactiveHotels  = DB::table('activity_logs')
-            ->select('hotel_id', DB::raw('MAX(created_at) as last_at'))
-            ->groupBy('hotel_id')
-            ->havingRaw("MAX(created_at) < ?", [$now->copy()->subDays(2)])
+        $inactiveHotels  = $totalHotels - DB::table('activity_logs')
+            ->select('hotel_id')
+            ->distinct()
+            ->where('created_at', '>=', $now->copy()->subDays(2))
             ->count();
 
         $totalRooms    = DB::table('rooms')->count();
         $occupiedRooms = DB::table('rooms')->where('status', 'occupied')->count();
-        $availRooms    = DB::table('rooms')->where('status', 'available')->count();
+        $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
 
-        $checkinsMonth  = DB::table('bookings')->where('status', 'checked_in')->where('created_at', '>=', $thisMonth)->count();
-        $checkoutsMonth = DB::table('bookings')->where('status', 'checked_out')->where('created_at', '>=', $thisMonth)->count();
-        $checkinsLast   = DB::table('bookings')->where('status', 'checked_in')->whereBetween('created_at', [$lastMonth, $lastMonthEnd])->count();
-        $checkoutsLast  = DB::table('bookings')->where('status', 'checked_out')->whereBetween('created_at', [$lastMonth, $lastMonthEnd])->count();
+        $revMonth  = (float) DB::table('payments')->where('status', 'completed')->where('created_at', '>=', $thisMonth)->sum('amount');
+        $revLast   = (float) DB::table('payments')->where('status', 'completed')->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->sum('amount');
+        $revGrowth = $revLast > 0 ? round((($revMonth - $revLast) / $revLast) * 100, 1) : ($revMonth > 0 ? 100 : 0);
 
-        $revMonth = (float) DB::table('payments')->where('status', 'completed')->where('created_at', '>=', $thisMonth)->sum('amount');
-        $revLast  = (float) DB::table('payments')->where('status', 'completed')->whereBetween('created_at', [$lastMonth, $lastMonthEnd])->sum('amount');
+        $totalBookingsMonth = DB::table('bookings')->where('created_at', '>=', $thisMonth)->count();
+        $totalDevices       = DB::table('fcm_tokens')->count();
+        $waEnabled          = DB::table('whatsapp_configs')->where('setup_completed', true)->count();
 
-        $waEnabled = DB::table('whatsapp_configs')->where('setup_completed', true)->count();
+        // Active 30 min
+        $activeNow = DB::table('activity_logs')
+            ->where('created_at', '>=', $now->copy()->subMinutes(30))
+            ->distinct('user_name')
+            ->count('user_name');
 
-        $revGrowth = $revLast > 0 ? round((($revMonth - $revLast) / $revLast) * 100, 1) : 0;
-        $ciGrowth  = $checkinsLast > 0 ? round((($checkinsMonth - $checkinsLast) / $checkinsLast) * 100, 1) : 0;
-        $coGrowth  = $checkoutsLast > 0 ? round((($checkoutsMonth - $checkoutsLast) / $checkoutsLast) * 100, 1) : 0;
+        // Platform health score (0-100)
+        $healthScore = min(100, (int)(
+            ($activeHotels / max(1, $totalHotels)) * 40 +
+            $occupancyRate * 0.3 +
+            ($revGrowth > 0 ? 20 : ($revGrowth > -10 ? 10 : 0)) +
+            ($activeNow > 0 ? 10 : 0)
+        ));
 
         return compact(
             'totalHotels', 'activeHotels', 'suspendedHotels', 'trialHotels', 'inactiveHotels',
-            'totalRooms', 'occupiedRooms', 'availRooms',
-            'checkinsMonth', 'checkoutsMonth', 'ciGrowth', 'coGrowth',
-            'revMonth', 'revLast', 'revGrowth', 'waEnabled'
+            'totalRooms', 'occupiedRooms', 'occupancyRate',
+            'revMonth', 'revLast', 'revGrowth',
+            'totalBookingsMonth', 'totalDevices', 'waEnabled',
+            'activeNow', 'healthScore'
         );
     }
 
-    public function getChartData(): array
+    private function getChartData(): array
     {
+        $now    = Carbon::now();
         $months = collect(range(5, 0))->map(fn($i) => Carbon::now()->subMonths($i));
 
-        // Monthly bookings (last 6 months)
+        // Monthly bookings + revenue (last 6 months)
         $bookingRows = DB::table('bookings')
             ->select(
                 DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"),
@@ -183,11 +439,8 @@ class AnalyticsDashboard extends Component
             )
             ->where('created_at', '>=', Carbon::now()->subMonths(6)->startOfMonth())
             ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM')")
-            ->orderByRaw("TO_CHAR(created_at, 'YYYY-MM')")
-            ->get()
-            ->keyBy('month');
+            ->get()->keyBy('month');
 
-        // Monthly revenue (last 6 months)
         $revenueRows = DB::table('payments')
             ->select(
                 DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"),
@@ -196,29 +449,18 @@ class AnalyticsDashboard extends Component
             ->where('status', 'completed')
             ->where('created_at', '>=', Carbon::now()->subMonths(6)->startOfMonth())
             ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM')")
-            ->orderByRaw("TO_CHAR(created_at, 'YYYY-MM')")
-            ->get()
-            ->keyBy('month');
+            ->get()->keyBy('month');
 
-        $monthLabels  = $months->map(fn($m) => $m->format('M Y'))->values()->toArray();
-        $monthKeys    = $months->map(fn($m) => $m->format('Y-m'))->values()->toArray();
-        $checkinData  = array_map(fn($k) => (int)($bookingRows[$k]?->checkins ?? 0), $monthKeys);
-        $checkoutData = array_map(fn($k) => (int)($bookingRows[$k]?->checkouts ?? 0), $monthKeys);
-        $revenueData  = array_map(fn($k) => (float)($revenueRows[$k]?->total ?? 0), $monthKeys);
+        // Daily bookings last 30 days (for sparkline)
+        $dailyBookings = DB::table('bookings')
+            ->select(DB::raw("DATE(created_at) as day"), DB::raw('COUNT(*) as cnt'))
+            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->groupByRaw("DATE(created_at)")
+            ->get()->keyBy('day');
 
-        // Plan distribution
-        $planDist = DB::table('hotels')
-            ->select('plan', DB::raw('COUNT(*) as cnt'))
-            ->groupBy('plan')
-            ->get();
+        $planDist   = DB::table('hotels')->select('plan', DB::raw('COUNT(*) as cnt'))->groupBy('plan')->get();
+        $statusDist = DB::table('hotels')->select('status', DB::raw('COUNT(*) as cnt'))->groupBy('status')->get();
 
-        // Hotel count by status
-        $statusDist = DB::table('hotels')
-            ->select('status', DB::raw('COUNT(*) as cnt'))
-            ->groupBy('status')
-            ->get();
-
-        // Room occupancy per hotel (top 10)
         $occupancy = DB::table('rooms')
             ->join('hotels', 'rooms.hotel_id', '=', 'hotels.id')
             ->select('hotels.name',
@@ -226,15 +468,26 @@ class AnalyticsDashboard extends Component
                 DB::raw("SUM(CASE WHEN rooms.status='occupied' THEN 1 ELSE 0 END) as occupied")
             )
             ->groupBy('hotels.id', 'hotels.name')
-            ->orderByDesc('total')
-            ->limit(10)
+            ->orderByDesc(DB::raw("SUM(CASE WHEN rooms.status='occupied' THEN 1 ELSE 0 END)"))
+            ->limit(8)
             ->get();
+
+        $monthLabels  = $months->map(fn($m) => $m->format('M Y'))->values()->toArray();
+        $monthKeys    = $months->map(fn($m) => $m->format('Y-m'))->values()->toArray();
+        $checkinData  = array_map(fn($k) => (int)($bookingRows[$k]?->checkins ?? 0), $monthKeys);
+        $checkoutData = array_map(fn($k) => (int)($bookingRows[$k]?->checkouts ?? 0), $monthKeys);
+        $revenueData  = array_map(fn($k) => (float)($revenueRows[$k]?->total ?? 0), $monthKeys);
+
+        // 30-day sparkline
+        $sparkDays = collect(range(29, 0))->map(fn($i) => $now->copy()->subDays($i)->toDateString())->values()->toArray();
+        $sparkData = array_map(fn($d) => (int)($dailyBookings[$d]?->cnt ?? 0), $sparkDays);
 
         return [
             'monthLabels'  => $monthLabels,
             'checkinData'  => $checkinData,
             'checkoutData' => $checkoutData,
             'revenueData'  => $revenueData,
+            'sparkData'    => $sparkData,
             'planLabels'   => $planDist->pluck('plan')->toArray(),
             'planCounts'   => $planDist->pluck('cnt')->map(fn($v) => (int)$v)->toArray(),
             'statusLabels' => $statusDist->pluck('status')->toArray(),
@@ -247,19 +500,27 @@ class AnalyticsDashboard extends Component
 
     public function getSelectedHotelDetail(): ?object
     {
-        if (!$this->selectedHotelId) {
-            return null;
-        }
+        if (!$this->selectedHotelId) return null;
 
         $hotel = DB::table('hotels')->where('id', $this->selectedHotelId)->first();
-        if (!$hotel) {
-            return null;
-        }
+        if (!$hotel) return null;
+
+        // 6-month revenue trend for this hotel
+        $revTrend = DB::table('payments')
+            ->where('hotel_id', $this->selectedHotelId)
+            ->where('status', 'completed')
+            ->where('created_at', '>=', Carbon::now()->subMonths(6)->startOfMonth())
+            ->select(DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"), DB::raw('SUM(amount) as total'))
+            ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM')")
+            ->get()->keyBy('month');
+
+        $months = collect(range(5, 0))->map(fn($i) => Carbon::now()->subMonths($i)->format('Y-m'))->values()->toArray();
+        $revTrendData = array_map(fn($m) => (float)($revTrend[$m]?->total ?? 0), $months);
 
         $recentActivity = DB::table('activity_logs')
             ->where('hotel_id', $this->selectedHotelId)
             ->orderByDesc('created_at')
-            ->limit(10)
+            ->limit(8)
             ->get();
 
         $bookingBreakdown = DB::table('bookings')
@@ -268,34 +529,33 @@ class AnalyticsDashboard extends Component
             ->groupBy('status')
             ->get();
 
-        $payments = DB::table('payments')
-            ->where('hotel_id', $this->selectedHotelId)
-            ->orderByDesc('created_at')
-            ->limit(10)
-            ->get();
-
-        $rooms = DB::table('rooms')
-            ->where('hotel_id', $this->selectedHotelId)
-            ->get(['room_number', 'type', 'status', 'price_per_night']);
-
         $totalRevenue = DB::table('payments')
             ->where('hotel_id', $this->selectedHotelId)
             ->where('status', 'completed')
             ->sum('amount');
 
-        return (object) compact('hotel', 'recentActivity', 'bookingBreakdown', 'payments', 'rooms', 'totalRevenue');
+        $rooms = DB::table('rooms')
+            ->where('hotel_id', $this->selectedHotelId)
+            ->get(['room_number', 'type', 'status', 'price_per_night']);
+
+        $devices = DB::table('fcm_tokens')->where('hotel_id', $this->selectedHotelId)->count();
+
+        return (object) compact('hotel', 'recentActivity', 'bookingBreakdown', 'totalRevenue', 'rooms', 'devices', 'revTrendData');
     }
 
     public function render()
     {
         $hotelEngagement = $this->hotelEngagement();
-        $kpi             = $this->getKpiData($hotelEngagement);
+        $kpi             = $this->getKpiData();
         $charts          = $this->getChartData();
+        $prediction      = $this->revenuePrediction();
+        $activeSessions  = $this->activeSessions();
         $selectedDetail  = $this->getSelectedHotelDetail();
         $plans           = DB::table('hotels')->distinct()->pluck('plan')->sort()->values();
 
         return view('livewire.platform.analytics-dashboard', compact(
-            'hotelEngagement', 'kpi', 'charts', 'selectedDetail', 'plans'
+            'hotelEngagement', 'kpi', 'charts', 'prediction',
+            'activeSessions', 'selectedDetail', 'plans'
         ));
     }
 }
