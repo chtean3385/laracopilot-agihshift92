@@ -34,6 +34,11 @@ APP_KEY = "base64:kVaJPN8ttGlh6do80Hl7tcVmRq0LorbReoE9o0NsFxI="
 DB_CONNECTION = "pgsql"
 SESSION_DRIVER = "file"
 CACHE_STORE = "file"
+DB_HOST = "ep-old-dew-ammo4tdv-pooler.c-5.us-east-1.aws.neon.tech"
+DB_PORT = "5432"
+DB_DATABASE = "neondb"
+DB_USERNAME = "neondb_owner"
+DB_SSLMODE = "require"
 
 [workflows]
 runButton = "Project"
