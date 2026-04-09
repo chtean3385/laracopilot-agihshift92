@@ -4,15 +4,28 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-// Copy OS-level env vars (injected by Replit) into $_ENV before phpdotenv runs.
-// phpdotenv (createImmutable) checks $_ENV for existing vars — not getenv() —
-// so without this, it silently overwrites Replit's injected vars with .env values.
-foreach (['DB_CONNECTION','DATABASE_URL','DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD','DB_SSLMODE','APP_ENV','APP_DEBUG','APP_URL','APP_KEY','SESSION_DRIVER','CACHE_STORE'] as $_k) {
-    if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
-        $_ENV[$_k] = $_SERVER[$_k] = $v;
+// Manage env var injection between Replit secrets and .env file.
+// In production (no .env file): copy Replit-injected vars from getenv() into
+// $_ENV so phpdotenv's createImmutable sees them and does not overwrite them.
+// In development (.env file exists): clear any globally-injected secrets that
+// conflict with local .env values so dotenv can set the correct dev credentials.
+$_replitEnvKeys = ['DB_CONNECTION','DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD','DB_SSLMODE','APP_ENV','APP_DEBUG','APP_URL','APP_KEY','SESSION_DRIVER','CACHE_STORE'];
+if (!file_exists(dirname(__DIR__) . '/.env')) {
+    // Production: promote getenv() values into $_ENV before dotenv runs
+    foreach ($_replitEnvKeys as $_k) {
+        if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
+            $_ENV[$_k] = $_SERVER[$_k] = $v;
+        }
     }
+    unset($_k, $v);
+} else {
+    // Development: remove globally-injected secrets so .env takes precedence
+    foreach (['DB_PASSWORD', 'APP_KEY'] as $_k) {
+        unset($_ENV[$_k], $_SERVER[$_k]);
+    }
+    unset($_k);
 }
-unset($_k, $v);
+unset($_replitEnvKeys);
 
 // Force file-based sessions/cache for installer routes so the install page
 // works on a fresh server with no database tables yet (runs before anything else).
