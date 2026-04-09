@@ -329,7 +329,13 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/backups/{id}/restore',                   [\App\Http\Controllers\Platform\BackupController::class, 'restore'])->name('platform.backups.restore');
 
     // WhatsApp Platform Settings
-    Route::get('/whatsapp',           [\App\Http\Controllers\Platform\WhatsAppController::class, 'settings']       )->name('platform.whatsapp.settings');
-    Route::post('/whatsapp',          [\App\Http\Controllers\Platform\WhatsAppController::class, 'saveSettings']   )->name('platform.whatsapp.save');
-    Route::post('/whatsapp/test',     [\App\Http\Controllers\Platform\WhatsAppController::class, 'testSharedNumber'])->name('platform.whatsapp.test');
+    Route::get('/whatsapp',                                   [\App\Http\Controllers\Platform\WhatsAppController::class, 'settings']       )->name('platform.whatsapp.settings');
+    Route::post('/whatsapp',                                  [\App\Http\Controllers\Platform\WhatsAppController::class, 'saveSettings']   )->name('platform.whatsapp.save');
+    Route::post('/whatsapp/test',                             [\App\Http\Controllers\Platform\WhatsAppController::class, 'testSharedNumber'])->name('platform.whatsapp.test');
+    Route::get('/whatsapp/templates',                         [\App\Http\Controllers\Platform\WhatsAppController::class, 'templates']       )->name('platform.whatsapp.templates');
+    Route::post('/whatsapp/templates',                        [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateStore']   )->name('platform.whatsapp.template.store');
+    Route::put('/whatsapp/templates/{id}',                    [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateSave']    )->name('platform.whatsapp.template.save');
+    Route::delete('/whatsapp/templates/{id}',                 [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateDestroy'] )->name('platform.whatsapp.template.destroy');
+    Route::post('/whatsapp/templates/{id}/toggle',            [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateToggle']  )->name('platform.whatsapp.template.toggle');
+    Route::post('/whatsapp/templates/{id}/submit-meta',       [\App\Http\Controllers\Platform\WhatsAppController::class, 'submitToMeta']    )->name('platform.whatsapp.template.submit-meta');
 });

@@ -329,9 +329,13 @@
             Hotel Backups
         </a>
 
-        <a href="{{ route('platform.whatsapp.settings') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.*') ? 'active' : '' }}">
+        <a href="{{ route('platform.whatsapp.settings') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.settings') || request()->routeIs('platform.whatsapp.save') || request()->routeIs('platform.whatsapp.test') ? 'active' : '' }}">
             <span class="icon"><i class="fab fa-whatsapp"></i></span>
-            WhatsApp
+            WhatsApp Settings
+        </a>
+        <a href="{{ route('platform.whatsapp.templates') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.templates') || request()->routeIs('platform.whatsapp.template.*') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-file-alt" style="font-size:12px;"></i></span>
+            Message Templates
         </a>
 
         <div class="nav-section">System</div>

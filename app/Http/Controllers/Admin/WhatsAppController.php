@@ -42,14 +42,28 @@ class WhatsAppController extends Controller
 
     public function templates()
     {
-        $templates    = WhatsAppTemplate::orderBy('id')->get()->keyBy('trigger_event');
-        $allEvents    = WhatsAppTemplate::allEvents();
-        $config       = WhatsAppConfig::first();
-        $hotel        = Hotel::find(app(HotelContext::class)->getHotel());
-        $isSaasAdmin  = session('crm_user_role') === 'Super Admin';
-        $isBasicPlan  = in_array($hotel?->plan ?? 'basic', ['basic', 'trial']);
-        $platform     = PlatformWhatsAppSetting::instance();
-        $canEdit      = $isSaasAdmin || !$isBasicPlan;
+        $allEvents   = WhatsAppTemplate::allEvents();
+        $config      = WhatsAppConfig::first();
+        $hotelId     = app(HotelContext::class)->getHotel();
+        $hotel       = Hotel::find($hotelId);
+        $isSaasAdmin = session('crm_user_role') === 'Super Admin';
+        $isBasicPlan = in_array($hotel?->plan ?? 'basic', ['basic', 'trial']);
+        $platform    = PlatformWhatsAppSetting::instance();
+        $canEdit     = $isSaasAdmin || !$isBasicPlan;
+
+        if ($isBasicPlan || !$hotelId) {
+            $templates = WhatsAppTemplate::withoutGlobalScopes()
+                ->whereNull('hotel_id')
+                ->orderBy('id')
+                ->get()
+                ->keyBy('trigger_event');
+        } else {
+            $templates = WhatsAppTemplate::withoutGlobalScopes()
+                ->where('hotel_id', $hotelId)
+                ->orderBy('id')
+                ->get()
+                ->keyBy('trigger_event');
+        }
 
         return view('admin.whatsapp.templates', compact(
             'templates', 'allEvents', 'config',
