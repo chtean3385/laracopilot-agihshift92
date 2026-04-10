@@ -51,36 +51,68 @@ class WhatsAppService
 
     public static function sendForEvent(string $event, Booking $booking): bool
     {
+        $context = ['event' => $event, 'booking_id' => $booking->id, 'hotel_id' => $booking->hotel_id];
+
         try {
             if (!Module::isEnabled('whatsapp')) {
+                Log::info('WhatsApp sendForEvent skipped: module not enabled', $context);
                 return false;
             }
 
             $config = WhatsAppConfig::active();
-            if (!$config || !$config->isSetupComplete()) {
+            if (!$config) {
+                Log::info('WhatsApp sendForEvent skipped: no active WhatsApp config', $context);
+                return false;
+            }
+            if (!$config->isSetupComplete()) {
+                Log::info('WhatsApp sendForEvent skipped: setup not complete', $context);
                 return false;
             }
 
             $template = WhatsAppTemplate::forEvent($event);
             if (!$template) {
+                Log::info('WhatsApp sendForEvent skipped: no active template for event', $context);
+                return false;
+            }
+
+            if ($template->is_active && $template->approval_status !== 'approved') {
+                Log::warning('WhatsApp sendForEvent skipped: template not yet approved by Meta', array_merge($context, [
+                    'template_id'       => $template->id,
+                    'template_name'     => $template->template_name,
+                    'approval_status'   => $template->approval_status,
+                    'meta_status'       => $template->meta_status,
+                    'action_required'   => 'Submit the template to Meta via Platform Admin → WhatsApp → Message Templates and wait for approval.',
+                ]));
                 return false;
             }
 
             $booking->load(['customer', 'room', 'invoice']);
             $phone = $booking->customer->phone ?? null;
             if (!$phone) {
+                Log::info('WhatsApp sendForEvent skipped: customer has no phone number', $context);
                 return false;
             }
 
             $message  = MessageBuilder::build($template->message_body, $booking);
             $provider = static::providerForConfig($config);
             if (!$provider) {
+                Log::info('WhatsApp sendForEvent skipped: provider unavailable — ' . static::$lastError, $context);
                 return false;
             }
 
-            return $provider->sendMessage($phone, $message);
+            $sent = $provider->sendMessage($phone, $message);
+            if ($sent) {
+                Log::info('WhatsApp sendForEvent sent', array_merge($context, ['phone' => $phone]));
+            } else {
+                Log::warning('WhatsApp sendForEvent failed to send', array_merge($context, [
+                    'phone' => $phone,
+                    'error' => static::$lastError,
+                ]));
+            }
+            return $sent;
+
         } catch (\Throwable $e) {
-            Log::error('WhatsAppService::sendForEvent error: ' . $e->getMessage());
+            Log::error('WhatsAppService::sendForEvent exception: ' . $e->getMessage(), $context);
             return false;
         }
     }
