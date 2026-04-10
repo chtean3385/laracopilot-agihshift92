@@ -37,8 +37,12 @@ Route::middleware(['not.installed'])->group(function () {
 // ── Healthcheck ────────────────────────────────────────────────────────────
 Route::get('/health', fn() => response('OK', 200));
 
-// ── WhatsApp Webhook (public — no auth, no CSRF) ────────────────────────────
-Route::withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
+// ── WhatsApp Webhook (public — no auth, no CSRF, no hotel-context middleware) ─
+// CSRF is excluded via bootstrap/app.php → validateCsrfTokens(except:['webhook/*'])
+Route::withoutMiddleware([
+    \App\Http\Middleware\SetHotelContext::class,
+    \App\Http\Middleware\CheckTrialStatus::class,
+])->group(function () {
     Route::get('/webhook/whatsapp',  [WhatsAppWebhookController::class, 'verify'] )->name('whatsapp.webhook.verify');
     Route::post('/webhook/whatsapp', [WhatsAppWebhookController::class, 'receive'])->name('whatsapp.webhook.receive');
 });

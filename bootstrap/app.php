@@ -39,6 +39,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetHotelContext::class,
             \App\Http\Middleware\CheckTrialStatus::class,
         ]);
+        // Exclude all webhook endpoints from CSRF token validation
+        $middleware->validateCsrfTokens(except: [
+            'webhook/*',
+        ]);
         $middleware->alias([
             'permission'     => \App\Http\Middleware\PermissionMiddleware::class,
             'not.installed'  => \App\Http\Middleware\CheckNotInstalled::class,
