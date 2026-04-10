@@ -248,6 +248,26 @@ class WhatsAppController extends Controller
         $metaBody     = $template->convertBodyForMeta();
         $templateName = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $template->template_name), '_'));
 
+        // Pre-validate: Meta rejects templates that start or end with a variable
+        $trimmed = trim($metaBody);
+        if (preg_match('/^\{\{\d+\}\}/', $trimmed)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Template body cannot start with a variable (e.g. {{guest_name}}). Add some text before the first variable and try again.',
+            ]);
+        }
+        if (preg_match('/\{\{\d+\}\}\s*$/', $trimmed)) {
+            // Find which named variable is at the end
+            $origTrimmed = trim($template->message_body ?? '');
+            preg_match('/\{\{(\w+)\}\}\s*$/', $origTrimmed, $endMatch);
+            $endVar = $endMatch[1] ?? 'variable';
+            return response()->json([
+                'success' => false,
+                'error'   => 'Template body cannot end with a variable. The last item is {{' . $endVar . '}}. '
+                           . 'Edit the template and add some text after it (e.g. change "Thank you! — {{hotel_name}}" to "Thank you for choosing {{hotel_name}}!").',
+            ]);
+        }
+
         preg_match_all('/\{\{\d+\}\}/', $metaBody, $matches);
         $varCount = count(array_unique($matches[0]));
 
@@ -276,7 +296,10 @@ class WhatsAppController extends Controller
             return response()->json(['success' => true, 'message' => 'Template submitted to Meta for review.', 'meta_id' => $result['id']]);
         }
 
-        $errMsg = $result['error']['message'] ?? 'Meta API returned an error.';
+        // Show Meta's detailed user-facing message when available
+        $errMsg = $result['error']['error_user_msg']
+               ?? $result['error']['message']
+               ?? 'Meta API returned an error.';
         Log::warning('Platform Meta template submission failed', ['id' => $id, 'response' => $result]);
         return response()->json(['success' => false, 'error' => $errMsg]);
     }
