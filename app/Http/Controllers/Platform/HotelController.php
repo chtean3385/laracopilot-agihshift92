@@ -33,6 +33,7 @@ class HotelController extends Controller
                 'hotels.billing_cycle', 'hotels.custom_monthly_price', 'hotels.custom_yearly_price',
                 'hotels.max_rooms', 'hotels.max_users',
                 'hotels.created_at', 'hotels.trial_ends_at', 'hotels.plan_expires_at',
+                'hotels.owner_wa_consent',
             )
             ->selectRaw('(SELECT COUNT(*) FROM rooms WHERE rooms.hotel_id = hotels.id) as room_count')
             ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.hotel_id = hotels.id) as booking_count')
