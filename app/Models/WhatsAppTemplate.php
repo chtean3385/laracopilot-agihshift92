@@ -35,6 +35,22 @@ class WhatsAppTemplate extends Model
             ->first();
     }
 
+    public static function globalForEvent(string $event): ?static
+    {
+        return static::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->where('trigger_event', $event)
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
+            ->first();
+    }
+
+    public function extractVariableNames(): array
+    {
+        preg_match_all('/\{\{(\w+)\}\}/', $this->message_body ?? '', $matches);
+        return array_values(array_unique($matches[1]));
+    }
+
     public static function allEvents(): array
     {
         return [

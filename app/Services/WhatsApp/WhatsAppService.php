@@ -24,7 +24,7 @@ class WhatsAppService
         return static::$lastError;
     }
 
-    private static function providerForConfig(WhatsAppConfig $config): ?WhatsAppProviderInterface
+    private static function providerForConfig(WhatsAppConfig $config): ?MetaProvider
     {
         if ($config->isSharedMode()) {
             $platform = PlatformWhatsAppSetting::instance();
@@ -51,6 +51,7 @@ class WhatsAppService
 
     public static function sendForEvent(string $event, Booking $booking): bool
     {
+        static::$lastError = '';
         $context = ['event' => $event, 'booking_id' => $booking->id, 'hotel_id' => $booking->hotel_id];
 
         try {
@@ -69,42 +70,67 @@ class WhatsAppService
                 return false;
             }
 
-            $template = WhatsAppTemplate::forEvent($event);
-            if (!$template) {
-                Log::info('WhatsApp sendForEvent skipped: no active template for event', $context);
-                return false;
-            }
-
-            if ($template->is_active && $template->approval_status !== 'approved') {
-                Log::warning('WhatsApp sendForEvent skipped: template not yet approved by Meta', array_merge($context, [
-                    'template_id'       => $template->id,
-                    'template_name'     => $template->template_name,
-                    'approval_status'   => $template->approval_status,
-                    'meta_status'       => $template->meta_status,
-                    'action_required'   => 'Submit the template to Meta via Platform Admin → WhatsApp → Message Templates and wait for approval.',
-                ]));
-                return false;
-            }
-
-            $booking->load(['customer', 'room', 'invoice']);
+            $booking->load(['customer', 'room', 'invoice', 'payments']);
             $phone = $booking->customer->phone ?? null;
             if (!$phone) {
                 Log::info('WhatsApp sendForEvent skipped: customer has no phone number', $context);
                 return false;
             }
 
-            $message  = MessageBuilder::build($template->message_body, $booking);
             $provider = static::providerForConfig($config);
             if (!$provider) {
                 Log::info('WhatsApp sendForEvent skipped: provider unavailable — ' . static::$lastError, $context);
                 return false;
             }
 
-            $sent = $provider->sendMessage($phone, $message);
-            if ($sent) {
-                Log::info('WhatsApp sendForEvent sent', array_merge($context, ['phone' => $phone]));
+            // For shared-mode (Basic plan hotels), use global platform templates (hotel_id=null)
+            // These are the ones synced from Meta and actually approved.
+            // For own-number hotels, fall back to hotel-specific templates.
+            $template = null;
+            if ($config->isSharedMode()) {
+                $template = WhatsAppTemplate::globalForEvent($event);
+                if (!$template) {
+                    Log::warning('WhatsApp sendForEvent skipped: no approved global platform template for event', $context);
+                    return false;
+                }
+                // Send using the Meta template API with positional parameters
+                $vars      = MessageBuilder::buildVars($booking);
+                $varNames  = $template->extractVariableNames();
+                $params    = [];
+                foreach ($varNames as $name) {
+                    $params[] = $vars[$name] ?? '';
+                }
+                $sent = $provider->sendTemplate($phone, $template->template_name, $params);
             } else {
-                Log::warning('WhatsApp sendForEvent failed to send', array_merge($context, [
+                // Own-number hotel: use hotel-specific template
+                $template = WhatsAppTemplate::forEvent($event);
+                if (!$template) {
+                    Log::info('WhatsApp sendForEvent skipped: no active approved hotel template for event', $context);
+                    return false;
+                }
+                if ($template->meta_status === 'approved' && !empty($template->template_name)) {
+                    // Send as Meta template if approved
+                    $vars     = MessageBuilder::buildVars($booking);
+                    $varNames = $template->extractVariableNames();
+                    $params   = [];
+                    foreach ($varNames as $name) {
+                        $params[] = $vars[$name] ?? '';
+                    }
+                    $sent = $provider->sendTemplate($phone, $template->template_name, $params);
+                } else {
+                    // Fallback: plain text (only works if guest messaged hotel within 24h)
+                    $message = MessageBuilder::build($template->message_body, $booking);
+                    $sent    = $provider->sendMessage($phone, $message);
+                }
+            }
+
+            if ($sent) {
+                Log::info('WhatsApp sendForEvent sent successfully', array_merge($context, [
+                    'phone'    => $phone,
+                    'template' => $template->template_name,
+                ]));
+            } else {
+                Log::warning('WhatsApp sendForEvent failed', array_merge($context, [
                     'phone' => $phone,
                     'error' => static::$lastError,
                 ]));
@@ -112,7 +138,9 @@ class WhatsAppService
             return $sent;
 
         } catch (\Throwable $e) {
-            Log::error('WhatsAppService::sendForEvent exception: ' . $e->getMessage(), $context);
+            Log::error('WhatsAppService::sendForEvent exception: ' . $e->getMessage(), array_merge($context, [
+                'trace' => $e->getTraceAsString(),
+            ]));
             return false;
         }
     }
