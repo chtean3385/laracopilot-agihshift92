@@ -46,13 +46,24 @@ class WhatsAppTemplateSeeder extends Seeder
                 'is_active'        => true,
             ],
             [
-                'trigger_event'    => 'checkout.done',
-                'template_name'    => 'check_out_and_bill',
-                'message_body'     => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
-                'approval_status'  => 'approved',
-                'meta_template_id' => '2851015818584226',
-                'meta_status'      => 'approved',
-                'is_active'        => true,
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'check_out_and_bill',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
+                'approval_status'         => 'approved',
+                'meta_template_id'        => '2851015818584226',
+                'meta_status'             => 'approved',
+                'is_active'               => true,
+                'has_document_attachment' => false,
+            ],
+            [
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'check_out_bill_with_pdf',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nPlease find your invoice attached.\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
+                'approval_status'         => 'pending',
+                'meta_template_id'        => null,
+                'meta_status'             => 'not_submitted',
+                'is_active'               => false,
+                'has_document_attachment' => true,
             ],
             [
                 'trigger_event'    => 'feedback.request',
@@ -75,21 +86,22 @@ class WhatsAppTemplateSeeder extends Seeder
         ];
 
         foreach ($globalTemplates as $tpl) {
-            // Find any existing global template for this event (there should be at most one)
+            // Match by template_name (unique) rather than trigger_event alone,
+            // because checkout.done legitimately has two rows (text + PDF).
             $existing = DB::table('whatsapp_templates')
                 ->whereNull('hotel_id')
-                ->where('trigger_event', $tpl['trigger_event'])
-                ->orderByDesc('approval_status') // approved first
+                ->where('template_name', $tpl['template_name'])
                 ->first();
 
             if ($existing) {
                 // Update to ensure correct values; never downgrade an approved one to pending
                 $update = [
-                    'template_name' => $tpl['template_name'],
-                    'message_body'  => $tpl['message_body'],
-                    'updated_at'    => now(),
+                    'trigger_event'           => $tpl['trigger_event'],
+                    'message_body'            => $tpl['message_body'],
+                    'has_document_attachment' => $tpl['has_document_attachment'] ?? false,
+                    'updated_at'              => now(),
                 ];
-                if ($tpl['meta_template_id'] && !$existing->meta_template_id) {
+                if (!empty($tpl['meta_template_id']) && !$existing->meta_template_id) {
                     $update['meta_template_id'] = $tpl['meta_template_id'];
                     $update['meta_status']       = $tpl['meta_status'];
                     $update['approval_status']   = $tpl['approval_status'];
@@ -97,22 +109,55 @@ class WhatsAppTemplateSeeder extends Seeder
                 } elseif ($existing->approval_status !== 'approved' && $tpl['approval_status'] === 'approved') {
                     $update['approval_status']   = 'approved';
                     $update['meta_template_id']  = $tpl['meta_template_id'];
-                    $update['meta_status']        = $tpl['meta_status'];
-                    $update['is_active']          = $tpl['is_active'];
+                    $update['meta_status']       = $tpl['meta_status'];
+                    $update['is_active']         = $tpl['is_active'];
                 }
                 DB::table('whatsapp_templates')->where('id', $existing->id)->update($update);
-
-                // Delete any stale duplicates for this event
-                DB::table('whatsapp_templates')
-                    ->whereNull('hotel_id')
-                    ->where('trigger_event', $tpl['trigger_event'])
-                    ->where('id', '!=', $existing->id)
-                    ->delete();
             } else {
                 DB::table('whatsapp_templates')->insert(
-                    array_merge($tpl, ['hotel_id' => null, 'created_at' => now(), 'updated_at' => now()])
+                    array_merge($tpl, [
+                        'hotel_id'                => null,
+                        'has_document_attachment' => $tpl['has_document_attachment'] ?? false,
+                        'created_at'              => now(),
+                        'updated_at'              => now(),
+                    ])
                 );
             }
+        }
+
+        // Clean up stale duplicates per event, but preserve any row with has_document_attachment=true
+        // alongside the canonical text template for that event.
+        $events = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->select('trigger_event')
+            ->distinct()
+            ->pluck('trigger_event');
+
+        foreach ($events as $event) {
+            $rows = DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('trigger_event', $event)
+                ->orderByDesc('approval_status')
+                ->get();
+
+            if ($rows->count() <= 1) {
+                continue;
+            }
+
+            // Keep all rows that have has_document_attachment=true (PDF templates)
+            // and the best approved text template; delete remaining duplicates.
+            $keepIds   = $rows->where('has_document_attachment', true)->pluck('id')->toArray();
+            $textRows  = $rows->where('has_document_attachment', false);
+            $canonical = $textRows->first(); // already sorted approved-first
+            if ($canonical) {
+                $keepIds[] = $canonical->id;
+            }
+
+            DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('trigger_event', $event)
+                ->whereNotIn('id', $keepIds)
+                ->delete();
         }
 
         // ── 2. Hotel-specific templates for every hotel ────────────────────

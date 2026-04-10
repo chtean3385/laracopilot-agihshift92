@@ -169,19 +169,26 @@ class WhatsAppService
                         'media_id' => $mediaId,
                         'filename' => $filename,
                     ]));
-                    return $provider->sendDocumentTemplate(
+                    $sent = $provider->sendDocumentTemplate(
                         $phone,
                         $template->template_name,
                         $mediaId,
                         $filename,
                         $params
                     );
+                    if ($sent) {
+                        return true;
+                    }
+                    // sendDocumentTemplate failed — fall through to text template
+                    Log::warning('WhatsApp: sendDocumentTemplate failed, falling back to text template', array_merge($context, [
+                        'error' => static::$lastError,
+                    ]));
+                } else {
+                    // Media upload failed — fall through to text template
+                    Log::warning('WhatsApp: PDF upload failed, falling back to text template', array_merge($context, [
+                        'error' => static::$lastError,
+                    ]));
                 }
-
-                // Media upload failed — fall through to plain template send
-                Log::warning('WhatsApp: PDF upload failed, falling back to text template', array_merge($context, [
-                    'error' => static::$lastError,
-                ]));
             } else {
                 Log::warning('WhatsApp: PDF generation failed, falling back to text template', $context);
             }

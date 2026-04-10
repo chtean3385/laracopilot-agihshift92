@@ -350,20 +350,21 @@ class SafeMigrate extends Command
 
         $count = 0;
         foreach ($templates as $tpl) {
-            // Find any existing global template for this event (at most one should exist)
+            // Match by template_name (unique identifier) rather than trigger_event,
+            // because checkout.done legitimately has two rows (text + PDF).
             $existing = DB::table('whatsapp_templates')
                 ->whereNull('hotel_id')
-                ->where('trigger_event', $tpl['trigger_event'])
-                ->orderByDesc('approval_status') // approved first
+                ->where('template_name', $tpl['template_name'])
                 ->first();
 
             if ($existing) {
                 $update = [
-                    'template_name' => $tpl['template_name'],
-                    'message_body'  => $tpl['message_body'],
-                    'updated_at'    => now(),
+                    'trigger_event'           => $tpl['trigger_event'],
+                    'message_body'            => $tpl['message_body'],
+                    'has_document_attachment' => false, // text templates are never PDF
+                    'updated_at'              => now(),
                 ];
-                if ($tpl['meta_template_id'] && !$existing->meta_template_id) {
+                if (!empty($tpl['meta_template_id']) && !$existing->meta_template_id) {
                     $update['meta_template_id'] = $tpl['meta_template_id'];
                     $update['meta_status']       = $tpl['meta_status'];
                     $update['approval_status']   = $tpl['approval_status'];
@@ -371,28 +372,50 @@ class SafeMigrate extends Command
                 } elseif ($existing->approval_status !== 'approved' && $tpl['approval_status'] === 'approved') {
                     $update['approval_status']  = 'approved';
                     $update['meta_template_id'] = $tpl['meta_template_id'];
-                    $update['meta_status']       = $tpl['meta_status'];
-                    $update['is_active']         = $tpl['is_active'];
+                    $update['meta_status']      = $tpl['meta_status'];
+                    $update['is_active']        = $tpl['is_active'];
                 }
                 DB::table('whatsapp_templates')->where('id', $existing->id)->update($update);
-
-                // Remove stale duplicates for the same event,
-                // but preserve any template marked as has_document_attachment=true
-                // (those are intentional secondary templates for PDF sends).
-                DB::table('whatsapp_templates')
-                    ->whereNull('hotel_id')
-                    ->where('trigger_event', $tpl['trigger_event'])
-                    ->where('id', '!=', $existing->id)
-                    ->where('has_document_attachment', false)
-                    ->delete();
-
                 $count++;
             } else {
-                DB::table('whatsapp_templates')->insert(
-                    array_merge($tpl, ['hotel_id' => null, 'created_at' => now(), 'updated_at' => now()])
-                );
+                DB::table('whatsapp_templates')->insert(array_merge($tpl, [
+                    'hotel_id'                => null,
+                    'has_document_attachment' => false,
+                    'created_at'              => now(),
+                    'updated_at'              => now(),
+                ]));
                 $count++;
             }
+        }
+
+        // Clean up stale text-template duplicates per event.
+        // Rows with has_document_attachment=true (PDF templates) are always preserved.
+        $events = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->select('trigger_event')
+            ->distinct()
+            ->pluck('trigger_event');
+
+        foreach ($events as $event) {
+            $textRows = DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('trigger_event', $event)
+                ->where('has_document_attachment', false)
+                ->orderByDesc('approval_status')
+                ->get();
+
+            if ($textRows->count() <= 1) {
+                continue;
+            }
+
+            // Keep the best text template (approved first); delete the rest
+            $keepId = $textRows->first()->id;
+            DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('trigger_event', $event)
+                ->where('has_document_attachment', false)
+                ->where('id', '!=', $keepId)
+                ->delete();
         }
 
         $this->info("Global WhatsApp templates: {$count} upserted.");
