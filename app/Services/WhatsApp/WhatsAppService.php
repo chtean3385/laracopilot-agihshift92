@@ -221,10 +221,12 @@ class WhatsAppService
                 return $provider->sendTemplate($phone, $textTemplate->template_name, $textParams);
             }
 
-            // No approved text template found — cannot send anything
-            static::setLastError('PDF send failed and no approved text-only checkout template found for fallback.');
-            Log::error('WhatsApp: PDF fallback failed — no approved text template', $context);
-            return false;
+            // No approved text template row found — last-resort: send the current template's
+            // body as a plain message (works only if guest messaged within Meta's 24h window,
+            // but ensures something is always sent rather than silently failing).
+            Log::warning('WhatsApp: no approved text fallback template found; sending plain text body', $context);
+            $plainText = MessageBuilder::build($template->message_body, $booking);
+            return $provider->sendMessage($phone, $plainText);
         }
 
         return $provider->sendTemplate($phone, $template->template_name, $params);

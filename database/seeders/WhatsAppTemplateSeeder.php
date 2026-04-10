@@ -187,11 +187,20 @@ class WhatsAppTemplateSeeder extends Seeder
                 'is_active'      => true,
             ],
             [
-                'trigger_event'  => 'checkout.done',
-                'template_name'  => 'Check-Out & Invoice',
-                'message_body'   => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
-                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
-                'is_active'      => true,
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'Check-Out & Invoice',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint'          => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'               => true,
+                'has_document_attachment' => false,
+            ],
+            [
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'Check-Out & Invoice (PDF)',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nPlease find your invoice attached.\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint'          => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'               => false,
+                'has_document_attachment' => true,
             ],
             [
                 'trigger_event'  => 'payment.received',
@@ -213,17 +222,31 @@ class WhatsAppTemplateSeeder extends Seeder
         foreach ($hotelIds as $hotelId) {
             app(HotelContext::class)->setHotel($hotelId);
             foreach ($hotelTemplates as $t) {
-                DB::table('whatsapp_templates')->updateOrInsert(
-                    ['hotel_id' => $hotelId, 'trigger_event' => $t['trigger_event']],
-                    array_merge($t, [
-                        'hotel_id'         => $hotelId,
-                        'approval_status'  => 'pending',
-                        'meta_template_id' => null,
-                        'meta_status'      => 'not_submitted',
-                        'created_at'       => now(),
-                        'updated_at'       => now(),
-                    ])
-                );
+                $isPdf = !empty($t['has_document_attachment']);
+
+                // Match on (hotel_id, trigger_event, has_document_attachment) so text and PDF
+                // variants can coexist for the same event (e.g. checkout.done).
+                $existing = DB::table('whatsapp_templates')
+                    ->where('hotel_id', $hotelId)
+                    ->where('trigger_event', $t['trigger_event'])
+                    ->where('has_document_attachment', $isPdf)
+                    ->first();
+
+                $data = array_merge($t, [
+                    'hotel_id'                => $hotelId,
+                    'has_document_attachment' => $isPdf,
+                    'approval_status'         => 'pending',
+                    'meta_template_id'        => null,
+                    'meta_status'             => 'not_submitted',
+                    'created_at'              => now(),
+                    'updated_at'              => now(),
+                ]);
+
+                if ($existing) {
+                    DB::table('whatsapp_templates')->where('id', $existing->id)->update(array_merge($data, ['created_at' => $existing->created_at]));
+                } else {
+                    DB::table('whatsapp_templates')->insert($data);
+                }
             }
         }
     }

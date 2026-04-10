@@ -241,11 +241,20 @@ class SafeMigrate extends Command
                 'is_active'      => true,
             ],
             [
-                'trigger_event'  => 'checkout.done',
-                'template_name'  => 'Check-Out Thank You + Bill',
-                'message_body'   => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! 🙏\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe would love to host you again!",
-                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
-                'is_active'      => true,
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'Check-Out Thank You + Bill',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! 🙏\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint'          => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'               => true,
+                'has_document_attachment' => false,
+            ],
+            [
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'Check-Out & Invoice (PDF)',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! 🙏\n\nWe hope you had a wonderful stay.\n\nPlease find your invoice attached.\nInvoice: {{invoice_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint'          => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'               => false,
+                'has_document_attachment' => true,
             ],
             [
                 'trigger_event'  => 'checkin.done',
@@ -271,15 +280,18 @@ class SafeMigrate extends Command
         ];
 
         foreach ($templateDefs as $t) {
+            $isPdf  = !empty($t['has_document_attachment']);
             $exists = DB::table('whatsapp_templates')
                 ->where('hotel_id', $hotelId)
                 ->where('trigger_event', $t['trigger_event'])
+                ->where('has_document_attachment', $isPdf)
                 ->exists();
             if (!$exists) {
                 DB::table('whatsapp_templates')->insert(array_merge($t, [
-                    'hotel_id'   => $hotelId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'hotel_id'                => $hotelId,
+                    'has_document_attachment' => $isPdf,
+                    'created_at'              => now(),
+                    'updated_at'              => now(),
                 ]));
             }
         }

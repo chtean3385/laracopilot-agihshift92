@@ -52,21 +52,27 @@ class WhatsAppController extends Controller
         $canEdit     = $isSaasAdmin || !$isBasicPlan;
 
         if ($isBasicPlan || !$hotelId) {
-            $templates = WhatsAppTemplate::withoutGlobalScopes()
+            $allTemplates = WhatsAppTemplate::withoutGlobalScopes()
                 ->whereNull('hotel_id')
+                ->orderBy('has_document_attachment')
                 ->orderBy('id')
-                ->get()
-                ->keyBy('trigger_event');
+                ->get();
         } else {
-            $templates = WhatsAppTemplate::withoutGlobalScopes()
+            $allTemplates = WhatsAppTemplate::withoutGlobalScopes()
                 ->where('hotel_id', $hotelId)
+                ->orderBy('has_document_attachment')
                 ->orderBy('id')
-                ->get()
-                ->keyBy('trigger_event');
+                ->get();
         }
 
+        // Primary (text-only) template per event — used for existing view event-slot logic
+        $templates = $allTemplates->where('has_document_attachment', false)->keyBy('trigger_event');
+
+        // Full collection grouped by event — used to also show PDF variant rows
+        $templatesByEvent = $allTemplates->groupBy('trigger_event');
+
         return view('admin.whatsapp.templates', compact(
-            'templates', 'allEvents', 'config',
+            'templates', 'templatesByEvent', 'allEvents', 'config',
             'hotel', 'isSaasAdmin', 'isBasicPlan', 'canEdit', 'platform'
         ));
     }
