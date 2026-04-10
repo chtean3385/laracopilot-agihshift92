@@ -75,7 +75,7 @@ externalPort = 3001
 
 [deployment]
 deploymentTarget = "vm"
-run = ["php", "artisan", "serve", "--host=0.0.0.0", "--port=5000"]
+run = ["bash", "scripts/start.sh"]
 publicDir = "public"
 build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan optimize && php artisan app:safe-migrate"]
 
