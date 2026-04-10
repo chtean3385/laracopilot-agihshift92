@@ -66,7 +66,7 @@ class WhatsAppTemplateSeeder extends Seeder
             [
                 'trigger_event'    => 'payment.received',
                 'template_name'    => 'payment_receipt',
-                'message_body'     => "Payment Received \u2705\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\n\n\ud83d\udccb Booking: {{booking_number}}\n\ud83d\udcb0 Balance Due: {{balance_due}}\n\nWe look forward to welcoming you again at {{hotel_name}}!",
+                'message_body'     => "Payment Received ✅\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\nBooking Ref: {{booking_number}}, Balance Due: {{balance_due}}.\n\nWe look forward to welcoming you again at {{hotel_name}}!",
                 'approval_status'  => 'pending',
                 'meta_template_id' => null,
                 'meta_status'      => 'not_submitted',
@@ -151,7 +151,7 @@ class WhatsAppTemplateSeeder extends Seeder
             [
                 'trigger_event'  => 'payment.received',
                 'template_name'  => 'Payment Receipt',
-                'message_body'   => "Payment Received \u2705\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\n\n\ud83d\udccb Booking: {{booking_number}}\n\ud83d\udcb0 Balance Due: {{balance_due}}\n\nWe look forward to welcoming you again at {{hotel_name}}!",
+                'message_body'   => "Payment Received ✅\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\nBooking Ref: {{booking_number}}, Balance Due: {{balance_due}}.\n\nWe look forward to welcoming you again at {{hotel_name}}!",
                 'variables_hint' => '{{guest_name}}, {{amount_paid}}, {{payment_method}}, {{booking_number}}, {{balance_due}}, {{hotel_name}}',
                 'is_active'      => true,
             ],
