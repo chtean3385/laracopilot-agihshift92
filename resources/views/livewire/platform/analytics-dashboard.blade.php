@@ -505,7 +505,7 @@
                         {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
                     </div>
                     <div style="font-size:11px;color:#64748b;line-height:1.5;">
-                        {{ Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 100) }}
+                        {{ Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 120) }}
                     </div>
                 </div>
                 @endforeach
