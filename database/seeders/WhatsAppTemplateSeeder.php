@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\WhatsAppTemplate;
 use App\Services\HotelContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -11,51 +10,176 @@ class WhatsAppTemplateSeeder extends Seeder
 {
     public function run(): void
     {
-        // Resolve hotel — for installer it's already created; for dev seeding create default
-        $hotelId = DB::table('hotels')->value('id');
-
-        if (!$hotelId) {
-            $hotelId = DB::table('hotels')->insertGetId([
-                'name'       => 'Default Hotel',
-                'slug'       => 'default-hotel',
-                'status'     => 'active',
-                'plan'       => 'basic',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        app(HotelContext::class)->setHotel($hotelId);
-
-        $templates = [
+        // ── 1. Global platform templates (hotel_id = null) ─────────────────
+        // These are the templates approved on Meta for the shared platform number.
+        // Used by all Basic-plan hotels. After deploying to a new environment,
+        // enter the API credentials in Platform Admin → WhatsApp Settings, then
+        // click "Sync from Meta" to update the approval statuses automatically.
+        //
+        // Rules enforced: no variable at the very start or end of the body.
+        $globalTemplates = [
             [
-                'trigger_event' => 'booking.created',
-                'template_name' => 'Booking Confirmation',
-                'message_body'  => "Hello {{guest_name}}, your booking at {{hotel_name}} is confirmed! 🏨\n\nRoom: {{room_number}}\nCheck-in: {{check_in_date}}\nCheck-out: {{check_out_date}}\nBooking Ref: {{booking_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe look forward to welcoming you! For any queries, please contact us.",
-                'variables_hint'=> '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{check_in_date}}, {{check_out_date}}, {{booking_number}}, {{total_amount}}',
-                'is_active'     => true,
+                'trigger_event'    => 'booking.created',
+                'template_name'    => 'booking_confrim_crm',
+                'message_body'     => "Hello {{guest_name}}, your booking at {{hotel_name}} is confirmed! 🏨\n\nRoom: {{room_number}}\nCheck-in: {{check_in_date}}\nCheck-out: {{check_out_date}}\nBooking Ref: {{booking_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe look forward to welcoming you! For any queries, please contact us.",
+                'approval_status'  => 'approved',
+                'meta_template_id' => '946426251471676',
+                'meta_status'      => 'approved',
+                'is_active'        => true,
             ],
             [
-                'trigger_event' => 'checkin.tomorrow',
-                'template_name' => 'Check-In Reminder',
-                'message_body'  => "Hello {{guest_name}}, this is a friendly reminder that your check-in at {{hotel_name}} is tomorrow! 🌟\n\nRoom: {{room_number}}\nCheck-in Date: {{check_in_date}}\n\nYour room is being prepared for you. We look forward to welcoming you! For any queries, please contact us.",
-                'variables_hint'=> '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{check_in_date}}',
-                'is_active'     => true,
+                'trigger_event'    => 'checkin.tomorrow',
+                'template_name'    => 'check_in_reminder_day_before',
+                'message_body'     => "Hello {{guest_name}}, this is a friendly reminder that your check-in at {{hotel_name}} is tomorrow! 🌟\n\nRoom: {{room_number}}\nCheck-in Date: {{check_in_date}}\n\nYour room is being prepared for you. We look forward to welcoming you!",
+                'approval_status'  => 'approved',
+                'meta_template_id' => '941731028473106',
+                'meta_status'      => 'approved',
+                'is_active'        => true,
             ],
             [
-                'trigger_event' => 'checkout.done',
-                'template_name' => 'Check-Out & Invoice',
-                'message_body'  => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! 🙏\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: ₹{{total_amount}}\n\nWe would love to host you again. Please share your feedback — it means the world to us!",
-                'variables_hint'=> '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
-                'is_active'     => true,
+                'trigger_event'    => 'checkin.done',
+                'template_name'    => 'rrival_elcome',
+                'message_body'     => "Welcome to {{hotel_name}}, {{guest_name}}! 🏨\n\nYou're all checked in!\n\ud83d\udeaa Room: {{room_number}} ({{room_type}})\n\ud83d\udcc5 Check-out: {{check_out_date}}\n\nWe hope you have a wonderful stay. Please don't hesitate to ask if you need anything.",
+                'approval_status'  => 'approved',
+                'meta_template_id' => '979908241129195',
+                'meta_status'      => 'approved',
+                'is_active'        => true,
+            ],
+            [
+                'trigger_event'    => 'checkout.done',
+                'template_name'    => 'check_out_and_bill',
+                'message_body'     => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
+                'approval_status'  => 'approved',
+                'meta_template_id' => '2851015818584226',
+                'meta_status'      => 'approved',
+                'is_active'        => true,
+            ],
+            [
+                'trigger_event'    => 'feedback.request',
+                'template_name'    => 'eedback_equest',
+                'message_body'     => "Dear {{guest_name}},\n\nThank you for staying with us at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a pleasant stay from {{check_in_date}} to {{check_out_date}}.\n\nWe'd love to hear your feedback to help us serve you better. Please share your experience whenever you get a moment.\n\nWe look forward to welcoming you again! \ud83c\udf1f",
+                'approval_status'  => 'approved',
+                'meta_template_id' => '1466324025233517',
+                'meta_status'      => 'approved',
+                'is_active'        => true,
+            ],
+            [
+                'trigger_event'    => 'payment.received',
+                'template_name'    => 'payment_receipt',
+                'message_body'     => "Payment Received \u2705\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\n\n\ud83d\udccb Booking: {{booking_number}}\n\ud83d\udcb0 Balance Due: {{balance_due}}\n\nWe look forward to welcoming you again at {{hotel_name}}!",
+                'approval_status'  => 'pending',
+                'meta_template_id' => null,
+                'meta_status'      => 'not_submitted',
+                'is_active'        => false,
             ],
         ];
 
-        foreach ($templates as $t) {
-            WhatsAppTemplate::firstOrCreate(
-                ['hotel_id' => $hotelId, 'trigger_event' => $t['trigger_event']],
-                array_merge($t, ['hotel_id' => $hotelId])
-            );
+        foreach ($globalTemplates as $tpl) {
+            // Find any existing global template for this event (there should be at most one)
+            $existing = DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('trigger_event', $tpl['trigger_event'])
+                ->orderByDesc('approval_status') // approved first
+                ->first();
+
+            if ($existing) {
+                // Update to ensure correct values; never downgrade an approved one to pending
+                $update = [
+                    'template_name' => $tpl['template_name'],
+                    'message_body'  => $tpl['message_body'],
+                    'updated_at'    => now(),
+                ];
+                if ($tpl['meta_template_id'] && !$existing->meta_template_id) {
+                    $update['meta_template_id'] = $tpl['meta_template_id'];
+                    $update['meta_status']       = $tpl['meta_status'];
+                    $update['approval_status']   = $tpl['approval_status'];
+                    $update['is_active']         = $tpl['is_active'];
+                } elseif ($existing->approval_status !== 'approved' && $tpl['approval_status'] === 'approved') {
+                    $update['approval_status']   = 'approved';
+                    $update['meta_template_id']  = $tpl['meta_template_id'];
+                    $update['meta_status']        = $tpl['meta_status'];
+                    $update['is_active']          = $tpl['is_active'];
+                }
+                DB::table('whatsapp_templates')->where('id', $existing->id)->update($update);
+
+                // Delete any stale duplicates for this event
+                DB::table('whatsapp_templates')
+                    ->whereNull('hotel_id')
+                    ->where('trigger_event', $tpl['trigger_event'])
+                    ->where('id', '!=', $existing->id)
+                    ->delete();
+            } else {
+                DB::table('whatsapp_templates')->insert(
+                    array_merge($tpl, ['hotel_id' => null, 'created_at' => now(), 'updated_at' => now()])
+                );
+            }
+        }
+
+        // ── 2. Hotel-specific templates for every hotel ────────────────────
+        // Each hotel gets its own editable copy. On the shared number, the
+        // *global* templates above are what actually gets sent. Hotel-specific
+        // templates are used for Pro+ hotels with their own Meta number.
+        $hotelTemplates = [
+            [
+                'trigger_event'  => 'booking.created',
+                'template_name'  => 'Booking Confirmation',
+                'message_body'   => "Hello {{guest_name}}, your booking at {{hotel_name}} is confirmed! 🏨\n\nRoom: {{room_number}}\nCheck-in: {{check_in_date}}\nCheck-out: {{check_out_date}}\nBooking Ref: {{booking_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe look forward to welcoming you! For any queries, please contact us.",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{check_in_date}}, {{check_out_date}}, {{booking_number}}, {{total_amount}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'checkin.tomorrow',
+                'template_name'  => 'Check-In Reminder',
+                'message_body'   => "Hello {{guest_name}}, this is a friendly reminder that your check-in at {{hotel_name}} is tomorrow! 🌟\n\nRoom: {{room_number}}\nCheck-in Date: {{check_in_date}}\n\nYour room is being prepared for you. We look forward to welcoming you!",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{check_in_date}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'checkin.done',
+                'template_name'  => 'Arrival Welcome',
+                'message_body'   => "Welcome to {{hotel_name}}, {{guest_name}}! 🏨\n\nYou're all checked in!\n\ud83d\udeaa Room: {{room_number}} ({{room_type}})\n\ud83d\udcc5 Check-out: {{check_out_date}}\n\nWe hope you have a wonderful stay. Please don't hesitate to ask if you need anything.",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{room_number}}, {{room_type}}, {{check_out_date}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'checkout.done',
+                'template_name'  => 'Check-Out & Invoice',
+                'message_body'   => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a wonderful stay.\n\nInvoice: {{invoice_number}}\nTotal Amount: \u20b9{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'payment.received',
+                'template_name'  => 'Payment Receipt',
+                'message_body'   => "Payment Received \u2705\n\nDear {{guest_name}},\n\nWe've received your payment of {{amount_paid}} via {{payment_method}}.\n\n\ud83d\udccb Booking: {{booking_number}}\n\ud83d\udcb0 Balance Due: {{balance_due}}\n\nWe look forward to welcoming you again at {{hotel_name}}!",
+                'variables_hint' => '{{guest_name}}, {{amount_paid}}, {{payment_method}}, {{booking_number}}, {{balance_due}}, {{hotel_name}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'feedback.request',
+                'template_name'  => 'Feedback Request',
+                'message_body'   => "Dear {{guest_name}},\n\nThank you for staying with us at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a pleasant stay from {{check_in_date}} to {{check_out_date}}.\n\nWe'd love to hear your feedback to help us serve you better. Please share your experience whenever you get a moment.\n\nWe look forward to welcoming you again! \ud83c\udf1f",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{check_in_date}}, {{check_out_date}}',
+                'is_active'      => true,
+            ],
+        ];
+
+        $hotelIds = DB::table('hotels')->pluck('id');
+        foreach ($hotelIds as $hotelId) {
+            app(HotelContext::class)->setHotel($hotelId);
+            foreach ($hotelTemplates as $t) {
+                DB::table('whatsapp_templates')->updateOrInsert(
+                    ['hotel_id' => $hotelId, 'trigger_event' => $t['trigger_event']],
+                    array_merge($t, [
+                        'hotel_id'         => $hotelId,
+                        'approval_status'  => 'pending',
+                        'meta_template_id' => null,
+                        'meta_status'      => 'not_submitted',
+                        'created_at'       => now(),
+                        'updated_at'       => now(),
+                    ])
+                );
+            }
         }
     }
 }

@@ -4,8 +4,8 @@ set -e
 # Install PHP dependencies
 composer install --no-interaction --no-progress --prefer-dist
 
-# Run migrations (idempotent — safe to run multiple times)
-php artisan migrate --force
+# Run safe migrations + seed global templates + provision hotels
+php artisan app:safe-migrate
 
 # Clear compiled views and config cache
 php artisan view:clear
