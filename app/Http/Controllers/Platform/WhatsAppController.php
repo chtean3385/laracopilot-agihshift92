@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\PlatformWhatsAppSetting;
+use App\Models\WhatsAppLog;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -278,5 +279,36 @@ class WhatsAppController extends Controller
         $errMsg = $result['error']['message'] ?? 'Meta API returned an error.';
         Log::warning('Platform Meta template submission failed', ['id' => $id, 'response' => $result]);
         return response()->json(['success' => false, 'error' => $errMsg]);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Webhook Logs Viewer
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function webhookLogs(Request $request)
+    {
+        $query = WhatsAppLog::orderByDesc('created_at');
+
+        if ($filter = $request->query('type')) {
+            $query->where('event_type', $filter);
+        }
+        if ($dir = $request->query('direction')) {
+            $query->where('direction', $dir);
+        }
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        $logs      = $query->paginate(50)->withQueryString();
+        $webhookUrl = url('/webhook/whatsapp');
+        $platform   = PlatformWhatsAppSetting::instance();
+
+        return view('platform.whatsapp.logs', compact('logs', 'webhookUrl', 'platform'));
+    }
+
+    public function clearLogs()
+    {
+        WhatsAppLog::where('created_at', '<', now()->subDays(30))->delete();
+        return back()->with('success', 'Logs older than 30 days cleared.');
     }
 }

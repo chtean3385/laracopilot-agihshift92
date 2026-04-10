@@ -337,6 +337,10 @@
             <span class="icon"><i class="fas fa-file-alt" style="font-size:12px;"></i></span>
             Message Templates
         </a>
+        <a href="{{ route('platform.whatsapp.logs') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.logs') || request()->routeIs('platform.whatsapp.logs.*') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-list-alt" style="font-size:12px;"></i></span>
+            Webhook Logs
+        </a>
 
         <div class="nav-section">Analytics</div>
 
