@@ -413,15 +413,16 @@ class SafeMigrate extends Command
                 ->whereNull('hotel_id')
                 ->where('trigger_event', $event)
                 ->where('has_document_attachment', false)
-                ->orderByDesc('approval_status')
                 ->get();
 
             if ($textRows->count() <= 1) {
                 continue;
             }
 
-            // Keep the best text template (approved first); delete the rest
-            $keepId = $textRows->first()->id;
+            // Sort explicitly: approved > pending > rejected, then lowest id
+            $priority = ['approved' => 0, 'pending' => 1, 'rejected' => 2];
+            $sorted   = $textRows->sortBy(fn ($r) => [($priority[$r->approval_status] ?? 9), $r->id]);
+            $keepId   = $sorted->first()->id;
             DB::table('whatsapp_templates')
                 ->whereNull('hotel_id')
                 ->where('trigger_event', $event)

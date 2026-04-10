@@ -217,7 +217,10 @@ class WhatsAppController extends Controller
         ]);
 
         $data['is_active']               = $request->boolean('is_active');
-        $data['has_document_attachment'] = $request->boolean('has_document_attachment');
+        // PDF attachment is only valid for checkout.done templates
+        $data['has_document_attachment'] = ($data['trigger_event'] ?? $template->trigger_event) === 'checkout.done'
+            ? $request->boolean('has_document_attachment')
+            : false;
         $data['approval_status']         = $data['approval_status'] ?? $template->approval_status;
 
         $template->update($data);

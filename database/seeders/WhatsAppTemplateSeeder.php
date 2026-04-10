@@ -145,10 +145,12 @@ class WhatsAppTemplateSeeder extends Seeder
             }
 
             // Keep all rows that have has_document_attachment=true (PDF templates)
-            // and the best approved text template; delete remaining duplicates.
-            $keepIds   = $rows->where('has_document_attachment', true)->pluck('id')->toArray();
-            $textRows  = $rows->where('has_document_attachment', false);
-            $canonical = $textRows->first(); // already sorted approved-first
+            // and the best text template (approved > pending > rejected, then lowest id).
+            $keepIds  = $rows->where('has_document_attachment', true)->pluck('id')->toArray();
+            $priority = ['approved' => 0, 'pending' => 1, 'rejected' => 2];
+            $textRows = $rows->where('has_document_attachment', false)
+                ->sortBy(fn ($r) => [($priority[$r->approval_status] ?? 9), $r->id]);
+            $canonical = $textRows->first();
             if ($canonical) {
                 $keepIds[] = $canonical->id;
             }
