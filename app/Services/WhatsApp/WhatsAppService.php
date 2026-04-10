@@ -154,7 +154,9 @@ class WhatsAppService
         Booking $booking,
         array $context
     ): bool {
-        // If the template has a document attachment flag, try the PDF path first.
+        // If the template has a document attachment flag, try the full PDF path first.
+        $mediaId  = null;
+        $filename = null;
         if ($template->has_document_attachment && $booking->invoice) {
             $invoice  = $booking->invoice;
             $pdfBytes = InvoicePdf::generate($invoice);
@@ -179,12 +181,13 @@ class WhatsAppService
                     if ($sent) {
                         return true;
                     }
-                    // sendDocumentTemplate failed — fall through to text template
-                    Log::warning('WhatsApp: sendDocumentTemplate failed, falling back to text template', array_merge($context, [
+                    // sendDocumentTemplate failed (e.g. Meta template has no DOCUMENT header component).
+                    // Fall through: we still have the uploaded PDF ($mediaId) — we will send the text
+                    // template notification + the PDF as a separate document message below.
+                    Log::warning('WhatsApp: sendDocumentTemplate failed; will send text template + PDF separately', array_merge($context, [
                         'error' => static::$lastError,
                     ]));
                 } else {
-                    // Media upload failed — fall through to text template
                     Log::warning('WhatsApp: PDF upload failed, falling back to text template', array_merge($context, [
                         'error' => static::$lastError,
                     ]));
@@ -194,11 +197,28 @@ class WhatsAppService
             }
         }
 
-        // Standard text-only template send.
-        // If the current template is a DOCUMENT-header template (PDF), it cannot be sent
-        // as a plain body-only template — Meta would reject it. Instead, find and send
-        // the approved text-only template for the same event as the fallback.
+        // Determine the text template to send.
+        // If the current template's document-send already failed AND it is itself a valid
+        // text-body template (no HEADER in Meta), try sending it directly first.
+        // Otherwise look for a paired text-only fallback template.
         if ($template->has_document_attachment) {
+            // First try: send the SAME template as a plain text template
+            // (works when Meta approved the template without a DOCUMENT header component)
+            $textSent = $provider->sendTemplate($phone, $template->template_name, $params);
+
+            if ($textSent) {
+                Log::info('WhatsApp: sent PDF template as text-only (no DOCUMENT header in Meta)', array_merge($context, [
+                    'template' => $template->template_name,
+                ]));
+                // Also send PDF as a separate document message (best-effort; needs open conv window)
+                if ($mediaId && $filename) {
+                    $docSent = $provider->sendDocument($phone, $mediaId, $filename, 'Your invoice is attached below.');
+                    Log::info('WhatsApp: separate PDF document send ' . ($docSent ? 'succeeded' : 'skipped (outside 24h window)'), $context);
+                }
+                return true;
+            }
+
+            // That also failed — look for the approved text-only paired template
             $textTemplate = WhatsAppTemplate::withoutGlobalScopes()
                 ->when(is_null($template->hotel_id), fn ($q) => $q->whereNull('hotel_id'))
                 ->when(!is_null($template->hotel_id), fn ($q) => $q->where('hotel_id', $template->hotel_id))
@@ -218,12 +238,16 @@ class WhatsAppService
                 foreach ($textVarNames as $name) {
                     $textParams[] = $textVars[$name] ?? '';
                 }
-                return $provider->sendTemplate($phone, $textTemplate->template_name, $textParams);
+                $sent = $provider->sendTemplate($phone, $textTemplate->template_name, $textParams);
+                // Also send PDF as a separate document (best-effort)
+                if ($sent && $mediaId && $filename) {
+                    $docSent = $provider->sendDocument($phone, $mediaId, $filename, 'Your invoice is attached below.');
+                    Log::info('WhatsApp: separate PDF document send ' . ($docSent ? 'succeeded' : 'skipped (outside 24h window)'), $context);
+                }
+                return $sent;
             }
 
-            // No approved text template row found — last-resort: send the current template's
-            // body as a plain message (works only if guest messaged within Meta's 24h window,
-            // but ensures something is always sent rather than silently failing).
+            // Last resort — send as plain text message
             Log::warning('WhatsApp: no approved text fallback template found; sending plain text body', $context);
             $plainText = MessageBuilder::build($template->message_body, $booking);
             return $provider->sendMessage($phone, $plainText);

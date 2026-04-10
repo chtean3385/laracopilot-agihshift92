@@ -22,6 +22,43 @@ class MetaProvider implements WhatsAppProviderInterface
         return $to;
     }
 
+    /**
+     * Send a PDF document as a direct media message (requires active conversation window).
+     * Best-effort: silently returns false if outside the 24h window.
+     */
+    public function sendDocument(string $to, string $mediaId, string $filename, string $caption = ''): bool
+    {
+        $to = $this->sanitizePhone($to);
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to'                => $to,
+            'type'              => 'document',
+            'document'          => [
+                'id'       => $mediaId,
+                'filename' => $filename,
+                'caption'  => $caption,
+            ],
+        ];
+
+        try {
+            $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
+                ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
+
+            if ($response->successful()) {
+                Log::info('WhatsApp document sent', ['to' => $to, 'filename' => $filename]);
+                return true;
+            }
+            Log::warning('WhatsApp document send failed (likely outside 24h window)', [
+                'body' => $response->body(),
+            ]);
+            return false;
+        } catch (\Throwable $e) {
+            Log::warning('WhatsApp sendDocument exception: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function sendMessage(string $to, string $message): bool
     {
         $to = $this->sanitizePhone($to);
