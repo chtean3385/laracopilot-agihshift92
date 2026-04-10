@@ -104,13 +104,26 @@ class WhatsAppController extends Controller
             ->orderBy('id')
             ->get();
 
-        $allEvents       = WhatsAppTemplate::allEvents();
-        $standardKeyed   = $allTemplates->whereIn('trigger_event', array_keys($allEvents))->keyBy('trigger_event');
+        $allEvents = WhatsAppTemplate::allEvents();
+
+        // Standard event templates: all rows that match a known event.
+        // For events with both text and PDF templates (e.g. checkout.done),
+        // we flatten them into a single ordered collection so the view can
+        // iterate over all of them — keyed list would silently drop duplicates.
+        $standardTemplates = $allTemplates->whereIn('trigger_event', array_keys($allEvents))
+            ->sortBy([['trigger_event', 'asc'], ['has_document_attachment', 'asc'], ['id', 'asc']])
+            ->values();
+
+        // Keep a keyBy for the primary (non-PDF) template per event, used for
+        // event-slot indicators (showing which events have a template set).
+        $standardKeyed = $standardTemplates->where('has_document_attachment', false)->keyBy('trigger_event');
+
         $customTemplates = $allTemplates->whereNotIn('trigger_event', array_keys($allEvents))->values();
         $platform        = PlatformWhatsAppSetting::instance();
 
-        return view('platform.whatsapp.templates', compact('standardKeyed', 'customTemplates', 'allEvents', 'platform'))
-            ->with('templates', $standardKeyed);
+        return view('platform.whatsapp.templates', compact(
+            'standardTemplates', 'standardKeyed', 'customTemplates', 'allEvents', 'platform'
+        ))->with('templates', $standardKeyed);
     }
 
     public function templateStore(Request $request)
@@ -278,12 +291,25 @@ class WhatsAppController extends Controller
             $bodyComponent['example'] = ['body_text' => [array_fill(0, $varCount, 'sample_value')]];
         }
 
+        $components = [];
+
+        // For PDF document templates, include a DOCUMENT header component.
+        // Meta requires this at submission time for DOCUMENT-header templates.
+        if ($template->has_document_attachment) {
+            $components[] = [
+                'type'   => 'HEADER',
+                'format' => 'DOCUMENT',
+            ];
+        }
+
+        $components[] = $bodyComponent;
+
         $response = Http::withToken($token)
             ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", [
                 'name'       => $templateName,
                 'language'   => 'en_US',
                 'category'   => 'UTILITY',
-                'components' => [$bodyComponent],
+                'components' => $components,
             ]);
 
         $result = $response->json();

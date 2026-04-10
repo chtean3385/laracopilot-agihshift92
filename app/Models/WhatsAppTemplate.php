@@ -31,19 +31,25 @@ class WhatsAppTemplate extends Model
 
     public static function forEvent(string $event): ?static
     {
+        // Prefer PDF/document template when available and approved for the event,
+        // fall back to text-only template.
         return static::where('trigger_event', $event)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
+            ->orderByDesc('has_document_attachment')
             ->first();
     }
 
     public static function globalForEvent(string $event): ?static
     {
+        // Prefer PDF/document template when available and approved for the event,
+        // fall back to text-only template.
         return static::withoutGlobalScopes()
             ->whereNull('hotel_id')
             ->where('trigger_event', $event)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
+            ->orderByDesc('has_document_attachment')
             ->first();
     }
 

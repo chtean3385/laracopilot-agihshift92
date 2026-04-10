@@ -161,12 +161,25 @@ class WhatsAppController extends Controller
             $bodyComponent['example'] = ['body_text' => [array_fill(0, count($varMap), 'sample_value')]];
         }
 
+        $components = [];
+
+        // For PDF document templates, include a DOCUMENT header component.
+        // Meta requires this at submission time for DOCUMENT-header templates.
+        if ($template->has_document_attachment) {
+            $components[] = [
+                'type'   => 'HEADER',
+                'format' => 'DOCUMENT',
+            ];
+        }
+
+        $components[] = $bodyComponent;
+
         $response = Http::withToken($token)
             ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", [
                 'name'       => $templateName,
                 'language'   => 'en_US',
                 'category'   => 'UTILITY',
-                'components' => [$bodyComponent],
+                'components' => $components,
             ]);
 
         $result = $response->json();

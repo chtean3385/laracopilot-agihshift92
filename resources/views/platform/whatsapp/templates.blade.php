@@ -100,7 +100,9 @@ $eventMeta = [
 <div style="display:grid;gap:16px;">
 @foreach($allEvents as $event => $eventLabel)
 @php
-    $t = $templates[$event] ?? null;
+    $t = $templates[$event] ?? null;  // primary text template
+    // All templates for this event (may include text + PDF for checkout.done)
+    $eventTemplates = $standardTemplates->where('trigger_event', $event)->values();
     [$icon, $grad, $shortLabel] = $eventMeta[$event];
     $status      = $t ? ($t->approval_status ?? 'pending') : null;
     $metaStatus  = $t?->meta_status ?? 'not_submitted';
@@ -207,6 +209,70 @@ $eventMeta = [
     @if($t)
     <div id="pt-result-{{ $t->id }}" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;"></div>
     @endif
+
+    {{-- Secondary PDF templates for this event (e.g. check_out_bill_with_pdf for checkout.done) --}}
+    @foreach($eventTemplates->where('has_document_attachment', true) as $pdfT)
+    @php
+        $pdfStatus      = $pdfT->approval_status ?? 'pending';
+        $pdfStatusColor = match($pdfStatus) {
+            'approved' => ['#dcfce7','#15803d'],
+            'rejected' => ['#fee2e2','#b91c1c'],
+            default    => ['#fef3c7','#92400e'],
+        };
+    @endphp
+    <div style="margin-top:14px;padding:14px 18px;background:#fdf4ff;border:1px solid #e9d5ff;border-radius:12px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                    <span style="font-size:13px;font-weight:800;color:#7c3aed;"><i class="fas fa-file-pdf" style="margin-right:5px;"></i>PDF Invoice Variant</span>
+                    <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:{{ $pdfStatusColor[0] }};color:{{ $pdfStatusColor[1] }};">{{ ucfirst($pdfStatus) }}</span>
+                    @if($pdfT->meta_template_id)
+                    <span style="font-size:11px;color:#94a3b8;">ID: <code style="color:#7c3aed;background:#f5f3ff;padding:1px 5px;border-radius:4px;">{{ $pdfT->meta_template_id }}</code></span>
+                    @endif
+                </div>
+                @if($pdfT->template_name)
+                <div style="font-size:11px;color:#9333ea;margin-bottom:6px;">
+                    <i class="fas fa-tag" style="margin-right:4px;"></i>
+                    <code style="background:#f5f3ff;padding:1px 6px;border-radius:5px;">{{ $pdfT->template_name }}</code>
+                    <span style="margin-left:6px;font-style:italic;">Requires DOCUMENT header in Meta Business Manager</span>
+                </div>
+                @endif
+                <div style="font-size:12px;color:#64748b;background:#fff;padding:10px 14px;border-radius:10px;border-left:3px solid #e9d5ff;line-height:1.6;white-space:pre-line;max-height:80px;overflow:hidden;">{{ Str::limit($pdfT->message_body, 200) }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+                    <input type="checkbox" {{ $pdfT->is_active ? 'checked' : '' }}
+                        onchange="toggleTemplate({{ $pdfT->id }}, this)"
+                        style="opacity:0;width:0;height:0;">
+                    <span id="pt-track-{{ $pdfT->id }}" style="position:absolute;inset:0;border-radius:24px;background:{{ $pdfT->is_active ? '#25d366' : '#e2e8f0' }};transition:background .2s;"></span>
+                    <span id="pt-thumb-{{ $pdfT->id }}" style="position:absolute;left:{{ $pdfT->is_active ? '22px' : '2px' }};top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;"></span>
+                </label>
+                <button onclick="openEditModal({{ $pdfT->id }}, '{{ addslashes($pdfT->trigger_event) }}', '{{ addslashes($pdfT->template_name) }}', {{ json_encode($pdfT->message_body) }}, '{{ $pdfT->approval_status }}', {{ $pdfT->is_active ? 'true' : 'false' }}, true)"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <form action="{{ route('platform.whatsapp.template.destroy', $pdfT->id) }}" method="POST" style="display:inline;"
+                    onsubmit="return confirm('Delete the PDF invoice template? Hotels will fall back to the text-only checkout template.')">
+                    @csrf @method('DELETE')
+                    <button type="submit" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fee2e2;color:#b91c1c;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+                @if($pdfStatus !== 'approved')
+                <button onclick="submitToMeta({{ $pdfT->id }}, this)" id="pt-submit-{{ $pdfT->id }}"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <i class="fab fa-meta"></i> Submit PDF Template
+                </button>
+                @else
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
+                    <i class="fas fa-check-circle"></i> Approved
+                </span>
+                @endif
+            </div>
+        </div>
+        <div id="pt-result-{{ $pdfT->id }}" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;"></div>
+    </div>
+    @endforeach
 </div>
 @endforeach
 </div>
