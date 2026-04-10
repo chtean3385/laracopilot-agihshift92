@@ -52,24 +52,29 @@ class WhatsAppController extends Controller
         }
 
         try {
-            $response = Http::withToken($settings->saas_token)
+            $response = Http::timeout(15)
+                ->withToken($settings->saas_token)
                 ->post("https://graph.facebook.com/v19.0/{$settings->saas_phone_number_id}/messages", [
                     'messaging_product' => 'whatsapp',
                     'to'                => $phone,
-                    'type'              => 'text',
-                    'text'              => ['body' => 'Test message from ' . config('app.name') . ' — your WhatsApp integration is working!'],
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'     => 'hello_world',
+                        'language' => ['code' => 'en_US'],
+                    ],
                 ]);
 
             if ($response->successful()) {
-                return back()->with('success', "Test message sent to {$request->phone} successfully!");
+                return back()->with('success', "Test message (hello_world template) sent to +{$phone} successfully!");
             }
 
-            $err = $response->json('error.message') ?? $response->body();
+            $err     = $response->json('error.message') ?? $response->body();
+            $errCode = $response->json('error.code');
             Log::warning('Platform WhatsApp test send failed', ['body' => $response->body()]);
-            return back()->with('error', 'Test failed: ' . $err);
+            return back()->with('error', 'Test failed: ' . $err . ($errCode ? " (code {$errCode})" : ''));
         } catch (\Throwable $e) {
             Log::error('Platform WhatsApp test exception: ' . $e->getMessage());
-            return back()->with('error', 'Could not reach Meta\'s servers. Check your internet connection.');
+            return back()->with('error', 'Could not reach Meta\'s servers: ' . $e->getMessage());
         }
     }
 
