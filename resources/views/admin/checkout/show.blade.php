@@ -207,15 +207,63 @@
                     <textarea name="notes" rows="2" class="form-input" placeholder="Any remarks about the stay or departure..."></textarea>
                 </div>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;">
-                <a href="{{ route('checkout.index') }}" class="btn-secondary">Cancel</a>
-                <button type="submit" style="display:inline-flex;align-items:center;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;padding:11px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,.4);">
-                    <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>Complete Check-Out & Generate Invoice
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:10px;">
+                <button type="button" onclick="showVoidModal()"
+                    style="display:inline-flex;align-items:center;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;padding:9px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">
+                    <i class="fas fa-ban" style="margin-right:7px;"></i>Void / Cancel Booking
                 </button>
+                <div style="display:flex;gap:10px;">
+                    <a href="{{ route('checkout.index') }}" class="btn-secondary">Back</a>
+                    <button type="submit" style="display:inline-flex;align-items:center;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;padding:11px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,.4);">
+                        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>Complete Check-Out & Generate Invoice
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
+
+{{-- Void/Cancel Modal --}}
+<div id="voidModal" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:420px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:18px 22px;display:flex;align-items:center;gap:12px;">
+            <i class="fas fa-ban" style="color:#fff;font-size:20px;"></i>
+            <div>
+                <div style="font-weight:800;color:#fff;font-size:15px;">Void / Cancel Booking</div>
+                <div style="color:#fecaca;font-size:12px;">Booking #{{ $booking->booking_number }} — {{ $booking->customer?->name }}</div>
+            </div>
+        </div>
+        <div style="padding:24px;">
+            <p style="font-size:13px;color:#475569;margin-bottom:16px;">This will cancel the booking and free up the room. No invoice will be generated. This action cannot be undone.</p>
+            <form action="{{ route('checkout.void', $booking->id) }}" method="POST">
+                @csrf
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Reason for cancellation (optional)</label>
+                    <input type="text" name="reason" placeholder="e.g. Guest did not stay, test booking, early departure..."
+                        style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;">
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button type="button" onclick="document.getElementById('voidModal').style.display='none'"
+                        style="flex:1;padding:10px;background:#f1f5f9;border:none;border-radius:10px;font-weight:700;font-size:13px;color:#475569;cursor:pointer;">
+                        Keep Booking
+                    </button>
+                    <button type="submit"
+                        style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">
+                        <i class="fas fa-ban" style="margin-right:5px;"></i>Confirm Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function showVoidModal() {
+    document.getElementById('voidModal').style.display = 'flex';
+}
+document.getElementById('voidModal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
+</script>
 
 @if(\App\Models\Module::isEnabled('payment_links'))
 <div id="coUpiModal" style="display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">

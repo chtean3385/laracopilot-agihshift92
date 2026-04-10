@@ -27,7 +27,7 @@ class MetaProvider implements WhatsAppProviderInterface
         $to = $this->sanitizePhone($to);
 
         try {
-            $response = Http::withToken($this->config->api_key)
+            $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
                 ->post("https://graph.facebook.com/v18.0/{$this->config->phone_number_id}/messages", [
                     'messaging_product' => 'whatsapp',
                     'to'                => $to,
@@ -70,7 +70,7 @@ class MetaProvider implements WhatsAppProviderInterface
         ];
 
         try {
-            $response = Http::withToken($this->config->api_key)
+            $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
                 ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
 
             if ($response->successful()) {
@@ -100,7 +100,7 @@ class MetaProvider implements WhatsAppProviderInterface
     public function uploadMedia(string $pdfBytes, string $filename = 'Invoice.pdf'): ?string
     {
         try {
-            $response = Http::withToken($this->config->api_key)
+            $response = Http::timeout(20)->connectTimeout(5)->withToken($this->config->api_key)
                 ->attach('file', $pdfBytes, $filename, ['Content-Type' => 'application/pdf'])
                 ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/media", [
                     'messaging_product' => 'whatsapp',
@@ -168,7 +168,7 @@ class MetaProvider implements WhatsAppProviderInterface
         ];
 
         try {
-            $response = Http::withToken($this->config->api_key)
+            $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
                 ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
 
             if ($response->successful()) {

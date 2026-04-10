@@ -122,9 +122,10 @@ Route::get('/checkin/{id}',  [CheckInController::class, 'show']   )->name('check
 Route::post('/checkin/{id}', [CheckInController::class, 'process'])->middleware('permission:checkin.process')->name('checkin.process');
 
 // ── Check-Out ──────────────────────────────────────────────────────────────
-Route::get('/checkout',       [CheckOutController::class, 'index']  )->name('checkout.index');
-Route::get('/checkout/{id}',  [CheckOutController::class, 'show']   )->name('checkout.show');
-Route::post('/checkout/{id}', [CheckOutController::class, 'process'])->middleware('permission:checkout.process')->name('checkout.process');
+Route::get('/checkout',            [CheckOutController::class, 'index']  )->name('checkout.index');
+Route::get('/checkout/{id}',       [CheckOutController::class, 'show']   )->name('checkout.show');
+Route::post('/checkout/{id}',      [CheckOutController::class, 'process'])->middleware('permission:checkout.process')->name('checkout.process');
+Route::post('/checkout/{id}/void', [CheckOutController::class, 'void']   )->name('checkout.void');
 
 // ── Payments ───────────────────────────────────────────────────────────────
 Route::get('/payments',        [PaymentController::class, 'index'])->name('payments.index');

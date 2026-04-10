@@ -161,4 +161,36 @@ class CheckOutController extends Controller
         return redirect()->route('invoices.show', $invoice->id)
             ->with('success', 'Check-out complete! Invoice generated.');
     }
+
+    public function void(Request $request, $bookingId)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+
+        $booking = Booking::with(['room', 'customer'])->findOrFail($bookingId);
+
+        if (!in_array($booking->status, ['checked_in', 'confirmed', 'pending'])) {
+            return redirect()->route('checkout.index')
+                ->with('error', 'This booking cannot be cancelled (status: ' . $booking->status . ').');
+        }
+
+        $booking->update([
+            'status'             => 'cancelled',
+            'actual_checkout_at' => now(),
+            'checkout_notes'     => 'Voided/Cancelled: ' . ($request->input('reason') ?: 'No reason provided'),
+        ]);
+
+        if ($booking->room) {
+            $booking->room->update(['status' => 'available']);
+        }
+
+        ActivityLogger::log(
+            'Booking Voided',
+            'Check-Out',
+            'Booking #' . $booking->booking_number . ' for ' . ($booking->customer->name ?? 'Guest') .
+            ' (Room ' . ($booking->room->room_number ?? '?') . ') was voided/cancelled.'
+        );
+
+        return redirect()->route('checkout.index')
+            ->with('success', 'Booking #' . $booking->booking_number . ' has been cancelled and the room is now available.');
+    }
 }
