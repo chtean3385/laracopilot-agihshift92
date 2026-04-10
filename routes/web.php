@@ -346,6 +346,7 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::delete('/whatsapp/templates/{id}',                 [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateDestroy'] )->name('platform.whatsapp.template.destroy');
     Route::post('/whatsapp/templates/{id}/toggle',            [\App\Http\Controllers\Platform\WhatsAppController::class, 'templateToggle']  )->name('platform.whatsapp.template.toggle');
     Route::post('/whatsapp/templates/{id}/submit-meta',       [\App\Http\Controllers\Platform\WhatsAppController::class, 'submitToMeta']    )->name('platform.whatsapp.template.submit-meta');
+    Route::post('/whatsapp/templates/sync-from-meta',         [\App\Http\Controllers\Platform\WhatsAppController::class, 'syncFromMeta']      )->name('platform.whatsapp.template.sync');
 
     // Analytics & Campaigns
     Route::get('/analytics',           [\App\Http\Controllers\Platform\AnalyticsController::class, 'index']        )->name('platform.analytics.index');

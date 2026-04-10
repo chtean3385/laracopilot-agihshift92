@@ -22,11 +22,19 @@ $eventMeta = [
         </h1>
         <p style="color:#6b7280;font-size:14px;margin:0;">These templates are used by all <strong>Basic plan</strong> hotels on the shared number. Pro+ hotels manage their own templates inside their CRM.</p>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <a href="{{ route('platform.whatsapp.settings') }}"
             style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
             <i class="fas fa-cog"></i> Platform Settings
         </a>
+        <form method="POST" action="{{ route('platform.whatsapp.template.sync') }}" style="margin:0;">
+            @csrf
+            <button type="submit"
+                style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;"
+                onclick="this.disabled=true;this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i> Syncing…';this.form.submit();">
+                <i class="fas fa-sync-alt"></i> Sync from Meta
+            </button>
+        </form>
         <button onclick="openCreateModal()"
             style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#25D366,#1aad55);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;">
             <i class="fas fa-plus"></i> New Template
@@ -55,6 +63,38 @@ $eventMeta = [
     </div>
 </div>
 @endif
+
+{{-- ── Legend ── --}}
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px 20px;margin-bottom:18px;">
+    <div style="font-size:12px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">
+        <i class="fas fa-info-circle" style="color:#7c3aed;margin-right:6px;"></i>How it works
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#fef3c7;color:#92400e;white-space:nowrap;flex-shrink:0;margin-top:1px;">Pending</div>
+            <span style="font-size:12px;color:#6b7280;line-height:1.5;">Template is not yet submitted to Meta, or is under review. Cannot send to real users yet.</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#dcfce7;color:#15803d;white-space:nowrap;flex-shrink:0;margin-top:1px;">Approved</div>
+            <span style="font-size:12px;color:#6b7280;line-height:1.5;">Meta reviewed and approved this template. It can now send messages to any WhatsApp number.</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="display:inline-flex;align-items:center;gap:5px;width:44px;height:24px;border-radius:12px;background:#25D366;padding:0 4px;flex-shrink:0;margin-top:1px;">
+                <div style="width:18px;height:18px;background:#fff;border-radius:50%;margin-left:auto;"></div>
+            </div>
+            <span style="font-size:12px;color:#6b7280;line-height:1.5;"><strong>Toggle ON:</strong> Template is active — will automatically send when the event fires (e.g., new booking). Requires Meta approval too.</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="display:inline-flex;align-items:center;gap:5px;width:44px;height:24px;border-radius:12px;background:#d1d5db;padding:0 4px;flex-shrink:0;margin-top:1px;">
+                <div style="width:18px;height:18px;background:#fff;border-radius:50%;"></div>
+            </div>
+            <span style="font-size:12px;color:#6b7280;line-height:1.5;"><strong>Toggle OFF:</strong> Template is inactive — saved but will NOT send even if Meta approved it.</span>
+        </div>
+    </div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#6b7280;">
+        <strong>Workflow:</strong> Create template → Click <em>Submit to Meta</em> → Meta reviews (minutes to hours) → Click <em>Sync from Meta</em> to pull latest approval status → Turn toggle ON to activate.
+    </div>
+</div>
 
 {{-- Templates grid by event --}}
 <div style="display:grid;gap:16px;">
@@ -171,6 +211,71 @@ $eventMeta = [
 @endforeach
 </div>
 
+{{-- ── Custom Event Templates ── --}}
+@if($customTemplates->count() > 0)
+<div style="margin-top:24px;">
+    <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-puzzle-piece" style="color:#7c3aed;"></i> Custom Event Templates
+        <span style="font-size:11px;font-weight:600;color:#7c3aed;background:#f5f3ff;padding:2px 8px;border-radius:10px;">Manually triggered</span>
+    </div>
+    <div style="display:grid;gap:14px;">
+    @foreach($customTemplates as $ct)
+    @php
+        $ctStatus      = $ct->approval_status ?? 'pending';
+        $ctMetaStatus  = $ct->meta_status ?? 'not_submitted';
+        $ctStatusColor = match($ctStatus) {
+            'approved' => ['#dcfce7','#15803d'],
+            'rejected' => ['#fee2e2','#b91c1c'],
+            default    => ['#fef3c7','#92400e'],
+        };
+    @endphp
+    <div style="background:#fff;border-radius:18px;padding:20px 24px;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid #f1f5f9;">
+        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div style="width:48px;height:48px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-puzzle-piece" style="color:#fff;font-size:18px;"></i>
+            </div>
+            <div style="flex:1;min-width:200px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                    <span style="font-size:15px;font-weight:800;color:#1e293b;">{{ ucwords(str_replace(['.','_'], ' ', $ct->trigger_event)) }}</span>
+                    <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:{{ $ctStatusColor[0] }};color:{{ $ctStatusColor[1] }};">{{ ucfirst($ctStatus) }}</span>
+                    <code style="font-size:10px;background:#f1f5f9;color:#64748b;padding:1px 6px;border-radius:5px;">{{ $ct->trigger_event }}</code>
+                </div>
+                @if($ct->template_name)
+                <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;"><i class="fas fa-tag" style="margin-right:4px;"></i><code style="color:#7c3aed;background:#f5f3ff;padding:1px 6px;border-radius:5px;">{{ $ct->template_name }}</code></div>
+                @endif
+                <div style="font-size:12px;color:#64748b;background:#f8fafc;padding:10px 14px;border-radius:10px;border-left:3px solid #e2e8f0;line-height:1.6;white-space:pre-line;max-height:80px;overflow:hidden;">{{ Str::limit($ct->message_body, 200) }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+                <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" title="{{ $ct->is_active ? 'Active — toggle OFF to disable' : 'Inactive — toggle ON to enable' }}">
+                    <input type="checkbox" {{ $ct->is_active ? 'checked' : '' }} onchange="toggleTemplate({{ $ct->id }}, this)" style="opacity:0;width:0;height:0;">
+                    <span id="toggle-{{ $ct->id }}" style="position:absolute;inset:0;border-radius:12px;background:{{ $ct->is_active ? '#25D366' : '#d1d5db' }};transition:background .2s;"></span>
+                    <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;{{ $ct->is_active ? 'transform:translateX(20px)' : '' }}"></span>
+                </label>
+                <button onclick="openEditModal({{ $ct->id }}, '{{ addslashes($ct->trigger_event) }}', '{{ addslashes($ct->template_name) }}', {{ json_encode($ct->message_body) }}, '{{ $ct->approval_status }}', {{ $ct->is_active ? 'true' : 'false' }})"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <form action="{{ route('platform.whatsapp.template.destroy', $ct->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this template?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fee2e2;color:#b91c1c;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </form>
+                @if($ctStatus !== 'approved')
+                <button onclick="submitToMeta({{ $ct->id }}, this)" id="pt-submit-{{ $ct->id }}"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#1877F2,#0d65d9);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                    <i class="fab fa-meta"></i> Submit to Meta
+                </button>
+                @else
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;"><i class="fas fa-check-circle"></i> Approved</span>
+                @endif
+            </div>
+        </div>
+        <div id="pt-result-{{ $ct->id }}" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;"></div>
+    </div>
+    @endforeach
+    </div>
+</div>
+@endif
+
 {{-- Variables reference --}}
 <div style="margin-top:22px;background:#fff;border-radius:16px;padding:18px 24px;border:1px solid #f1f5f9;box-shadow:0 2px 8px rgba(0,0,0,.04);">
     <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:10px;">
@@ -200,13 +305,22 @@ $eventMeta = [
             <div style="display:grid;gap:18px;">
                 <div>
                     <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Trigger Event <span style="color:#e11d48;">*</span></label>
-                    <select name="trigger_event" id="create-event" required
+                    <select name="trigger_event" id="create-event" onchange="handleCustomEvent(this)"
                         style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;background:#fff;">
                         <option value="">— Select event —</option>
                         @foreach($allEvents as $key => $label)
                         <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
+                        <option value="__custom__">✏️ Custom Event Name…</option>
                     </select>
+                    <div id="custom-event-wrap" style="display:none;margin-top:8px;">
+                        <input type="text" name="custom_trigger_event" id="custom-event-input"
+                            placeholder="e.g. birthday_greeting, room_upgrade_offer"
+                            style="width:100%;padding:10px 14px;border:1.5px solid #7c3aed;border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;">
+                        <div style="font-size:11px;color:#7c3aed;margin-top:4px;">
+                            <i class="fas fa-info-circle"></i> This will be a unique event key (lowercase letters, numbers, dots, underscores). Use it to send this template manually via API or future custom triggers.
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Template Name <span style="color:#e11d48;">*</span></label>
@@ -303,15 +417,35 @@ $eventMeta = [
 <script>
 const allEvents = @json($allEvents);
 
+function handleCustomEvent(sel) {
+    const wrap  = document.getElementById('custom-event-wrap');
+    const input = document.getElementById('custom-event-input');
+    if (sel.value === '__custom__') {
+        wrap.style.display = 'block';
+        input.required = true;
+        sel.removeAttribute('required');
+    } else {
+        wrap.style.display = 'none';
+        input.required = false;
+        sel.required = true;
+    }
+}
+
 function openCreateModal(presetEvent) {
     const modal = document.getElementById('createModal');
     modal.style.display = 'flex';
+    document.getElementById('custom-event-wrap').style.display = 'none';
+    document.getElementById('custom-event-input').value = '';
+    document.getElementById('custom-event-input').required = false;
     if (presetEvent) {
         document.getElementById('create-event').value = presetEvent;
+    } else {
+        document.getElementById('create-event').value = '';
     }
 }
 function closeCreateModal() {
     document.getElementById('createModal').style.display = 'none';
+    document.getElementById('custom-event-wrap').style.display = 'none';
 }
 
 function openEditModal(id, event, name, body, status, active) {

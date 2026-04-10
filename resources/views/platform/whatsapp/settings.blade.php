@@ -50,6 +50,11 @@
     <i class="fas fa-check-circle"></i> {{ session('success') }}
 </div>
 @endif
+@if(session('warning'))
+<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 18px;border-radius:12px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;">
+    <i class="fas fa-exclamation-triangle"></i> {{ session('warning') }}
+</div>
+@endif
 @if(session('error'))
 <div style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:12px 18px;border-radius:12px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;">
     <i class="fas fa-times-circle"></i> {{ session('error') }}

@@ -65,7 +65,21 @@ class WhatsAppController extends Controller
                 ]);
 
             if ($response->successful()) {
-                return back()->with('success', "Test message (hello_world template) sent to +{$phone} successfully!");
+                $data      = $response->json();
+                $msgId     = $data['messages'][0]['id'] ?? null;
+                $waId      = $data['contacts'][0]['wa_id'] ?? $phone;
+                $msgIdNote = $msgId ? " Message ID: {$msgId}" : '';
+
+                Log::info('Platform WhatsApp test send succeeded', [
+                    'to'    => $waId,
+                    'msgId' => $msgId,
+                ]);
+
+                if ($waId !== $phone) {
+                    return back()->with('warning', "Meta accepted the message for +{$waId} (you entered +{$phone}).{$msgIdNote} If you don't receive it, ensure the number is registered as a test recipient in Meta Business Manager.");
+                }
+
+                return back()->with('success', "hello_world template queued for +{$waId}.{$msgIdNote} — Check your WhatsApp. If it doesn't arrive, add the number as a test recipient in Meta Business Manager → WhatsApp → Test Numbers.");
             }
 
             $err     = $response->json('error.message') ?? $response->body();
@@ -84,22 +98,29 @@ class WhatsAppController extends Controller
 
     public function templates()
     {
-        $templates = WhatsAppTemplate::withoutGlobalScopes()
+        $allTemplates = WhatsAppTemplate::withoutGlobalScopes()
             ->whereNull('hotel_id')
             ->orderBy('id')
-            ->get()
-            ->keyBy('trigger_event');
+            ->get();
 
-        $allEvents = WhatsAppTemplate::allEvents();
-        $platform  = PlatformWhatsAppSetting::instance();
+        $allEvents       = WhatsAppTemplate::allEvents();
+        $standardKeyed   = $allTemplates->whereIn('trigger_event', array_keys($allEvents))->keyBy('trigger_event');
+        $customTemplates = $allTemplates->whereNotIn('trigger_event', array_keys($allEvents))->values();
+        $platform        = PlatformWhatsAppSetting::instance();
 
-        return view('platform.whatsapp.templates', compact('templates', 'allEvents', 'platform'));
+        return view('platform.whatsapp.templates', compact('standardKeyed', 'customTemplates', 'allEvents', 'platform'))
+            ->with('templates', $standardKeyed);
     }
 
     public function templateStore(Request $request)
     {
-        $data = $request->validate([
-            'trigger_event' => 'required|string|in:' . implode(',', array_keys(WhatsAppTemplate::allEvents())),
+        $customEvent = trim($request->input('custom_trigger_event', ''));
+        $triggerEvent = ($request->input('trigger_event') === '__custom__' && $customEvent !== '')
+            ? strtolower(preg_replace('/[^a-z0-9._]+/', '_', $customEvent))
+            : $request->input('trigger_event');
+
+        $data = $request->merge(['trigger_event' => $triggerEvent])->validate([
+            'trigger_event' => 'required|string|max:120',
             'template_name' => 'required|string|max:120',
             'message_body'  => 'required|string',
             'is_active'     => 'nullable|boolean',
@@ -113,6 +134,58 @@ class WhatsAppController extends Controller
         WhatsAppTemplate::withoutGlobalScopes()->create($data);
 
         return redirect()->route('platform.whatsapp.templates')->with('success', 'Global template created successfully.');
+    }
+
+    public function syncFromMeta()
+    {
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_waba_id || !$platform->saas_token) {
+            return back()->with('error', 'WABA ID or access token not configured in Platform Settings.');
+        }
+
+        try {
+            $response = Http::timeout(20)
+                ->withToken($platform->saas_token)
+                ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
+                    'fields' => 'name,status,id',
+                    'limit'  => 200,
+                ]);
+
+            if (!$response->successful()) {
+                $err = $response->json('error.message') ?? $response->body();
+                return back()->with('error', 'Meta API error: ' . $err);
+            }
+
+            $metaTemplates = collect($response->json('data') ?? [])
+                ->keyBy(fn($t) => strtolower($t['name']));
+
+            $dbTemplates = WhatsAppTemplate::withoutGlobalScopes()
+                ->whereNull('hotel_id')
+                ->get();
+
+            $updated = 0;
+            foreach ($dbTemplates as $tmpl) {
+                $key  = strtolower($tmpl->template_name);
+                $meta = $metaTemplates->get($key);
+                if (!$meta) continue;
+
+                $newStatus     = strtolower($meta['status']) === 'approved' ? 'approved'
+                    : (strtolower($meta['status']) === 'rejected' ? 'rejected' : 'pending');
+                $newMetaStatus = strtolower($meta['status']) === 'approved' ? 'approved' : 'submitted';
+
+                $tmpl->update([
+                    'approval_status'  => $newStatus,
+                    'meta_status'      => $newMetaStatus,
+                    'meta_template_id' => $meta['id'] ?? $tmpl->meta_template_id,
+                ]);
+                $updated++;
+            }
+
+            return back()->with('success', "Synced {$updated} template(s) from Meta. Statuses are now up to date.");
+        } catch (\Throwable $e) {
+            Log::error('Platform WhatsApp syncFromMeta error: ' . $e->getMessage());
+            return back()->with('error', 'Sync failed: ' . $e->getMessage());
+        }
     }
 
     public function templateSave(Request $request, int $id)
