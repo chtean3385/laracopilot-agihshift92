@@ -60,6 +60,25 @@
                             <span id="toggle-thumb" style="position:absolute;left:{{ old('is_active', $template->is_active) ? '24px' : '2px' }};top:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:left .2s;"></span>
                         </label>
                     </div>
+
+                    {{-- PDF attachment toggle — only for checkout.done --}}
+                    @if($template->trigger_event === 'checkout.done')
+                    <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#fdf4ff;border:1px solid #e9d5ff;border-radius:12px;">
+                        <div style="flex-shrink:0;padding-top:1px;">
+                            <input type="hidden" name="has_document_attachment" value="0">
+                            <input type="checkbox" name="has_document_attachment" value="1"
+                                id="toggle-pdf" {{ old('has_document_attachment', $template->has_document_attachment) ? 'checked' : '' }}
+                                style="width:20px;height:20px;cursor:pointer;accent-color:#7c3aed;">
+                        </div>
+                        <div>
+                            <label for="toggle-pdf" style="font-size:14px;font-weight:700;color:#7c3aed;cursor:pointer;">Attach PDF invoice on send</label>
+                            <div style="font-size:12px;color:#9333ea;margin-top:2px;">
+                                When enabled, the invoice PDF is generated at checkout and sent as a document attachment via WhatsApp.
+                                Your Meta template must have a <strong>DOCUMENT header</strong> component for this to work.
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 <div style="margin-top:20px;display:flex;gap:12px;">

@@ -18,13 +18,15 @@ class WhatsAppTemplate extends Model
         'message_body',
         'variables_hint',
         'is_active',
+        'has_document_attachment',
         'approval_status',
         'meta_template_id',
         'meta_status',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'                => 'boolean',
+        'has_document_attachment'  => 'boolean',
     ];
 
     public static function forEvent(string $event): ?static

@@ -79,6 +79,7 @@ class SafeMigrate extends Command
             // ── 5. Global platform WhatsApp templates (hotel_id = null) ──────────────
             if (Schema::hasTable('whatsapp_templates')) {
                 $this->seedGlobalWhatsAppTemplates();
+                $this->seedPdfCheckoutTemplate();
             }
 
             // ── 6. Platform settings from environment variables ────────────────────
@@ -375,11 +376,14 @@ class SafeMigrate extends Command
                 }
                 DB::table('whatsapp_templates')->where('id', $existing->id)->update($update);
 
-                // Remove stale duplicates for the same event
+                // Remove stale duplicates for the same event,
+                // but preserve any template marked as has_document_attachment=true
+                // (those are intentional secondary templates for PDF sends).
                 DB::table('whatsapp_templates')
                     ->whereNull('hotel_id')
                     ->where('trigger_event', $tpl['trigger_event'])
                     ->where('id', '!=', $existing->id)
+                    ->where('has_document_attachment', false)
                     ->delete();
 
                 $count++;
@@ -392,6 +396,38 @@ class SafeMigrate extends Command
         }
 
         $this->info("Global WhatsApp templates: {$count} upserted.");
+    }
+
+    private function seedPdfCheckoutTemplate(): void
+    {
+        // Ensure the "check_out_bill_with_pdf" global template exists.
+        // This is a DOCUMENT-header Meta template (separate from the approved text-only checkout template).
+        // It starts as pending — the Platform Admin submits it to Meta and activates it once approved.
+        // The dedup loop preserves it because has_document_attachment = true.
+        $exists = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->where('template_name', 'check_out_bill_with_pdf')
+            ->exists();
+
+        if (!$exists) {
+            DB::table('whatsapp_templates')->insert([
+                'hotel_id'                => null,
+                'trigger_event'           => 'checkout.done',
+                'template_name'           => 'check_out_bill_with_pdf',
+                'message_body'            => "Thank you, {{guest_name}}, for staying at {{hotel_name}}! 🙏\n\nWe hope you had a wonderful stay.\n\nYour invoice {{invoice_number}} is attached for your records.\nTotal Amount: ₹{{total_amount}}\n\nWe would love to host you again!",
+                'variables_hint'          => '{{guest_name}}, {{hotel_name}}, {{invoice_number}}, {{total_amount}}',
+                'is_active'               => false,
+                'has_document_attachment' => true,
+                'approval_status'         => 'pending',
+                'meta_template_id'        => null,
+                'meta_status'             => 'not_submitted',
+                'created_at'              => now(),
+                'updated_at'              => now(),
+            ]);
+            $this->info('PDF checkout template (check_out_bill_with_pdf) created — submit to Meta to activate.');
+        } else {
+            $this->info('PDF checkout template: already exists, skipping.');
+        }
     }
 
     private function seedPlatformSettings(): void

@@ -166,7 +166,7 @@ $eventMeta = [
                 </label>
 
                 {{-- Edit --}}
-                <button onclick="openEditModal({{ $t->id }}, '{{ addslashes($t->trigger_event) }}', '{{ addslashes($t->template_name) }}', {{ json_encode($t->message_body) }}, '{{ $t->approval_status }}', {{ $t->is_active ? 'true' : 'false' }})"
+                <button onclick="openEditModal({{ $t->id }}, '{{ addslashes($t->trigger_event) }}', '{{ addslashes($t->template_name) }}', {{ json_encode($t->message_body) }}, '{{ $t->approval_status }}', {{ $t->is_active ? 'true' : 'false' }}, {{ $t->has_document_attachment ? 'true' : 'false' }})"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -399,6 +399,19 @@ $eventMeta = [
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" id="edit-active" value="1" style="width:18px;height:18px;cursor:pointer;">
                 </div>
+                {{-- PDF attachment toggle (only shown for checkout.done templates) --}}
+                <div id="edit-pdf-row" style="display:none;align-items:flex-start;gap:12px;padding:12px 14px;background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;">
+                    <input type="hidden" name="has_document_attachment" value="0">
+                    <input type="checkbox" name="has_document_attachment" id="edit-pdf-attach" value="1"
+                        style="width:18px;height:18px;cursor:pointer;margin-top:2px;flex-shrink:0;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#7c3aed;">Attach PDF invoice on send</div>
+                        <div style="font-size:11px;color:#9333ea;margin-top:2px;">
+                            When enabled, the invoice PDF is generated and uploaded to Meta, then sent as a DOCUMENT header with this template.
+                            This template must have a <strong>DOCUMENT header</strong> in Meta Business Manager.
+                        </div>
+                    </div>
+                </div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
                 <button type="button" onclick="closeEditModal()"
@@ -448,13 +461,24 @@ function closeCreateModal() {
     document.getElementById('custom-event-wrap').style.display = 'none';
 }
 
-function openEditModal(id, event, name, body, status, active) {
+function openEditModal(id, event, name, body, status, active, hasDocAttachment) {
     document.getElementById('editForm').action = '/platform/whatsapp/templates/' + id;
     document.getElementById('edit-event-display').value = allEvents[event] || event;
     document.getElementById('edit-name').value = name;
     document.getElementById('edit-body').value = body;
     document.getElementById('edit-status').value = status;
     document.getElementById('edit-active').checked = active;
+
+    const pdfRow = document.getElementById('edit-pdf-row');
+    const pdfCheck = document.getElementById('edit-pdf-attach');
+    if (event === 'checkout.done') {
+        pdfRow.style.display = 'flex';
+        pdfCheck.checked = hasDocAttachment || false;
+    } else {
+        pdfRow.style.display = 'none';
+        pdfCheck.checked = false;
+    }
+
     document.getElementById('editModal').style.display = 'flex';
 }
 function closeEditModal() {

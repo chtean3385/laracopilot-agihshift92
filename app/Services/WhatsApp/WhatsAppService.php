@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\PlatformWhatsAppSetting;
 use App\Models\WhatsAppConfig;
 use App\Models\WhatsAppTemplate;
+use App\Services\InvoicePdf;
 use App\Services\WhatsApp\Providers\MetaProvider;
 use Illuminate\Support\Facades\Log;
 
@@ -70,7 +71,7 @@ class WhatsAppService
                 return false;
             }
 
-            $booking->load(['customer', 'room', 'invoice', 'payments']);
+            $booking->load(['customer', 'room', 'invoice.booking.extraCharges', 'payments']);
             $phone = $booking->customer->phone ?? null;
             if (!$phone) {
                 Log::info('WhatsApp sendForEvent skipped: customer has no phone number', $context);
@@ -100,7 +101,7 @@ class WhatsAppService
                 foreach ($varNames as $name) {
                     $params[] = $vars[$name] ?? '';
                 }
-                $sent = $provider->sendTemplate($phone, $template->template_name, $params);
+                $sent = static::sendWithTemplate($provider, $phone, $template, $params, $booking, $context);
             } else {
                 // Own-number hotel: use hotel-specific template
                 $template = WhatsAppTemplate::forEvent($event);
@@ -116,7 +117,7 @@ class WhatsAppService
                     foreach ($varNames as $name) {
                         $params[] = $vars[$name] ?? '';
                     }
-                    $sent = $provider->sendTemplate($phone, $template->template_name, $params);
+                    $sent = static::sendWithTemplate($provider, $phone, $template, $params, $booking, $context);
                 } else {
                     // Fallback: plain text (only works if guest messaged hotel within 24h)
                     $message = MessageBuilder::build($template->message_body, $booking);
@@ -143,6 +144,51 @@ class WhatsAppService
             ]));
             return false;
         }
+    }
+
+    private static function sendWithTemplate(
+        MetaProvider $provider,
+        string $phone,
+        WhatsAppTemplate $template,
+        array $params,
+        Booking $booking,
+        array $context
+    ): bool {
+        // If the template has a document attachment flag, try the PDF path first.
+        if ($template->has_document_attachment && $booking->invoice) {
+            $invoice  = $booking->invoice;
+            $pdfBytes = InvoicePdf::generate($invoice);
+
+            if ($pdfBytes) {
+                $filename = 'Invoice-' . ($invoice->invoice_number ?? 'INV') . '.pdf';
+                $mediaId  = $provider->uploadMedia($pdfBytes, $filename);
+
+                if ($mediaId) {
+                    Log::info('WhatsApp: sending document template with PDF attachment', array_merge($context, [
+                        'template' => $template->template_name,
+                        'media_id' => $mediaId,
+                        'filename' => $filename,
+                    ]));
+                    return $provider->sendDocumentTemplate(
+                        $phone,
+                        $template->template_name,
+                        $mediaId,
+                        $filename,
+                        $params
+                    );
+                }
+
+                // Media upload failed — fall through to plain template send
+                Log::warning('WhatsApp: PDF upload failed, falling back to text template', array_merge($context, [
+                    'error' => static::$lastError,
+                ]));
+            } else {
+                Log::warning('WhatsApp: PDF generation failed, falling back to text template', $context);
+            }
+        }
+
+        // Standard text-only template send
+        return $provider->sendTemplate($phone, $template->template_name, $params);
     }
 
     public static function sendRaw(string $phone, string $message): bool

@@ -105,13 +105,15 @@ class WhatsAppController extends Controller
     public function templateSave(Request $request, WhatsAppTemplate $template)
     {
         $data = $request->validate([
-            'template_name'   => 'required|string|max:120',
-            'message_body'    => 'required|string',
-            'approval_status' => 'nullable|in:pending,approved,rejected',
-            'is_active'       => 'nullable|boolean',
+            'template_name'           => 'required|string|max:120',
+            'message_body'            => 'required|string',
+            'approval_status'         => 'nullable|in:pending,approved,rejected',
+            'is_active'               => 'nullable|boolean',
+            'has_document_attachment' => 'nullable|boolean',
         ]);
-        $data['is_active']       = $request->boolean('is_active');
-        $data['approval_status'] = $data['approval_status'] ?? $template->approval_status;
+        $data['is_active']               = $request->boolean('is_active');
+        $data['has_document_attachment'] = $request->boolean('has_document_attachment');
+        $data['approval_status']         = $data['approval_status'] ?? $template->approval_status;
         $template->update($data);
         return redirect()->route('whatsapp.templates')->with('success', 'Template saved.');
     }
