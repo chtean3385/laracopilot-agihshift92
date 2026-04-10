@@ -194,7 +194,39 @@ class WhatsAppService
             }
         }
 
-        // Standard text-only template send
+        // Standard text-only template send.
+        // If the current template is a DOCUMENT-header template (PDF), it cannot be sent
+        // as a plain body-only template — Meta would reject it. Instead, find and send
+        // the approved text-only template for the same event as the fallback.
+        if ($template->has_document_attachment) {
+            $textTemplate = WhatsAppTemplate::withoutGlobalScopes()
+                ->when(is_null($template->hotel_id), fn ($q) => $q->whereNull('hotel_id'))
+                ->when(!is_null($template->hotel_id), fn ($q) => $q->where('hotel_id', $template->hotel_id))
+                ->where('trigger_event', $template->trigger_event)
+                ->where('has_document_attachment', false)
+                ->where('is_active', true)
+                ->where('approval_status', 'approved')
+                ->first();
+
+            if ($textTemplate) {
+                Log::info('WhatsApp: using text-only fallback template', array_merge($context, [
+                    'fallback_template' => $textTemplate->template_name,
+                ]));
+                $textVarNames = $textTemplate->extractVariableNames();
+                $textVars     = MessageBuilder::buildVars($booking);
+                $textParams   = [];
+                foreach ($textVarNames as $name) {
+                    $textParams[] = $textVars[$name] ?? '';
+                }
+                return $provider->sendTemplate($phone, $textTemplate->template_name, $textParams);
+            }
+
+            // No approved text template found — cannot send anything
+            static::setLastError('PDF send failed and no approved text-only checkout template found for fallback.');
+            Log::error('WhatsApp: PDF fallback failed — no approved text template', $context);
+            return false;
+        }
+
         return $provider->sendTemplate($phone, $template->template_name, $params);
     }
 
