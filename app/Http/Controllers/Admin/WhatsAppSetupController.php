@@ -11,6 +11,7 @@ use App\Models\WhatsAppTemplate;
 use App\Services\HotelContext;
 use App\Services\WhatsApp\WhatsAppSetupService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppSetupController extends Controller
@@ -192,6 +193,57 @@ class WhatsAppSetupController extends Controller
         $config->update(['setup_step' => $request->step - 1]);
 
         return response()->json(['success' => true]);
+    }
+
+    public function testShared(Request $request)
+    {
+        $request->validate(['phone' => 'required|string|min:10']);
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_token || !$platform->saas_phone_number_id) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Shared number is not fully configured. Contact the CRM administrator.',
+            ]);
+        }
+
+        $to = preg_replace('/[^0-9]/', '', $request->phone);
+        if (strlen($to) === 10 && !str_starts_with($to, '91')) {
+            $to = '91' . $to;
+        }
+
+        try {
+            $response = Http::timeout(15)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $to,
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'     => 'hello_world',
+                        'language' => ['code' => 'en_US'],
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Test message sent to +' . $to . '. Check your WhatsApp!',
+                ]);
+            }
+
+            $errMsg  = $response->json('error.message') ?? $response->body();
+            $errCode = $response->json('error.code');
+            Log::warning('WhatsApp testShared failed', ['body' => $response->body()]);
+
+            return response()->json([
+                'success' => false,
+                'error'   => $errMsg . ($errCode ? " (code {$errCode})" : ''),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp testShared exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 
     public function reset()

@@ -207,6 +207,7 @@ Route::post('/whatsapp/setup/embedded-complete',        [WhatsAppSetupController
 Route::post('/whatsapp/setup/resume',                   [WhatsAppSetupController::class, 'resumeSetup']      )->name('whatsapp.setup.resume');
 Route::post('/whatsapp/setup/retry-step',               [WhatsAppSetupController::class, 'retryStep']        )->name('whatsapp.setup.retry-step');
 Route::post('/whatsapp/setup/reset',                    [WhatsAppSetupController::class, 'reset']            )->name('whatsapp.setup.reset');
+Route::post('/whatsapp/setup/test-shared',              [WhatsAppSetupController::class, 'testShared']       )->name('whatsapp.setup.test-shared');
 
 // ── WhatsApp — Templates & Automations ────────────────────────────────────
 Route::get('/whatsapp/automations',                     [WhatsAppController::class, 'templates']       )->name('whatsapp.templates');

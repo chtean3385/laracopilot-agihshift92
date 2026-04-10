@@ -85,6 +85,103 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
             </button>
         </form>
     </div>
+
+    @if(($config->mode ?? 'shared') === 'shared')
+    {{-- ── Test Shared Number ── --}}
+    <div style="margin-top:24px;border-top:1px solid #e5e7eb;padding-top:24px;">
+        <div style="font-weight:700;color:#111827;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-flask" style="color:#7c3aed;"></i> Test Shared Number
+        </div>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:14px;">
+            Send the <strong>hello_world</strong> template to verify the shared number is working correctly.
+        </p>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:200px;">
+                <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">Phone Number (with country code)</label>
+                <input type="tel" id="testPhone" placeholder="e.g. 9876543210 or +919876543210"
+                    style="width:100%;border:1.5px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:14px;color:#111827;outline:none;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#d1d5db'">
+            </div>
+            <button onclick="sendTestMessage()"
+                style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;">
+                <i class="fas fa-paper-plane"></i> Send Test
+            </button>
+        </div>
+
+        {{-- Result banner --}}
+        <div id="testResult" style="display:none;margin-top:14px;padding:12px 16px;border-radius:10px;font-size:14px;font-weight:600;align-items:center;gap:10px;"></div>
+
+        {{-- Template preview --}}
+        <div style="margin-top:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 18px;">
+            <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">
+                Template Preview — hello_world
+            </div>
+            <div style="background:#fff;border-radius:8px;padding:12px 16px;font-size:13px;color:#111827;line-height:1.6;box-shadow:0 1px 4px rgba(0,0,0,.06);max-width:380px;">
+                <strong>Hello World</strong><br>
+                Welcome and congratulations!! This message demonstrates your ability to send a WhatsApp message notification from the Cloud API, hosted by Meta. Thank you for taking the time to test with us.
+            </div>
+            <div style="font-size:11px;color:#6b7280;margin-top:6px;">
+                <i class="fas fa-info-circle"></i> This is a Meta pre-approved template. No variables required.
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function sendTestMessage() {
+        const phone  = document.getElementById('testPhone').value.trim();
+        const result = document.getElementById('testResult');
+
+        if (!phone || phone.replace(/[^0-9]/g, '').length < 10) {
+            result.style.display = 'flex';
+            result.style.background = '#fef2f2';
+            result.style.border = '1px solid #fca5a5';
+            result.style.color = '#b91c1c';
+            result.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter a valid phone number (at least 10 digits).';
+            return;
+        }
+
+        result.style.display = 'flex';
+        result.style.background = '#f8fafc';
+        result.style.border = '1px solid #e2e8f0';
+        result.style.color = '#475569';
+        result.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+        fetch('{{ route("whatsapp.setup.test-shared") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ phone }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                result.style.background = '#f0fdf4';
+                result.style.border = '1px solid #86efac';
+                result.style.color = '#15803d';
+                result.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+            } else {
+                result.style.background = '#fef2f2';
+                result.style.border = '1px solid #fca5a5';
+                result.style.color = '#b91c1c';
+                result.innerHTML = '<i class="fas fa-times-circle"></i> ' + (data.error || 'Something went wrong.');
+            }
+        })
+        .catch(() => {
+            result.style.background = '#fef2f2';
+            result.style.border = '1px solid #fca5a5';
+            result.style.color = '#b91c1c';
+            result.innerHTML = '<i class="fas fa-times-circle"></i> Network error. Please try again.';
+        });
+    }
+
+    document.getElementById('testPhone').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') sendTestMessage();
+    });
+    </script>
+    @endif
 </div>
 
 @elseif($inProgress)
