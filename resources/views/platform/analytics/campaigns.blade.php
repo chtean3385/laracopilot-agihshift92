@@ -45,19 +45,46 @@
         </div>
 
         <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Message Body</label>
-            <textarea name="body" rows="7"
-                style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;resize:vertical;"
-                placeholder="Write your message here...">{{ old('body') }}</textarea>
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Channel</label>
+            <select name="channel" id="campaignChannel" onchange="toggleCampaignChannelFields()"
+                style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;">
+                <option value="email" {{ old('channel') == 'email' ? 'selected' : '' }}>Email only</option>
+                <option value="whatsapp" {{ old('channel') == 'whatsapp' ? 'selected' : '' }}>WhatsApp only</option>
+                <option value="both" {{ old('channel') == 'both' ? 'selected' : '' }}>Email + WhatsApp</option>
+            </select>
         </div>
 
-        <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Channel</label>
-            <select name="channel" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;">
-                <option value="email">Email only</option>
-                <option value="whatsapp">WhatsApp only</option>
-                <option value="both">Email + WhatsApp</option>
-            </select>
+        <div id="campaignBodySection" style="margin-bottom:14px;">
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Message Body <span style="font-size:11px;color:#94a3b8;">(Email / text preview)</span></label>
+            <textarea name="body" rows="5"
+                style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:9px;font-size:13px;color:#374151;resize:vertical;"
+                placeholder="Write your email message here...">{{ old('body') }}</textarea>
+        </div>
+
+        <div id="campaignWaSection" style="margin-bottom:14px;display:none;">
+            <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">
+                <i class="fab fa-whatsapp" style="color:#25d366;margin-right:4px;"></i> WhatsApp Template
+            </label>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                @php $platformTemplates = \App\Http\Controllers\Platform\HotelController::platformWaTemplates(); @endphp
+                @foreach($platformTemplates as $tplKey => $tpl)
+                <label style="border:2px solid #e2e8f0;border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;"
+                    class="wa-tpl-card" data-key="{{ $tplKey }}">
+                    <input type="radio" name="wa_template_key" value="{{ $tplKey }}"
+                        {{ old('wa_template_key') === $tplKey ? 'checked' : '' }}
+                        style="margin-top:3px;accent-color:#25d366;" onchange="highlightWaTpl()">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:3px;">
+                            {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
+                        </div>
+                        <div style="font-size:11px;color:#64748b;line-height:1.5;">
+                            {{ Str::limit(str_replace(['{name}','{url}'],['[Hotel Name]','[CRM URL]'], $tpl['preview']), 110) }}
+                        </div>
+                    </div>
+                </label>
+                @endforeach
+            </div>
+            <p style="font-size:11px;color:#94a3b8;margin-top:6px;">Templates must be approved in Meta Business Manager before they can be sent.</p>
         </div>
 
         <div style="margin-bottom:18px;">
@@ -127,6 +154,35 @@
 function toggleAllHotels(state) {
     document.querySelectorAll('.hotel-checkbox').forEach(el => el.checked = state);
 }
+
+function toggleCampaignChannelFields() {
+    const channel = document.getElementById('campaignChannel').value;
+    const bodySection = document.getElementById('campaignBodySection');
+    const waSection   = document.getElementById('campaignWaSection');
+    if (channel === 'whatsapp') {
+        bodySection.style.display = 'none';
+        waSection.style.display   = 'block';
+    } else if (channel === 'email') {
+        bodySection.style.display = 'block';
+        waSection.style.display   = 'none';
+    } else {
+        bodySection.style.display = 'block';
+        waSection.style.display   = 'block';
+    }
+    highlightWaTpl();
+}
+
+function highlightWaTpl() {
+    document.querySelectorAll('.wa-tpl-card').forEach(card => {
+        const radio = card.querySelector('input[type=radio]');
+        card.style.borderColor = radio?.checked ? '#25d366' : '#e2e8f0';
+        card.style.background  = radio?.checked ? '#f0fdf4'  : '#fff';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCampaignChannelFields();
+});
 </script>
 
 @endsection

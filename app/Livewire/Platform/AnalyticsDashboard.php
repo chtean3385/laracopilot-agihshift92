@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Platform;
 
+use App\Http\Controllers\Platform\HotelController;
 use App\Models\PlatformWhatsAppSetting;
 use App\Services\FcmService;
 use Carbon\Carbon;
@@ -21,13 +22,15 @@ class AnalyticsDashboard extends Component
     public int    $selectedHotelId = 0;
 
     // ── Quick Action modal ───────────────────────────────────────────────
-    public bool   $showQuickModal     = false;
-    public int    $quickModalHotelId  = 0;
-    public string $quickModalHotelName = '';
-    public string $quickModalChannel  = 'whatsapp'; // whatsapp | push
-    public string $quickMessage       = '';
-    public string $quickPushTitle     = '';
-    public string $quickActionResult  = '';
+    public bool   $showQuickModal       = false;
+    public int    $quickModalHotelId    = 0;
+    public string $quickModalHotelName  = '';
+    public string $quickModalChannel    = 'whatsapp'; // whatsapp | push
+    public string $quickMessage         = '';
+    public string $quickPushTitle       = '';
+    public string $quickActionResult    = '';
+    public string $selectedTemplateKey  = '';
+    public bool   $quickModalConsented  = false;
 
     // ── Active Sessions tab ──────────────────────────────────────────────
     public string $activeTab = 'hotels'; // hotels | active
@@ -47,40 +50,85 @@ class AnalyticsDashboard extends Component
         $this->quickMessage        = '';
         $this->quickPushTitle      = '';
         $this->quickActionResult   = '';
+        $this->selectedTemplateKey = '';
+        $this->quickModalConsented = (bool) ($hotel?->owner_wa_consent ?? false);
         $this->showQuickModal      = true;
     }
 
     public function closeQuickModal(): void { $this->showQuickModal = false; $this->quickActionResult = ''; }
 
-    // ── Send quick WhatsApp message ───────────────────────────────────────
+    public function selectTemplate(string $key): void
+    {
+        $this->selectedTemplateKey = $key;
+        $this->quickActionResult   = '';
+    }
+
+    // ── Send quick WhatsApp template message ─────────────────────────────
     public function sendQuickWhatsApp(): void
     {
-        if (!$this->quickMessage) return;
+        if (!$this->selectedTemplateKey) {
+            $this->quickActionResult = '⚠️ Please select a template first.';
+            return;
+        }
 
         $hotel    = DB::table('hotels')->where('id', $this->quickModalHotelId)->first();
         $platform = PlatformWhatsAppSetting::instance();
 
-        if (!$hotel?->phone || !$platform?->saas_token || !$platform?->saas_phone_number_id) {
-            $this->quickActionResult = '❌ WhatsApp not configured or hotel has no phone.';
+        if (!$hotel?->phone) {
+            $this->quickActionResult = '❌ This hotel has no phone number. Add one in Edit Hotel.';
+            return;
+        }
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            $this->quickActionResult = '❌ Platform WhatsApp not configured.';
             return;
         }
 
+        $templates = HotelController::platformWaTemplates();
+        if (!isset($templates[$this->selectedTemplateKey])) {
+            $this->quickActionResult = '❌ Unknown template.';
+            return;
+        }
+
+        $tpl   = $templates[$this->selectedTemplateKey];
         $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
         if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
             $phone = '91' . $phone;
         }
 
         try {
-            Http::withToken($platform->saas_token)
+            $response = Http::timeout(15)->withToken($platform->saas_token)
                 ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
                     'messaging_product' => 'whatsapp',
-                    'to'   => $phone,
-                    'type' => 'text',
-                    'text' => ['body' => $this->quickMessage],
+                    'to'                => $phone,
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'       => $tpl['meta_name'],
+                        'language'   => ['code' => $tpl['language']],
+                        'components' => [[
+                            'type'       => 'body',
+                            'parameters' => [
+                                ['type' => 'text', 'text' => $hotel->name],
+                                ['type' => 'text', 'text' => config('app.url') . '/login'],
+                            ],
+                        ]],
+                    ],
                 ]);
-            $this->quickActionResult = '✅ WhatsApp sent to ' . $hotel->name;
+
+            $body    = $response->json();
+            $errCode = $body['error']['code'] ?? 0;
+
+            if ($response->successful() && isset($body['messages'])) {
+                $this->quickActionResult = '✅ WhatsApp sent to ' . $hotel->name;
+            } elseif ($errCode === 132001) {
+                $this->quickActionResult = "⚠️ Template \"{$tpl['meta_name']}\" not yet approved by Meta. Submit it in Meta Business Manager first.";
+            } else {
+                $errMsg = $body['error']['message'] ?? 'Unknown error';
+                $this->quickActionResult = "❌ Meta error: {$errMsg}";
+                Log::warning("Quick WA template failed for hotel {$this->quickModalHotelId}", ['body' => $body]);
+            }
         } catch (\Throwable $e) {
             $this->quickActionResult = '❌ Failed: ' . $e->getMessage();
+            Log::error("Quick WA exception for hotel {$this->quickModalHotelId}: " . $e->getMessage());
         }
     }
 

@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Mail\HotelWelcomeMail;
 use App\Models\HotelBackupSetting;
 use App\Models\Permission;
+use App\Models\PlatformWhatsAppSetting;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -439,6 +442,7 @@ class HotelController extends Controller
             'email'                => $data['email'] ?? null,
             'phone'                => $data['phone'] ?? null,
             'address'              => $data['address'] ?? null,
+            'owner_wa_consent'     => $request->boolean('owner_wa_consent'),
             'plan'                 => $data['plan'],
             'billing_cycle'        => $data['billing_cycle'],
             'custom_monthly_price' => $data['custom_monthly_price'] ?: null,
@@ -1032,6 +1036,101 @@ class HotelController extends Controller
                     'updated_at' => now(),
                 ]));
             }
+        }
+    }
+
+    // ── Platform WhatsApp templates for hotel owner messaging ─────────────────
+    public static function platformWaTemplates(): array
+    {
+        $dashboardUrl = config('app.url') . '/login';
+        return [
+            'crm_update' => [
+                'label'     => 'CRM Dashboard Update',
+                'meta_name' => 'hotel_crm_dashboard_update',
+                'language'  => 'en',
+                'preview'   => "Hello {name},\n\nYour hotel CRM dashboard has recent updates that can help you manage bookings and customer communication more efficiently.\n\nStay on top of your operations and avoid missing any important updates.\n\n👉 Access your dashboard: {url}\n\nNeed help? WhatsApp us at 9725225519.\n\n– Dreams Technology",
+                'var1'      => 'hotel_name',
+                'var2'      => $dashboardUrl,
+            ],
+            'login_reminder' => [
+                'label'     => 'Login Reminder',
+                'meta_name' => 'hotel_crm_login_reminder',
+                'language'  => 'en',
+                'preview'   => "Hello {name},\n\nWe noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attention!\n\n👉 Login here: {url}\n\nNeed help? WhatsApp us at 9725225519.\n\n– Dreams Technology",
+                'var1'      => 'hotel_name',
+                'var2'      => $dashboardUrl,
+            ],
+        ];
+    }
+
+    // ── Send quick WhatsApp template to hotel owner ────────────────────────────
+    public function sendQuickWA(Request $request, int $id)
+    {
+        $hotel    = DB::table('hotels')->where('id', $id)->first();
+        $platform = PlatformWhatsAppSetting::instance();
+
+        if (!$hotel) {
+            return response()->json(['success' => false, 'message' => '❌ Hotel not found.']);
+        }
+        if (!$hotel->phone) {
+            return response()->json(['success' => false, 'message' => '❌ This hotel has no phone number set. Add one in Edit Hotel.']);
+        }
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            return response()->json(['success' => false, 'message' => '❌ Platform WhatsApp not configured. Check WhatsApp Settings.']);
+        }
+
+        $templateKey = $request->input('template_key');
+        $templates   = self::platformWaTemplates();
+
+        if (!isset($templates[$templateKey])) {
+            return response()->json(['success' => false, 'message' => '❌ Unknown template selected.']);
+        }
+
+        $tpl  = $templates[$templateKey];
+        $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
+        if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
+            $phone = '91' . $phone;
+        }
+
+        try {
+            $response = Http::timeout(15)->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $phone,
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'     => $tpl['meta_name'],
+                        'language' => ['code' => $tpl['language']],
+                        'components' => [[
+                            'type'       => 'body',
+                            'parameters' => [
+                                ['type' => 'text', 'text' => $hotel->name],
+                                ['type' => 'text', 'text' => config('app.url') . '/login'],
+                            ],
+                        ]],
+                    ],
+                ]);
+
+            $body = $response->json();
+
+            if ($response->successful() && isset($body['messages'])) {
+                Log::info("Platform Quick WA sent to hotel {$id} ({$hotel->name})", ['template' => $templateKey]);
+                return response()->json(['success' => true, 'message' => '✅ WhatsApp sent to ' . $hotel->name]);
+            }
+
+            $errMsg = $body['error']['message'] ?? 'Unknown error';
+            $errCode = $body['error']['code'] ?? 0;
+
+            if ($errCode === 132001) {
+                return response()->json(['success' => false, 'message' => "⚠️ Template \"{$tpl['meta_name']}\" not approved yet. Create and submit it in Meta Business Manager first."]);
+            }
+
+            Log::warning("Platform Quick WA failed for hotel {$id}", ['error' => $body]);
+            return response()->json(['success' => false, 'message' => "❌ Meta error: {$errMsg}"]);
+
+        } catch (\Throwable $e) {
+            Log::error("Platform Quick WA exception for hotel {$id}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => '❌ Failed: ' . $e->getMessage()]);
         }
     }
 }

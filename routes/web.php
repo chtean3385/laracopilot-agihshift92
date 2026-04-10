@@ -331,6 +331,7 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/hotels/{id}/cancel-trial',     [\App\Http\Controllers\Platform\HotelController::class, 'cancelTrial'])->name('platform.hotels.cancel-trial');
     Route::post('/hotels/{id}/cancel-plan-expiry', [\App\Http\Controllers\Platform\HotelController::class, 'cancelPlanExpiry'])->name('platform.hotels.cancel-plan-expiry');
     Route::post('/hotels/{id}/add-related',        [\App\Http\Controllers\Platform\HotelController::class, 'addRelatedHotel'])->name('platform.hotels.add-related');
+    Route::post('/hotels/{id}/send-quick-wa',      [\App\Http\Controllers\Platform\HotelController::class, 'sendQuickWA'])->name('platform.hotels.send-quick-wa');
 
     // 2FA settings
     Route::get('/settings/2fa',          [\App\Http\Controllers\Platform\AuthController::class, 'show2faSetup'])->name('platform.settings.2fa');

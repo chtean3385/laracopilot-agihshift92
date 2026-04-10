@@ -63,10 +63,20 @@
                 </div>
 
                 <div>
-                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Phone</label>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Phone <span style="font-size:10px;font-weight:500;color:#94a3b8;">(Owner WhatsApp — include country code, e.g. 919725XXXXXX)</span></label>
                     <input type="text" name="phone" value="{{ old('phone', $hotel->phone) }}"
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('phone')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
                     @if(isset($errors) && $errors->has('phone')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('phone') }}</p> @endif
+
+                    {{-- WhatsApp consent toggle --}}
+                    <label style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;user-select:none;">
+                        <input type="checkbox" name="owner_wa_consent" value="1" {{ old('owner_wa_consent', $hotel->owner_wa_consent ?? false) ? 'checked' : '' }}
+                            style="width:16px;height:16px;accent-color:#25d366;cursor:pointer;">
+                        <span style="font-size:12px;font-weight:700;color:#374151;">
+                            <i class="fab fa-whatsapp" style="color:#25d366;margin-right:4px;"></i>
+                            Owner has consented to receive WhatsApp messages from Dreams Technology
+                        </span>
+                    </label>
                 </div>
 
                 <div style="grid-column:1/-1;">

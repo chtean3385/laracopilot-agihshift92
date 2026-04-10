@@ -490,12 +490,29 @@
             @endif
 
             @if($quickModalChannel === 'whatsapp')
-            <div style="margin-bottom:16px;">
-                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Message</label>
-                <textarea wire:model="quickMessage" rows="5" placeholder="Type your WhatsApp message..."
-                    style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;resize:vertical;box-sizing:border-box;"></textarea>
+            @if(!$quickModalConsented)
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;font-weight:600;color:#92400e;">
+                ⚠️ This owner hasn't consented to WhatsApp messages yet. Proceed with caution.
             </div>
-            <button wire:click="sendQuickWhatsApp" style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            @endif
+
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">Choose a template:</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+                @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
+                <div wire:click="selectTemplate('{{ $tplKey }}')"
+                    style="border:2px solid {{ $selectedTemplateKey === $tplKey ? '#25d366' : '#e2e8f0' }};border-radius:11px;padding:11px 13px;cursor:pointer;background:{{ $selectedTemplateKey === $tplKey ? '#f0fdf4' : '#fff' }};transition:border-color .15s;">
+                    <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">
+                        {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
+                    </div>
+                    <div style="font-size:11px;color:#64748b;line-height:1.5;">
+                        {{ Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 100) }}
+                    </div>
+                </div>
+                @endforeach
+            </div>
+
+            <button wire:click="sendQuickWhatsApp"
+                style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;{{ !$selectedTemplateKey ? 'opacity:.5;cursor:not-allowed;' : '' }}">
                 <i class="fab fa-whatsapp"></i> Send WhatsApp Now
             </button>
             @else
