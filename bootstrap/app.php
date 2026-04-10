@@ -7,7 +7,22 @@ use Illuminate\Foundation\Configuration\Middleware;
 // Copy OS-level env vars (injected by Replit) into $_ENV before phpdotenv runs.
 // phpdotenv (createImmutable) checks $_ENV for existing vars — not getenv() —
 // so without this, it silently overwrites Replit's injected vars with .env values.
-foreach (['DB_CONNECTION','DATABASE_URL','DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD','DB_SSLMODE','APP_ENV','APP_DEBUG','APP_URL','APP_KEY','SESSION_DRIVER','CACHE_STORE'] as $_k) {
+foreach ([
+    // Database
+    'DB_CONNECTION','DATABASE_URL','DB_HOST','DB_PORT','DB_DATABASE',
+    'DB_USERNAME','DB_PASSWORD','DB_SSLMODE',
+    // App
+    'APP_ENV','APP_DEBUG','APP_URL','APP_KEY',
+    'SESSION_DRIVER','CACHE_STORE',
+    // WhatsApp platform credentials (seeded into platform_whatsapp_settings on first boot)
+    'WA_SAAS_TOKEN','WA_SAAS_PHONE_NUMBER_ID','WA_SAAS_WABA_ID',
+    'WA_META_APP_ID','WA_META_APP_SECRET','WA_META_CONFIG_ID','WA_WEBHOOK_VERIFY_TOKEN',
+    // Firebase credentials (seeded into platform_firebase_settings on first boot)
+    'FIREBASE_PROJECT_ID','FIREBASE_API_KEY','FIREBASE_MESSAGING_SENDER_ID',
+    'FIREBASE_APP_ID','FIREBASE_VAPID_KEY','FCM_SERVER_KEY','FIREBASE_SERVICE_ACCOUNT_JSON',
+    // Mail
+    'MAIL_PASSWORD',
+] as $_k) {
     if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
         $_ENV[$_k] = $_SERVER[$_k] = $v;
     }

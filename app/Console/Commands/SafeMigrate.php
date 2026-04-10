@@ -81,6 +81,9 @@ class SafeMigrate extends Command
                 $this->seedGlobalWhatsAppTemplates();
             }
 
+            // ── 6. Platform settings from environment variables ────────────────────
+            $this->seedPlatformSettings();
+
         } catch (\Exception $e) {
             $this->error('SafeMigrate failed: ' . $e->getMessage());
             return 1;
@@ -389,5 +392,76 @@ class SafeMigrate extends Command
         }
 
         $this->info("Global WhatsApp templates: {$count} upserted.");
+    }
+
+    private function seedPlatformSettings(): void
+    {
+        // ── WhatsApp platform settings ───────────────────────────────────────────
+        // Only seed when the table is empty (first production boot).
+        // Never overwrites data that the Platform Admin has manually configured.
+        if (Schema::hasTable('platform_whatsapp_settings') &&
+            DB::table('platform_whatsapp_settings')->count() === 0) {
+
+            $token       = env('WA_SAAS_TOKEN');
+            $phoneId     = env('WA_SAAS_PHONE_NUMBER_ID');
+            $wabaId      = env('WA_SAAS_WABA_ID');
+            $metaAppId   = env('WA_META_APP_ID');
+            $metaSecret  = env('WA_META_APP_SECRET');
+            $metaConfig  = env('WA_META_CONFIG_ID');
+            $verifyToken = env('WA_WEBHOOK_VERIFY_TOKEN', 'resort-crm-whatsapp-2026');
+
+            if ($token || $phoneId || $wabaId) {
+                DB::table('platform_whatsapp_settings')->insert([
+                    'meta_app_id'          => $metaAppId,
+                    'meta_app_secret'      => $metaSecret,
+                    'meta_config_id'       => $metaConfig,
+                    'saas_token'           => $token,
+                    'saas_phone_number_id' => $phoneId,
+                    'saas_waba_id'         => $wabaId,
+                    'webhook_verify_token' => $verifyToken,
+                    'is_saas_active'       => (bool) ($token && $phoneId && $wabaId),
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
+                ]);
+                $this->info('Platform WhatsApp settings seeded from environment variables.');
+            } else {
+                $this->warn('Platform WhatsApp settings: table is empty and no WA_* env vars set — skipping.');
+            }
+        } else {
+            $this->info('Platform WhatsApp settings: already configured, skipping.');
+        }
+
+        // ── Firebase platform settings ───────────────────────────────────────────
+        if (Schema::hasTable('platform_firebase_settings') &&
+            DB::table('platform_firebase_settings')->count() === 0) {
+
+            $projectId  = env('FIREBASE_PROJECT_ID');
+            $apiKey     = env('FIREBASE_API_KEY');
+            $senderId   = env('FIREBASE_MESSAGING_SENDER_ID');
+            $appId      = env('FIREBASE_APP_ID');
+            $vapidKey   = env('FIREBASE_VAPID_KEY');
+            $fcmKey     = env('FCM_SERVER_KEY');
+            $serviceJson = env('FIREBASE_SERVICE_ACCOUNT_JSON');
+
+            if ($projectId || $apiKey) {
+                DB::table('platform_firebase_settings')->insert([
+                    'firebase_project_id'          => $projectId,
+                    'firebase_api_key'              => $apiKey,
+                    'firebase_messaging_sender_id'  => $senderId,
+                    'firebase_app_id'               => $appId,
+                    'firebase_vapid_key'            => $vapidKey,
+                    'fcm_server_key'                => $fcmKey,
+                    'service_account_json'          => $serviceJson,
+                    'push_enabled'                  => (bool) $projectId,
+                    'created_at'                    => now(),
+                    'updated_at'                    => now(),
+                ]);
+                $this->info('Platform Firebase settings seeded from environment variables.');
+            } else {
+                $this->warn('Platform Firebase settings: table is empty and no FIREBASE_* env vars set — skipping.');
+            }
+        } else {
+            $this->info('Platform Firebase settings: already configured, skipping.');
+        }
     }
 }

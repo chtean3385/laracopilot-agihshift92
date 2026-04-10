@@ -418,12 +418,64 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 - `Crypt::decryptString` could throw 500 on corrupted TOTP secret — wrapped in try/catch
 - MRR used `??` null coalescing which failed when custom price = 0 (not null) — fixed to `> 0` check
 - `MAIL_SCHEME=ssl` not valid in Laravel 12 for port 465 — changed to `smtps`
-<<<<<<< HEAD
 - Soft-deleted guest null crash on Booking/Invoice/Payment — `->withTrashed()` on `customer()` relationship + `?->` guards in all views
 - Platform dashboard KPI grid not responsive — inline `style` overrode media queries; moved to class-based `<style>` block; breakpoints 600px (2-col) / 960px (4-col)
 - "Activate Trial" / "Extend Plan" buttons did nothing — trial forms were nested inside main edit `<form>` (HTML ignores nested forms); moved outside as standalone card
 - Create Hotel blocked existing user emails — changed from `unique:users,email` to smart link: if email exists, user is linked to new hotel without creating duplicate account
-=======
 - Nested `<form>` in hotel edit page caused trial/expiry forms to submit incorrectly — moved trial and expiry forms outside the main hotel edit `<form>` tag
 - Cancel trial and cancel expiry buttons were missing routes — added `POST /platform/hotels/{id}/cancel-trial` and `POST /platform/hotels/{id}/cancel-expiry` routes and controller methods
->>>>>>> 525bdb2 (docs: Update replit.md with complete how-to guide and task status (Task #21))
+- WhatsApp webhook returning 419 CSRF — fixed via `validateCsrfTokens(except: ['webhook/*'])` in `bootstrap/app.php` (L11 has no `VerifyCsrfToken` class to extend)
+
+---
+
+## Production Deploy Checklist
+
+When deploying to production for the first time (or on a fresh Neon database), `app:safe-migrate` automatically seeds platform settings from Replit environment secrets. Set the following secrets in Replit's **Secrets** panel (production environment) before deploying:
+
+### Database (Neon PostgreSQL)
+| Secret | Purpose | Example |
+|--------|---------|---------|
+| `DB_HOST` or `PGHOST` | Neon host | `ep-fancy-scene-anzx2eyx.c...neon.tech` |
+| `DB_DATABASE` or `PGDATABASE` | Database name | `neondb` |
+| `DB_USERNAME` or `PGUSER` | DB user | `neondb_owner` |
+| `DB_PASSWORD` or `PGPASSWORD` | DB password | _(secret)_ |
+| `DB_SSLMODE` | SSL mode | `require` |
+
+### WhatsApp Platform Credentials (`platform_whatsapp_settings`)
+| Secret | Column seeded | Purpose |
+|--------|--------------|---------|
+| `WA_SAAS_TOKEN` | `saas_token` | System User Access Token for the shared CRM WhatsApp number |
+| `WA_SAAS_PHONE_NUMBER_ID` | `saas_phone_number_id` | Meta phone number ID (e.g. `123456789012345`) |
+| `WA_SAAS_WABA_ID` | `saas_waba_id` | WhatsApp Business Account ID (e.g. `1291891699064537`) |
+| `WA_META_APP_ID` | `meta_app_id` | Meta App ID (e.g. `1390491206132028`) |
+| `WA_META_APP_SECRET` | `meta_app_secret` | Meta App Secret for HMAC webhook verification |
+| `WA_META_CONFIG_ID` | `meta_config_id` | Business Login Configuration ID (for hotel OAuth flow) |
+| `WA_WEBHOOK_VERIFY_TOKEN` | `webhook_verify_token` | Webhook verify token (default: `resort-crm-whatsapp-2026`) |
+
+**Note:** These are only seeded when `platform_whatsapp_settings` is empty. To re-seed, delete the row from the table, then re-deploy.
+
+### Firebase Platform Credentials (`platform_firebase_settings`)
+| Secret | Column seeded | Purpose |
+|--------|--------------|---------|
+| `FIREBASE_PROJECT_ID` | `firebase_project_id` | Firebase project ID (e.g. `hotel-crm-e9e34`) |
+| `FIREBASE_API_KEY` | `firebase_api_key` | Firebase Web API key |
+| `FIREBASE_MESSAGING_SENDER_ID` | `firebase_messaging_sender_id` | FCM sender ID (e.g. `884314304438`) |
+| `FIREBASE_APP_ID` | `firebase_app_id` | Firebase App ID |
+| `FIREBASE_VAPID_KEY` | `firebase_vapid_key` | VAPID key for web push |
+| `FCM_SERVER_KEY` | `fcm_server_key` | Legacy FCM server key (for Android/Flutter WebView) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | `service_account_json` | Full service account JSON string (for server-side FCM v1 API) |
+
+### Mail
+| Secret | Purpose |
+|--------|---------|
+| `MAIL_PASSWORD` | SMTP password for `support@dreamstechnology.in` |
+
+### What `app:safe-migrate` does (and does NOT do)
+- Runs `php artisan migrate --force` — applies only **schema changes** (new tables, new columns, indexes).
+- Seeds the `users` table with the Platform Super Admin if it is empty.
+- Seeds `platform_plans` if empty.
+- Seeds `permissions` catalog if empty.
+- Provisions roles, modules, and WhatsApp templates for existing hotels (idempotent).
+- Seeds global WhatsApp templates (`hotel_id = null`) for the shared Meta number.
+- Seeds `platform_whatsapp_settings` and `platform_firebase_settings` from env vars **if and only if those tables are empty**.
+- **NEVER** touches: guests, bookings, check-ins, invoices, payments, rooms, activity logs, or any hotel transactional data.
