@@ -411,6 +411,7 @@ class SafeMigrate extends Command
             $verifyToken = env('WA_WEBHOOK_VERIFY_TOKEN', 'resort-crm-whatsapp-2026');
 
             if ($token || $phoneId || $wabaId) {
+                $isActive = (bool) ($token && $phoneId && $wabaId);
                 DB::table('platform_whatsapp_settings')->insert([
                     'meta_app_id'          => $metaAppId,
                     'meta_app_secret'      => $metaSecret,
@@ -419,11 +420,14 @@ class SafeMigrate extends Command
                     'saas_phone_number_id' => $phoneId,
                     'saas_waba_id'         => $wabaId,
                     'webhook_verify_token' => $verifyToken,
-                    'is_saas_active'       => (bool) ($token && $phoneId && $wabaId),
+                    'is_saas_active'       => $isActive,
                     'created_at'           => now(),
                     'updated_at'           => now(),
                 ]);
                 $this->info('Platform WhatsApp settings seeded from environment variables.');
+                if (!$isActive) {
+                    $this->warn('WhatsApp: is_saas_active=false — one or more of WA_SAAS_TOKEN, WA_SAAS_PHONE_NUMBER_ID, WA_SAAS_WABA_ID is missing.');
+                }
             } else {
                 $this->warn('Platform WhatsApp settings: table is empty and no WA_* env vars set — skipping.');
             }
@@ -443,7 +447,7 @@ class SafeMigrate extends Command
             $fcmKey     = env('FCM_SERVER_KEY');
             $serviceJson = env('FIREBASE_SERVICE_ACCOUNT_JSON');
 
-            if ($projectId || $apiKey) {
+            if ($projectId || $apiKey || $fcmKey || $serviceJson) {
                 DB::table('platform_firebase_settings')->insert([
                     'firebase_project_id'          => $projectId,
                     'firebase_api_key'              => $apiKey,
@@ -457,8 +461,11 @@ class SafeMigrate extends Command
                     'updated_at'                    => now(),
                 ]);
                 $this->info('Platform Firebase settings seeded from environment variables.');
+                if (!$projectId) {
+                    $this->warn('Firebase: FIREBASE_PROJECT_ID is not set — push_enabled will be false.');
+                }
             } else {
-                $this->warn('Platform Firebase settings: table is empty and no FIREBASE_* env vars set — skipping.');
+                $this->warn('Platform Firebase settings: table is empty and no FIREBASE_*/FCM_* env vars set — skipping.');
             }
         } else {
             $this->info('Platform Firebase settings: already configured, skipping.');
