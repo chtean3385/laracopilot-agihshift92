@@ -1047,7 +1047,7 @@ class HotelController extends Controller
         return [
             'crm_update' => [
                 'label'     => 'CRM Dashboard Update',
-                'meta_name' => 'hotel_crm_dashboard_update',
+                'meta_name' => 'crm_dashboard_update',
                 'language'  => 'en',
                 'preview'   => "Hello {name},\n\nYour hotel CRM dashboard has recent updates that can help you manage bookings and customer communication more efficiently.\n\nStay on top of your operations and avoid missing any important updates.\n\n👉 Access your dashboard: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
                 'var1'      => 'hotel_name',
@@ -1055,7 +1055,7 @@ class HotelController extends Controller
             ],
             'login_reminder' => [
                 'label'     => 'Login Reminder',
-                'meta_name' => 'hotel_crm_login_reminder',
+                'meta_name' => 'login_reminder',
                 'language'  => 'en',
                 'preview'   => "Hello {name},\n\nWe noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attention!\n\n👉 Login here: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
                 'var1'      => 'hotel_name',
@@ -1151,8 +1151,15 @@ class HotelController extends Controller
                     'to'                => $phone,
                     'type'              => 'template',
                     'template'          => [
-                        'name'     => $templateName,
-                        'language' => ['code' => $templateLang],
+                        'name'       => $templateName,
+                        'language'   => ['code' => $templateLang],
+                        'components' => [[
+                            'type'       => 'body',
+                            'parameters' => [
+                                ['type' => 'text', 'text' => $hotel->name],
+                                ['type' => 'text', 'text' => config('app.url') . '/login'],
+                            ],
+                        ]],
                     ],
                 ]);
 
