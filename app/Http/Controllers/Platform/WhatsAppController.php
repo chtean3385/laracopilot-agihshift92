@@ -217,15 +217,41 @@ class WhatsAppController extends Controller
         ]);
 
         $data['is_active']               = $request->boolean('is_active');
-        // PDF attachment is only valid for checkout.done templates
         $data['has_document_attachment'] = ($data['trigger_event'] ?? $template->trigger_event) === 'checkout.done'
             ? $request->boolean('has_document_attachment')
             : false;
-        $data['approval_status']         = $data['approval_status'] ?? $template->approval_status;
+
+        // ── Auto-version when body text changes ─────────────────────────
+        $bodyChanged = trim($data['message_body']) !== trim($template->message_body ?? '');
+        if ($bodyChanged) {
+            // Strip any existing _v{N} suffix to get the stable base name
+            $baseName = preg_replace('/_v\d+$/', '', $template->template_name);
+            $baseName = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $baseName), '_'));
+
+            // Find next available version number (v2, v3, …)
+            $version = 2;
+            while (WhatsAppTemplate::withoutGlobalScopes()
+                ->whereNull('hotel_id')
+                ->where('template_name', $baseName . '_v' . $version)
+                ->where('id', '!=', $id)
+                ->exists()) {
+                $version++;
+            }
+
+            $data['template_name']  = $baseName . '_v' . $version;
+            $data['approval_status'] = 'pending';
+            $data['meta_status']    = 'not_submitted';
+        } else {
+            $data['approval_status'] = $data['approval_status'] ?? $template->approval_status;
+        }
 
         $template->update($data);
 
-        return redirect()->route('platform.whatsapp.templates')->with('success', 'Template updated successfully.');
+        $msg = $bodyChanged
+            ? 'Template body updated. Name auto-versioned to <strong>' . $data['template_name'] . '</strong> — status reset to Pending. Click "Submit to Meta" to send for review.'
+            : 'Template updated successfully.';
+
+        return redirect()->route('platform.whatsapp.templates')->with('success', $msg);
     }
 
     public function templateDestroy(int $id)

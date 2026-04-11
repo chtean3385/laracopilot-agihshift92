@@ -45,7 +45,7 @@ $eventMeta = [
 {{-- Flash messages --}}
 @if(session('success'))
 <div style="background:#dcfce7;border:1px solid #86efac;color:#15803d;padding:12px 18px;border-radius:12px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;">
-    <i class="fas fa-check-circle"></i> {{ session('success') }}
+    <i class="fas fa-check-circle"></i> {!! session('success') !!}
 </div>
 @endif
 @if(session('error'))
@@ -441,15 +441,19 @@ $eventMeta = [
                         style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;color:#94a3b8;background:#f8fafc;box-sizing:border-box;">
                 </div>
                 <div>
-                    <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Template Name <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="template_name" id="edit-name" required
-                        style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;">
-                    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Lowercase, underscores only. Must match Meta Business Manager.</div>
+                    <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Template Name</label>
+                    <input type="text" name="template_name" id="edit-name" required readonly
+                        style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;color:#64748b;background:#f8fafc;box-sizing:border-box;cursor:default;">
+                    <div style="font-size:11px;color:#94a3b8;margin-top:4px;"><i class="fas fa-lock" style="margin-right:3px;"></i>Auto-managed. If you change the body text, the name is automatically versioned (e.g. <code>login_reminder_v2</code>).</div>
                 </div>
                 <div>
                     <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Message Body <span style="color:#e11d48;">*</span></label>
                     <textarea name="message_body" id="edit-body" required rows="9"
                         style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;resize:vertical;box-sizing:border-box;color:#1e293b;"></textarea>
+                    <div id="edit-body-changed-notice" style="display:none;margin-top:8px;padding:10px 14px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e;">
+                        <i class="fas fa-info-circle" style="margin-right:5px;"></i>
+                        Body text changed — saving will auto-version the template name and reset status to <strong>Pending</strong> ready to submit to Meta.
+                    </div>
                 </div>
                 <div>
                     <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Approval Status</label>
@@ -459,6 +463,7 @@ $eventMeta = [
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
                     </select>
+                    <div id="edit-status-note" style="display:none;font-size:11px;color:#92400e;margin-top:4px;"><i class="fas fa-exclamation-triangle" style="margin-right:3px;"></i>Status will be forced to <strong>Pending</strong> because body text changed.</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <label style="font-size:13px;font-weight:700;color:#374151;">Active</label>
@@ -527,6 +532,8 @@ function closeCreateModal() {
     document.getElementById('custom-event-wrap').style.display = 'none';
 }
 
+var _editOriginalBody = '';
+
 function openEditModal(id, event, name, body, status, active, hasDocAttachment) {
     document.getElementById('editForm').action = '/platform/whatsapp/templates/' + id;
     document.getElementById('edit-event-display').value = allEvents[event] || event;
@@ -534,6 +541,11 @@ function openEditModal(id, event, name, body, status, active, hasDocAttachment) 
     document.getElementById('edit-body').value = body;
     document.getElementById('edit-status').value = status;
     document.getElementById('edit-active').checked = active;
+
+    // Reset body-change notices
+    _editOriginalBody = body;
+    document.getElementById('edit-body-changed-notice').style.display = 'none';
+    document.getElementById('edit-status-note').style.display = 'none';
 
     const pdfRow = document.getElementById('edit-pdf-row');
     const pdfCheck = document.getElementById('edit-pdf-attach');
@@ -550,6 +562,14 @@ function openEditModal(id, event, name, body, status, active, hasDocAttachment) 
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('edit-body').addEventListener('input', function () {
+        var changed = this.value.trim() !== _editOriginalBody.trim();
+        document.getElementById('edit-body-changed-notice').style.display = changed ? 'block' : 'none';
+        document.getElementById('edit-status-note').style.display = changed ? 'block' : 'none';
+    });
+});
 
 function toggleTemplate(id, checkbox) {
     const track = document.getElementById('pt-track-' + id);
