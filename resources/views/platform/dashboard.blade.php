@@ -527,10 +527,21 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
         <div style="padding:20px 24px;">
             <div id="waModalResult" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:600;"></div>
             <p style="font-size:12px;font-weight:700;color:#475569;margin:0 0 12px;">Choose a template:</p>
-            <div id="waTemplates" style="display:flex;flex-direction:column;gap:10px;min-height:60px;">
-                <div id="waTplLoading" style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">
-                    <i class="fas fa-spinner fa-spin"></i> Loading approved templates…
-                </div>
+            <div id="waTemplates" style="display:flex;flex-direction:column;gap:10px;">
+                <label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" onclick="selectWaTpl(this)">
+                    <input type="radio" name="wa_tpl" data-name="hotel_crm_dashboard_update" data-lang="en" style="margin-top:3px;accent-color:#25d366;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 CRM Dashboard Update</div>
+                        <div style="font-size:11px;color:#64748b;line-height:1.5;">Hello [Hotel Name], Your hotel CRM dashboard has recent updates that can help you manage bookings and customer communic...</div>
+                    </div>
+                </label>
+                <label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" onclick="selectWaTpl(this)">
+                    <input type="radio" name="wa_tpl" data-name="hotel_crm_login_reminder" data-lang="en" style="margin-top:3px;accent-color:#25d366;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 Login Reminder</div>
+                        <div style="font-size:11px;color:#64748b;line-height:1.5;">Hello [Hotel Name], We noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attenti...</div>
+                    </div>
+                </label>
             </div>
         </div>
         {{-- Footer --}}
