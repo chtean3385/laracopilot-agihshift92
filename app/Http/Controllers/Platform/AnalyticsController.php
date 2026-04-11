@@ -49,7 +49,7 @@ class AnalyticsController extends Controller
         $hotelIds         = $data['hotel_ids'] ?? null;
         $platformTemplates = HotelController::platformWaTemplates();
 
-        $query = DB::table('hotels')->where('status', 'active');
+        $query = DB::table('hotels')->where('status', '!=', 'suspended');
         if (!empty($hotelIds)) {
             $query->whereIn('id', $hotelIds);
         }
