@@ -703,12 +703,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ── Analytics Quick Modal (pure JS, no Livewire re-render) ─────────────
-var _aqmHotelId = 0, _aqmChannel = 'whatsapp', _aqmTplName = '', _aqmTplLang = '';
+window._aqmHotelId = 0; window._aqmChannel = 'whatsapp'; window._aqmTplName = ''; window._aqmTplLang = '';
 
-function analyticsOpenModal(hotelId, hotelName, phone, channel, consented) {
-    _aqmHotelId = hotelId;
-    _aqmChannel = channel;
-    _aqmTplName = ''; _aqmTplLang = '';
+window.analyticsOpenModal = function(hotelId, hotelName, phone, channel, consented) {
+    window._aqmHotelId = hotelId;
+    window._aqmChannel = channel;
+    window._aqmTplName = ''; window._aqmTplLang = '';
 
     document.getElementById('aqmSubtitle').textContent = 'To: ' + hotelName + (phone ? ' (' + phone + ')' : '');
     document.getElementById('aqmResult').style.display = 'none';
@@ -737,22 +737,22 @@ function analyticsOpenModal(hotelId, hotelName, phone, channel, consented) {
     }
 
     document.getElementById('analyticsQuickModal').style.display = 'flex';
-}
+};
 
-function analyticsCloseModal() {
+window.analyticsCloseModal = function() {
     document.getElementById('analyticsQuickModal').style.display = 'none';
-}
+};
 
-function analyticsSelectTpl(key, name, lang) {
+window.analyticsSelectTpl = function(key, name, lang) {
     document.querySelectorAll('[id^="aqm-tpl-"]').forEach(function(el) {
         el.style.border = '2px solid #e2e8f0'; el.style.background = '#fff';
     });
     var el = document.getElementById('aqm-tpl-' + key);
     if (el) { el.style.border = '2px solid #25d366'; el.style.background = '#f0fdf4'; }
-    _aqmTplName = name; _aqmTplLang = lang;
+    window._aqmTplName = name; window._aqmTplLang = lang;
     var btn = document.getElementById('aqmWaSendBtn');
     btn.disabled = false; btn.style.opacity = '1';
-}
+};
 
 function _aqmShowResult(success, msg) {
     var res = document.getElementById('aqmResult');
@@ -762,33 +762,33 @@ function _aqmShowResult(success, msg) {
     res.textContent      = msg;
 }
 
-function analyticsSendWA() {
-    if (!_aqmTplName || !_aqmHotelId) return;
+window.analyticsSendWA = function() {
+    if (!window._aqmTplName || !window._aqmHotelId) return;
     var btn = document.getElementById('aqmWaSendBtn');
     btn.disabled = true; btn.style.opacity = '0.6';
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
-    fetch('/platform/hotels/' + _aqmHotelId + '/send-quick-wa', {
+    fetch('/platform/hotels/' + window._aqmHotelId + '/send-quick-wa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-        body: JSON.stringify({ template_name: _aqmTplName, template_language: _aqmTplLang }),
+        body: JSON.stringify({ template_name: window._aqmTplName, template_language: window._aqmTplLang }),
     }).then(function(r) { return r.json(); }).then(function(data) {
         _aqmShowResult(data.success, data.message || (data.success ? '✅ Sent!' : '❌ Error'));
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
         btn.disabled = false; btn.style.opacity = '1';
-        if (data.success && typeof waSetCooldown === 'function') waSetCooldown(_aqmHotelId);
+        if (data.success && typeof waSetCooldown === 'function') waSetCooldown(window._aqmHotelId);
     }).catch(function() {
         _aqmShowResult(false, '❌ Network error. Try again.');
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
         btn.disabled = false; btn.style.opacity = '1';
     });
-}
+};
 
-function analyticsSendPush() {
-    if (!_aqmHotelId) return;
+window.analyticsSendPush = function() {
+    if (!window._aqmHotelId) return;
     var title = document.getElementById('aqmPushTitle').value.trim();
     var body  = document.getElementById('aqmPushBody').value.trim();
     if (!title || !body) { alert('Please fill in both title and message.'); return; }
-    fetch('/platform/hotels/' + _aqmHotelId + '/send-quick-push', {
+    fetch('/platform/hotels/' + window._aqmHotelId + '/send-quick-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
         body: JSON.stringify({ title: title, body: body }),
@@ -797,6 +797,6 @@ function analyticsSendPush() {
     }).catch(function() {
         _aqmShowResult(false, '❌ Network error. Try again.');
     });
-}
+};
 </script>
 @endscript
