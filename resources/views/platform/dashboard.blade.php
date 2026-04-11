@@ -527,21 +527,10 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
         <div style="padding:20px 24px;">
             <div id="waModalResult" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:600;"></div>
             <p style="font-size:12px;font-weight:700;color:#475569;margin:0 0 12px;">Choose a template:</p>
-            <div id="waTemplates" style="display:flex;flex-direction:column;gap:10px;">
-                <label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" onclick="selectWaTpl(this,'crm_update')">
-                    <input type="radio" name="wa_tpl" value="crm_update" style="margin-top:3px;accent-color:#25d366;">
-                    <div>
-                        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 CRM Dashboard Update</div>
-                        <div style="font-size:11px;color:#64748b;line-height:1.5;">Hello [Hotel Name], Your hotel CRM dashboard has recent updates that can help you manage bookings and customer communic...</div>
-                    </div>
-                </label>
-                <label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" onclick="selectWaTpl(this,'login_reminder')">
-                    <input type="radio" name="wa_tpl" value="login_reminder" style="margin-top:3px;accent-color:#25d366;">
-                    <div>
-                        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 Login Reminder</div>
-                        <div style="font-size:11px;color:#64748b;line-height:1.5;">Hello [Hotel Name], We noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attenti...</div>
-                    </div>
-                </label>
+            <div id="waTemplates" style="display:flex;flex-direction:column;gap:10px;min-height:60px;">
+                <div id="waTplLoading" style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading approved templates…
+                </div>
             </div>
         </div>
         {{-- Footer --}}
@@ -588,27 +577,63 @@ function filterTenants() {
 
 // ── Quick WA Modal ────────────────────────────────────────────────────
 var _waHotelId = null;
+var _waTplsCache = null; // cache so we only fetch once per page load
 
 function openWaModal(hotelId, hotelName) {
     _waHotelId = hotelId;
     document.getElementById('waModalTo').textContent = 'To: ' + hotelName;
     document.getElementById('waModalResult').style.display = 'none';
     document.getElementById('waModalResult').textContent = '';
-    document.querySelectorAll('#waTemplates label').forEach(function(l) {
-        l.style.border = '2px solid #e2e8f0';
-    });
-    document.querySelectorAll('input[name="wa_tpl"]').forEach(function(r) { r.checked = false; });
     document.getElementById('waSendBtn').disabled = false;
     document.getElementById('waSendBtn').style.opacity = '1';
-    var modal = document.getElementById('waModal');
-    modal.style.display = 'flex';
+    document.getElementById('waSendBtn').innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
+    document.getElementById('waModal').style.display = 'flex';
+    loadWaTemplates();
 }
 
 function closeWaModal() {
     document.getElementById('waModal').style.display = 'none';
 }
 
-function selectWaTpl(label, key) {
+function loadWaTemplates() {
+    if (_waTplsCache) { renderWaTemplates(_waTplsCache); return; }
+    document.getElementById('waTemplates').innerHTML =
+        '<div id="waTplLoading" style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Loading approved templates…</div>';
+    fetch('/platform/wa-templates', {
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success && data.templates.length) {
+            _waTplsCache = data.templates;
+            renderWaTemplates(data.templates);
+        } else {
+            document.getElementById('waTemplates').innerHTML =
+                '<div style="padding:16px;color:#b91c1c;font-size:13px;font-weight:600;">⚠️ ' + (data.message || 'No approved templates found in Meta.') + '</div>';
+        }
+    })
+    .catch(function() {
+        document.getElementById('waTemplates').innerHTML =
+            '<div style="padding:16px;color:#b91c1c;font-size:13px;font-weight:600;">❌ Could not load templates. Check network.</div>';
+    });
+}
+
+function renderWaTemplates(templates) {
+    var html = '';
+    templates.forEach(function(tpl, i) {
+        html += '<label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" ' +
+            'onclick="selectWaTpl(this)">' +
+            '<input type="radio" name="wa_tpl" data-name="' + tpl.name + '" data-lang="' + tpl.language + '" style="margin-top:3px;accent-color:#25d366;">' +
+            '<div>' +
+            '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 ' + tpl.label + '</div>' +
+            '<div style="font-size:10px;font-family:monospace;color:#94a3b8;margin-bottom:4px;">' + tpl.name + ' · ' + tpl.language + '</div>' +
+            '<div style="font-size:11px;color:#64748b;line-height:1.5;">' + (tpl.preview || '—') + '</div>' +
+            '</div></label>';
+    });
+    document.getElementById('waTemplates').innerHTML = html;
+}
+
+function selectWaTpl(label) {
     document.querySelectorAll('#waTemplates label').forEach(function(l) {
         l.style.border = '2px solid #e2e8f0';
     });
@@ -631,7 +656,10 @@ function sendWaMessage() {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
         },
-        body: JSON.stringify({ template_key: selected.value }),
+        body: JSON.stringify({
+            template_name:     selected.getAttribute('data-name'),
+            template_language: selected.getAttribute('data-lang'),
+        }),
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -641,10 +669,7 @@ function sendWaMessage() {
         el.style.color       = data.success ? '#15803d' : '#b91c1c';
         el.textContent       = data.message || (data.success ? '✅ Sent!' : '❌ Error');
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
-        if (!data.success) {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-        }
+        if (!data.success) { btn.disabled = false; btn.style.opacity = '1'; }
     })
     .catch(function() {
         var el = document.getElementById('waModalResult');
@@ -652,8 +677,7 @@ function sendWaMessage() {
         el.style.background = '#fee2e2';
         el.style.color = '#b91c1c';
         el.textContent = '❌ Network error. Please try again.';
-        btn.disabled = false;
-        btn.style.opacity = '1';
+        btn.disabled = false; btn.style.opacity = '1';
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
     });
 }

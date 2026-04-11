@@ -1064,8 +1064,52 @@ class HotelController extends Controller
         ];
     }
 
+    // ── Fetch live approved templates from Meta ────────────────────────────────
+    public function fetchApprovedWaTemplates(): \Illuminate\Http\JsonResponse
+    {
+        $platform = PlatformWhatsAppSetting::instance();
+
+        if (!$platform?->saas_token || !$platform?->saas_waba_id) {
+            return response()->json(['success' => false, 'templates' => [], 'message' => 'Platform WhatsApp not configured.']);
+        }
+
+        try {
+            $response = Http::timeout(15)
+                ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
+                    'access_token' => $platform->saas_token,
+                    'status'       => 'APPROVED',
+                    'fields'       => 'name,status,language,components',
+                    'limit'        => 100,
+                ]);
+
+            $data = $response->json();
+
+            if (!$response->successful() || !isset($data['data'])) {
+                return response()->json(['success' => false, 'templates' => [], 'message' => $data['error']['message'] ?? 'Meta API error.']);
+            }
+
+            $templates = collect($data['data'])->map(function ($tpl) {
+                $body = collect($tpl['components'] ?? [])->firstWhere('type', 'BODY');
+                $preview = $body['text'] ?? '';
+                // Truncate preview for display
+                $preview = mb_strlen($preview) > 120 ? mb_substr($preview, 0, 120) . '…' : $preview;
+                return [
+                    'name'     => $tpl['name'],
+                    'language' => $tpl['language'],
+                    'preview'  => $preview,
+                    'label'    => ucwords(str_replace('_', ' ', $tpl['name'])),
+                ];
+            })->values()->all();
+
+            return response()->json(['success' => true, 'templates' => $templates]);
+
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'templates' => [], 'message' => $e->getMessage()]);
+        }
+    }
+
     // ── Send quick WhatsApp template to hotel owner ────────────────────────────
-    public function sendQuickWA(Request $request, int $id)
+    public function sendQuickWA(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         $hotel    = DB::table('hotels')->where('id', $id)->first();
         $platform = PlatformWhatsAppSetting::instance();
@@ -1080,14 +1124,21 @@ class HotelController extends Controller
             return response()->json(['success' => false, 'message' => '❌ Platform WhatsApp not configured. Check WhatsApp Settings.']);
         }
 
-        $templateKey = $request->input('template_key');
-        $templates   = self::platformWaTemplates();
+        // Accept either a raw template_name+language OR legacy template_key
+        $templateName = $request->input('template_name');
+        $templateLang = $request->input('template_language', 'en');
 
-        if (!isset($templates[$templateKey])) {
-            return response()->json(['success' => false, 'message' => '❌ Unknown template selected.']);
+        if (!$templateName) {
+            // Legacy fallback: map template_key to static template
+            $templateKey = $request->input('template_key');
+            $templates   = self::platformWaTemplates();
+            if (!isset($templates[$templateKey])) {
+                return response()->json(['success' => false, 'message' => '❌ No template selected.']);
+            }
+            $templateName = $templates[$templateKey]['meta_name'];
+            $templateLang = $templates[$templateKey]['language'];
         }
 
-        $tpl  = $templates[$templateKey];
         $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
         if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
             $phone = '91' . $phone;
@@ -1100,30 +1151,23 @@ class HotelController extends Controller
                     'to'                => $phone,
                     'type'              => 'template',
                     'template'          => [
-                        'name'     => $tpl['meta_name'],
-                        'language' => ['code' => $tpl['language']],
-                        'components' => [[
-                            'type'       => 'body',
-                            'parameters' => [
-                                ['type' => 'text', 'text' => $hotel->name],
-                                ['type' => 'text', 'text' => config('app.url') . '/login'],
-                            ],
-                        ]],
+                        'name'     => $templateName,
+                        'language' => ['code' => $templateLang],
                     ],
                 ]);
 
             $body = $response->json();
 
             if ($response->successful() && isset($body['messages'])) {
-                Log::info("Platform Quick WA sent to hotel {$id} ({$hotel->name})", ['template' => $templateKey]);
+                Log::info("Platform Quick WA sent to hotel {$id} ({$hotel->name})", ['template' => $templateName]);
                 return response()->json(['success' => true, 'message' => '✅ WhatsApp sent to ' . $hotel->name]);
             }
 
-            $errMsg = $body['error']['message'] ?? 'Unknown error';
+            $errMsg  = $body['error']['message'] ?? 'Unknown error';
             $errCode = $body['error']['code'] ?? 0;
 
             if ($errCode === 132001) {
-                return response()->json(['success' => false, 'message' => "⚠️ Template \"{$tpl['meta_name']}\" not approved yet. Create and submit it in Meta Business Manager first."]);
+                return response()->json(['success' => false, 'message' => "⚠️ Template \"{$templateName}\" not approved by Meta yet."]);
             }
 
             Log::warning("Platform Quick WA failed for hotel {$id}", ['error' => $body]);

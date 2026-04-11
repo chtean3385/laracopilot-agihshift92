@@ -22,15 +22,19 @@ class AnalyticsDashboard extends Component
     public int    $selectedHotelId = 0;
 
     // ── Quick Action modal ───────────────────────────────────────────────
-    public bool   $showQuickModal       = false;
-    public int    $quickModalHotelId    = 0;
-    public string $quickModalHotelName  = '';
-    public string $quickModalChannel    = 'whatsapp'; // whatsapp | push
-    public string $quickMessage         = '';
-    public string $quickPushTitle       = '';
-    public string $quickActionResult    = '';
-    public string $selectedTemplateKey  = '';
-    public bool   $quickModalConsented  = false;
+    public bool   $showQuickModal         = false;
+    public int    $quickModalHotelId      = 0;
+    public string $quickModalHotelName    = '';
+    public string $quickModalChannel      = 'whatsapp'; // whatsapp | push
+    public string $quickMessage           = '';
+    public string $quickPushTitle         = '';
+    public string $quickActionResult      = '';
+    public string $selectedTemplateKey    = ''; // kept for compatibility
+    public string $selectedTemplateName   = '';
+    public string $selectedTemplateLang   = 'en';
+    public array  $liveWaTemplates        = [];
+    public bool   $waTemplatesLoading     = false;
+    public bool   $quickModalConsented    = false;
 
     // ── Active Sessions tab ──────────────────────────────────────────────
     public string $activeTab = 'hotels'; // hotels | active
