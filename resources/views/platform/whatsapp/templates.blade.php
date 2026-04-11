@@ -184,16 +184,22 @@ $eventMeta = [
                 </form>
 
                 {{-- Submit to Meta --}}
-                @if($status !== 'approved')
+                @if($status === 'approved')
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
+                    <i class="fas fa-check-circle"></i> Approved
+                </span>
+                @elseif($metaStatus === 'submitted')
+                <button disabled id="pt-submit-{{ $t->id }}"
+                    title="Already submitted — click 'Sync from Meta' to get the latest approval status"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#e2e8f0;color:#94a3b8;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:not-allowed;">
+                    <i class="fas fa-clock"></i> Submitted · Sync to update
+                </button>
+                @else
                 <button onclick="submitToMeta({{ $t->id }}, this)"
                     id="pt-submit-{{ $t->id }}"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#1877F2,#0d65d9);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fab fa-meta"></i> Submit to Meta
                 </button>
-                @else
-                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
-                    <i class="fas fa-check-circle"></i> Approved
-                </span>
                 @endif
             @else
                 {{-- No template yet: Add button --}}
@@ -258,15 +264,21 @@ $eventMeta = [
                         <i class="fas fa-trash"></i>
                     </button>
                 </form>
-                @if($pdfStatus !== 'approved')
+                @if($pdfStatus === 'approved')
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
+                    <i class="fas fa-check-circle"></i> Approved
+                </span>
+                @elseif(($pdfT->meta_status ?? 'not_submitted') === 'submitted')
+                <button disabled id="pt-submit-{{ $pdfT->id }}"
+                    title="Already submitted — click 'Sync from Meta' to get the latest approval status"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#e2e8f0;color:#94a3b8;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:not-allowed;">
+                    <i class="fas fa-clock"></i> Submitted · Sync to update
+                </button>
+                @else
                 <button onclick="submitToMeta({{ $pdfT->id }}, this)" id="pt-submit-{{ $pdfT->id }}"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fab fa-meta"></i> Submit PDF Template
                 </button>
-                @else
-                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
-                    <i class="fas fa-check-circle"></i> Approved
-                </span>
                 @endif
             </div>
         </div>
@@ -325,13 +337,19 @@ $eventMeta = [
                     @csrf @method('DELETE')
                     <button type="submit" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fee2e2;color:#b91c1c;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-trash"></i></button>
                 </form>
-                @if($ctStatus !== 'approved')
+                @if($ctStatus === 'approved')
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;"><i class="fas fa-check-circle"></i> Approved</span>
+                @elseif($ctMetaStatus === 'submitted')
+                <button disabled id="pt-submit-{{ $ct->id }}"
+                    title="Already submitted — click 'Sync from Meta' to get the latest approval status"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#e2e8f0;color:#94a3b8;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:not-allowed;">
+                    <i class="fas fa-clock"></i> Submitted · Sync to update
+                </button>
+                @else
                 <button onclick="submitToMeta({{ $ct->id }}, this)" id="pt-submit-{{ $ct->id }}"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#1877F2,#0d65d9);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fab fa-meta"></i> Submit to Meta
                 </button>
-                @else
-                <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;"><i class="fas fa-check-circle"></i> Approved</span>
                 @endif
             </div>
         </div>
@@ -610,10 +628,15 @@ function submitToMeta(id, btn) {
             resultEl.style.background = '#dcfce7';
             resultEl.style.color = '#15803d';
             resultEl.style.border = '1px solid #86efac';
-            resultEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + (data.meta_id ? ' — Meta Template ID: <strong>' + data.meta_id + '</strong>' : '');
-            btn.innerHTML = '<i class="fas fa-check"></i> Submitted';
-            btn.style.background = '#dcfce7';
-            btn.style.color = '#15803d';
+            resultEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message + (data.meta_id ? ' — Meta Template ID: <strong>' + data.meta_id + '</strong>' : '') + ' Click <strong>Sync from Meta</strong> to check when it is approved.';
+            // Grey out the button — re-enable only after Sync from Meta
+            btn.disabled = true;
+            btn.removeAttribute('onclick');
+            btn.style.background = '#e2e8f0';
+            btn.style.color = '#94a3b8';
+            btn.style.cursor = 'not-allowed';
+            btn.title = "Already submitted — click 'Sync from Meta' to get the latest approval status";
+            btn.innerHTML = '<i class="fas fa-clock"></i> Submitted · Sync to update';
         } else {
             resultEl.style.display = 'block';
             resultEl.style.background = '#fee2e2';
