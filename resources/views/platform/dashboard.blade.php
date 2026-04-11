@@ -459,13 +459,13 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
                     {{-- Actions --}}
                     <td style="padding:14px 20px;text-align:center;">
                         <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
-                            @if($waUrl)
-                            <a href="{{ $waUrl }}" target="_blank"
-                               style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }};color:#15803d;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s;white-space:nowrap;{{ $needsAttention ? 'box-shadow:0 0 0 2px #22c55e;' : '' }}"
+                            @if($hotel->phone)
+                            <button onclick="openWaModal({{ $hotel->id }}, '{{ addslashes($hotel->name) }}')"
+                               style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }};color:#15803d;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;{{ $needsAttention ? 'box-shadow:0 0 0 2px #22c55e;' : '' }}"
                                onmouseover="this.style.background='#bbf7d0'" onmouseout="this.style.background='{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }}'"
-                               title="WhatsApp {{ $hotel->phone }}">
+                               title="Quick WhatsApp to {{ $hotel->phone }}">
                                 <i class="fab fa-whatsapp" style="font-size:13px;"></i> WA
-                            </a>
+                            </button>
                             @endif
                             <a href="{{ route('platform.hotels.view-in-crm', $hotel->id) }}"
                                style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#ede9fe;color:#6d28d9;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s;white-space:nowrap;"
@@ -510,6 +510,50 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
 
 </div>
 
+{{-- ── Quick WhatsApp Modal ─────────────────────────────────────────────── --}}
+<div id="waModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;margin:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
+        {{-- Header --}}
+        <div style="padding:20px 24px;background:linear-gradient(135deg,#128c43,#25d366);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:17px;font-weight:800;">
+                    <i class="fab fa-whatsapp" style="font-size:20px;"></i> Quick WhatsApp
+                </div>
+                <div id="waModalTo" style="color:rgba(255,255,255,.8);font-size:12px;margin-top:2px;"></div>
+            </div>
+            <button onclick="closeWaModal()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">&times;</button>
+        </div>
+        {{-- Body --}}
+        <div style="padding:20px 24px;">
+            <div id="waModalResult" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:600;"></div>
+            <p style="font-size:12px;font-weight:700;color:#475569;margin:0 0 12px;">Choose a template:</p>
+            <div id="waTemplates" style="display:flex;flex-direction:column;gap:10px;">
+                <label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" onclick="selectWaTpl(this,'crm_update')">
+                    <input type="radio" name="wa_tpl" value="crm_update" style="margin-top:3px;accent-color:#25d366;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 CRM Dashboard Update</div>
+                        <div style="font-size:11px;color:#64748b;line-height:1.5;">Hello [Hotel Name], Your hotel CRM dashboard has recent updates that can help you manage bookings and customer communic...</div>
+                    </div>
+                </label>
+                <label style="display:flex;gap:12px;padding:14px;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:border .15s;" onclick="selectWaTpl(this,'login_reminder')">
+                    <input type="radio" name="wa_tpl" value="login_reminder" style="margin-top:3px;accent-color:#25d366;">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🔔 Login Reminder</div>
+                        <div style="font-size:11px;color:#64748b;line-height:1.5;">Hello [Hotel Name], We noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attenti...</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+        {{-- Footer --}}
+        <div style="padding:0 24px 20px;">
+            <button id="waSendBtn" onclick="sendWaMessage()"
+                style="width:100%;padding:14px;background:linear-gradient(135deg,#128c43,#25d366);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;">
+                <i class="fab fa-whatsapp"></i> Send WhatsApp Now
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 function filterTenants() {
@@ -541,6 +585,85 @@ function filterTenants() {
         }
     }
 }
+
+// ── Quick WA Modal ────────────────────────────────────────────────────
+var _waHotelId = null;
+
+function openWaModal(hotelId, hotelName) {
+    _waHotelId = hotelId;
+    document.getElementById('waModalTo').textContent = 'To: ' + hotelName;
+    document.getElementById('waModalResult').style.display = 'none';
+    document.getElementById('waModalResult').textContent = '';
+    document.querySelectorAll('#waTemplates label').forEach(function(l) {
+        l.style.border = '2px solid #e2e8f0';
+    });
+    document.querySelectorAll('input[name="wa_tpl"]').forEach(function(r) { r.checked = false; });
+    document.getElementById('waSendBtn').disabled = false;
+    document.getElementById('waSendBtn').style.opacity = '1';
+    var modal = document.getElementById('waModal');
+    modal.style.display = 'flex';
+}
+
+function closeWaModal() {
+    document.getElementById('waModal').style.display = 'none';
+}
+
+function selectWaTpl(label, key) {
+    document.querySelectorAll('#waTemplates label').forEach(function(l) {
+        l.style.border = '2px solid #e2e8f0';
+    });
+    label.style.border = '2px solid #25d366';
+    label.querySelector('input').checked = true;
+}
+
+function sendWaMessage() {
+    var selected = document.querySelector('input[name="wa_tpl"]:checked');
+    if (!selected) { alert('Please choose a template first.'); return; }
+
+    var btn = document.getElementById('waSendBtn');
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+    fetch('/platform/hotels/' + _waHotelId + '/send-quick-wa', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: JSON.stringify({ template_key: selected.value }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var el = document.getElementById('waModalResult');
+        el.style.display = 'block';
+        el.style.background = data.success ? '#dcfce7' : '#fee2e2';
+        el.style.color       = data.success ? '#15803d' : '#b91c1c';
+        el.textContent       = data.message || (data.success ? '✅ Sent!' : '❌ Error');
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
+        if (!data.success) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    })
+    .catch(function() {
+        var el = document.getElementById('waModalResult');
+        el.style.display = 'block';
+        el.style.background = '#fee2e2';
+        el.style.color = '#b91c1c';
+        el.textContent = '❌ Network error. Please try again.';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
+    });
+}
+
+// Close modal on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('waModal').addEventListener('click', function(e) {
+        if (e.target === this) closeWaModal();
+    });
+});
 </script>
 @endpush
 
