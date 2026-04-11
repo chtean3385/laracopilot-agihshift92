@@ -1043,7 +1043,7 @@ class HotelController extends Controller
     // ── Platform WhatsApp templates for hotel owner messaging ─────────────────
     public static function platformWaTemplates(): array
     {
-        $dashboardUrl = config('app.url') . '/login';
+        $dashboardUrl = 'https://resort.dreamstechnology.in/';
         return [
             'crm_update' => [
                 'label'     => 'CRM Dashboard Update',
@@ -1157,7 +1157,7 @@ class HotelController extends Controller
                             'type'       => 'body',
                             'parameters' => [
                                 ['type' => 'text', 'text' => $hotel->name],
-                                ['type' => 'text', 'text' => config('app.url') . '/login'],
+                                ['type' => 'text', 'text' => 'https://resort.dreamstechnology.in/'],
                             ],
                         ]],
                     ],

@@ -112,7 +112,7 @@ class AnalyticsDashboard extends Component
                             'type'       => 'body',
                             'parameters' => [
                                 ['type' => 'text', 'text' => $hotel->name],
-                                ['type' => 'text', 'text' => config('app.url') . '/login'],
+                                ['type' => 'text', 'text' => 'https://resort.dreamstechnology.in/'],
                             ],
                         ]],
                     ],
