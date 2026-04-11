@@ -362,25 +362,46 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
                     $statusBg   = $isActive ? '#dcfce7' : '#fee2e2';
                     $statusText = $isActive ? '#15803d' : '#b91c1c';
                     $statusLabel = ucfirst($hotel->status);
-                    // Effective price: custom override if set, else plan default
                     $monthlyPrice = $hotel->custom_monthly_price > 0 ? (float)$hotel->custom_monthly_price : ($plan['monthly_price'] ?? 0);
                     $yearlyPrice  = $hotel->custom_yearly_price  > 0 ? (float)$hotel->custom_yearly_price  : ($plan['yearly_price']  ?? 0);
                     $isCustom     = $hotel->custom_monthly_price > 0 || $hotel->custom_yearly_price > 0;
                     $cycle        = $hotel->billing_cycle ?? 'monthly';
+                    // Attention flags
+                    $planExpired   = ($hotel->plan_expires_at && \Carbon\Carbon::parse($hotel->plan_expires_at)->isPast())
+                                  || ($hotel->trial_ends_at  && \Carbon\Carbon::parse($hotel->trial_ends_at)->isPast());
+                    $lastActAt     = $hotel->last_activity ? \Carbon\Carbon::parse($hotel->last_activity) : null;
+                    $daysSince     = $lastActAt ? (int) $lastActAt->diffInDays(now()) : 999;
+                    $inactive3d    = $daysSince >= 3;
+                    $needsAttention = $planExpired || $inactive3d;
+                    // WhatsApp link
+                    $rawPhone = preg_replace('/\D/', '', $hotel->phone ?? '');
+                    $waPhone  = strlen($rawPhone) === 10 ? '91'.$rawPhone : $rawPhone;
+                    $waMsg    = urlencode("Hello, this is a message from ResortSaaS regarding your hotel *{$hotel->name}*.");
+                    $waUrl    = $waPhone ? "https://wa.me/{$waPhone}?text={$waMsg}" : null;
                 @endphp
                 <tr class="tenant-row"
                     data-name="{{ strtolower($hotel->name . ' ' . $hotel->slug) }}"
                     data-status="{{ $hotel->status }}"
-                    style="border-bottom:1px solid #f8fafc;transition:background .15s;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'">
+                    style="border-bottom:1px solid #f8fafc;transition:background .15s;{{ $needsAttention ? 'background:#fffbeb;border-left:3px solid #f59e0b;' : 'border-left:3px solid transparent;' }}"
+                    onmouseover="this.style.background='{{ $needsAttention ? '#fef9c3' : '#fafbff' }}'"
+                    onmouseout="this.style.background='{{ $needsAttention ? '#fffbeb' : 'transparent' }}'"
+                    >
 
                     {{-- Hotel name + slug --}}
                     <td style="padding:14px 20px;">
                         <div style="display:flex;align-items:center;gap:10px;">
-                            <div style="width:36px;height:36px;background:linear-gradient(135deg,#8b5cf6,#4c1d95);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <div style="width:36px;height:36px;background:{{ $needsAttention ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#8b5cf6,#4c1d95)' }};border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                                 <span style="color:#fff;font-size:13px;font-weight:800;">{{ strtoupper(substr($hotel->name, 0, 1)) }}</span>
                             </div>
                             <div>
-                                <div style="font-size:14px;font-weight:700;color:#1e293b;">{{ $hotel->name }}</div>
+                                <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                                    <span style="font-size:14px;font-weight:700;color:#1e293b;">{{ $hotel->name }}</span>
+                                    @if($planExpired)
+                                    <span style="font-size:9px;font-weight:800;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:4px;white-space:nowrap;">EXPIRED</span>
+                                    @elseif($inactive3d)
+                                    <span style="font-size:9px;font-weight:800;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;white-space:nowrap;">INACTIVE {{ $daysSince === 999 ? '(never)' : $daysSince.'d' }}</span>
+                                    @endif
+                                </div>
                                 <div style="font-size:11px;color:#94a3b8;font-family:monospace;">{{ $hotel->slug }}</div>
                             </div>
                         </div>
@@ -437,7 +458,15 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
 
                     {{-- Actions --}}
                     <td style="padding:14px 20px;text-align:center;">
-                        <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+                        <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
+                            @if($waUrl)
+                            <a href="{{ $waUrl }}" target="_blank"
+                               style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }};color:#15803d;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s;white-space:nowrap;{{ $needsAttention ? 'box-shadow:0 0 0 2px #22c55e;' : '' }}"
+                               onmouseover="this.style.background='#bbf7d0'" onmouseout="this.style.background='{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }}'"
+                               title="WhatsApp {{ $hotel->phone }}">
+                                <i class="fab fa-whatsapp" style="font-size:13px;"></i> WA
+                            </a>
+                            @endif
                             <a href="{{ route('platform.hotels.view-in-crm', $hotel->id) }}"
                                style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#ede9fe;color:#6d28d9;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s;white-space:nowrap;"
                                onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#ede9fe'"
