@@ -276,9 +276,13 @@
             </thead>
             <tbody>
                 @forelse($hotelEngagement as $h)
-                <tr style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .12s;"
+                @php
+                    $rowBg     = $h->needs_attention ? 'background:#fffbeb;' : '';
+                    $rowBorder = $h->needs_attention ? 'border-left:3px solid #f59e0b;' : 'border-left:3px solid transparent;';
+                @endphp
+                <tr style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .12s;{{ $rowBg }}{{ $rowBorder }}"
                     onclick="@this.set('selectedHotelId', {{ $h->id === $selectedHotelId ? 0 : $h->id }})"
-                    onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    onmouseover="this.style.background='{{ $h->needs_attention ? '#fef9c3' : '#f8fafc' }}'" onmouseout="this.style.background='{{ $h->needs_attention ? '#fffbeb' : 'transparent' }}'">
 
                     <td style="padding:13px 16px;">
                         <div style="display:flex;align-items:center;gap:10px;">
@@ -286,7 +290,15 @@
                                 {{ mb_strtoupper(mb_substr($h->name, 0, 1)) }}
                             </div>
                             <div>
-                                <div style="font-weight:800;color:#0f172a;font-size:13px;">{{ $h->name }}</div>
+                                <div style="display:flex;align-items:center;gap:5px;">
+                                    <span style="font-weight:800;color:#0f172a;font-size:13px;">{{ $h->name }}</span>
+                                    @if($h->plan_expired)
+                                    <span style="font-size:9px;font-weight:800;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:4px;white-space:nowrap;">EXPIRED</span>
+                                    @endif
+                                    @if($h->inactive_3d && !$h->plan_expired)
+                                    <span style="font-size:9px;font-weight:800;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;white-space:nowrap;">INACTIVE</span>
+                                    @endif
+                                </div>
                                 <div style="font-size:10px;color:#94a3b8;margin-top:1px;">{{ $h->email }}</div>
                             </div>
                         </div>
@@ -663,13 +675,25 @@ function initCharts() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof ApexCharts !== 'undefined') initCharts();
-});
+// Init charts with retry until ApexCharts is loaded
+function tryInitCharts(attempts) {
+    if (typeof ApexCharts !== 'undefined') {
+        initCharts();
+    } else if (attempts > 0) {
+        setTimeout(() => tryInitCharts(attempts - 1), 200);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => tryInitCharts(20));
+
+// Also try immediately in case DOMContentLoaded already fired
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    tryInitCharts(20);
+}
 
 document.addEventListener('livewire:update', () => {
     destroyCharts();
-    setTimeout(initCharts, 120);
+    setTimeout(() => tryInitCharts(10), 150);
 });
 </script>
 @endscript

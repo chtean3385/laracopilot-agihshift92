@@ -390,6 +390,11 @@ class AnalyticsDashboard extends Component
                 default         => ['Dormant', '#b91c1c', '#fee2e2'],
             };
 
+            $planExpired  = $hotel->plan_expires_at && Carbon::parse($hotel->plan_expires_at)->isPast();
+            $trialExpired = $hotel->trial_ends_at  && Carbon::parse($hotel->trial_ends_at)->isPast();
+            $inactive3d   = $daysSince >= 3;
+            $needsAttention = ($planExpired || $trialExpired || $inactive3d);
+
             return (object) [
                 'id'              => $hotel->id,
                 'name'            => $hotel->name,
@@ -413,6 +418,9 @@ class AnalyticsDashboard extends Component
                 'grade'           => $grade,
                 'devices'         => (int)($dev?->cnt ?? 0),
                 'created_at'      => $hotel->created_at,
+                'plan_expired'    => $planExpired || $trialExpired,
+                'inactive_3d'     => $inactive3d,
+                'needs_attention' => $needsAttention,
             ];
         })->when($this->filterInactive !== '0', function ($col) {
             $days = (int) $this->filterInactive;

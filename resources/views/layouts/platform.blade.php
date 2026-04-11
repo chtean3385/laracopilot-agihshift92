@@ -439,6 +439,9 @@
 
 </div>
 
+<!-- ApexCharts (required by analytics dashboard) -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+
 @stack('scripts')
 
 <script>
