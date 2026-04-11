@@ -14,12 +14,8 @@
 {{-- Header action --}}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
     <div>
-        <span style="font-size:13px;color:#64748b;">
-            @if($hotels->total() !== $totalCount)
-                {{ $hotels->total() }} result{{ $hotels->total() !== 1 ? 's' : '' }} of {{ $totalCount }} hotel{{ $totalCount !== 1 ? 's' : '' }}
-            @else
-                {{ $totalCount }} hotel{{ $totalCount !== 1 ? 's' : '' }} registered on platform
-            @endif
+        <span id="hotelCount" style="font-size:13px;color:#64748b;">
+            {{ $totalCount }} hotel{{ $totalCount !== 1 ? 's' : '' }} registered on platform
         </span>
     </div>
     <a href="{{ route('platform.hotels.create') }}" class="btn-primary">
@@ -27,36 +23,33 @@
     </a>
 </div>
 
-{{-- Search & Filter bar --}}
-<form method="GET" action="{{ route('platform.hotels.index') }}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+{{-- Search & Filter bar (live client-side filtering) --}}
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
     <div style="position:relative;flex:1;min-width:200px;">
         <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;pointer-events:none;"></i>
-        <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, email, phone…"
+        <input type="text" id="hotelSearch" value="{{ $search }}" placeholder="Search by name, slug, email, phone…"
+            oninput="filterHotels()"
             style="width:100%;padding:9px 14px 9px 36px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#1e293b;outline:none;box-sizing:border-box;background:#fff;"
             autocomplete="off">
     </div>
-    <select name="status"
+    <select id="hotelStatusFilter" onchange="filterHotels()"
         style="padding:9px 32px 9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
         <option value="">All Statuses</option>
         <option value="active"    {{ $status === 'active'    ? 'selected' : '' }}>Active</option>
         <option value="suspended" {{ $status === 'suspended' ? 'selected' : '' }}>Suspended</option>
     </select>
-    <select name="plan"
+    <select id="hotelPlanFilter" onchange="filterHotels()"
         style="padding:9px 32px 9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;background:#fff;outline:none;cursor:pointer;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;">
         <option value="">All Plans</option>
         @foreach($plans as $slug => $planData)
         <option value="{{ $slug }}" {{ $planFilter === $slug ? 'selected' : '' }}>{{ $planData['label'] }}</option>
         @endforeach
     </select>
-    <button type="submit" style="padding:9px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-        <i class="fas fa-filter"></i> Filter
-    </button>
-    @if($search !== '' || $status !== '' || $planFilter !== '')
-    <a href="{{ route('platform.hotels.index') }}" style="padding:9px 14px;background:#f1f5f9;color:#64748b;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;">
+    <button type="button" onclick="clearHotelFilters()" id="hotelClearBtn"
+        style="padding:9px 14px;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:{{ ($search !== '' || $status !== '' || $planFilter !== '') ? 'inline-flex' : 'none' }};align-items:center;gap:5px;">
         <i class="fas fa-times"></i> Clear
-    </a>
-    @endif
-</form>
+    </button>
+</div>
 
 {{-- Table card --}}
 <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #f1f5f9;overflow:hidden;">
@@ -111,7 +104,11 @@
                     $trialExp    = $trialEnd && $trialEnd->isPast();
                     $planExpired = $planExp  && $planExp->isPast();
                 @endphp
-                <tr style="border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'" onclick="window.location='{{ route('platform.hotels.edit', $hotel->id) }}'" title="Click to edit {{ addslashes($hotel->name) }}">
+                <tr class="hotel-row"
+                    data-search="{{ strtolower($hotel->name . ' ' . $hotel->slug . ' ' . $hotel->email . ' ' . $hotel->phone) }}"
+                    data-status="{{ $hotel->status }}"
+                    data-plan="{{ $hotel->plan }}"
+                    style="border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'" onclick="window.location='{{ route('platform.hotels.edit', $hotel->id) }}'" title="Click to edit {{ addslashes($hotel->name) }}">
 
                     <td style="padding:14px 20px;">
                         <div style="display:flex;align-items:center;gap:10px;">
@@ -269,6 +266,14 @@
 
                 </tr>
                 @endforeach
+                <tr id="hotelNoResults" style="display:none;">
+                    <td colspan="10" style="padding:60px 24px;text-align:center;">
+                        <i class="fas fa-search" style="font-size:40px;color:#e2e8f0;display:block;margin-bottom:12px;"></i>
+                        <p style="font-size:16px;font-weight:700;color:#1e293b;margin:0 0 6px;">No hotels match your search</p>
+                        <p style="color:#94a3b8;font-size:13px;margin:0 0 16px;">Try different search terms or clear the filters.</p>
+                        <button onclick="clearHotelFilters()" style="padding:8px 18px;background:#f1f5f9;color:#475569;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;"><i class="fas fa-times" style="margin-right:5px;"></i>Clear Filters</button>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -485,6 +490,55 @@ function submitQuickWA(e) {
 document.getElementById('quickWaModal').addEventListener('click', function(e) {
     if (e.target === this) closeQuickWA();
 });
+
+// ── Live hotel filtering ──────────────────────────────────────────────────
+var _totalHotels = document.querySelectorAll('.hotel-row').length;
+
+function filterHotels() {
+    var term   = (document.getElementById('hotelSearch').value || '').toLowerCase().trim();
+    var status = (document.getElementById('hotelStatusFilter').value || '').toLowerCase();
+    var plan   = (document.getElementById('hotelPlanFilter').value || '').toLowerCase();
+    var rows   = document.querySelectorAll('.hotel-row');
+    var shown  = 0;
+
+    rows.forEach(function(row) {
+        var search = row.dataset.search || '';
+        var rowStatus = row.dataset.status || '';
+        var rowPlan   = row.dataset.plan   || '';
+        var visible = true;
+        if (term   && search.indexOf(term) === -1)   visible = false;
+        if (status && rowStatus !== status)           visible = false;
+        if (plan   && rowPlan   !== plan)             visible = false;
+        row.style.display = visible ? '' : 'none';
+        if (visible) shown++;
+    });
+
+    var noRes = document.getElementById('hotelNoResults');
+    if (noRes) noRes.style.display = (shown === 0) ? '' : 'none';
+
+    var countEl = document.getElementById('hotelCount');
+    if (countEl) {
+        var hasFilter = term || status || plan;
+        if (!hasFilter) {
+            countEl.textContent = _totalHotels + ' hotel' + (_totalHotels !== 1 ? 's' : '') + ' registered on platform';
+        } else {
+            countEl.textContent = shown + ' of ' + _totalHotels + ' hotel' + (_totalHotels !== 1 ? 's' : '') + ' shown';
+        }
+    }
+
+    var clearBtn = document.getElementById('hotelClearBtn');
+    if (clearBtn) clearBtn.style.display = (term || status || plan) ? 'inline-flex' : 'none';
+}
+
+function clearHotelFilters() {
+    document.getElementById('hotelSearch').value = '';
+    document.getElementById('hotelStatusFilter').value = '';
+    document.getElementById('hotelPlanFilter').value = '';
+    filterHotels();
+}
+
+// Run on page load to apply any pre-filled search from URL
+document.addEventListener('DOMContentLoaded', filterHotels);
 </script>
 @endpush
 
