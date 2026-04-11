@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Platform\HotelController;
 
 class DashboardController extends Controller
 {
@@ -136,6 +137,8 @@ class DashboardController extends Controller
         $showExpiryPopup = session('platform_show_expiry_popup', false) && $expiryAlerts->isNotEmpty();
         session(['platform_show_expiry_popup' => false]);
 
+        $ownerWaTemplates = HotelController::platformWaTemplates();
+
         return view('platform.dashboard', compact(
             'totalHotels', 'activeHotels', 'suspendedHotels', 'trialHotels',
             'mrr', 'arr', 'nextMonthRevenue', 'activeSubscriptions',
@@ -143,7 +146,8 @@ class DashboardController extends Controller
             'plans',
             'hotelStats',
             'expiryAlerts',
-            'showExpiryPopup'
+            'showExpiryPopup',
+            'ownerWaTemplates'
         ));
     }
 

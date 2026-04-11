@@ -1044,10 +1044,34 @@ class HotelController extends Controller
     public static function platformWaTemplates(): array
     {
         $dashboardUrl = 'https://resort.dreamstechnology.in/';
+
+        // ── Dynamically resolve the latest APPROVED version from DB ──────────────
+        // This means after any body edit + auto-versioning + Meta approval,
+        // the send code picks up the new name automatically — no hardcoding.
+        $crmName = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->where(function ($q) {
+                $q->where('template_name', 'crm_dashboard_update')
+                  ->orWhere('template_name', 'LIKE', 'crm_dashboard_update_v%');
+            })
+            ->where('approval_status', 'approved')
+            ->orderByDesc('id')
+            ->value('template_name') ?? 'crm_dashboard_update';
+
+        $loginName = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->where(function ($q) {
+                $q->where('template_name', 'login_reminder')
+                  ->orWhere('template_name', 'LIKE', 'login_reminder_v%');
+            })
+            ->where('approval_status', 'approved')
+            ->orderByDesc('id')
+            ->value('template_name') ?? 'login_reminder';
+
         return [
             'crm_update' => [
                 'label'     => 'CRM Dashboard Update',
-                'meta_name' => 'crm_dashboard_update',
+                'meta_name' => $crmName,
                 'language'  => 'en_US',
                 'preview'   => "Hello {name},\n\nYour hotel CRM dashboard has recent updates that can help you manage bookings and customer communication more efficiently.\n\nStay on top of your operations and avoid missing any important updates.\n\n👉 Access your dashboard: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
                 'var1'      => 'hotel_name',
@@ -1055,7 +1079,7 @@ class HotelController extends Controller
             ],
             'login_reminder' => [
                 'label'     => 'Login Reminder',
-                'meta_name' => 'login_reminder',
+                'meta_name' => $loginName,
                 'language'  => 'en_US',
                 'preview'   => "Hello {name},\n\nWe noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attention!\n\n👉 Login here: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
                 'var1'      => 'hotel_name',

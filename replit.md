@@ -479,3 +479,38 @@ When deploying to production for the first time (or on a fresh Neon database), `
 - Seeds global WhatsApp templates (`hotel_id = null`) for the shared Meta number.
 - Seeds `platform_whatsapp_settings` and `platform_firebase_settings` from env vars **if and only if those tables are empty**.
 - **NEVER** touches: guests, bookings, check-ins, invoices, payments, rooms, activity logs, or any hotel transactional data.
+
+---
+
+## ⚠️ PRE-PUBLISH VERIFICATION (check this EVERY time before publishing)
+
+### 1. Deployment target
+- Must be **`autoscale`** in `.replit` — **not** `vm`. Laravel web apps fail with `vm` target.
+- Run command: `["bash", "scripts/start.sh"]` — starts on port 5000.
+- Build command: `composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan optimize && php artisan app:safe-migrate`
+
+### 2. WhatsApp owner templates (Platform → Hotel Owner messaging)
+- The 2 platform owner templates (`crm_dashboard_update` / `login_reminder`) are **dynamically resolved from DB** — `platformWaTemplates()` queries the `whatsapp_templates` table for the latest APPROVED version by base name pattern.
+- **Before publishing**: Go to Platform Admin → Message Templates. Confirm both `crm_dashboard_update` (or latest `_v{N}`) and `login_reminder` (or latest `_v{N}`) show **Approved** status.
+- If body was edited → name auto-versioned → status reset to Pending → must Submit to Meta → wait for Meta approval → Sync from Meta → confirm Approved. Only then publish.
+- **Never hardcode** template names in PHP code. All send paths use `platformWaTemplates()` which reads from DB.
+
+### 3. Environment secrets (production only)
+All these must be set in Replit Secrets (production environment):
+- `DB_PASSWORD` / `PGPASSWORD` — Neon DB password
+- `MAIL_PASSWORD` — SMTP password
+- `WA_SAAS_TOKEN`, `WA_SAAS_PHONE_NUMBER_ID`, `WA_SAAS_WABA_ID` — Platform WhatsApp
+- `WA_META_APP_ID`, `WA_META_APP_SECRET`, `WA_WEBHOOK_VERIFY_TOKEN`
+- `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`, `FIREBASE_VAPID_KEY`, `FCM_SERVER_KEY`, `FIREBASE_SERVICE_ACCOUNT_JSON`
+
+### 4. New migrations
+- Check `git diff <last-deploy-commit> HEAD --name-only | grep migration`
+- All new migrations must be **ADD COLUMN** or **CREATE TABLE** only — never DROP or ALTER existing columns.
+- SafeMigrate guard protects production from `migrate:fresh` — only `migrate --force` runs.
+
+### 5. Quick smoke test after publish
+1. Open `https://resort.dreamstechnology.in/platform/login` — login works ✅
+2. Open Platform Admin → Dashboard — loads without error ✅
+3. Open Platform Admin → Message Templates — templates show correct Approved status ✅
+4. Open Platform Admin → Hotels → click WA button on any hotel — modal shows 2 templates, send works ✅
+5. Open Hotel CRM → `/login` — hotel staff login works ✅
