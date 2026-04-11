@@ -34,6 +34,8 @@ class UserController extends Controller
                 'hotels.name as hotel_name',
                 'hotels.slug as hotel_slug',
                 'hotels.status as hotel_status',
+                'hotels.phone as hotel_phone',
+                'hotels.owner_wa_consent',
             )
             ->orderBy('users.name')
             ->orderBy('hotels.name');
@@ -159,6 +161,41 @@ class UserController extends Controller
         }
 
         return view('platform.users.reset-password', compact('user'));
+    }
+
+    // ── Toggle WA consent for all hotels managed by this user ─────────────────
+
+    public function toggleWaConsent(int $id): \Illuminate\Http\JsonResponse
+    {
+        $hotelIds = DB::table('hotel_users')
+            ->where('user_id', $id)
+            ->where('is_hotel_admin', true)
+            ->pluck('hotel_id');
+
+        if ($hotelIds->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hotels found for this admin user.']);
+        }
+
+        $currentConsent = (bool) DB::table('hotels')
+            ->whereIn('id', $hotelIds)
+            ->value('owner_wa_consent');
+
+        $newConsent = !$currentConsent;
+
+        DB::table('hotels')
+            ->whereIn('id', $hotelIds)
+            ->update(['owner_wa_consent' => $newConsent, 'updated_at' => now()]);
+
+        $count = $hotelIds->count();
+
+        return response()->json([
+            'success'        => true,
+            'consented'      => $newConsent,
+            'hotels_updated' => $count,
+            'message'        => $newConsent
+                ? "✅ Consent granted for {$count} hotel(s)"
+                : "✅ Consent removed for {$count} hotel(s)",
+        ]);
     }
 
     // ── Reset Password ────────────────────────────────────────────────────────

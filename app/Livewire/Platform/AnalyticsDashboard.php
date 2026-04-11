@@ -6,6 +6,7 @@ use App\Http\Controllers\Platform\HotelController;
 use App\Models\PlatformWhatsAppSetting;
 use App\Services\FcmService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -326,7 +327,7 @@ class AnalyticsDashboard extends Component
 
         $query = DB::table('hotels')->select(
             'id', 'name', 'slug', 'plan', 'status', 'email', 'phone',
-            'trial_ends_at', 'plan_expires_at', 'created_at'
+            'trial_ends_at', 'plan_expires_at', 'created_at', 'owner_wa_consent'
         );
 
         if ($this->filterPlan !== '') {
@@ -421,10 +422,11 @@ class AnalyticsDashboard extends Component
                 'score'           => $score,
                 'grade'           => $grade,
                 'devices'         => (int)($dev?->cnt ?? 0),
-                'created_at'      => $hotel->created_at,
-                'plan_expired'    => $planExpired || $trialExpired,
-                'inactive_3d'     => $inactive3d,
-                'needs_attention' => $needsAttention,
+                'created_at'        => $hotel->created_at,
+                'plan_expired'      => $planExpired || $trialExpired,
+                'inactive_3d'       => $inactive3d,
+                'needs_attention'   => $needsAttention,
+                'owner_wa_consent'  => (bool)($hotel->owner_wa_consent ?? false),
             ];
         })->when($this->filterInactive !== '0', function ($col) {
             $days = (int) $this->filterInactive;
@@ -605,13 +607,19 @@ class AnalyticsDashboard extends Component
 
     public function render()
     {
-        $hotelEngagement = $this->hotelEngagement();
-        $kpi             = $this->getKpiData();
-        $charts          = $this->getChartData();
-        $prediction      = $this->revenuePrediction();
-        $activeSessions  = $this->activeSessions();
-        $selectedDetail  = $this->getSelectedHotelDetail();
-        $plans           = DB::table('hotels')->distinct()->pluck('plan')->sort()->values();
+        // ── Platform-wide metrics: cached 5 min ──────────────────────────
+        $kpi        = Cache::remember('analytics_kpi',        300, fn() => $this->getKpiData());
+        $charts     = Cache::remember('analytics_charts',     300, fn() => $this->getChartData());
+        $prediction = Cache::remember('analytics_prediction', 300, fn() => $this->revenuePrediction());
+
+        // ── Hotel engagement: filter-sensitive, cached per filter combo ──
+        $engKey          = 'analytics_hotels_' . md5($this->filterPlan . '|' . $this->filterStatus . '|' . $this->filterInactive);
+        $hotelEngagement = Cache::remember($engKey, 300, fn() => $this->hotelEngagement());
+
+        // ── Active sessions: real-time, never cached ─────────────────────
+        $activeSessions = $this->activeSessions();
+        $selectedDetail = $this->getSelectedHotelDetail();
+        $plans          = DB::table('hotels')->distinct()->pluck('plan')->sort()->values();
 
         return view('livewire.platform.analytics-dashboard', compact(
             'hotelEngagement', 'kpi', 'charts', 'prediction',

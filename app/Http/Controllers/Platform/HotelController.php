@@ -1144,6 +1144,9 @@ class HotelController extends Controller
         if (!$hotel->phone) {
             return response()->json(['success' => false, 'message' => '❌ This hotel has no phone number set. Add one in Edit Hotel.']);
         }
+        if (!$hotel->owner_wa_consent) {
+            return response()->json(['success' => false, 'message' => '❌ Owner has not consented to receive WhatsApp messages. Tick the consent box on the Users list or in Edit Hotel first.']);
+        }
         if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
             return response()->json(['success' => false, 'message' => '❌ Platform WhatsApp not configured. Check WhatsApp Settings.']);
         }
@@ -1208,5 +1211,122 @@ class HotelController extends Controller
             Log::error("Platform Quick WA exception for hotel {$id}: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => '❌ Failed: ' . $e->getMessage()]);
         }
+    }
+
+    // ── Send WA to ALL consented hotel owners (deduplicated by phone) ─────────
+    public function sendWaAll(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $platform = PlatformWhatsAppSetting::instance();
+
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            return response()->json(['success' => false, 'message' => '❌ Platform WhatsApp not configured.']);
+        }
+
+        $templateName = $request->input('template_name');
+        $templateLang = $request->input('template_language', 'en_US');
+
+        if (!$templateName) {
+            return response()->json(['success' => false, 'message' => '❌ No template selected.']);
+        }
+
+        $hotels = DB::table('hotels')
+            ->where('owner_wa_consent', true)
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->get(['id', 'name', 'phone']);
+
+        $sent              = 0;
+        $skippedDuplicate  = 0;
+        $skippedNoPhone    = 0;
+        $errors            = [];
+        $seenPhones        = [];
+
+        foreach ($hotels as $hotel) {
+            $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
+            if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
+                $phone = '91' . $phone;
+            }
+
+            if (strlen($phone) < 10) {
+                $skippedNoPhone++;
+                continue;
+            }
+
+            if (in_array($phone, $seenPhones)) {
+                $skippedDuplicate++;
+                continue;
+            }
+
+            $seenPhones[] = $phone;
+
+            try {
+                $response = Http::timeout(15)->withToken($platform->saas_token)
+                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                        'messaging_product' => 'whatsapp',
+                        'to'                => $phone,
+                        'type'              => 'template',
+                        'template'          => [
+                            'name'       => $templateName,
+                            'language'   => ['code' => $templateLang],
+                            'components' => [[
+                                'type'       => 'body',
+                                'parameters' => [
+                                    ['type' => 'text', 'text' => $hotel->name],
+                                    ['type' => 'text', 'text' => 'https://resort.dreamstechnology.in/'],
+                                ],
+                            ]],
+                        ],
+                    ]);
+
+                $body = $response->json();
+                if ($response->successful() && isset($body['messages'])) {
+                    $sent++;
+                } else {
+                    $errMsg  = $body['error']['message'] ?? 'Unknown error';
+                    $errors[] = "{$hotel->name}: {$errMsg}";
+                }
+            } catch (\Throwable $e) {
+                $errors[] = "{$hotel->name}: " . $e->getMessage();
+            }
+        }
+
+        Log::info("Platform WA All: sent={$sent}, dupes={$skippedDuplicate}, no_phone={$skippedNoPhone}");
+
+        return response()->json([
+            'success'           => true,
+            'sent'              => $sent,
+            'skipped_duplicate' => $skippedDuplicate,
+            'skipped_no_phone'  => $skippedNoPhone,
+            'errors'            => $errors,
+        ]);
+    }
+
+    // ── Send quick push notification to a single hotel ────────────────────────
+    public function sendQuickPushHotel(\Illuminate\Http\Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        $fcm = app(\App\Services\FcmService::class);
+
+        if (!$fcm->isEnabled()) {
+            return response()->json(['success' => false, 'message' => '❌ Firebase not enabled.']);
+        }
+
+        $tokens = $fcm->getTokensForHotel($id);
+        if (empty($tokens)) {
+            return response()->json(['success' => false, 'message' => '⚠️ No devices registered for this hotel.']);
+        }
+
+        $title = trim($request->input('title', ''));
+        $body  = trim($request->input('body', ''));
+
+        if (!$title && !$body) {
+            return response()->json(['success' => false, 'message' => '❌ Please enter a title or message body.']);
+        }
+
+        $result = $fcm->sendToTokens($tokens, $title ?: 'Platform Alert', $body);
+
+        return response()->json([
+            'success' => true,
+            'message' => "✅ Push sent to {$result['success']} device(s)" . ($result['failure'] > 0 ? " (failed: {$result['failure']})" : ''),
+        ]);
     }
 }

@@ -49,6 +49,45 @@
         style="padding:9px 14px;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:{{ ($search !== '' || $status !== '' || $planFilter !== '') ? 'inline-flex' : 'none' }};align-items:center;gap:5px;">
         <i class="fas fa-times"></i> Clear
     </button>
+    <button type="button" onclick="openWaAllModal()"
+        style="padding:9px 16px;background:linear-gradient(135deg,#128c43,#25d366);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;"
+        title="Send WhatsApp to all consented hotel owners (deduped by phone)">
+        <i class="fab fa-whatsapp"></i> WA All Owners
+    </button>
+</div>
+
+{{-- WA All Owners Modal --}}
+<div id="waAllModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeWaAllModal()">
+    <div style="background:#fff;border-radius:20px;width:480px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;" onclick="event.stopPropagation()">
+        <div style="padding:20px 24px;background:linear-gradient(135deg,#128c43,#25d366);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;"><i class="fab fa-whatsapp"></i> WA — All Consented Owners</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px;">Sends once per unique phone number — no duplicates</div>
+            </div>
+            <button onclick="closeWaAllModal()" style="width:32px;height:32px;background:rgba(255,255,255,.2);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:16px;">✕</button>
+        </div>
+        <div style="padding:20px 24px;">
+            <div id="waAllResult" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;font-weight:600;"></div>
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">Choose a template:</div>
+            <div id="waAllTemplates" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+                @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
+                <label onclick="selectWaAllTpl(this, '{{ $tpl['meta_name'] }}', '{{ $tpl['language'] }}')"
+                    style="border:2px solid #e2e8f0;border-radius:11px;padding:11px 13px;cursor:pointer;display:block;">
+                    <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">
+                        {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
+                    </div>
+                    <div style="font-size:11px;color:#64748b;line-height:1.5;">
+                        {{ \Illuminate\Support\Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 120) }}
+                    </div>
+                </label>
+                @endforeach
+            </div>
+            <button id="waAllSendBtn" onclick="sendWaAll()"
+                style="width:100%;padding:13px;background:linear-gradient(135deg,#128c43,#25d366);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fab fa-whatsapp"></i> Send to All Consented Owners
+            </button>
+        </div>
+    </div>
 </div>
 
 {{-- Table card --}}
@@ -209,6 +248,7 @@
                             {{-- Quick WhatsApp --}}
                             @if($hotel->phone)
                             <button type="button"
+                                data-wa-hotel-id="{{ $hotel->id }}"
                                 onclick="openQuickWA({{ $hotel->id }}, '{{ addslashes($hotel->name) }}', '{{ addslashes($hotel->phone) }}', {{ $hotel->owner_wa_consent ? 'true' : 'false' }})"
                                 style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:{{ $hotel->owner_wa_consent ? '#dcfce7' : '#f1f5f9' }};color:{{ $hotel->owner_wa_consent ? '#15803d' : '#64748b' }};border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;"
                                 title="{{ $hotel->owner_wa_consent ? 'Send WhatsApp (consented)' : 'Send WhatsApp (no consent yet)' }}">
@@ -479,6 +519,7 @@ function submitQuickWA(e) {
         res.textContent      = data.message;
         btn.disabled = false; btn.style.opacity = '1';
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
+        if (data.success) waSetCooldown(_qaHotelId);
     }).catch(() => {
         res.style.display = 'block'; res.style.background = '#fee2e2'; res.style.color = '#b91c1c';
         res.textContent = '❌ Request failed.';
@@ -538,7 +579,63 @@ function clearHotelFilters() {
 }
 
 // Run on page load to apply any pre-filled search from URL
-document.addEventListener('DOMContentLoaded', filterHotels);
+document.addEventListener('DOMContentLoaded', function() {
+    filterHotels();
+    waInitAllCooldowns();
+});
+
+// ── WA All Owners ─────────────────────────────────────────────────────────
+var _waAllTplName = '', _waAllTplLang = '';
+
+function openWaAllModal() {
+    _waAllTplName = ''; _waAllTplLang = '';
+    document.getElementById('waAllResult').style.display = 'none';
+    document.getElementById('waAllResult').textContent = '';
+    document.querySelectorAll('#waAllTemplates label').forEach(function(l) { l.style.border = '2px solid #e2e8f0'; });
+    var btn = document.getElementById('waAllSendBtn');
+    btn.disabled = false; btn.style.opacity = '1';
+    btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send to All Consented Owners';
+    document.getElementById('waAllModal').style.display = 'flex';
+}
+function closeWaAllModal() { document.getElementById('waAllModal').style.display = 'none'; }
+function selectWaAllTpl(lbl, name, lang) {
+    document.querySelectorAll('#waAllTemplates label').forEach(function(l) { l.style.border = '2px solid #e2e8f0'; });
+    lbl.style.border = '2px solid #25d366';
+    _waAllTplName = name; _waAllTplLang = lang;
+}
+function sendWaAll() {
+    if (!_waAllTplName) { alert('Please choose a template first.'); return; }
+    if (!confirm('Send WhatsApp to ALL consented hotel owners? (Deduplicated by phone — safe to run)')) return;
+    var btn = document.getElementById('waAllSendBtn');
+    btn.disabled = true; btn.style.opacity = '0.6'; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    fetch('/platform/hotels/send-wa-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+        body: JSON.stringify({ template_name: _waAllTplName, template_language: _waAllTplLang }),
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        var res = document.getElementById('waAllResult');
+        res.style.display = 'block';
+        if (data.success) {
+            var msg = '✅ Sent: ' + data.sent + ' message(s).';
+            if (data.skipped_duplicate > 0) msg += ' · ' + data.skipped_duplicate + ' skipped (same owner number).';
+            if (data.skipped_no_phone   > 0) msg += ' · ' + data.skipped_no_phone   + ' skipped (no phone).';
+            if (data.errors && data.errors.length > 0) msg += ' · ' + data.errors.length + ' error(s).';
+            res.style.background = '#dcfce7'; res.style.color = '#15803d';
+            res.textContent = msg;
+        } else {
+            res.style.background = '#fee2e2'; res.style.color = '#b91c1c';
+            res.textContent = data.message || '❌ Error sending messages.';
+        }
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send to All Consented Owners';
+        btn.disabled = false; btn.style.opacity = '1';
+    }).catch(function() {
+        var res = document.getElementById('waAllResult');
+        res.style.display = 'block'; res.style.background = '#fee2e2'; res.style.color = '#b91c1c';
+        res.textContent = '❌ Network error. Try again.';
+        btn.disabled = false; btn.style.opacity = '1';
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send to All Consented Owners';
+    });
+}
 </script>
 @endpush
 

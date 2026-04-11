@@ -249,6 +249,60 @@
         table th:first-child, table td:first-child { padding-left: 12px; }
         table th:last-child, table td:last-child { padding-right: 12px; }
     </style>
+
+    {{-- ── WA 5-minute cooldown utility (shared across all platform pages) ── --}}
+    <script>
+    var WA_COOLDOWN_SECS = 300;
+
+    function waKey(hotelId) { return 'wa_sent_' + hotelId; }
+
+    function waSetCooldown(hotelId) {
+        localStorage.setItem(waKey(hotelId), Date.now().toString());
+        waApplyCooldownBtn(hotelId);
+    }
+
+    function waRemainingSeconds(hotelId) {
+        var ts = parseInt(localStorage.getItem(waKey(hotelId)) || '0', 10);
+        if (!ts) return 0;
+        var elapsed = Math.floor((Date.now() - ts) / 1000);
+        return Math.max(0, WA_COOLDOWN_SECS - elapsed);
+    }
+
+    function waApplyCooldownBtn(hotelId) {
+        var rem = waRemainingSeconds(hotelId);
+        var btns = document.querySelectorAll('[data-wa-hotel-id="' + hotelId + '"]');
+        btns.forEach(function(btn) {
+            if (rem > 0) {
+                btn.disabled = true;
+                btn.style.background = '#94a3b8';
+                btn.style.cursor = 'not-allowed';
+                var mins = Math.floor(rem / 60), secs = rem % 60;
+                btn.setAttribute('data-original-html', btn.getAttribute('data-original-html') || btn.innerHTML);
+                btn.innerHTML = '<i class="fas fa-clock"></i> WA cooldown ' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+            } else {
+                btn.disabled = false;
+                btn.style.background = '';
+                btn.style.cursor = '';
+                var orig = btn.getAttribute('data-original-html');
+                if (orig) { btn.innerHTML = orig; btn.removeAttribute('data-original-html'); }
+            }
+        });
+    }
+
+    function waInitAllCooldowns() {
+        document.querySelectorAll('[data-wa-hotel-id]').forEach(function(btn) {
+            var hotelId = btn.getAttribute('data-wa-hotel-id');
+            waApplyCooldownBtn(hotelId);
+        });
+        setInterval(function() {
+            var seen = {};
+            document.querySelectorAll('[data-wa-hotel-id]').forEach(function(btn) {
+                var id = btn.getAttribute('data-wa-hotel-id');
+                if (!seen[id]) { seen[id] = true; waApplyCooldownBtn(id); }
+            });
+        }, 1000);
+    }
+    </script>
 </head>
 <body>
 

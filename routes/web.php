@@ -332,7 +332,10 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/hotels/{id}/cancel-plan-expiry', [\App\Http\Controllers\Platform\HotelController::class, 'cancelPlanExpiry'])->name('platform.hotels.cancel-plan-expiry');
     Route::post('/hotels/{id}/add-related',        [\App\Http\Controllers\Platform\HotelController::class, 'addRelatedHotel'])->name('platform.hotels.add-related');
     Route::post('/hotels/{id}/send-quick-wa',      [\App\Http\Controllers\Platform\HotelController::class, 'sendQuickWA'])->name('platform.hotels.send-quick-wa');
+    Route::post('/hotels/{id}/send-quick-push',    [\App\Http\Controllers\Platform\HotelController::class, 'sendQuickPushHotel'])->name('platform.hotels.send-quick-push');
+    Route::post('/hotels/send-wa-all',             [\App\Http\Controllers\Platform\HotelController::class, 'sendWaAll'])->name('platform.hotels.send-wa-all');
     Route::get('/wa-templates',                    [\App\Http\Controllers\Platform\HotelController::class, 'fetchApprovedWaTemplates'])->name('platform.wa-templates');
+    Route::post('/users/{id}/toggle-wa-consent',   [\App\Http\Controllers\Platform\UserController::class, 'toggleWaConsent'])->name('platform.users.toggle-wa-consent');
 
     // 2FA settings
     Route::get('/settings/2fa',          [\App\Http\Controllers\Platform\AuthController::class, 'show2faSetup'])->name('platform.settings.2fa');

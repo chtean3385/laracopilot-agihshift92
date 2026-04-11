@@ -461,6 +461,7 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
                         <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;">
                             @if($hotel->phone)
                             <button onclick="openWaModal({{ $hotel->id }}, '{{ addslashes($hotel->name) }}')"
+                               data-wa-hotel-id="{{ $hotel->id }}"
                                style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }};color:#15803d;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;{{ $needsAttention ? 'box-shadow:0 0 0 2px #22c55e;' : '' }}"
                                onmouseover="this.style.background='#bbf7d0'" onmouseout="this.style.background='{{ $needsAttention ? '#dcfce7' : '#f0fdf4' }}'"
                                title="Quick WhatsApp to {{ $hotel->phone }}">
@@ -643,6 +644,7 @@ function sendWaMessage() {
         el.textContent       = data.message || (data.success ? '✅ Sent!' : '❌ Error');
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
         if (!data.success) { btn.disabled = false; btn.style.opacity = '1'; }
+        if (data.success && _waHotelId) waSetCooldown(_waHotelId);
     })
     .catch(function() {
         var el = document.getElementById('waModalResult');
@@ -655,11 +657,12 @@ function sendWaMessage() {
     });
 }
 
-// Close modal on backdrop click
+// Close modal on backdrop click + init cooldowns
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('waModal').addEventListener('click', function(e) {
         if (e.target === this) closeWaModal();
     });
+    waInitAllCooldowns();
 });
 </script>
 @endpush

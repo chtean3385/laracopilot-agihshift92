@@ -80,6 +80,7 @@
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Role</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Status</th>
                     <th style="text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">Joined</th>
+                    <th style="text-align:center;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 14px;">WA Consent</th>
                     <th style="text-align:center;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;padding:13px 20px;">Actions</th>
                 </tr>
             </thead>
@@ -141,6 +142,22 @@
                     {{-- Joined --}}
                     <td style="padding:14px;">
                         <span style="font-size:12px;color:#64748b;">{{ \Carbon\Carbon::parse($row->joined_at)->format('d M Y') }}</span>
+                    </td>
+
+                    {{-- WA Consent --}}
+                    <td style="padding:14px;text-align:center;" onclick="event.stopPropagation()">
+                        @if($row->is_hotel_admin)
+                        <button
+                            id="wa-consent-btn-{{ $row->user_id }}"
+                            onclick="toggleWaConsent({{ $row->user_id }}, this)"
+                            title="{{ $row->owner_wa_consent ? 'Consented — click to revoke' : 'No consent — click to grant' }}"
+                            style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:none;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;{{ $row->owner_wa_consent ? 'background:#dcfce7;color:#15803d;' : 'background:#f1f5f9;color:#94a3b8;' }}">
+                            <i class="fas {{ $row->owner_wa_consent ? 'fa-check-circle' : 'fa-circle' }}" style="font-size:10px;"></i>
+                            {{ $row->owner_wa_consent ? 'Consented' : 'No Consent' }}
+                        </button>
+                        @else
+                        <span style="font-size:11px;color:#e2e8f0;">—</span>
+                        @endif
                     </td>
 
                     {{-- Actions --}}
@@ -206,3 +223,55 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+function toggleWaConsent(userId, btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    fetch('/platform/users/' + userId + '/toggle-wa-consent', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: JSON.stringify({}),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        if (data.success) {
+            var on = data.consented;
+            btn.style.background = on ? '#dcfce7' : '#f1f5f9';
+            btn.style.color      = on ? '#15803d' : '#94a3b8';
+            btn.innerHTML = '<i class="fas ' + (on ? 'fa-check-circle' : 'fa-circle') + '" style="font-size:10px;"></i> ' + (on ? 'Consented' : 'No Consent');
+            btn.title = on ? 'Consented — click to revoke' : 'No consent — click to grant';
+            // Update all buttons for this user on the page (multiple hotel rows)
+            document.querySelectorAll('#wa-consent-btn-' + userId).forEach(function(b) {
+                if (b !== btn) {
+                    b.style.background = on ? '#dcfce7' : '#f1f5f9';
+                    b.style.color      = on ? '#15803d' : '#94a3b8';
+                    b.innerHTML = '<i class="fas ' + (on ? 'fa-check-circle' : 'fa-circle') + '" style="font-size:10px;"></i> ' + (on ? 'Consented' : 'No Consent');
+                }
+            });
+            var n = data.hotels_updated;
+            if (n > 1) {
+                var toast = document.createElement('div');
+                toast.textContent = data.message + ' (' + n + ' hotels updated)';
+                toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.25);';
+                document.body.appendChild(toast);
+                setTimeout(function() { toast.remove(); }, 3000);
+            }
+        } else {
+            alert(data.message || 'Failed to update consent.');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        alert('Network error. Please try again.');
+    });
+}
+</script>
+@endpush

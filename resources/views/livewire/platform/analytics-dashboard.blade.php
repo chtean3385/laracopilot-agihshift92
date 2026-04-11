@@ -348,12 +348,17 @@
 
                     <td style="padding:13px 10px;text-align:center;" onclick="event.stopPropagation()">
                         <div style="display:flex;gap:5px;justify-content:center;align-items:center;">
-                            <button wire:click="openQuickModal({{ $h->id }}, 'whatsapp')" title="Quick WhatsApp"
+                            <button
+                                data-wa-hotel-id="{{ $h->id }}"
+                                onclick="analyticsOpenModal({{ $h->id }}, '{{ addslashes($h->name) }}', '{{ addslashes($h->phone ?? '') }}', 'whatsapp', {{ $h->owner_wa_consent ? 'true' : 'false' }})"
+                                title="Quick WhatsApp"
                                 style="width:30px;height:30px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
                                 onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''">
                                 <i class="fab fa-whatsapp" style="font-size:13px;"></i>
                             </button>
-                            <button wire:click="openQuickModal({{ $h->id }}, 'push')" title="Quick Push"
+                            <button
+                                onclick="analyticsOpenModal({{ $h->id }}, '{{ addslashes($h->name) }}', '', 'push', false)"
+                                title="Quick Push"
                                 style="width:30px;height:30px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
                                 onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''">
                                 <i class="fas fa-bell" style="font-size:12px;"></i>
@@ -477,75 +482,71 @@
 @endif
 
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
-{{-- QUICK ACTION MODAL                                                    --}}
+{{-- QUICK ACTION MODAL — Pure JS, no Livewire re-render on open/close ──  --}}
 {{-- ══════════════════════════════════════════════════════════════════════ --}}
-@if($showQuickModal)
-<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;" wire:click.self="closeQuickModal">
+<div id="analyticsQuickModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;" onclick="if(event.target===this)analyticsCloseModal()">
     <div style="background:#fff;border-radius:20px;width:460px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;" onclick="event.stopPropagation()">
 
-        <div style="padding:20px 24px;background:{{ $quickModalChannel === 'whatsapp' ? 'linear-gradient(135deg,#128c43,#25d366)' : 'linear-gradient(135deg,#5b21b6,#7c3aed)' }};display:flex;justify-content:space-between;align-items:center;">
+        <div id="aqmHeader" style="padding:20px 24px;background:linear-gradient(135deg,#128c43,#25d366);display:flex;justify-content:space-between;align-items:center;">
             <div>
-                <div style="font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
-                    <i class="{{ $quickModalChannel === 'whatsapp' ? 'fab fa-whatsapp' : 'fas fa-bell' }}"></i>
-                    Quick {{ $quickModalChannel === 'whatsapp' ? 'WhatsApp' : 'Push' }}
+                <div id="aqmTitle" style="font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+                    <i id="aqmIcon" class="fab fa-whatsapp"></i> Quick WhatsApp
                 </div>
-                <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;">To: {{ $quickModalHotelName }}</div>
+                <div id="aqmSubtitle" style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;"></div>
             </div>
-            <button wire:click="closeQuickModal" style="width:32px;height:32px;background:rgba(255,255,255,.2);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:16px;">✕</button>
+            <button onclick="analyticsCloseModal()" style="width:32px;height:32px;background:rgba(255,255,255,.2);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:16px;">✕</button>
         </div>
 
         <div style="padding:22px 24px;">
-            @if($quickActionResult)
-            <div style="background:{{ str_contains($quickActionResult,'✅') ? '#dcfce7' : (str_contains($quickActionResult,'⚠') ? '#fef3c7' : '#fee2e2') }};border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:600;color:{{ str_contains($quickActionResult,'✅') ? '#15803d' : (str_contains($quickActionResult,'⚠') ? '#92400e' : '#b91c1c') }};">
-                {{ $quickActionResult }}
-            </div>
-            @endif
+            <div id="aqmResult" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:600;"></div>
 
-            @if($quickModalChannel === 'whatsapp')
-            @if(!$quickModalConsented)
-            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;font-weight:600;color:#92400e;">
-                ⚠️ This owner hasn't consented to WhatsApp messages yet. Proceed with caution.
-            </div>
-            @endif
-
-            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">Choose a template:</div>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-                @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
-                <div wire:click="selectTemplate('{{ $tplKey }}')"
-                    style="border:2px solid {{ $selectedTemplateKey === $tplKey ? '#25d366' : '#e2e8f0' }};border-radius:11px;padding:11px 13px;cursor:pointer;background:{{ $selectedTemplateKey === $tplKey ? '#f0fdf4' : '#fff' }};transition:border-color .15s;">
-                    <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">
-                        {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
-                    </div>
-                    <div style="font-size:11px;color:#64748b;line-height:1.5;">
-                        {{ Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 120) }}
-                    </div>
+            {{-- WA section --}}
+            <div id="aqmWaSection">
+                <div id="aqmConsentWarn" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;font-weight:600;color:#92400e;">
+                    ⚠️ This owner hasn't consented to WhatsApp messages yet. Proceed with caution.
                 </div>
-                @endforeach
+                <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">Choose a template:</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+                    @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
+                    <div id="aqm-tpl-{{ $tplKey }}"
+                        onclick="analyticsSelectTpl('{{ $tplKey }}','{{ $tpl['meta_name'] }}','{{ $tpl['language'] }}')"
+                        style="border:2px solid #e2e8f0;border-radius:11px;padding:11px 13px;cursor:pointer;background:#fff;transition:border-color .15s;">
+                        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">
+                            {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
+                        </div>
+                        <div style="font-size:11px;color:#64748b;line-height:1.5;">
+                            {{ Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 120) }}
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                <button id="aqmWaSendBtn" onclick="analyticsSendWA()"
+                    style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;opacity:.5;"
+                    disabled>
+                    <i class="fab fa-whatsapp"></i> Send WhatsApp Now
+                </button>
             </div>
 
-            <button wire:click="sendQuickWhatsApp"
-                style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;{{ !$selectedTemplateKey ? 'opacity:.5;cursor:not-allowed;' : '' }}">
-                <i class="fab fa-whatsapp"></i> Send WhatsApp Now
-            </button>
-            @else
-            <div style="margin-bottom:14px;">
-                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Notification Title</label>
-                <input wire:model="quickPushTitle" type="text" placeholder="e.g. Important Update"
-                    style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;box-sizing:border-box;">
+            {{-- Push section --}}
+            <div id="aqmPushSection" style="display:none;">
+                <div style="margin-bottom:14px;">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Notification Title</label>
+                    <input id="aqmPushTitle" type="text" placeholder="e.g. Important Update"
+                        style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Message Body</label>
+                    <textarea id="aqmPushBody" rows="4" placeholder="Push notification body..."
+                        style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;resize:vertical;box-sizing:border-box;"></textarea>
+                </div>
+                <button onclick="analyticsSendPush()"
+                    style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <i class="fas fa-bell"></i> Send Push Notification
+                </button>
             </div>
-            <div style="margin-bottom:16px;">
-                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Message Body</label>
-                <textarea wire:model="quickMessage" rows="4" placeholder="Push notification body..."
-                    style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#374151;resize:vertical;box-sizing:border-box;"></textarea>
-            </div>
-            <button wire:click="sendQuickPush" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <i class="fas fa-bell"></i> Send Push Notification
-            </button>
-            @endif
         </div>
     </div>
 </div>
-@endif
 
 {{-- Chart data --}}
 <script id="chart-data" type="application/json">@json($charts)</script>
@@ -694,6 +695,108 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 document.addEventListener('livewire:update', () => {
     destroyCharts();
     setTimeout(() => tryInitCharts(10), 150);
+    if (typeof waInitAllCooldowns === 'function') waInitAllCooldowns();
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof waInitAllCooldowns === 'function') waInitAllCooldowns();
+});
+
+// ── Analytics Quick Modal (pure JS, no Livewire re-render) ─────────────
+var _aqmHotelId = 0, _aqmChannel = 'whatsapp', _aqmTplName = '', _aqmTplLang = '';
+
+function analyticsOpenModal(hotelId, hotelName, phone, channel, consented) {
+    _aqmHotelId = hotelId;
+    _aqmChannel = channel;
+    _aqmTplName = ''; _aqmTplLang = '';
+
+    document.getElementById('aqmSubtitle').textContent = 'To: ' + hotelName + (phone ? ' (' + phone + ')' : '');
+    document.getElementById('aqmResult').style.display = 'none';
+
+    var isWa = (channel === 'whatsapp');
+    document.getElementById('aqmHeader').style.background = isWa
+        ? 'linear-gradient(135deg,#128c43,#25d366)'
+        : 'linear-gradient(135deg,#5b21b6,#7c3aed)';
+    document.getElementById('aqmIcon').className = isWa ? 'fab fa-whatsapp' : 'fas fa-bell';
+    document.getElementById('aqmTitle').innerHTML = '<i id="aqmIcon" class="' + (isWa ? 'fab fa-whatsapp' : 'fas fa-bell') + '"></i> Quick ' + (isWa ? 'WhatsApp' : 'Push');
+
+    document.getElementById('aqmWaSection').style.display  = isWa ? '' : 'none';
+    document.getElementById('aqmPushSection').style.display = isWa ? 'none' : '';
+
+    if (isWa) {
+        document.getElementById('aqmConsentWarn').style.display = consented ? 'none' : 'block';
+        var sendBtn = document.getElementById('aqmWaSendBtn');
+        sendBtn.disabled = true; sendBtn.style.opacity = '0.5';
+        document.querySelectorAll('[id^="aqm-tpl-"]').forEach(function(el) {
+            el.style.border = '2px solid #e2e8f0';
+            el.style.background = '#fff';
+        });
+    } else {
+        document.getElementById('aqmPushTitle').value = '';
+        document.getElementById('aqmPushBody').value = '';
+    }
+
+    document.getElementById('analyticsQuickModal').style.display = 'flex';
+}
+
+function analyticsCloseModal() {
+    document.getElementById('analyticsQuickModal').style.display = 'none';
+}
+
+function analyticsSelectTpl(key, name, lang) {
+    document.querySelectorAll('[id^="aqm-tpl-"]').forEach(function(el) {
+        el.style.border = '2px solid #e2e8f0'; el.style.background = '#fff';
+    });
+    var el = document.getElementById('aqm-tpl-' + key);
+    if (el) { el.style.border = '2px solid #25d366'; el.style.background = '#f0fdf4'; }
+    _aqmTplName = name; _aqmTplLang = lang;
+    var btn = document.getElementById('aqmWaSendBtn');
+    btn.disabled = false; btn.style.opacity = '1';
+}
+
+function _aqmShowResult(success, msg) {
+    var res = document.getElementById('aqmResult');
+    res.style.display = 'block';
+    res.style.background = success ? '#dcfce7' : '#fee2e2';
+    res.style.color      = success ? '#15803d' : '#b91c1c';
+    res.textContent      = msg;
+}
+
+function analyticsSendWA() {
+    if (!_aqmTplName || !_aqmHotelId) return;
+    var btn = document.getElementById('aqmWaSendBtn');
+    btn.disabled = true; btn.style.opacity = '0.6';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    fetch('/platform/hotels/' + _aqmHotelId + '/send-quick-wa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+        body: JSON.stringify({ template_name: _aqmTplName, template_language: _aqmTplLang }),
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        _aqmShowResult(data.success, data.message || (data.success ? '✅ Sent!' : '❌ Error'));
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
+        btn.disabled = false; btn.style.opacity = '1';
+        if (data.success && typeof waSetCooldown === 'function') waSetCooldown(_aqmHotelId);
+    }).catch(function() {
+        _aqmShowResult(false, '❌ Network error. Try again.');
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
+        btn.disabled = false; btn.style.opacity = '1';
+    });
+}
+
+function analyticsSendPush() {
+    if (!_aqmHotelId) return;
+    var title = document.getElementById('aqmPushTitle').value.trim();
+    var body  = document.getElementById('aqmPushBody').value.trim();
+    if (!title || !body) { alert('Please fill in both title and message.'); return; }
+    fetch('/platform/hotels/' + _aqmHotelId + '/send-quick-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+        body: JSON.stringify({ title: title, body: body }),
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        _aqmShowResult(data.success, data.message || (data.success ? '✅ Sent!' : '❌ Error'));
+    }).catch(function() {
+        _aqmShowResult(false, '❌ Network error. Try again.');
+    });
+}
 </script>
 @endscript
