@@ -55,20 +55,33 @@ class AnalyticsController extends Controller
         }
         $hotels = $query->get(['id', 'name', 'email', 'phone']);
 
+        // Pre-load admin emails for hotels that have no direct email
+        $hotelAdminEmails = DB::table('hotel_users')
+            ->join('users', 'users.id', '=', 'hotel_users.user_id')
+            ->where('hotel_users.is_hotel_admin', true)
+            ->whereIn('hotel_users.hotel_id', $hotels->pluck('id'))
+            ->select('hotel_users.hotel_id', DB::raw('MIN(users.email) as admin_email'))
+            ->groupBy('hotel_users.hotel_id')
+            ->pluck('admin_email', 'hotel_id');
+
         $sentCount = 0;
         $platform  = PlatformWhatsAppSetting::instance();
 
         foreach ($hotels as $hotel) {
-            // Email channel
-            if (in_array($data['channel'], ['email', 'both']) && $hotel->email && !empty($data['body'])) {
-                try {
-                    Mail::raw($data['body'], function ($msg) use ($hotel, $data) {
-                        $msg->to($hotel->email)
-                            ->subject($data['subject'] ?? 'Message from Dreams Technology');
-                    });
-                    $sentCount++;
-                } catch (\Throwable $e) {
-                    Log::warning("Campaign email failed for hotel {$hotel->id}: " . $e->getMessage());
+            // Email channel — fall back to admin user email if hotel email is blank
+            if (in_array($data['channel'], ['email', 'both']) && !empty($data['body'])) {
+                $toEmail = $hotel->email ?: ($hotelAdminEmails[$hotel->id] ?? null);
+                if ($toEmail) {
+                    try {
+                        Mail::raw($data['body'], function ($msg) use ($toEmail, $hotel, $data) {
+                            $msg->to($toEmail)
+                                ->subject($data['subject'] ?? 'Message from Dreams Technology');
+                        });
+                        $sentCount++;
+                        Log::info("Campaign email sent to {$toEmail} for hotel {$hotel->id} ({$hotel->name})");
+                    } catch (\Throwable $e) {
+                        Log::warning("Campaign email failed for hotel {$hotel->id}: " . $e->getMessage());
+                    }
                 }
             }
 
