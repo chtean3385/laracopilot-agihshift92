@@ -23,6 +23,7 @@
         <div style="flex:1;overflow-y:auto;">
             @forelse($conversations as $convo)
             @php $isSelected = $selectedContact && $selectedContact->phone === $convo->phone; @endphp
+
             <div wire:click="selectContact('{{ $convo->phone }}')"
                  style="padding:11px 13px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;{{ $isSelected ? 'background:#ede9fe;border-left:3px solid #7c3aed;' : 'border-left:3px solid transparent;' }}"
                  onmouseover="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='#f8fafc'"
@@ -60,8 +61,8 @@
             @empty
             <div style="padding:40px 20px;text-align:center;color:#94a3b8;">
                 <i class="fab fa-whatsapp" style="font-size:36px;opacity:.3;display:block;margin-bottom:10px;"></i>
-                <div style="font-size:13px;font-weight:600;">No conversations yet</div>
-                <div style="font-size:11px;margin-top:4px;">Messages from owners, guests, or any WhatsApp contact will appear here once received.</div>
+                <div style="font-size:13px;font-weight:600;">Waiting for first message</div>
+                <div style="font-size:11px;margin-top:4px;line-height:1.6;">Conversations appear here only when someone messages your WhatsApp number first. Hotel owners sharing the same phone show as one conversation.</div>
             </div>
             @endforelse
         </div>
@@ -203,8 +204,8 @@
                 <i class="fab fa-whatsapp" style="font-size:38px;color:#25d366;"></i>
             </div>
             <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:6px;">WhatsApp Inbox</div>
-            <div style="font-size:13px;text-align:center;max-width:320px;line-height:1.6;color:#64748b;">
-                Select a conversation to view messages. Shows <strong>owners</strong>, <strong>guests</strong>, and <strong>any contact</strong> who messages your WhatsApp business number.
+            <div style="font-size:13px;text-align:center;max-width:340px;line-height:1.6;color:#64748b;">
+                Conversations appear only when someone messages your WhatsApp number first. If the same admin manages multiple hotels with the same phone, it shows as <strong>one conversation</strong>.
             </div>
             <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
                 <span style="font-size:11px;background:#ede9fe;color:#7c3aed;padding:4px 10px;border-radius:6px;font-weight:700;">OWNER — Hotel phone match</span>

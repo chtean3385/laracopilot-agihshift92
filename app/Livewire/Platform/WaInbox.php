@@ -123,31 +123,15 @@ class WaInbox extends Component
 
     public function render()
     {
-        // ── Conversations from wa_contacts (phone-based, any sender) ──────
+        // ── Conversations from wa_contacts only (phone-based, real messages only) ──
+        // Only contacts who have actually sent a message appear here.
+        // wa_contacts.phone is unique → automatically deduplicates multi-hotel admins
+        // with the same phone number.
         $contacts = DB::table('wa_contacts')
             ->orderByDesc('last_message_at')
             ->get();
 
-        // Also include hotels with no wa_contact yet (bootstrap so admin can initiate)
-        $knownPhones  = $contacts->pluck('phone')->toArray();
-        $bootstrapped = DB::table('hotels')
-            ->where('status', '!=', 'suspended')
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->whereNotIn('phone', $knownPhones)
-            ->get(['id', 'name', 'phone', 'plan'])
-            ->map(fn($h) => (object) [
-                'phone'                => $h->phone,
-                'hotel_id'            => $h->id,
-                'contact_type'        => 'owner',
-                'display_name'        => $h->name . ' (Owner)',
-                'last_message_at'     => null,
-                'last_message_preview'=> null,
-                'unread_count'        => 0,
-                'consented_at'        => null,
-            ]);
-
-        $conversations = $contacts->concat($bootstrapped)->map(function ($c) {
+        $conversations = $contacts->map(function ($c) {
             $typeLabel = match($c->contact_type) {
                 'owner'   => 'Owner',
                 'guest'   => 'Guest',
@@ -197,29 +181,6 @@ class WaInbox extends Component
 
         if ($this->selectedPhone) {
             $selectedContact = $conversations->firstWhere('phone', $this->selectedPhone);
-
-            // Fallback: may be a bootstrapped hotel not yet in wa_contacts
-            if (!$selectedContact) {
-                $hotel = DB::table('hotels')->where('phone', $this->selectedPhone)->first();
-                if ($hotel) {
-                    $selectedContact = (object) [
-                        'phone'      => $this->selectedPhone,
-                        'hotel_id'   => $hotel->id,
-                        'hotel_name' => $hotel->name,
-                        'name'       => $hotel->name . ' (Owner)',
-                        'type'       => 'owner',
-                        'type_label' => 'Owner',
-                        'type_color' => '#7c3aed',
-                        'type_bg'    => '#ede9fe',
-                        'preview'    => null,
-                        'last_at'    => null,
-                        'time_ago'   => 'No messages',
-                        'unread'     => 0,
-                        'consented'  => false,
-                        'consented_at'=> null,
-                    ];
-                }
-            }
 
             if ($selectedContact) {
                 // Fetch messages by phone (both logged by hotel_id and by phone field)
