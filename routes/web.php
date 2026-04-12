@@ -365,6 +365,9 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::get('/analytics/campaigns', [\App\Http\Controllers\Platform\AnalyticsController::class, 'campaigns']    )->name('platform.analytics.campaigns');
     Route::post('/analytics/campaigns',[\App\Http\Controllers\Platform\AnalyticsController::class, 'sendCampaign'] )->name('platform.analytics.campaigns.send');
 
+    // WA Inbox (Task #54)
+    Route::get('/wa-inbox', fn() => view('platform.wa-inbox.index'))->name('platform.wa-inbox');
+
     // Push Notifications (Platform Admin)
     Route::get('/notifications/settings',  [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settings']    )->name('platform.notifications.settings');
     Route::post('/notifications/settings', [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settingsSave'])->name('platform.notifications.settings.save');

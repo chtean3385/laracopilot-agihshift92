@@ -395,6 +395,14 @@
             <span class="icon"><i class="fas fa-list-alt" style="font-size:12px;"></i></span>
             Webhook Logs
         </a>
+        @php $waInboxUnread = (int) \Illuminate\Support\Facades\DB::table('wa_inbox_conversations')->sum('unread_count'); @endphp
+        <a href="{{ route('platform.wa-inbox') }}" class="nav-link {{ request()->routeIs('platform.wa-inbox') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fab fa-whatsapp" style="font-size:12px;"></i></span>
+            WA Inbox
+            @if($waInboxUnread > 0)
+            <span style="margin-left:auto;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center;line-height:1.4;">{{ $waInboxUnread }}</span>
+            @endif
+        </a>
 
         <div class="nav-section">Analytics</div>
 

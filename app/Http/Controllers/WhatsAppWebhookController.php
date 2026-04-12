@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlatformWhatsAppSetting;
+use App\Models\WaInboxConversation;
 use App\Models\WhatsAppLog;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppWebhookController extends Controller
@@ -165,6 +167,8 @@ class WhatsAppWebhookController extends Controller
                 'text' => $text,
             ]);
 
+            $preview = $text ? mb_substr($text, 0, 200) : "Type: {$type}";
+
             WhatsAppLog::record(
                 'incoming',
                 'message_received',
@@ -172,8 +176,12 @@ class WhatsAppWebhookController extends Controller
                 $message,
                 $phone,
                 null,
-                $text ? mb_substr($text, 0, 200) : "Type: {$type}"
+                $preview
             );
+
+            if ($phone) {
+                $this->upsertConversation($phone, $preview);
+            }
         }
 
         // Delivery status updates also come inside 'messages' field
@@ -192,6 +200,37 @@ class WhatsAppWebhookController extends Controller
                 null,
                 "Msg {$msgId} → {$state}"
             );
+        }
+    }
+
+    protected function upsertConversation(string $phone, string $preview): void
+    {
+        try {
+            $hotel = DB::table('hotels')->where('phone', $phone)->first();
+
+            $existing = WaInboxConversation::where('phone', $phone)->first();
+
+            if ($existing) {
+                $existing->unread_count          = $existing->unread_count + 1;
+                $existing->last_message_preview  = $preview;
+                $existing->last_message_at       = now();
+                $existing->last_24h_reset_at     = now();
+                if ($hotel && !$existing->hotel_id) {
+                    $existing->hotel_id = $hotel->id;
+                }
+                $existing->save();
+            } else {
+                WaInboxConversation::create([
+                    'hotel_id'             => $hotel?->id,
+                    'phone'                => $phone,
+                    'last_message_at'      => now(),
+                    'last_message_preview' => $preview,
+                    'unread_count'         => 1,
+                    'last_24h_reset_at'    => now(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('WaInbox upsertConversation failed: ' . $e->getMessage());
         }
     }
 
