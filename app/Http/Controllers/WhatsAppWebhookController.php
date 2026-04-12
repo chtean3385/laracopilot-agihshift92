@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlatformWhatsAppSetting;
-use App\Models\WaInboxConversation;
 use App\Models\WhatsAppLog;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Http\Request;
@@ -27,24 +26,13 @@ class WhatsAppWebhookController extends Controller
                 '<!DOCTYPE html><html><head><meta charset="utf-8"><title>WhatsApp Webhook</title>'
                 . '<style>body{font-family:system-ui,sans-serif;max-width:700px;margin:60px auto;padding:0 24px;color:#111827;line-height:1.6;}'
                 . 'code{background:#f1f5f9;color:#7c3aed;padding:2px 8px;border-radius:6px;font-size:14px;font-family:monospace;}'
-                . '.ok{color:#15803d;font-weight:700;} .warn{color:#b45309;font-weight:700;}'
                 . 'h1{color:#1d4ed8;} .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:16px 0;}'
                 . 'ol li{margin-bottom:8px;}'
                 . '</style></head><body>'
                 . '<h1>⚡ WhatsApp Webhook — Active</h1>'
                 . '<p>This endpoint receives real-time events from Meta (message delivery status, template approvals, incoming messages).</p>'
-                . '<div class="box"><strong>📋 Webhook URL (copy into Meta Business Manager):</strong><br><br>'
-                . '<code>' . $webhookUrl . '</code></div>'
+                . '<div class="box"><strong>📋 Webhook URL:</strong><br><br><code>' . $webhookUrl . '</code></div>'
                 . '<div class="box"><strong>🔑 Verify Token:</strong> ' . $tokenStatus . '</div>'
-                . '<h2>How to configure in Meta</h2><ol>'
-                . '<li>Open <a href="https://developers.facebook.com" target="_blank">Meta for Developers</a> → Your App → WhatsApp → Configuration</li>'
-                . '<li>Under <strong>Webhook</strong>, click <strong>Edit</strong></li>'
-                . '<li>Paste the Webhook URL above in the <em>Callback URL</em> field</li>'
-                . '<li>Enter your <em>Verify Token</em> (from Platform Admin → WhatsApp Settings)</li>'
-                . '<li>Subscribe to fields: <code>messages</code> and <code>message_template_status_update</code></li>'
-                . '<li>Click <strong>Verify and Save</strong></li>'
-                . '</ol>'
-                . '<p style="color:#6b7280;font-size:13px;margin-top:32px;">View all webhook activity: Platform Admin → WhatsApp → Webhook Logs</p>'
                 . '</body></html>',
                 200
             )->header('Content-Type', 'text/html');
@@ -54,7 +42,6 @@ class WhatsAppWebhookController extends Controller
         $expected = $platform?->webhook_verify_token;
 
         if (!$expected) {
-            Log::warning('WhatsApp webhook: no verify token configured on platform');
             WhatsAppLog::record('incoming', 'verification', 'error', [], null, null, 'No verify token configured on platform');
             return response('Webhook verify token not configured', 500);
         }
@@ -64,14 +51,18 @@ class WhatsAppWebhookController extends Controller
             return response($challenge, 200)->header('Content-Type', 'text/plain');
         }
 
-        Log::warning('WhatsApp webhook verification failed', ['mode' => $mode]);
         WhatsAppLog::record('incoming', 'verification', 'error', ['mode' => $mode], null, null, 'Verification failed — wrong token or mode');
         return response('Forbidden', 403);
     }
 
     public function receive(Request $request)
     {
-        if (!$this->verifySignature($request)) {
+        $platform = PlatformWhatsAppSetting::instance();
+
+        // Bypass signature check if toggled (dev mode / Replit proxy strips the header)
+        $skipSig = $platform?->skip_signature_check ?? false;
+
+        if (!$skipSig && !$this->verifySignature($request, $platform)) {
             Log::warning('WhatsApp webhook: invalid signature — request rejected');
             WhatsAppLog::record('incoming', 'signature_check', 'error', [], null, null, 'Invalid HMAC signature — request rejected');
             return response()->json(['status' => 'forbidden'], 403);
@@ -111,19 +102,10 @@ class WhatsAppWebhookController extends Controller
         $event      = strtolower($value['event'] ?? '');
         $name       = $value['message_template_name'] ?? '(unknown)';
 
-        WhatsAppLog::record(
-            'incoming',
-            'template_status_update',
-            'ok',
-            $value,
-            null,
-            null,
-            "Template '{$name}' (ID: {$templateId}) event: {$event}"
-        );
+        WhatsAppLog::record('incoming', 'template_status_update', 'ok', $value, null, null,
+            "Template '{$name}' (ID: {$templateId}) event: {$event}");
 
-        if (!$templateId) {
-            return;
-        }
+        if (!$templateId) return;
 
         $metaStatus = match ($event) {
             'approved'         => 'approved',
@@ -133,22 +115,17 @@ class WhatsAppWebhookController extends Controller
             default            => null,
         };
 
-        if (!$metaStatus) {
-            return;
-        }
-
-        $approvalStatus = $metaStatus === 'approved' ? 'approved' : 'rejected';
+        if (!$metaStatus) return;
 
         $updated = WhatsAppTemplate::where('meta_template_id', (string) $templateId)
             ->update([
                 'meta_status'     => $metaStatus,
-                'approval_status' => $approvalStatus,
+                'approval_status' => $metaStatus === 'approved' ? 'approved' : 'rejected',
             ]);
 
         Log::info('WhatsApp template status updated', [
             'meta_template_id' => $templateId,
             'event'            => $event,
-            'meta_status'      => $metaStatus,
             'rows_updated'     => $updated,
         ]);
     }
@@ -161,82 +138,119 @@ class WhatsAppWebhookController extends Controller
             $type  = $message['type'] ?? 'unknown';
             $text  = $message['text']['body'] ?? null;
 
-            Log::info('WhatsApp incoming message', [
-                'from' => $phone,
-                'type' => $type,
-                'text' => $text,
-            ]);
+            Log::info('WhatsApp incoming message', ['from' => $phone, 'type' => $type, 'text' => $text]);
 
             $preview = $text ? mb_substr($text, 0, 200) : "Type: {$type}";
 
-            WhatsAppLog::record(
-                'incoming',
-                'message_received',
-                'ok',
-                $message,
-                $phone,
-                null,
-                $preview
-            );
+            // Resolve hotel_id by matching phone
+            $hotelId = null;
+            if ($phone) {
+                $hotel = DB::table('hotels')
+                    ->where('phone', $phone)
+                    ->orWhere('phone', ltrim($phone, '91')) // strip country code
+                    ->first();
+                $hotelId = $hotel?->id;
+            }
+
+            WhatsAppLog::record('incoming', 'message_received', 'ok', $message, $phone, $hotelId, $preview);
 
             if ($phone) {
-                $this->upsertConversation($phone, $preview);
+                $this->upsertWaContact($phone, $preview, $text);
             }
         }
 
-        // Delivery status updates also come inside 'messages' field
+        // Delivery status updates
         $statuses = $value['statuses'] ?? [];
         foreach ($statuses as $status) {
-            $phone   = $status['recipient_id'] ?? null;
-            $state   = $status['status'] ?? 'unknown';
-            $msgId   = $status['id'] ?? null;
+            $phone  = $status['recipient_id'] ?? null;
+            $state  = $status['status'] ?? 'unknown';
+            $msgId  = $status['id'] ?? null;
 
-            WhatsAppLog::record(
-                'outgoing',
-                'delivery_status',
-                'ok',
-                $status,
-                $phone,
-                null,
-                "Msg {$msgId} → {$state}"
-            );
+            WhatsAppLog::record('outgoing', 'delivery_status', 'ok', $status, $phone, null,
+                "Msg {$msgId} → {$state}");
         }
     }
 
-    protected function upsertConversation(string $phone, string $preview): void
+    protected function upsertWaContact(string $phone, string $preview, ?string $text): void
     {
         try {
-            $hotel = DB::table('hotels')->where('phone', $phone)->first();
+            // Resolve contact type and hotel
+            $normalPhone = preg_replace('/[^0-9]/', '', $phone);
+            $shortPhone  = strlen($normalPhone) > 10 ? substr($normalPhone, -10) : $normalPhone;
 
-            $existing = WaInboxConversation::where('phone', $phone)->first();
+            $hotel = DB::table('hotels')
+                ->where('phone', $phone)
+                ->orWhere(DB::raw("regexp_replace(phone, '[^0-9]', '', 'g')"), $normalPhone)
+                ->orWhere(DB::raw("right(regexp_replace(phone, '[^0-9]', '', 'g'), 10)"), $shortPhone)
+                ->first();
+
+            $hotelId     = $hotel?->id;
+            $contactType = 'unknown';
+            $displayName = null;
+
+            if ($hotel) {
+                $contactType = 'owner';
+                $displayName = $hotel->name . ' (Owner)';
+            } else {
+                // Check customers table
+                $customer = DB::table('customers')
+                    ->where(DB::raw("regexp_replace(phone, '[^0-9]', '', 'g')"), $normalPhone)
+                    ->orWhere(DB::raw("right(regexp_replace(phone, '[^0-9]', '', 'g'), 10)"), $shortPhone)
+                    ->first();
+
+                if ($customer) {
+                    $contactType = 'guest';
+                    $hotelId     = $customer->hotel_id ?? $hotelId;
+                    $hotelName   = $hotelId
+                        ? (DB::table('hotels')->where('id', $hotelId)->value('name') ?? '')
+                        : '';
+                    $displayName = $customer->name . ($hotelName ? " — {$hotelName}" : '');
+                }
+            }
+
+            // Auto-consent if they replied "yes"
+            $grantedConsent = $text && strtolower(trim($text)) === 'yes';
+
+            $existing = DB::table('wa_contacts')->where('phone', $phone)->first();
 
             if ($existing) {
-                $existing->unread_count          = $existing->unread_count + 1;
-                $existing->last_message_preview  = $preview;
-                $existing->last_message_at       = now();
-                $existing->last_24h_reset_at     = now();
-                if ($hotel && !$existing->hotel_id) {
-                    $existing->hotel_id = $hotel->id;
+                $update = [
+                    'last_message_preview' => $preview,
+                    'last_message_at'      => now(),
+                    'unread_count'         => $existing->unread_count + 1,
+                    'updated_at'           => now(),
+                ];
+                if ($grantedConsent && !$existing->consented_at) {
+                    $update['consented_at'] = now();
                 }
-                $existing->save();
+                if (!$existing->hotel_id && $hotelId) {
+                    $update['hotel_id']     = $hotelId;
+                    $update['contact_type'] = $contactType;
+                    $update['display_name'] = $displayName;
+                }
+                DB::table('wa_contacts')->where('phone', $phone)->update($update);
             } else {
-                WaInboxConversation::create([
-                    'hotel_id'             => $hotel?->id,
+                DB::table('wa_contacts')->insert([
                     'phone'                => $phone,
+                    'hotel_id'             => $hotelId,
+                    'contact_type'         => $contactType,
+                    'display_name'         => $displayName,
+                    'consented_at'         => now(), // first message = opt-in
                     'last_message_at'      => now(),
                     'last_message_preview' => $preview,
                     'unread_count'         => 1,
-                    'last_24h_reset_at'    => now(),
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
                 ]);
             }
         } catch (\Throwable $e) {
-            Log::error('WaInbox upsertConversation failed: ' . $e->getMessage());
+            Log::error('upsertWaContact failed: ' . $e->getMessage());
         }
     }
 
-    protected function verifySignature(Request $request): bool
+    protected function verifySignature(Request $request, ?object $platform = null): bool
     {
-        $platform  = PlatformWhatsAppSetting::instance();
+        $platform  = $platform ?? PlatformWhatsAppSetting::instance();
         $appSecret = $platform?->meta_app_secret;
 
         if (!$appSecret) {
@@ -246,6 +260,7 @@ class WhatsAppWebhookController extends Controller
 
         $signature = $request->header('X-Hub-Signature-256');
         if (!$signature) {
+            Log::warning('WhatsApp webhook: X-Hub-Signature-256 header missing (proxy may have stripped it)');
             return false;
         }
 

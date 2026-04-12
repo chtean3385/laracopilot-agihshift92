@@ -209,6 +209,29 @@
     </div>
 </div>
 
+{{-- Signature bypass toggle (dev mode) --}}
+<div style="background:{{ $settings->skip_signature_check ? '#fef2f2' : '#fff' }};border:1px solid {{ $settings->skip_signature_check ? '#fca5a5' : '#e5e7eb' }};border-radius:16px;padding:20px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
+    <div>
+        <div style="font-size:15px;font-weight:700;color:{{ $settings->skip_signature_check ? '#b91c1c' : '#111827' }};display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-shield-alt"></i> Bypass Webhook Signature Check
+            @if($settings->skip_signature_check)
+            <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.5px;">DEV MODE ON</span>
+            @endif
+        </div>
+        <div style="font-size:13px;color:#6b7280;margin-top:4px;">
+            Enable this when Meta webhook is pointing to the <strong>Replit dev URL</strong> — Replit's proxy strips the
+            <code style="font-size:11px;background:#f3f4f6;padding:1px 5px;border-radius:4px;">X-Hub-Signature-256</code> header, causing all incoming messages to be rejected.
+            <strong style="color:#b91c1c;">Keep OFF in production</strong> (resort.dreamstechnology.in passes headers correctly).
+        </div>
+    </div>
+    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;flex-shrink:0;">
+        <input type="checkbox" name="skip_signature_check" value="1" {{ $settings->skip_signature_check ? 'checked' : '' }}
+            style="opacity:0;width:0;height:0;" id="skipSigToggle">
+        <span id="skipSigSpan" style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:28px;transition:.3s;background:{{ $settings->skip_signature_check ? '#ef4444' : '#d1d5db' }};"></span>
+        <span id="skipSigKnob" style="position:absolute;top:3px;left:{{ $settings->skip_signature_check ? '27px' : '3px' }};width:22px;height:22px;border-radius:50%;background:#fff;transition:.3s;"></span>
+    </label>
+</div>
+
 {{-- Active toggle --}}
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;">
     <div>
@@ -266,6 +289,21 @@ toggle.addEventListener('change', () => {
         knob.style.left = '3px';
     }
 });
+
+const skipSigToggle = document.getElementById('skipSigToggle');
+const skipSigSpan   = document.getElementById('skipSigSpan');
+const skipSigKnob   = document.getElementById('skipSigKnob');
+if (skipSigToggle) {
+    skipSigToggle.addEventListener('change', () => {
+        if (skipSigToggle.checked) {
+            skipSigSpan.style.background = '#ef4444';
+            skipSigKnob.style.left = '27px';
+        } else {
+            skipSigSpan.style.background = '#d1d5db';
+            skipSigKnob.style.left = '3px';
+        }
+    });
+}
 </script>
 
 @endsection

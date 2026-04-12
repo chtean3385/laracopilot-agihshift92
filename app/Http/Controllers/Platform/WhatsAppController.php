@@ -27,11 +27,13 @@ class WhatsAppController extends Controller
             'saas_token'           => 'nullable|string',
             'saas_phone_number_id' => 'nullable|string|max:255',
             'saas_waba_id'         => 'nullable|string|max:255',
-            'webhook_verify_token' => 'nullable|string|max:255',
-            'is_saas_active'       => 'nullable|boolean',
+            'webhook_verify_token'   => 'nullable|string|max:255',
+            'is_saas_active'         => 'nullable|boolean',
+            'skip_signature_check'   => 'nullable|boolean',
         ]);
 
-        $data['is_saas_active'] = $request->boolean('is_saas_active');
+        $data['is_saas_active']       = $request->boolean('is_saas_active');
+        $data['skip_signature_check'] = $request->boolean('skip_signature_check');
 
         PlatformWhatsAppSetting::updateOrCreate(['id' => 1], $data);
 

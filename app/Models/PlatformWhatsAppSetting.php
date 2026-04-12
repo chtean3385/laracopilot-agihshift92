@@ -17,10 +17,12 @@ class PlatformWhatsAppSetting extends Model
         'saas_waba_id',
         'webhook_verify_token',
         'is_saas_active',
+        'skip_signature_check',
     ];
 
     protected $casts = [
-        'is_saas_active' => 'boolean',
+        'is_saas_active'       => 'boolean',
+        'skip_signature_check' => 'boolean',
     ];
 
     public static function instance(): ?static
