@@ -668,3 +668,79 @@ document.addEventListener('DOMContentLoaded', function() {
 @endpush
 
 @endsection
+
+@push('styles')
+<style>
+#waChatFloat { position:fixed;right:24px;bottom:28px;z-index:8888;display:flex;flex-direction:column;align-items:flex-end;gap:10px; }
+#waChatPopup { display:none;width:290px;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);border:1px solid #e2e8f0;overflow:hidden;flex-direction:column;max-height:420px; }
+#waChatPopup.open { display:flex; }
+#waChatFab { width:56px;height:56px;background:linear-gradient(135deg,#25d366,#128c43);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(37,211,102,.45);border:none;transition:transform .2s,box-shadow .2s; }
+#waChatFab:hover { transform:scale(1.08);box-shadow:0 6px 28px rgba(37,211,102,.55); }
+#waChatFab .badge { position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:2px 6px;min-width:18px;text-align:center;border:2px solid #fff; }
+.wa-hotel-row { padding:11px 14px;cursor:pointer;border-bottom:1px solid #f8fafc;display:flex;align-items:center;gap:10px;transition:background .12s;text-decoration:none; }
+.wa-hotel-row:hover { background:#f8fafc; }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+(function() {
+    var fab = document.getElementById('waChatFab');
+    var popup = document.getElementById('waChatPopup');
+    if (!fab || !popup) return;
+    fab.addEventListener('click', function(e) {
+        e.stopPropagation();
+        popup.classList.toggle('open');
+    });
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('waChatFloat').contains(e.target)) {
+            popup.classList.remove('open');
+        }
+    });
+})();
+</script>
+@endpush
+
+{{-- ── Floating WA Quick-Chat Widget ─────────────────────────────────── --}}
+<div id="waChatFloat">
+
+    {{-- Popup --}}
+    <div id="waChatPopup">
+        <div style="padding:14px 16px;background:linear-gradient(135deg,#25d366,#128c43);display:flex;align-items:center;gap:10px;">
+            <i class="fab fa-whatsapp" style="color:#fff;font-size:20px;"></i>
+            <div>
+                <div style="font-size:13px;font-weight:800;color:#fff;">Quick WA Chat</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.75);">Select a hotel owner to message</div>
+            </div>
+            <a href="{{ route('platform.wa-inbox') }}" style="margin-left:auto;color:rgba(255,255,255,.8);font-size:11px;font-weight:700;text-decoration:none;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:8px;white-space:nowrap;" title="Open full inbox">
+                Full Inbox <i class="fas fa-external-link-alt" style="font-size:9px;"></i>
+            </a>
+        </div>
+        <div style="overflow-y:auto;flex:1;">
+            @forelse($hotelStats->where('status','!=','suspended') as $hs)
+            <a href="{{ route('platform.wa-inbox') }}?hotel={{ $hs->id }}" class="wa-hotel-row">
+                <div style="width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">
+                    {{ mb_strtoupper(mb_substr($hs->name, 0, 1)) }}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $hs->name }}</div>
+                    <div style="font-size:11px;color:#94a3b8;">{{ $hs->phone ?: 'No phone' }} &nbsp;·&nbsp; {{ strtoupper($hs->plan) }}</div>
+                </div>
+                <i class="fab fa-whatsapp" style="color:#25d366;font-size:18px;flex-shrink:0;"></i>
+            </a>
+            @empty
+            <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">No active hotels</div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- FAB button --}}
+    <button id="waChatFab" title="WhatsApp Quick Chat" style="position:relative;">
+        <i class="fab fa-whatsapp" style="color:#fff;font-size:26px;"></i>
+        @php $quickUnread = \Illuminate\Support\Facades\DB::table('whatsapp_logs')->where('direction','incoming')->where('event_type','message_received')->where('created_at','>=',now()->subHours(24))->count(); @endphp
+        @if($quickUnread > 0)
+        <span class="badge">{{ $quickUnread }}</span>
+        @endif
+    </button>
+
+</div>

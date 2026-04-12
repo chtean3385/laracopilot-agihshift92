@@ -3,8 +3,6 @@
 namespace App\Livewire\Platform;
 
 use App\Models\PlatformWhatsAppSetting;
-use App\Models\WaInboxConversation;
-use App\Models\WhatsAppLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -13,25 +11,34 @@ use Livewire\Component;
 
 class WaInbox extends Component
 {
-    public int    $selectedConversationId = 0;
-    public string $replyText              = '';
-    public string $sendResult             = '';
-    public bool   $sending                = false;
+    public int    $selectedHotelId = 0;
+    public string $replyText       = '';
+    public string $sendResult      = '';
+    public bool   $sending         = false;
 
-    public function selectConversation(int $id): void
+    public function mount(): void
     {
-        $this->selectedConversationId = $id;
-        $this->replyText              = '';
-        $this->sendResult             = '';
+        // Pre-select hotel from ?hotel=X query param (e.g. dashboard quick-chat)
+        $hotelId = (int) request()->query('hotel', 0);
+        if ($hotelId > 0) {
+            $this->selectedHotelId = $hotelId;
+        }
+    }
 
-        WaInboxConversation::where('id', $id)->update(['unread_count' => 0]);
+    // Called from dashboard quick-chat widget
+    public function selectHotel(int $hotelId): void
+    {
+        $this->selectedHotelId = $hotelId;
+        $this->replyText       = '';
+        $this->sendResult      = '';
+        $this->dispatch('wa-scroll-to-bottom');
     }
 
     public function backToList(): void
     {
-        $this->selectedConversationId = 0;
-        $this->replyText              = '';
-        $this->sendResult             = '';
+        $this->selectedHotelId = 0;
+        $this->replyText       = '';
+        $this->sendResult      = '';
     }
 
     public function sendReply(): void
@@ -42,14 +49,18 @@ class WaInbox extends Component
             return;
         }
 
-        $convo = WaInboxConversation::find($this->selectedConversationId);
-        if (!$convo) {
-            $this->sendResult = 'error:Conversation not found.';
+        $hotel = DB::table('hotels')->where('id', $this->selectedHotelId)->first();
+        if (!$hotel) {
+            $this->sendResult = 'error:Hotel not found.';
             return;
         }
 
-        if (!$convo->isWithin24hWindow()) {
-            $this->sendResult = 'error:Cannot send — outside the 24-hour Meta messaging window.';
+        $phone = preg_replace('/[^0-9]/', '', $hotel->phone ?? '');
+        if (strlen($phone) === 10) {
+            $phone = '91' . $phone;
+        }
+        if (empty($phone)) {
+            $this->sendResult = 'error:This hotel has no WhatsApp number configured.';
             return;
         }
 
@@ -58,8 +69,6 @@ class WaInbox extends Component
             $this->sendResult = 'error:Platform WhatsApp credentials are not configured.';
             return;
         }
-
-        $phone = preg_replace('/[^0-9]/', '', $convo->phone);
 
         $this->sending = true;
 
@@ -76,32 +85,29 @@ class WaInbox extends Component
             $body = $response->json();
 
             if ($response->successful() && isset($body['messages'])) {
-                WhatsAppLog::record(
-                    'outgoing',
-                    'message_sent',
-                    'ok',
-                    $body,
-                    $convo->phone,
-                    $convo->hotel_id,
-                    $text
-                );
-
-                $preview = mb_substr($text, 0, 200);
-                $convo->update([
-                    'last_message_preview' => $preview,
-                    'last_message_at'      => now(),
+                DB::table('whatsapp_logs')->insert([
+                    'direction'  => 'outgoing',
+                    'event_type' => 'message_sent',
+                    'phone'      => $phone,
+                    'hotel_id'   => $hotel->id,
+                    'status'     => 'ok',
+                    'payload'    => json_encode($body),
+                    'notes'      => $text,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
                 $this->replyText  = '';
-                $this->sendResult = 'ok:Message sent successfully.';
+                $this->sendResult = 'ok:Sent to ' . $hotel->name . '.';
+                $this->dispatch('wa-scroll-to-bottom');
             } else {
-                $errMsg           = $body['error']['message'] ?? 'Unknown error';
-                $this->sendResult = 'error:Meta API error: ' . $errMsg;
+                $errMsg           = $body['error']['message'] ?? 'Unknown API error';
+                $this->sendResult = 'error:Meta error: ' . $errMsg;
                 Log::warning('WaInbox send failed', ['body' => $body, 'phone' => $phone]);
             }
         } catch (\Throwable $e) {
             $this->sendResult = 'error:Send failed: ' . $e->getMessage();
-            Log::error('WaInbox send exception: ' . $e->getMessage());
+            Log::error('WaInbox exception: ' . $e->getMessage());
         } finally {
             $this->sending = false;
         }
@@ -109,58 +115,90 @@ class WaInbox extends Component
 
     public function render()
     {
-        $conversations = WaInboxConversation::with('hotel')
-            ->orderByDesc('last_message_at')
-            ->get()
-            ->map(function ($c) {
-                $hotel = $c->hotel ?? DB::table('hotels')->where('id', $c->hotel_id)->first();
-                return (object) [
-                    'id'                => $c->id,
-                    'hotel_id'          => $c->hotel_id,
-                    'hotel_name'        => $hotel?->name ?? 'Unknown Hotel',
-                    'phone'             => $c->phone,
-                    'last_message_at'   => $c->last_message_at,
-                    'time_ago'          => $c->last_message_at ? Carbon::parse($c->last_message_at)->diffForHumans() : 'No messages',
-                    'last_message_preview' => $c->last_message_preview,
-                    'unread_count'      => $c->unread_count,
-                    'within_24h'        => $c->isWithin24hWindow(),
-                ];
-            });
+        // Bootstrap conversations from hotels — no webhook dependency
+        $hotels = DB::table('hotels')
+            ->where('status', '!=', 'suspended')
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'status', 'plan']);
 
-        $selectedConvo   = null;
-        $messages        = collect();
-        $within24h       = false;
+        $hotelIds = $hotels->pluck('id');
 
-        if ($this->selectedConversationId) {
-            $selectedConvo = $conversations->firstWhere('id', $this->selectedConversationId);
+        // Last message preview per hotel
+        $lastMsgPerHotel = DB::table('whatsapp_logs')
+            ->whereIn('event_type', ['message_received', 'message_sent'])
+            ->whereIn('hotel_id', $hotelIds)
+            ->orderByDesc('created_at')
+            ->get(['hotel_id', 'notes', 'direction', 'created_at'])
+            ->groupBy('hotel_id')
+            ->map(fn($msgs) => $msgs->first());
 
-            if ($selectedConvo) {
-                $within24h = $selectedConvo->within_24h;
+        // Unread = incoming messages in last 24h not replied
+        $unreadPerHotel = DB::table('whatsapp_logs')
+            ->where('direction', 'incoming')
+            ->where('event_type', 'message_received')
+            ->whereIn('hotel_id', $hotelIds)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->select('hotel_id', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('hotel_id')
+            ->pluck('cnt', 'hotel_id');
 
-                $messages = WhatsAppLog::where('phone', $selectedConvo->phone)
+        $conversations = $hotels->map(function ($h) use ($lastMsgPerHotel, $unreadPerHotel) {
+            $last = $lastMsgPerHotel[$h->id] ?? null;
+            return (object) [
+                'hotel_id'   => $h->id,
+                'hotel_name' => $h->name,
+                'phone'      => $h->phone ?? '',
+                'plan'       => strtoupper($h->plan ?? ''),
+                'last_at'    => $last?->created_at,
+                'time_ago'   => $last ? Carbon::parse($last->created_at)->diffForHumans() : 'No messages',
+                'preview'    => $last ? mb_substr($last->notes ?? '', 0, 55) : 'No messages yet',
+                'preview_dir'=> $last?->direction,
+                'unread'     => $unreadPerHotel[$h->id] ?? 0,
+            ];
+        })->sortByDesc('last_at')->values();
+
+        $selectedHotel = null;
+        $messages      = collect();
+        $within24h     = false;
+
+        if ($this->selectedHotelId) {
+            $selectedHotel = $conversations->firstWhere('hotel_id', $this->selectedHotelId);
+
+            if ($selectedHotel) {
+                $messages = DB::table('whatsapp_logs')
+                    ->where('hotel_id', $this->selectedHotelId)
                     ->whereIn('event_type', ['message_received', 'message_sent'])
                     ->orderBy('created_at')
                     ->get()
                     ->map(function ($log) {
                         return (object) [
-                            'id'         => $log->id,
-                            'direction'  => $log->direction,
-                            'text'       => $log->notes ?? '',
-                            'created_at' => $log->created_at,
-                            'time'       => Carbon::parse($log->created_at)->format('d M, H:i'),
+                            'id'        => $log->id,
+                            'direction' => $log->direction,
+                            'tag'       => $log->direction === 'outgoing' ? 'You' : 'Owner',
+                            'text'      => $log->notes ?? '',
+                            'time'      => Carbon::parse($log->created_at)->format('d M, H:i'),
                         ];
                     });
+
+                // 24h window — last incoming from this hotel
+                $lastIncoming = DB::table('whatsapp_logs')
+                    ->where('hotel_id', $this->selectedHotelId)
+                    ->where('direction', 'incoming')
+                    ->where('event_type', 'message_received')
+                    ->max('created_at');
+
+                $within24h = $lastIncoming && Carbon::parse($lastIncoming)->diffInHours(now()) < 24;
             }
         }
 
-        $totalUnread = WaInboxConversation::sum('unread_count');
+        $totalUnread = $unreadPerHotel->sum();
 
         return view('livewire.platform.wa-inbox', [
-            'conversations'   => $conversations,
-            'selectedConvo'   => $selectedConvo,
-            'messages'        => $messages,
-            'within24h'       => $within24h,
-            'totalUnread'     => $totalUnread,
+            'conversations' => $conversations,
+            'selectedHotel' => $selectedHotel,
+            'messages'      => $messages,
+            'within24h'     => $within24h,
+            'totalUnread'   => $totalUnread,
         ]);
     }
 }
