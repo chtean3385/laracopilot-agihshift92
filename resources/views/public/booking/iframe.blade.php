@@ -194,6 +194,8 @@ function renderRooms(types, nights, showPrices) {
         return;
     }
 
+    const showPhotos = data.show_room_photos ?? false;
+
     types.forEach(t => {
         const card = document.createElement('div');
         card.className = 'room-card' + (!t.available ? ' unavailable' : '');
@@ -213,8 +215,12 @@ function renderRooms(types, nights, showPrices) {
         const descHtml = t.description
             ? `<div style="font-size:.75rem;color:#6b7280;margin-top:3px;line-height:1.4;">${t.description}</div>`
             : '';
+        const photoHtml = showPhotos && t.photo_url
+            ? `<img src="${t.photo_url}" alt="${t.type}" style="width:100%;height:120px;object-fit:cover;border-radius:7px 7px 0 0;display:block;margin:-12px -12px 10px -12px;width:calc(100% + 24px);" loading="lazy" onerror="this.style.display='none'">`
+            : '';
 
         card.innerHTML = `
+            ${photoHtml}
             <div class="room-row">
                 <div style="flex:1;min-width:0;">
                     <div class="room-name">${t.type}</div>

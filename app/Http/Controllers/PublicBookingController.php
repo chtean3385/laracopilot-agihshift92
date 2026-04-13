@@ -217,6 +217,7 @@ JS;
                 'capacity'        => (int) $r->capacity,
                 'description'     => $r->description ?? '',
                 'amenities'       => $r->amenities ?? '',
+                'photo_url'       => $r->photo_url ?? null,
                 'available_count' => $data['available'],
                 'available'       => $data['available'] > 0,
             ];
@@ -225,12 +226,13 @@ JS;
         usort($result, fn($a, $b) => $b['available'] <=> $a['available'] ?: $a['price_per_night'] <=> $b['price_per_night']);
 
         return response()->json([
-            'types'        => $result,
-            'check_in'     => $checkIn,
-            'check_out'    => $checkOut,
-            'nights'       => $nights,
-            'widget_token' => $this->hotelToken($slug),
-            'show_prices'  => (bool) ($ws->show_prices ?? true),
+            'types'            => $result,
+            'check_in'         => $checkIn,
+            'check_out'        => $checkOut,
+            'nights'           => $nights,
+            'widget_token'     => $this->hotelToken($slug),
+            'show_prices'      => (bool) ($ws->show_prices ?? true),
+            'show_room_photos' => (bool) ($ws->show_room_photos ?? false),
         ]);
     }
 
@@ -493,35 +495,61 @@ JS;
             $hotelSettings = Setting::where('hotel_id', $hotel->id)->first();
             $hotelName     = $hotelSettings->resort_name ?? $hotel->name;
 
-            $templateName = $isConflict ? 'website_booking_guest_conflict' : 'website_booking_guest_confirm';
+            $preferredName = $isConflict ? 'website_booking_guest_conflict' : 'website_booking_guest_confirm';
+
+            // Try platform-level specific template first, then fall back to hotel's booking_confirmation
             $tmpl = DB::table('whatsapp_templates')
                 ->whereNull('hotel_id')
-                ->where('template_name', $templateName)
+                ->where('template_name', $preferredName)
                 ->where('approval_status', 'approved')
                 ->where('is_active', true)
                 ->first();
 
+            $useSpecific = (bool) $tmpl;
+
             if (!$tmpl) {
-                Log::info("Website booking guest WA skipped: template '{$templateName}' not approved yet.", [
+                // Fall back to hotel's active booking.created template
+                $tmpl = DB::table('whatsapp_templates')
+                    ->where('hotel_id', $hotel->id)
+                    ->where('trigger_event', 'booking.created')
+                    ->where('is_active', true)
+                    ->orderByDesc('id')
+                    ->first();
+            }
+
+            if (!$tmpl) {
+                Log::info("Website booking guest WA skipped: no suitable template found.", [
                     'hotel_id' => $hotel->id, 'booking_number' => $booking->booking_number,
                 ]);
                 return;
             }
 
-            $components = $isConflict ? [
+            // Specific templates carry custom parameter sets; fallback (booking.created) uses standard vars
+            $components = $useSpecific ? (
+                $isConflict ? [
+                    ['type' => 'body', 'parameters' => [
+                        ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
+                        ['type' => 'text', 'text' => $hotelName],
+                        ['type' => 'text', 'text' => $booking->booking_number],
+                        ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
+                        ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
+                    ]],
+                ] : [
+                    ['type' => 'body', 'parameters' => [
+                        ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
+                        ['type' => 'text', 'text' => $hotelName],
+                        ['type' => 'text', 'text' => $booking->booking_number],
+                        ['type' => 'text', 'text' => $roomType],
+                        ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
+                        ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
+                    ]],
+                ]
+            ) : [
+                // Standard booking_confirmation parameters (name, hotel, booking#, check-in, check-out)
                 ['type' => 'body', 'parameters' => [
                     ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
                     ['type' => 'text', 'text' => $hotelName],
                     ['type' => 'text', 'text' => $booking->booking_number],
-                    ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
-                    ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
-                ]],
-            ] : [
-                ['type' => 'body', 'parameters' => [
-                    ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
-                    ['type' => 'text', 'text' => $hotelName],
-                    ['type' => 'text', 'text' => $booking->booking_number],
-                    ['type' => 'text', 'text' => $roomType],
                     ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
                     ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
                 ]],
@@ -534,7 +562,7 @@ JS;
                     'to'                => $guestPhone,
                     'type'              => 'template',
                     'template'          => [
-                        'name'       => $tmpl->meta_template_name ?? $templateName,
+                        'name'       => $tmpl->meta_template_name ?? $tmpl->template_name ?? $preferredName,
                         'language'   => ['code' => 'en_US'],
                         'components' => $components,
                     ],
