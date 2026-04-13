@@ -145,7 +145,16 @@
             </div>
             <div class="form-group">
                 <label>Phone Number</label>
-                <input type="tel" name="phone" id="phoneInput" required placeholder="9876543210">
+                <div class="phone-row" style="display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:start;">
+                    <select id="countryCode" style="margin-bottom:0;">
+                        <option value="91" selected>India (+91)</option>
+                        <option value="1">United States (+1)</option>
+                        <option value="44">United Kingdom (+44)</option>
+                        <option value="971">UAE (+971)</option>
+                        <option value="65">Singapore (+65)</option>
+                    </select>
+                    <input type="tel" name="phone" id="phoneInput" required placeholder="9876543210" style="margin-bottom:0;">
+                </div>
             </div>
             <div class="form-group">
                 <label>Email <small style="font-weight:400;text-transform:none;">(optional)</small></label>
@@ -176,22 +185,20 @@
 </div>
 <div class="powered">Powered by Resort CRM</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
 <script>
-const iti = window.intlTelInput(document.getElementById('phoneInput'), {
-    initialCountry: '{{ strtolower($widgetSettings->default_country_code) }}',
-    preferredCountries: ['in', 'us', 'gb', 'ae', 'sg'],
-    utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js',
-});
-
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
-    const raw = document.getElementById('phoneInput').value.trim();
-    if (raw && iti.isValidNumber()) {
-        document.getElementById('phoneInput').value = iti.getNumber();
-    } else if (raw) {
+    const phone = document.getElementById('phoneInput');
+    const code = document.getElementById('countryCode').value.replace(/[^0-9]/g, '');
+    const raw = phone.value.trim().replace(/[^0-9]/g, '');
+    if (!raw) {
         e.preventDefault();
         showErr('Please enter a valid phone number.');
         return;
+    }
+    if (!raw.startsWith(code)) {
+        phone.value = code + raw;
+    } else {
+        phone.value = raw;
     }
 });
 

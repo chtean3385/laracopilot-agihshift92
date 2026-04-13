@@ -104,7 +104,16 @@
     <label>Full Name</label>
     <input type="text" name="guest_name" required placeholder="Your name">
     <label>Phone</label>
-    <input type="tel" name="phone" id="phoneInput" required placeholder="9876543210">
+    <div style="display:grid;grid-template-columns:128px 1fr;gap:8px;align-items:start;">
+        <select id="countryCode" style="margin-bottom:0;">
+            <option value="91" selected>India (+91)</option>
+            <option value="1">United States (+1)</option>
+            <option value="44">United Kingdom (+44)</option>
+            <option value="971">UAE (+971)</option>
+            <option value="65">Singapore (+65)</option>
+        </select>
+        <input type="tel" name="phone" id="phoneInput" required placeholder="9876543210" style="margin-bottom:0;">
+    </div>
     <label>Email (optional)</label>
     <input type="email" name="email" placeholder="you@example.com">
     <div class="guest-row">
@@ -118,21 +127,20 @@
     <button type="submit" class="btn" id="btnSubmit" disabled>{{ $widgetSettings->button_text }}</button>
 </form>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
 <script>
-const iti = window.intlTelInput(document.getElementById('phoneInput'), {
-    initialCountry: '{{ strtolower($widgetSettings->default_country_code) }}',
-    preferredCountries: ['in', 'us', 'gb', 'ae', 'sg'],
-    utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js',
-});
-
 document.getElementById('iframeForm').addEventListener('submit', function(e) {
-    const raw = document.getElementById('phoneInput').value.trim();
-    if (raw && iti.isValidNumber()) {
-        document.getElementById('phoneInput').value = iti.getNumber();
-    } else if (raw) {
+    const phone = document.getElementById('phoneInput');
+    const code = document.getElementById('countryCode').value.replace(/[^0-9]/g, '');
+    const raw = phone.value.trim().replace(/[^0-9]/g, '');
+    if (!raw) {
         e.preventDefault();
         showErr('Enter a valid phone number.');
+        return;
+    }
+    if (!raw.startsWith(code)) {
+        phone.value = code + raw;
+    } else {
+        phone.value = raw;
     }
 });
 
