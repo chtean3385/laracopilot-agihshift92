@@ -5,6 +5,41 @@
 
 @section('content')
 <div class="space-y-6">
+    {{-- ── Website Booking Confirm Banner ────────────────────────────────── --}}
+    @if($booking->status === 'website_pending')
+    <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fbbf24;border-radius:16px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div style="width:36px;height:36px;background:#f59e0b;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-globe" style="color:#fff;font-size:15px;"></i>
+            </div>
+            <div>
+                <div style="font-weight:700;font-size:15px;color:#92400e;">Website Booking — Awaiting Confirmation</div>
+                <div style="font-size:12px;color:#b45309;margin-top:1px;">Review the request and assign a room to confirm.</div>
+            </div>
+        </div>
+        @if($errors->has('room_id'))
+            <div style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:12px;"><i class="fas fa-exclamation-circle mr-1"></i>{{ $errors->first('room_id') }}</div>
+        @endif
+        <form method="POST" action="{{ route('admin.booking-widget.confirm', $booking->id) }}" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            @csrf
+            <select name="room_id" required style="flex:1;min-width:180px;padding:9px 12px;border:1.5px solid #fbbf24;border-radius:10px;background:#fff;font-size:13px;font-weight:600;color:#374151;">
+                <option value="">— Select room to assign —</option>
+                @foreach($rooms as $room)
+                    <option value="{{ $room->id }}" {{ $booking->room_id == $room->id ? 'selected' : '' }}>
+                        Room {{ $room->room_number }} — {{ $room->type }} ({{ ucfirst($room->status) }})
+                    </option>
+                @endforeach
+            </select>
+            <button type="submit" style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                <i class="fas fa-check-circle"></i> Confirm Booking
+            </button>
+            <a href="{{ route('bookings.edit', $booking->id) }}" style="display:inline-flex;align-items:center;gap:7px;padding:10px 16px;background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </form>
+    </div>
+    @endif
+
     <div class="flex items-center justify-between">
         <a href="{{ route('bookings.index') }}" class="btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i>Back to Bookings</a>
         <div class="flex gap-2 flex-wrap">

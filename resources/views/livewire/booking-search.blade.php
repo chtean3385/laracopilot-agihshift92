@@ -235,6 +235,11 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 @endif
+                                @if($booking->status === 'website_pending')
+                                <a href="{{ route('bookings.show', $booking->id) }}" class="lv-action-btn" title="Review &amp; Confirm" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;">
+                                    <i class="fas fa-check-circle"></i>
+                                </a>
+                                @endif
                                 @if($booking->status === 'confirmed')
                                 <a href="{{ route('checkin.show', $booking->id) }}" class="lv-action-btn lv-action-btn-green" title="Check In">
                                     <i class="fas fa-sign-in-alt"></i>

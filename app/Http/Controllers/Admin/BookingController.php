@@ -273,7 +273,8 @@ class BookingController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests', 'timeSlot', 'bookingAddOns', 'extraCharges', 'paymentReferences'])->findOrFail($id);
-        return view('admin.bookings.show', compact('booking'));
+        $rooms   = Room::where('status', '!=', 'maintenance')->orderBy('room_number')->get();
+        return view('admin.bookings.show', compact('booking', 'rooms'));
     }
 
     public function edit($id)
