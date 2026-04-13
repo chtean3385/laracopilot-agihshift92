@@ -37,8 +37,17 @@
             outline: none; border-color: {{ $widgetSettings->primary_color }};
             box-shadow: 0 0 0 3px {{ $widgetSettings->primary_color }}22;
         }
-        .iti { width: 100%; }
-        .iti input { padding-left: 54px !important; margin-bottom: 10px; }
+        .phone-row { display: grid; grid-template-columns: 170px 1fr; gap: 8px; align-items: start; }
+        @media (max-width: 520px) { .phone-row { grid-template-columns: 1fr; } }
+        .phone-row select, .phone-row input { margin-bottom: 10px; }
+        .phone-search {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: .82rem;
+        }
 
         .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .guest-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -104,15 +113,59 @@
     <label>Full Name</label>
     <input type="text" name="guest_name" required placeholder="Your name">
     <label>Phone</label>
-    <div style="display:grid;grid-template-columns:128px 1fr;gap:8px;align-items:start;">
-        <select id="countryCode" style="margin-bottom:0;">
+    <div class="phone-row">
+        <select id="countryCode" name="country_code">
             <option value="91" selected>India (+91)</option>
             <option value="1">United States (+1)</option>
             <option value="44">United Kingdom (+44)</option>
-            <option value="971">UAE (+971)</option>
+            <option value="971">United Arab Emirates (+971)</option>
             <option value="65">Singapore (+65)</option>
+            <option value="93">Afghanistan (+93)</option>
+            <option value="355">Albania (+355)</option>
+            <option value="213">Algeria (+213)</option>
+            <option value="61">Australia (+61)</option>
+            <option value="43">Austria (+43)</option>
+            <option value="973">Bahrain (+973)</option>
+            <option value="880">Bangladesh (+880)</option>
+            <option value="32">Belgium (+32)</option>
+            <option value="975">Bhutan (+975)</option>
+            <option value="55">Brazil (+55)</option>
+            <option value="855">Cambodia (+855)</option>
+            <option value="1">Canada (+1)</option>
+            <option value="86">China (+86)</option>
+            <option value="57">Colombia (+57)</option>
+            <option value="385">Croatia (+385)</option>
+            <option value="420">Czech Republic (+420)</option>
+            <option value="45">Denmark (+45)</option>
+            <option value="20">Egypt (+20)</option>
+            <option value="358">Finland (+358)</option>
+            <option value="33">France (+33)</option>
+            <option value="49">Germany (+49)</option>
+            <option value="30">Greece (+30)</option>
+            <option value="852">Hong Kong (+852)</option>
+            <option value="36">Hungary (+36)</option>
+            <option value="62">Indonesia (+62)</option>
+            <option value="353">Ireland (+353)</option>
+            <option value="39">Italy (+39)</option>
+            <option value="81">Japan (+81)</option>
+            <option value="962">Jordan (+962)</option>
+            <option value="7">Kazakhstan (+7)</option>
+            <option value="60">Malaysia (+60)</option>
+            <option value="968">Oman (+968)</option>
+            <option value="63">Philippines (+63)</option>
+            <option value="974">Qatar (+974)</option>
+            <option value="966">Saudi Arabia (+966)</option>
+            <option value="27">South Africa (+27)</option>
+            <option value="82">South Korea (+82)</option>
+            <option value="34">Spain (+34)</option>
+            <option value="94">Sri Lanka (+94)</option>
+            <option value="46">Sweden (+46)</option>
+            <option value="41">Switzerland (+41)</option>
+            <option value="66">Thailand (+66)</option>
+            <option value="90">Turkey (+90)</option>
+            <option value="84">Vietnam (+84)</option>
         </select>
-        <input type="tel" name="phone" id="phoneInput" required placeholder="9876543210" style="margin-bottom:0;">
+        <input type="tel" name="phone" id="phoneInput" required placeholder="9876543210">
     </div>
     <label>Email (optional)</label>
     <input type="email" name="email" placeholder="you@example.com">
@@ -137,11 +190,7 @@ document.getElementById('iframeForm').addEventListener('submit', function(e) {
         showErr('Enter a valid phone number.');
         return;
     }
-    if (!raw.startsWith(code)) {
-        phone.value = code + raw;
-    } else {
-        phone.value = raw;
-    }
+    phone.value = raw.startsWith(code) ? raw : code + raw;
 });
 
 function showErr(m) { const e = document.getElementById('formErr'); e.textContent = m; e.style.display = 'block'; }
