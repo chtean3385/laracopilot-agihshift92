@@ -1,0 +1,165 @@
+Build a Laravel module for a SaaS-based Resort CRM that enables Email Parsing for OTA bookings.
+
+GOAL:
+Each hotel (tenant) can configure an email inbox. The system will automatically read incoming emails (from OTAs like Airbnb, Booking.com, MakeMyTrip, etc.), parse booking details, and create/update bookings in the CRM.
+
+ARCHITECTURE REQUIREMENTS:
+
+1. MULTI-TENANT SUPPORT
+- Each hotel has its own email configuration:
+  - email_address
+  - email_password (encrypted)
+  - IMAP host, port, encryption
+- Store in table: hotel_email_configs
+
+2. DATABASE TABLES:
+
+hotel_email_configs:
+- id
+- hotel_id
+- email_address
+- email_password (encrypted)
+- imap_host
+- imap_port
+- encryption (ssl/tls)
+- is_active
+
+parsed_emails:
+- id
+- hotel_id
+- subject
+- sender
+- raw_body
+- parsed_data (JSON)
+- status (pending, processed, failed)
+- created_at
+
+bookings:
+- id
+- hotel_id
+- guest_name
+- guest_email
+- check_in
+- check_out
+- room_type
+- source (Airbnb, MMT, Goibibo, etc.)
+- external_booking_id
+- status
+
+3. EMAIL FETCHING SERVICE
+
+Create a service:
+App\Services\EmailFetcherService
+
+Responsibilities:
+- Connect to IMAP using credentials
+- Fetch unread emails
+- Mark emails as read after processing
+- Push emails into parsed_emails table
+
+Use library:
+- webklex/laravel-imap
+
+4. EMAIL PARSER SERVICE
+
+Create:
+App\Services\EmailParserService
+
+Responsibilities:
+- Detect OTA source from sender/subject
+- Parse booking details using patterns
+
+Example rules:
+- Airbnb → detect "Reservation confirmed"
+- Booking.com → detect "New reservation"
+- MMT → detect "Booking ID"
+
+Extract:
+- guest name
+- check-in date
+- check-out date
+- booking id
+- room type
+
+Store structured JSON in parsed_data
+
+5. BOOKING SYNC SERVICE
+
+Create:
+App\Services\BookingSyncService
+
+Responsibilities:
+- Convert parsed_data → bookings table
+- Avoid duplicates using external_booking_id
+- Update existing booking if already exists
+
+6. CRON / QUEUE
+
+- Create Laravel command:
+  php artisan emails:sync
+
+Steps:
+- Loop all active hotel_email_configs
+- Fetch emails
+- Parse emails
+- Sync bookings
+
+Run every 5 minutes via cron
+
+7. ADMIN PANEL (IMPORTANT)
+
+Create UI for SaaS admin & hotel admin:
+
+Page: Email Configuration
+Fields:
+- Email address
+- Password
+- IMAP host
+- Port
+- Encryption
+- Test Connection button
+- Enable/Disable toggle
+
+Page: Email Logs
+- Show parsed_emails
+- Status: pending / processed / failed
+- View raw email + parsed JSON
+
+8. ERROR HANDLING
+
+- If parsing fails → mark as failed
+- Log errors
+- Retry mechanism
+
+9. SECURITY
+
+- Encrypt email passwords
+- Do not store plain text
+- Use Laravel encryption
+
+10. BONUS (IMPORTANT)
+
+- Add rule-based parser:
+  config/email_parsers.php
+
+Example:
+{
+  "airbnb": {
+    "subject_contains": "Reservation confirmed",
+    "patterns": {
+      "guest_name": "...regex...",
+      "check_in": "...regex..."
+    }
+  }
+}
+
+So future OTAs can be added without code change.
+
+OUTPUT EXPECTED:
+- Full Laravel code (Models, Services, Controllers)
+- Migration files
+- Sample parser rules
+- Cron command
+- Basic Blade UI for admin
+
+Make code clean, modular, scalable for SaaS.
