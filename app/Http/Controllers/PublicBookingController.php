@@ -290,10 +290,11 @@ JS;
 
         if (!$customer) {
             $customer = Customer::withoutGlobalScopes()->create([
-                'hotel_id' => $hotel->id,
-                'name'     => $request->guest_name,
-                'phone'    => $phone,
-                'email'    => $email ?: null,
+                'hotel_id'  => $hotel->id,
+                'name'      => $request->guest_name,
+                'phone'     => $phone,
+                'email'     => $email ?: null,
+                'id_number' => '',
             ]);
         }
 
@@ -301,7 +302,6 @@ JS;
         $matchedRooms = Room::withoutGlobalScopes()
             ->where('hotel_id', $hotel->id)
             ->where('status', '!=', 'maintenance')
-            ->where('pricing_type', 'per_night')
             ->where('type', $roomType)
             ->get();
 
