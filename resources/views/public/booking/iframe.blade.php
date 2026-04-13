@@ -57,6 +57,9 @@
         .check-circle { display: none; width: 18px; height: 18px; background: {{ $widgetSettings->primary_color }}; border-radius: 50%; flex-shrink: 0; align-items: center; justify-content: center; }
         .room-card.selected .check-circle { display: flex; }
         .check-circle svg { width: 10px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; }
+        .room-card.unavailable { background: #fafafa; border-color: #f0f0f0; }
+        .room-card.unavailable .room-name { color: #9ca3af; }
+        .room-card.unavailable .room-price { color: #d1d5db; }
 
         .btn { width: 100%; padding: 14px; background: {{ $widgetSettings->primary_color }}; color: #fff; font-weight: 700; font-size: .95rem; border: none; border-radius: 10px; cursor: pointer; margin-top: 8px; font-family: inherit; }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -172,11 +175,8 @@ function fetchRooms(ci, co) {
     .then(r => r.json())
     .then(data => {
         document.getElementById('roomsLoading').style.display = 'none';
-        if (!data.types || data.types.length === 0) {
-            document.getElementById('noRooms').style.display = 'block';
-            return;
-        }
-        renderRooms(data.types, data.nights);
+        const showPrices = data.show_prices !== false;
+        renderRooms(data.types || [], data.nights, showPrices);
         document.getElementById('roomsList').style.display = 'block';
     })
     .catch(() => {
@@ -185,20 +185,47 @@ function fetchRooms(ci, co) {
     });
 }
 
-function renderRooms(types, nights) {
+function renderRooms(types, nights, showPrices) {
     const list = document.getElementById('roomsList');
     list.innerHTML = '';
+
+    if (!types || types.length === 0) {
+        list.innerHTML = '<div class="rooms-placeholder">No rooms configured. Please contact the hotel directly.</div>';
+        return;
+    }
+
     types.forEach(t => {
         const card = document.createElement('div');
-        card.className = 'room-card';
+        card.className = 'room-card' + (!t.available ? ' unavailable' : '');
+
+        const priceHtml = showPrices
+            ? `<div class="room-price">₹${t.price_per_night.toLocaleString('en-IN')}<small>/night</small></div>`
+            : '';
+        const totalHtml = showPrices && t.available
+            ? `<div class="room-sub" style="margin-top:2px;color:#9ca3af;font-size:.7rem;">Total: ₹${t.total_price.toLocaleString('en-IN')}</div>`
+            : '';
+        const soldOutBadge = !t.available
+            ? `<span style="font-size:.68rem;font-weight:700;background:#fef3c7;color:#92400e;border-radius:20px;padding:2px 8px;white-space:nowrap;">Request Waitlist</span>`
+            : '';
+        const amenitiesHtml = t.amenities
+            ? `<div style="font-size:.7rem;color:#9ca3af;margin-top:4px;">✦ ${t.amenities}</div>`
+            : '';
+        const descHtml = t.description
+            ? `<div style="font-size:.75rem;color:#6b7280;margin-top:3px;line-height:1.4;">${t.description}</div>`
+            : '';
+
         card.innerHTML = `
             <div class="room-row">
-                <div>
+                <div style="flex:1;min-width:0;">
                     <div class="room-name">${t.type}</div>
-                    <div class="room-sub">Up to ${t.capacity} guests · ${nights} night${nights>1?'s':''} total: ₹${t.total_price.toLocaleString('en-IN')}</div>
+                    <div class="room-sub">Up to ${t.capacity} guests · ${nights} night${nights>1?'s':''}</div>
+                    ${descHtml}
+                    ${amenitiesHtml}
+                    ${totalHtml}
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div class="room-price">₹${t.price_per_night.toLocaleString('en-IN')}<small>/night</small></div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;margin-left:10px;">
+                    ${priceHtml}
+                    ${soldOutBadge}
                     <div class="check-circle"><svg viewBox="0 0 10 8"><polyline points="0,4 4,8 10,0"/></svg></div>
                 </div>
             </div>

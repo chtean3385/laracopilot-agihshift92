@@ -207,29 +207,30 @@ JS;
 
         $result = [];
         foreach ($types as $typeName => $data) {
-            if ($data['available'] > 0) {
-                $r = $data['room'];
-                $result[] = [
-                    'type'            => $typeName,
-                    'price_per_night' => (float) $r->price_per_night,
-                    'total_price'     => (float) $r->price_per_night * $nights,
-                    'nights'          => $nights,
-                    'capacity'        => (int) $r->capacity,
-                    'description'     => $r->description ?? '',
-                    'amenities'       => $r->amenities ?? '',
-                    'available_count' => $data['available'],
-                ];
-            }
+            // Always return all types (available + sold-out) so guest can request even if dates are full
+            $r = $data['room'];
+            $result[] = [
+                'type'            => $typeName,
+                'price_per_night' => (float) $r->price_per_night,
+                'total_price'     => (float) $r->price_per_night * $nights,
+                'nights'          => $nights,
+                'capacity'        => (int) $r->capacity,
+                'description'     => $r->description ?? '',
+                'amenities'       => $r->amenities ?? '',
+                'available_count' => $data['available'],
+                'available'       => $data['available'] > 0,
+            ];
         }
 
-        usort($result, fn($a, $b) => $a['price_per_night'] <=> $b['price_per_night']);
+        usort($result, fn($a, $b) => $b['available'] <=> $a['available'] ?: $a['price_per_night'] <=> $b['price_per_night']);
 
         return response()->json([
-            'types'       => $result,
-            'check_in'    => $checkIn,
-            'check_out'   => $checkOut,
-            'nights'      => $nights,
-            'widget_token'=> $this->hotelToken($slug),
+            'types'        => $result,
+            'check_in'     => $checkIn,
+            'check_out'    => $checkOut,
+            'nights'       => $nights,
+            'widget_token' => $this->hotelToken($slug),
+            'show_prices'  => (bool) ($ws->show_prices ?? true),
         ]);
     }
 
