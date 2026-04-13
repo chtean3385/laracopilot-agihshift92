@@ -87,6 +87,20 @@ class BookingWidgetSettingsController extends Controller
             'room_id' => "required|integer|exists:rooms,id,hotel_id,{$hotelId}",
         ]);
 
+        // Date-overlap check — prevent double-booking the same room
+        $overlapping = \App\Models\Booking::withoutGlobalScopes()
+            ->where('hotel_id', $hotelId)
+            ->where('room_id', $request->room_id)
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->where('id', '!=', $id)
+            ->where('check_in_date', '<', $booking->check_out_date)
+            ->where('check_out_date', '>', $booking->check_in_date)
+            ->exists();
+
+        if ($overlapping) {
+            return back()->withErrors(['room_id' => 'This room is already booked for the selected dates. Please choose another room.']);
+        }
+
         $booking->update([
             'room_id' => $request->room_id,
             'status'  => 'confirmed',

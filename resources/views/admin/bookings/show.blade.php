@@ -249,8 +249,8 @@
         <div class="px-6 py-3 flex items-center justify-between">
             <div>
                 <div class="text-sm font-semibold text-gray-800 font-mono">{{ $ref->reference_number }}</div>
-                <div class="text-xs text-gray-400">{{ $ref->payment_method ?? 'UPI/Bank Transfer' }} · Submitted {{ $ref->created_at->format('d M Y h:i A') }}</div>
-                @if($ref->note)<div class="text-xs text-gray-500 mt-0.5">{{ $ref->note }}</div>@endif
+                <div class="text-xs text-gray-400">{{ ucfirst($ref->payment_type ?? 'UPI/Bank Transfer') }} · Submitted {{ $ref->created_at->format('d M Y h:i A') }}</div>
+                @if($ref->notes)<div class="text-xs text-gray-500 mt-0.5">{{ $ref->notes }}</div>@endif
             </div>
             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
                 {{ $ref->verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
@@ -715,8 +715,20 @@ document.getElementById('pathikModal').addEventListener('click', function(e) {
 {{-- Assign Room Modal (website_pending / pending_room_assignment bookings) --}}
 @if(in_array($booking->status, ['website_pending', 'pending_room_assignment']))
 @php
+    // Exclude rooms already confirmed/checked_in for overlapping dates
+    $bookedRoomIds = \App\Models\Booking::withoutGlobalScopes()
+        ->where('hotel_id', $booking->hotel_id)
+        ->whereIn('status', ['confirmed', 'checked_in'])
+        ->where('id', '!=', $booking->id)
+        ->whereNotNull('room_id')
+        ->where('check_in_date', '<', $booking->check_out_date)
+        ->where('check_out_date', '>', $booking->check_in_date)
+        ->pluck('room_id')
+        ->toArray();
+
     $availableRooms = \App\Models\Room::where('hotel_id', $booking->hotel_id)
         ->where('status', 'available')
+        ->whereNotIn('id', $bookedRoomIds)
         ->orderBy('room_number')
         ->get();
 @endphp

@@ -179,9 +179,10 @@ JS;
             ->where('pricing_type', 'per_night')
             ->get();
 
+        // Only confirmed/checked_in bookings block availability (pending bookings don't hold rooms)
         $conflictingIds = Booking::withoutGlobalScopes()
             ->where('hotel_id', $hotel->id)
-            ->whereIn('status', ['confirmed', 'checked_in', 'website_pending'])
+            ->whereIn('status', ['confirmed', 'checked_in'])
             ->whereNotNull('room_id')
             ->where('check_in_date', '<', $checkOut)
             ->where('check_out_date', '>', $checkIn)
@@ -297,9 +298,10 @@ JS;
             ->where('type', $roomType)
             ->get();
 
+        // Only confirmed/checked_in bookings block room assignment (pending bookings don't hold rooms)
         $conflictingIds = Booking::withoutGlobalScopes()
             ->where('hotel_id', $hotel->id)
-            ->whereIn('status', ['confirmed', 'checked_in', 'website_pending'])
+            ->whereIn('status', ['confirmed', 'checked_in'])
             ->whereNotNull('room_id')
             ->where('check_in_date', '<', $checkOut)
             ->where('check_out_date', '>', $checkIn)
