@@ -1342,19 +1342,19 @@ class HotelController extends Controller
 
         $row = DB::table('modules')
             ->where('hotel_id', $hotel->id)
-            ->where('module_name', $module)
+            ->where('slug', $module)
             ->first();
 
         if (!$row) {
             return response()->json(['success' => false, 'message' => "Module '{$module}' not found for hotel."], 404);
         }
 
-        $newStatus = !$row->is_active;
+        $newStatus = !$row->is_enabled;
 
         DB::table('modules')
             ->where('hotel_id', $hotel->id)
-            ->where('module_name', $module)
-            ->update(['is_active' => $newStatus, 'updated_at' => now()]);
+            ->where('slug', $module)
+            ->update(['is_enabled' => $newStatus, 'updated_at' => now()]);
 
         return response()->json([
             'success' => true,

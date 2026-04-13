@@ -169,11 +169,19 @@
                             </div>
                         </td>
                         <td class="lv-td">
+                            @if($booking->room)
                             <div class="lv-room-pill">
                                 <span class="lv-room-pill-label">RM</span>
                                 <span class="lv-room-pill-num">{{ $booking->room->room_number }}</span>
                             </div>
                             <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room->type) }}</div>
+                            @else
+                            <div class="lv-room-pill" style="background:#fef3c7;color:#92400e;">
+                                <span class="lv-room-pill-label">RM</span>
+                                <span class="lv-room-pill-num">TBD</span>
+                            </div>
+                            <div class="lv-secondary" style="margin-top:4px;color:#d97706;">Pending</div>
+                            @endif
                         </td>
                         {{-- Dates cell — varies by room pricing_type --}}
                         @if($booking->room?->pricing_type === 'per_slot')

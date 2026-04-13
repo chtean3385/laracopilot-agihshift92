@@ -176,7 +176,7 @@
                     {{ $pendingCount }} Website Booking{{ $pendingCount > 1 ? 's' : '' }} Pending
                 </p>
                 <p class="text-xs text-amber-600 mt-0.5">Confirm and assign rooms from the Bookings page.</p>
-                <a href="{{ route('admin.bookings.index') }}?status=website_pending"
+                <a href="{{ route('bookings.index') }}?status=website_pending"
                    class="mt-2 inline-block text-xs font-semibold text-amber-700 underline">View pending →</a>
             </div>
             @endif

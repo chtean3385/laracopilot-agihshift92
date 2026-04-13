@@ -104,6 +104,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="font-bold text-gray-800 mb-4">Room</h3>
+                    @if($booking->room)
                     <div class="text-4xl font-black text-gray-800 mb-1">{{ $booking->room->room_number }}</div>
                     <span class="badge-{{ $booking->room->type_color }}">{{ ucfirst($booking->room->type) }}</span>
                     <div class="mt-4 space-y-2">
@@ -117,6 +118,22 @@
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room->price_per_night) }}</span></div>
                         @endif
                     </div>
+                    @else
+                    <div class="flex flex-col items-center justify-center py-6 text-center">
+                        <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+                            <i class="fas fa-clock text-amber-500"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-amber-700">Room Pending Assignment</p>
+                        <p class="text-xs text-gray-400 mt-1">This booking came in via website and needs a room assigned.</p>
+                        @if($booking->status === 'pending_room_assignment')
+                        <button onclick="document.getElementById('assignRoomModal').style.display='flex'"
+                                class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white rounded-lg"
+                                style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
+                            <i class="fas fa-door-open"></i> Assign Room
+                        </button>
+                        @endif
+                    </div>
+                    @endif
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -144,8 +161,8 @@
                         @php $roomCost = max(0, $booking->total_amount - $bExtraChargesTotal); @endphp
                         <div class="flex justify-between text-sm"><span class="text-gray-500"><i class="fas fa-hourglass-half text-amber-400 mr-1"></i>Hourly booking</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
                         @else
-                        @php $roomCost = $booking->nights * $booking->room->price_per_night; @endphp
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room->price_per_night) }}</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
+                        @php $roomCost = $booking->room ? $booking->nights * $booking->room->price_per_night : $booking->total_amount; @endphp
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room ? $booking->room->price_per_night : 0) }}</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
                         @endif
                         @if($booking->meal_cost > 0)
                         <div class="flex justify-between text-sm">
@@ -385,7 +402,7 @@
                         <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Phone</span><span style="font-weight:600;color:#1e293b;">{{ $booking->customer?->phone ?? '—' }}</span></div>
                         <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Check-In</span><span style="font-weight:600;color:#1e293b;">{{ $booking->check_in_date->format('d M Y') }}</span></div>
                         <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Check-Out</span><span style="font-weight:600;color:#1e293b;">{{ $booking->check_out_date->format('d M Y') }}</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Room</span><span style="font-weight:600;color:#1e293b;">{{ $booking->room->room_number }} ({{ ucfirst($booking->room->type) }})</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span style="color:#94a3b8;">Room</span><span style="font-weight:600;color:#1e293b;">{{ $booking->room?->room_number ?? 'TBD' }} ({{ ucfirst($booking->room?->type ?? 'Pending') }})</span></div>
                     </div>
                 </div>
                 <div style="display:flex;gap:8px;">
@@ -643,8 +660,8 @@ var pathikData = {
     nights:         {{ $booking->nights }},
     adults:         {{ $booking->adults }},
     children:       {{ $booking->children }},
-    room_number:    {!! json_encode((string)$booking->room->room_number) !!},
-    room_type:      {!! json_encode($booking->room->type) !!},
+    room_number:    {!! json_encode((string)($booking->room?->room_number ?? 'TBD')) !!},
+    room_type:      {!! json_encode($booking->room?->type ?? 'Pending') !!},
     total_amount:   {{ $booking->total_amount }},
 };
 
@@ -695,4 +712,47 @@ document.getElementById('pathikModal').addEventListener('click', function(e) {
 });
 </script>
 @endif
+{{-- Assign Room Modal (website_pending / pending_room_assignment bookings) --}}
+@if(in_array($booking->status, ['website_pending', 'pending_room_assignment']))
+@php
+    $availableRooms = \App\Models\Room::where('hotel_id', $booking->hotel_id)
+        ->where('status', 'available')
+        ->orderBy('room_number')
+        ->get();
+@endphp
+<div id="assignRoomModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-800">Assign Room & Confirm Booking</h3>
+            <button onclick="document.getElementById('assignRoomModal').style.display='none'" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Select a room for <strong>{{ $booking->booking_number }}</strong> ({{ $booking->customer?->name }}).</p>
+        <form method="POST" action="{{ route('admin.booking-widget.confirm', $booking->id) }}">
+            @csrf
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                <select name="room_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <option value="">— Select room —</option>
+                    @foreach($availableRooms as $rm)
+                    <option value="{{ $rm->id }}">RM {{ $rm->room_number }} — {{ ucfirst($rm->type) }} (₹{{ number_format($rm->price_per_night) }}/night)</option>
+                    @endforeach
+                </select>
+                @if($availableRooms->isEmpty())
+                <p class="text-xs text-amber-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>No available rooms right now. Update room status first.</p>
+                @endif
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 py-2 text-sm font-semibold text-white rounded-lg" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
+                    <i class="fas fa-check mr-1"></i> Confirm & Assign
+                </button>
+                <button type="button" onclick="document.getElementById('assignRoomModal').style.display='none'"
+                        class="flex-1 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
 @endsection
