@@ -187,9 +187,9 @@
 
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Script Embed (floating button)</p>
                 <div class="bg-gray-50 rounded-lg px-3 py-2.5 font-mono text-xs text-gray-700 break-all mb-2 select-all">
-                    &lt;script src="{{ url("/book/{$slug}/embed.js") }}"&gt;&lt;/script&gt;
+                    &lt;script src="{{ url("/widget/{$slug}/embed.js") }}"&gt;&lt;/script&gt;
                 </div>
-                <button onclick="copyCode('scriptCode')" data-code="{{ htmlspecialchars('<script src=&quot;'.url("/book/{$slug}/embed.js").'&quot;></script>') }}"
+                <button onclick="copyCode('scriptCode')" data-code="{{ htmlspecialchars('<script src=&quot;'.url("/widget/{$slug}/embed.js").'&quot;></script>') }}"
                     id="scriptCode"
                     class="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg py-1.5 transition mb-4">
                     Copy Script Tag

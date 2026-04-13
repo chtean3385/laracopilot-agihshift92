@@ -19,7 +19,7 @@ $icons = [
     'channel_manager'   => ['fas fa-hotel',           'linear-gradient(135deg,#8b5cf6,#6d28d9)', '#8b5cf6'],
     'time-slot-pricing' => ['fas fa-clock',           'linear-gradient(135deg,#7c3aed,#a855f7)', '#7c3aed'],
     'hourly-pricing'    => ['fas fa-hourglass-half',  'linear-gradient(135deg,#0891b2,#0e7490)', '#0891b2'],
-    'booking-widget'    => ['fas fa-globe',           'linear-gradient(135deg,#ec4899,#be185d)', '#ec4899'],
+    'booking-widget'    => ['fas fa-globe',           'linear-gradient(135deg,#6366f1,#4f46e5)', '#6366f1'],
 ];
 @endphp
 

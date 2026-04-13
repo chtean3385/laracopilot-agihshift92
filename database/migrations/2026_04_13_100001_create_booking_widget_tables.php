@@ -121,7 +121,8 @@ return new class extends Migration
     {
         DB::table('modules')->where('slug', 'booking-widget')->delete();
         DB::table('whatsapp_templates')->whereNull('hotel_id')->where('trigger_event', 'website.booking.received')->delete();
-        Schema::dropIfExists('ota_booking_conflicts');
+        // NOTE: ota_booking_conflicts is a shared table (also used by Task #58).
+        // We intentionally do NOT drop it here to avoid destroying sibling module data.
         Schema::dropIfExists('booking_payment_references');
         Schema::dropIfExists('booking_widget_settings');
         Schema::table('bookings', function (Blueprint $table) {

@@ -268,17 +268,26 @@ Route::get('/bookings/{bookingId}/guests/{guestId}/document',     [\App\Http\Con
 // Primary guest (customer) signature
 Route::post('/guests/{customerId}/signature',                      [\App\Http\Controllers\Admin\CustomerController::class, 'saveSignature']     )->name('customers.signature');
 
-// ── Public Booking Widget (no auth, no hotel-context, CSRF works normally) ──
+// ── Public Booking Widget (no auth, no hotel-context, CSRF exempted via bootstrap/app.php) ──
 Route::withoutMiddleware([
     \App\Http\Middleware\SetHotelContext::class,
     \App\Http\Middleware\CheckTrialStatus::class,
 ])->group(function () {
+    // Standalone full-page booking form
     Route::get( '/book/{slug}',              [\App\Http\Controllers\PublicBookingController::class, 'show']            )->name('public.booking.show');
+    // iFrame-optimised version (embedded in hotel website)
     Route::get( '/book/{slug}/iframe',       [\App\Http\Controllers\PublicBookingController::class, 'iframe']          )->name('public.booking.iframe');
-    Route::get( '/book/{slug}/embed.js',     [\App\Http\Controllers\PublicBookingController::class, 'embedJs']         )->name('public.booking.embed_js');
-    Route::get( '/book/{slug}/availability', [\App\Http\Controllers\PublicBookingController::class, 'availability']    )->name('public.booking.availability');
-    Route::post('/book/{slug}',              [\App\Http\Controllers\PublicBookingController::class, 'store']           )->name('public.booking.store');
+    // JS floating widget (canonical path)
+    Route::get( '/widget/{slug}/embed.js',   [\App\Http\Controllers\PublicBookingController::class, 'embedJs']         )->name('public.booking.embed_js');
+    // Availability AJAX (POST to carry body params, no CSRF — hotel token validated server-side)
+    Route::post('/book/{slug}/availability', [\App\Http\Controllers\PublicBookingController::class, 'availability']    )->name('public.booking.availability');
+    // Submit booking (POST, hotel token validated server-side)
+    Route::post('/book/{slug}/book',         [\App\Http\Controllers\PublicBookingController::class, 'store']           )->name('public.booking.store');
+    // Confirmation page
     Route::get( '/book/{slug}/confirm/{ref}',[\App\Http\Controllers\PublicBookingController::class, 'confirm']         )->name('public.booking.confirm');
+    // ICS calendar download
+    Route::get( '/book/{slug}/confirm/{ref}/ical', [\App\Http\Controllers\PublicBookingController::class, 'ical']      )->name('public.booking.ical');
+    // Guest submits UPI UTR
     Route::post('/book/{slug}/payment-ref',  [\App\Http\Controllers\PublicBookingController::class, 'submitPaymentRef'])->name('public.booking.payment_ref');
 });
 

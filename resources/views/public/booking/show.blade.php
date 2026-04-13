@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="widget-token" content="{{ $widgetToken }}">
     <title>Book Your Stay – {{ $hotelSettings->resort_name ?? $hotel->name }}</title>
     <link rel="icon" href="{{ asset('img/logo.png') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -105,7 +105,7 @@
 
 <div class="card">
     <form id="bookingForm" method="POST" action="{{ route('public.booking.store', $hotel->slug) }}">
-        @csrf
+        <input type="hidden" name="_widget_token" value="{{ $widgetToken }}">
         <input type="hidden" name="room_type" id="selectedRoomType">
 
         {{-- Step 1: Dates --}}
@@ -236,8 +236,10 @@ function fetchRooms(ci, co) {
     document.getElementById('selectedRoomType').value         = '';
     document.getElementById('btnSubmit').disabled             = true;
 
-    fetch("{{ route('public.booking.availability', $hotel->slug) }}?check_in=" + ci + "&check_out=" + co, {
-        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+    fetch("{{ route('public.booking.availability', $hotel->slug) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Widget-Token': document.querySelector('meta[name="widget-token"]').content },
+        body: JSON.stringify({ check_in: ci, check_out: co, _widget_token: document.querySelector('meta[name="widget-token"]').content })
     })
     .then(r => r.json())
     .then(data => {
