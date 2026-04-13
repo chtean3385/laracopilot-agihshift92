@@ -167,6 +167,7 @@ class HotelController extends Controller
                 ['slug' => 'time-slot-pricing', 'name' => 'Time Slot Pricing',  'description' => 'Enable fixed time-block (per-slot) room pricing and booking.', 'is_enabled' => false],
                 ['slug' => 'hourly-pricing',    'name' => 'Hourly Pricing',    'description' => 'Enable per-hour room pricing and booking.',                    'is_enabled' => false],
                 ['slug' => 'extra-billing',     'name' => 'Extra Billing',     'description' => 'Add post-booking charges (food, laundry, services, etc.) to occupied or confirmed bookings and reflect them on the final bill.', 'is_enabled' => false],
+                ['slug' => 'booking-widget',    'name' => 'Booking Widget',     'description' => 'Embeddable website booking form. Guests book directly from your hotel website and bookings appear in CRM instantly.', 'is_enabled' => false],
             ];
             foreach ($modules as $m) {
                 DB::table('modules')->insert(array_merge($m, [
@@ -378,6 +379,7 @@ class HotelController extends Controller
                 ['slug' => 'time-slot-pricing', 'name' => 'Time Slot Pricing',  'description' => 'Enable fixed time-block (per-slot) room pricing and booking.', 'is_enabled' => false],
                 ['slug' => 'hourly-pricing',    'name' => 'Hourly Pricing',     'description' => 'Enable per-hour room pricing and booking.',                    'is_enabled' => false],
                 ['slug' => 'extra-billing',     'name' => 'Extra Billing',      'description' => 'Add post-booking charges (food, laundry, services, etc.) to occupied or confirmed bookings and reflect them on the final bill.', 'is_enabled' => false],
+                ['slug' => 'booking-widget',    'name' => 'Booking Widget',     'description' => 'Embeddable website booking form. Guests book directly from your hotel website and bookings appear in CRM instantly.', 'is_enabled' => false],
             ] as $m) {
                 DB::table('modules')->insert(array_merge($m, ['hotel_id' => $newHotelId, 'created_at' => now(), 'updated_at' => now()]));
             }

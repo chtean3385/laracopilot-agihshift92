@@ -67,6 +67,14 @@ class DashboardController extends Controller
         }
 
         try {
+            $websitePendingCount = Module::isEnabled('booking-widget')
+                ? Booking::where('status', 'website_pending')->count()
+                : 0;
+        } catch (\Exception $e) {
+            $websitePendingCount = 0;
+        }
+
+        try {
             $totalCustomers    = Customer::count();
             $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
                 ->whereYear('created_at', $today->year)
@@ -237,7 +245,8 @@ class DashboardController extends Controller
             'pendingPayments', 'totalCustomers', 'newCustomersMonth',
             'recentBookings', 'occupancyRate', 'weeklyRevenue',
             'calWeeks', 'calStart', 'prevMonth', 'nextMonth',
-            'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart'
+            'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
+            'websitePendingCount'
         ));
     }
 

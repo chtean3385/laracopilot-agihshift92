@@ -229,6 +229,15 @@
                             <div class="kpi-num" data-count="{{ $totalCustomers }}">{{ $totalCustomers }}</div>
                             <div class="kpi-sub">+{{ $newCustomersMonth }} this month <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
                         </a>
+                        @if(\App\Models\Module::isEnabled('booking-widget') && ($websitePendingCount ?? 0) > 0)
+                        <a href="{{ route('bookings.index') }}?status=website_pending" class="kpi-card" style="background:linear-gradient(135deg,#ec4899,#be185d);">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <i class="fas fa-globe kpi-icon"></i>
+                            <div class="kpi-label">Website Bookings</div>
+                            <div class="kpi-num" data-count="{{ $websitePendingCount ?? 0 }}">{{ $websitePendingCount ?? 0 }}</div>
+                            <div class="kpi-sub">Pending confirmation <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                        </a>
+                        @endif
                     </div>
 
                     {{-- Occupancy + Revenue --}}

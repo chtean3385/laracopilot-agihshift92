@@ -898,6 +898,13 @@
             </a>
             @endif
 
+            @if(\App\Models\Module::isEnabled('booking-widget'))
+            <a href="{{ route('admin.booking-widget.settings') }}" class="nav-link {{ request()->routeIs('admin.booking-widget.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-globe"></i></span>
+                Booking Widget
+            </a>
+            @endif
+
             @if(\App\Models\Module::isEnabled('pathik'))
             <a href="{{ route('pathik.index') }}" class="nav-link {{ request()->routeIs('pathik.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-clipboard-list"></i></span>

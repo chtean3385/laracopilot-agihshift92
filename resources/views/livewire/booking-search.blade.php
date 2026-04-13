@@ -28,6 +28,10 @@
                     <option value="checked_in">Checked In</option>
                     <option value="checked_out">Checked Out</option>
                     <option value="cancelled">Cancelled</option>
+                    @if(\App\Models\Module::isEnabled('booking-widget'))
+                    <option value="website_pending">Website Pending</option>
+                    @endif
+                    <option value="pending_room_assignment">Pending Room</option>
                 </select>
             </div>
 
@@ -112,10 +116,12 @@
                     @forelse($bookings as $booking)
                     @php
                         $sMap = [
-                            'confirmed'   => ['lv-badge-cyan',   'fa-check-circle'],
-                            'checked_in'  => ['lv-badge-green',  'fa-sign-in-alt'],
-                            'checked_out' => ['lv-badge-gray',   'fa-sign-out-alt'],
-                            'cancelled'   => ['lv-badge-red',    'fa-times-circle'],
+                            'confirmed'              => ['lv-badge-cyan',   'fa-check-circle'],
+                            'checked_in'             => ['lv-badge-green',  'fa-sign-in-alt'],
+                            'checked_out'            => ['lv-badge-gray',   'fa-sign-out-alt'],
+                            'cancelled'              => ['lv-badge-red',    'fa-times-circle'],
+                            'website_pending'        => ['lv-badge-purple', 'fa-globe'],
+                            'pending_room_assignment'=> ['lv-badge-amber',  'fa-bed'],
                         ];
                         [$sCls, $sIcon] = $sMap[$booking->status] ?? ['lv-badge-gray', 'fa-circle'];
                         $pMap = [

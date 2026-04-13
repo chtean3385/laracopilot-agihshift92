@@ -1,0 +1,448 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Hotel;
+use App\Models\Room;
+use App\Models\Booking;
+use App\Models\Customer;
+use App\Models\Module;
+use App\Models\Setting;
+use App\Models\BookingWidgetSetting;
+use App\Models\BookingPaymentReference;
+use App\Models\PlatformWhatsAppSetting;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+
+class PublicBookingController extends Controller
+{
+    private function getActiveHotel(string $slug): ?Hotel
+    {
+        return Hotel::where('slug', $slug)->where('status', 'active')->first();
+    }
+
+    private function widgetEnabled(int $hotelId): bool
+    {
+        return Module::withoutGlobalScopes()
+            ->where('hotel_id', $hotelId)
+            ->where('slug', 'booking-widget')
+            ->where('is_enabled', true)
+            ->exists();
+    }
+
+    public function show(string $slug)
+    {
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel || !$this->widgetEnabled($hotel->id)) abort(404);
+
+        $widgetSettings = BookingWidgetSetting::where('hotel_id', $hotel->id)->first()
+            ?? new BookingWidgetSetting(['hotel_id' => $hotel->id]);
+        $hotelSettings  = Setting::where('hotel_id', $hotel->id)->first();
+
+        return view('public.booking.show', compact('hotel', 'widgetSettings', 'hotelSettings'));
+    }
+
+    public function iframe(string $slug)
+    {
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel || !$this->widgetEnabled($hotel->id)) abort(404);
+
+        $widgetSettings = BookingWidgetSetting::where('hotel_id', $hotel->id)->first()
+            ?? new BookingWidgetSetting(['hotel_id' => $hotel->id]);
+        $hotelSettings  = Setting::where('hotel_id', $hotel->id)->first();
+
+        return view('public.booking.iframe', compact('hotel', 'widgetSettings', 'hotelSettings'));
+    }
+
+    public function embedJs(string $slug)
+    {
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel || !$this->widgetEnabled($hotel->id)) {
+            return response('// Booking widget not available', 404)
+                ->header('Content-Type', 'application/javascript');
+        }
+
+        $ws      = BookingWidgetSetting::where('hotel_id', $hotel->id)->first();
+        $color   = $ws->primary_color   ?? '#6366f1';
+        $btnText = $ws->button_text     ?? 'Book Now';
+        $iframeUrl = url("/book/{$slug}/iframe");
+
+        $js = <<<JS
+(function() {
+    var color = "{$color}";
+    var btnText = "{$btnText}";
+    var iframeUrl = "{$iframeUrl}";
+
+    var btn = document.createElement('button');
+    btn.innerText = btnText;
+    btn.style.cssText = 'position:fixed;bottom:28px;right:28px;z-index:99998;background:' + color + ';color:#fff;border:none;border-radius:50px;padding:14px 26px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.2);font-family:system-ui,sans-serif;letter-spacing:.01em;';
+    btn.onmouseover = function() { this.style.opacity = '0.9'; this.style.transform = 'scale(1.04)'; };
+    btn.onmouseout  = function() { this.style.opacity = '1';   this.style.transform = 'scale(1)'; };
+
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);transition:opacity .2s;';
+
+    var panel = document.createElement('div');
+    panel.style.cssText = 'position:absolute;right:0;top:0;height:100%;width:100%;max-width:500px;background:#fff;box-shadow:-4px 0 40px rgba(0,0,0,.18);transition:transform .3s;';
+
+    var iframe = document.createElement('iframe');
+    iframe.src = iframeUrl;
+    iframe.style.cssText = 'width:100%;height:100%;border:none;display:block;';
+    iframe.allow = 'autoplay';
+
+    panel.appendChild(iframe);
+    overlay.appendChild(panel);
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) { overlay.style.display = 'none'; }
+    });
+
+    btn.addEventListener('click', function() { overlay.style.display = 'block'; });
+
+    document.body.appendChild(btn);
+    document.body.appendChild(overlay);
+})();
+JS;
+
+        return response($js, 200)
+            ->header('Content-Type', 'application/javascript')
+            ->header('Cache-Control', 'public, max-age=300');
+    }
+
+    public function availability(Request $request, string $slug)
+    {
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel || !$this->widgetEnabled($hotel->id)) {
+            return response()->json(['error' => 'Not found'], 404);
+        }
+
+        $checkIn  = $request->input('check_in');
+        $checkOut = $request->input('check_out');
+
+        if (!$checkIn || !$checkOut || $checkIn >= $checkOut) {
+            return response()->json(['error' => 'Invalid dates'], 422);
+        }
+
+        $nights = (int) round((strtotime($checkOut) - strtotime($checkIn)) / 86400);
+        if ($nights < 1) {
+            return response()->json(['error' => 'Minimum 1 night'], 422);
+        }
+
+        $rooms = Room::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->where('status', '!=', 'maintenance')
+            ->where('pricing_type', 'per_night')
+            ->get();
+
+        $conflictingIds = Booking::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->whereIn('status', ['confirmed', 'checked_in', 'website_pending'])
+            ->whereNotNull('room_id')
+            ->where('check_in_date', '<', $checkOut)
+            ->where('check_out_date', '>', $checkIn)
+            ->pluck('room_id')
+            ->toArray();
+
+        $types = [];
+        foreach ($rooms as $room) {
+            $t = $room->type ?: 'Standard';
+            if (!isset($types[$t])) {
+                $types[$t] = [
+                    'available' => 0,
+                    'total'     => 0,
+                    'room'      => $room,
+                ];
+            }
+            $types[$t]['total']++;
+            if (!in_array($room->id, $conflictingIds)) {
+                $types[$t]['available']++;
+            }
+        }
+
+        $result = [];
+        foreach ($types as $typeName => $data) {
+            if ($data['available'] > 0) {
+                $r = $data['room'];
+                $result[] = [
+                    'type'            => $typeName,
+                    'price_per_night' => (float) $r->price_per_night,
+                    'total_price'     => (float) $r->price_per_night * $nights,
+                    'nights'          => $nights,
+                    'capacity'        => (int) $r->capacity,
+                    'description'     => $r->description ?? '',
+                    'amenities'       => $r->amenities ?? '',
+                    'available_count' => $data['available'],
+                ];
+            }
+        }
+
+        usort($result, fn($a, $b) => $a['price_per_night'] <=> $b['price_per_night']);
+
+        return response()->json([
+            'types'     => $result,
+            'check_in'  => $checkIn,
+            'check_out' => $checkOut,
+            'nights'    => $nights,
+        ]);
+    }
+
+    public function store(Request $request, string $slug)
+    {
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel || !$this->widgetEnabled($hotel->id)) abort(404);
+
+        $request->validate([
+            'check_in'       => 'required|date|after_or_equal:today',
+            'check_out'      => 'required|date|after:check_in',
+            'room_type'      => 'required|string|max:100',
+            'guest_name'     => 'required|string|max:255',
+            'phone'          => 'required|string|max:30',
+            'adults'         => 'required|integer|min:1',
+            'children'       => 'nullable|integer|min:0',
+            'special_requests' => 'nullable|string|max:500',
+        ]);
+
+        $ws          = BookingWidgetSetting::where('hotel_id', $hotel->id)->first();
+        $autoConfirm = $ws && $ws->auto_confirm;
+        $checkIn     = $request->check_in;
+        $checkOut    = $request->check_out;
+        $roomType    = $request->room_type;
+        $phone       = $request->phone;
+        $email       = $request->email;
+
+        // Find or create Customer (no duplicates)
+        $customer = Customer::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->where(function ($q) use ($phone, $email) {
+                $q->where('phone', $phone);
+                if ($email) $q->orWhere('email', $email);
+            })
+            ->first();
+
+        if (!$customer) {
+            $customer = Customer::withoutGlobalScopes()->create([
+                'hotel_id' => $hotel->id,
+                'name'     => $request->guest_name,
+                'phone'    => $phone,
+                'email'    => $email ?: null,
+            ]);
+        }
+
+        // Room assignment decision tree
+        $matchedRooms = Room::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->where('status', '!=', 'maintenance')
+            ->where('pricing_type', 'per_night')
+            ->where('type', $roomType)
+            ->get();
+
+        $conflictingIds = Booking::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->whereIn('status', ['confirmed', 'checked_in', 'website_pending'])
+            ->whereNotNull('room_id')
+            ->where('check_in_date', '<', $checkOut)
+            ->where('check_out_date', '>', $checkIn)
+            ->pluck('room_id')
+            ->toArray();
+
+        $assignedRoom = null;
+        $hasConflict  = false;
+        $conflictType = null;
+
+        if ($matchedRooms->isEmpty()) {
+            $hasConflict  = true;
+            $conflictType = 'no_room_matched';
+        } else {
+            $freeRooms = $matchedRooms->reject(fn($r) => in_array($r->id, $conflictingIds));
+            if ($freeRooms->isEmpty()) {
+                $hasConflict  = true;
+                $conflictType = 'dates_overlap';
+            } else {
+                $assignedRoom = $freeRooms->first();
+            }
+        }
+
+        $nights        = (int) round((strtotime($checkOut) - strtotime($checkIn)) / 86400);
+        $sampleRoom    = $assignedRoom ?? $matchedRooms->first();
+        $pricePerNight = $sampleRoom ? (float) $sampleRoom->price_per_night : 0;
+        $total         = $pricePerNight * $nights;
+
+        $status = $hasConflict
+            ? 'pending_room_assignment'
+            : ($autoConfirm ? 'confirmed' : 'website_pending');
+
+        $bookingNumber = 'BK-WEB-' . strtoupper(Str::random(6));
+
+        $booking = Booking::withoutGlobalScopes()->create([
+            'hotel_id'        => $hotel->id,
+            'booking_number'  => $bookingNumber,
+            'customer_id'     => $customer->id,
+            'room_id'         => $assignedRoom?->id,
+            'check_in_date'   => $checkIn,
+            'check_out_date'  => $checkOut,
+            'nights'          => $nights,
+            'adults'          => $request->adults,
+            'children'        => $request->children ?? 0,
+            'total_amount'    => $total,
+            'advance_payment' => 0,
+            'balance_due'     => $total,
+            'status'          => $status,
+            'payment_status'  => 'pending',
+            'special_requests'=> $request->special_requests,
+            'source'          => 'website',
+            'ota_conflict'    => $hasConflict,
+        ]);
+
+        if ($hasConflict && Schema::hasTable('ota_booking_conflicts')) {
+            DB::table('ota_booking_conflicts')->insert([
+                'hotel_id'            => $hotel->id,
+                'booking_id'          => $booking->id,
+                'conflict_type'       => $conflictType === 'no_room_matched'
+                    ? 'no_room_matched'
+                    : 'dates_overlap',
+                'requested_room_type' => $roomType,
+                'check_in_date'       => $checkIn,
+                'check_out_date'      => $checkOut,
+                'resolved'            => false,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ]);
+        }
+
+        $this->notifyAdmin($hotel, $customer, $booking, $roomType, $hasConflict);
+
+        return redirect()->route('public.booking.confirm', [
+            'slug' => $slug,
+            'ref'  => $bookingNumber,
+        ]);
+    }
+
+    public function confirm(string $slug, string $ref)
+    {
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel || !$this->widgetEnabled($hotel->id)) abort(404);
+
+        $booking = Booking::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->where('booking_number', $ref)
+            ->with('customer')
+            ->firstOrFail();
+
+        $ws            = BookingWidgetSetting::where('hotel_id', $hotel->id)->first();
+        $hotelSettings = Setting::where('hotel_id', $hotel->id)->first();
+
+        return view('public.booking.confirm', compact('hotel', 'booking', 'ws', 'hotelSettings'));
+    }
+
+    public function submitPaymentRef(Request $request, string $slug)
+    {
+        $request->validate([
+            'booking_ref' => 'required|string',
+            'utr'         => 'required|string|max:50',
+        ]);
+
+        $hotel = $this->getActiveHotel($slug);
+        if (!$hotel) abort(404);
+
+        $booking = Booking::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->where('booking_number', $request->booking_ref)
+            ->firstOrFail();
+
+        BookingPaymentReference::create([
+            'booking_id'       => $booking->id,
+            'payment_type'     => 'upi',
+            'reference_number' => $request->utr,
+            'amount'           => $request->amount ?? 0,
+            'submitted_by'     => 'guest',
+            'verified'         => false,
+        ]);
+
+        return back()->with('payment_submitted', true);
+    }
+
+    private function notifyAdmin(Hotel $hotel, Customer $customer, Booking $booking, string $roomType, bool $isConflict): void
+    {
+        try {
+            $platform = PlatformWhatsAppSetting::instance();
+            if (!$platform || !$platform->is_saas_active || !$platform->saas_token || !$platform->saas_phone_number_id) {
+                return;
+            }
+
+            $hotelPhone = preg_replace('/[^0-9]/', '', $hotel->phone ?? '');
+            if (!$hotelPhone) return;
+
+            if (!str_starts_with($hotelPhone, '91') && strlen($hotelPhone) === 10) {
+                $hotelPhone = '91' . $hotelPhone;
+            }
+
+            $hotelSettings = Setting::where('hotel_id', $hotel->id)->first();
+            $hotelName     = $hotelSettings->resort_name ?? $hotel->name;
+
+            $templateName  = $isConflict ? 'ota_booking_conflict' : 'website_booking_received';
+            $tmpl = DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('template_name', $templateName)
+                ->where('approval_status', 'approved')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$tmpl) {
+                Log::info("Website booking WA skipped: template '{$templateName}' not approved yet.", [
+                    'hotel_id'       => $hotel->id,
+                    'booking_number' => $booking->booking_number,
+                ]);
+                return;
+            }
+
+            $metaName = $tmpl->meta_template_name ?? $templateName;
+
+            $components = $isConflict ? [
+                [
+                    'type'       => 'body',
+                    'parameters' => [
+                        ['type' => 'text', 'text' => $hotelName],
+                        ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
+                        ['type' => 'text', 'text' => 'Website Booking'],
+                        ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
+                        ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
+                        ['type' => 'text', 'text' => "Room type '{$roomType}' not available for selected dates"],
+                    ],
+                ],
+            ] : [
+                [
+                    'type'       => 'body',
+                    'parameters' => [
+                        ['type' => 'text', 'text' => $hotelName],
+                        ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
+                        ['type' => 'text', 'text' => $customer->phone ?? ''],
+                        ['type' => 'text', 'text' => $roomType],
+                        ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
+                        ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
+                        ['type' => 'text', 'text' => $booking->booking_number],
+                    ],
+                ],
+            ];
+
+            \Illuminate\Support\Facades\Http::timeout(10)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $hotelPhone,
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'       => $metaName,
+                        'language'   => ['code' => 'en_US'],
+                        'components' => $components,
+                    ],
+                ]);
+        } catch (\Throwable $e) {
+            Log::warning('Website booking admin WA notification failed: ' . $e->getMessage(), [
+                'hotel_id' => $hotel->id,
+            ]);
+        }
+    }
+}

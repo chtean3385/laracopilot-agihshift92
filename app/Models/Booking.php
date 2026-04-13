@@ -22,6 +22,7 @@ class Booking extends Model
         'checkin_notes', 'checkout_notes',
         'meal_breakfast', 'meal_lunch', 'meal_dinner', 'meal_cost',
         'extra_beds', 'extra_bed_cost',
+        'source', 'ota_conflict',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class Booking extends Model
         'extra_beds'         => 'integer',
         'extra_bed_cost'     => 'decimal:2',
         'hours_booked'       => 'integer',
+        'ota_conflict'       => 'boolean',
     ];
 
     public function customer()
@@ -80,6 +82,11 @@ class Booking extends Model
     public function bookingGuests()
     {
         return $this->hasMany(BookingGuest::class)->orderBy('id');
+    }
+
+    public function paymentReferences()
+    {
+        return $this->hasMany(BookingPaymentReference::class)->orderByDesc('created_at');
     }
 
     public function isSlotBooking(): bool { return !is_null($this->time_slot_id); }

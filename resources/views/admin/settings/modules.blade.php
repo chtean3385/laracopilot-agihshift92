@@ -19,6 +19,7 @@ $icons = [
     'channel_manager'   => ['fas fa-hotel',           'linear-gradient(135deg,#8b5cf6,#6d28d9)', '#8b5cf6'],
     'time-slot-pricing' => ['fas fa-clock',           'linear-gradient(135deg,#7c3aed,#a855f7)', '#7c3aed'],
     'hourly-pricing'    => ['fas fa-hourglass-half',  'linear-gradient(135deg,#0891b2,#0e7490)', '#0891b2'],
+    'booking-widget'    => ['fas fa-globe',           'linear-gradient(135deg,#ec4899,#be185d)', '#ec4899'],
 ];
 @endphp
 
@@ -101,6 +102,10 @@ $icons = [
                 @if($module->is_enabled)
                     @if($module->slug === 'whatsapp')
                     <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
+                        <i class="fas fa-cog" style="font-size:11px;"></i> Configure
+                    </a>
+                    @elseif($module->slug === 'booking-widget')
+                    <a href="{{ route('admin.booking-widget.settings') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
                     @endif
