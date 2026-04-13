@@ -11,14 +11,18 @@ use Livewire\Component;
 
 class WaInbox extends Component
 {
-    public string $selectedPhone  = '';
-    public string $replyText      = '';
-    public string $sendResult     = '';
-    public bool   $sending        = false;
+    public string $selectedPhone = '';
+    public string $replyText     = '';
+    public string $sendResult    = '';
+    public bool   $sending       = false;
+
+    // Contact edit modal state
+    public bool   $editingContact  = false;
+    public string $editName        = '';
+    public string $editType        = 'unknown';
 
     public function mount(): void
     {
-        // Pre-select hotel from ?hotel=X query param (dashboard quick-chat)
         $hotelId = (int) request()->query('hotel', 0);
         if ($hotelId > 0) {
             $hotel = DB::table('hotels')->where('id', $hotelId)->first(['phone']);
@@ -30,19 +34,61 @@ class WaInbox extends Component
 
     public function selectContact(string $phone): void
     {
-        $this->selectedPhone = $phone;
-        $this->replyText     = '';
-        $this->sendResult    = '';
+        $this->selectedPhone  = $phone;
+        $this->replyText      = '';
+        $this->sendResult     = '';
+        $this->editingContact = false;
+
         DB::table('wa_contacts')->where('phone', $phone)->update(['unread_count' => 0]);
         $this->dispatch('wa-scroll-to-bottom');
     }
 
     public function backToList(): void
     {
-        $this->selectedPhone = '';
-        $this->replyText     = '';
-        $this->sendResult    = '';
+        $this->selectedPhone  = '';
+        $this->replyText      = '';
+        $this->sendResult     = '';
+        $this->editingContact = false;
     }
+
+    // ── Contact editing ───────────────────────────────────────────────────
+
+    public function openEditContact(): void
+    {
+        $c = DB::table('wa_contacts')->where('phone', $this->selectedPhone)->first();
+        if (!$c) return;
+        $this->editName       = $c->display_name ?? '';
+        $this->editType       = $c->contact_type ?? 'unknown';
+        $this->editingContact = true;
+    }
+
+    public function saveContact(): void
+    {
+        $name = trim($this->editName);
+        if ($name === '') {
+            $this->sendResult = 'error:Name cannot be empty.';
+            return;
+        }
+
+        $allowed = ['owner', 'guest', 'unknown'];
+        $type    = in_array($this->editType, $allowed) ? $this->editType : 'unknown';
+
+        DB::table('wa_contacts')->where('phone', $this->selectedPhone)->update([
+            'display_name' => $name,
+            'contact_type' => $type,
+            'updated_at'   => now(),
+        ]);
+
+        $this->editingContact = false;
+        $this->sendResult     = 'ok:Contact saved.';
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->editingContact = false;
+    }
+
+    // ── Text reply ────────────────────────────────────────────────────────
 
     public function sendReply(): void
     {
@@ -51,7 +97,6 @@ class WaInbox extends Component
             $this->sendResult = 'error:Please type a message first.';
             return;
         }
-
         if (empty($this->selectedPhone)) {
             $this->sendResult = 'error:No contact selected.';
             return;
@@ -64,9 +109,7 @@ class WaInbox extends Component
         }
 
         $phone = preg_replace('/[^0-9]/', '', $this->selectedPhone);
-        if (strlen($phone) === 10) {
-            $phone = '91' . $phone;
-        }
+        if (strlen($phone) === 10) $phone = '91' . $phone;
 
         $contact = DB::table('wa_contacts')->where('phone', $this->selectedPhone)->first();
         $hotelId = $contact?->hotel_id;
@@ -80,53 +123,131 @@ class WaInbox extends Component
                     'messaging_product' => 'whatsapp',
                     'to'                => $phone,
                     'type'              => 'text',
-                    'text'              => ['body' => $text],
+                    'text'              => ['body' => $text, 'preview_url' => false],
                 ]);
 
             $body = $response->json();
 
             if ($response->successful() && isset($body['messages'])) {
-                DB::table('whatsapp_logs')->insert([
-                    'direction'  => 'outgoing',
-                    'event_type' => 'message_sent',
-                    'phone'      => $this->selectedPhone,
-                    'hotel_id'   => $hotelId,
-                    'status'     => 'ok',
-                    'payload'    => json_encode($body),
-                    'notes'      => $text,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Update wa_contacts preview
-                DB::table('wa_contacts')->where('phone', $this->selectedPhone)->update([
-                    'last_message_preview' => mb_substr($text, 0, 200),
-                    'last_message_at'      => now(),
-                    'updated_at'           => now(),
-                ]);
-
+                $this->logOutgoing($this->selectedPhone, $hotelId, $text, $body);
+                $this->updateContactPreview($this->selectedPhone, $text);
                 $this->replyText  = '';
                 $this->sendResult = 'ok:Message sent.';
                 $this->dispatch('wa-scroll-to-bottom');
             } else {
                 $errMsg           = $body['error']['message'] ?? 'Unknown API error';
                 $this->sendResult = 'error:Meta error: ' . $errMsg;
-                Log::warning('WaInbox send failed', ['body' => $body, 'phone' => $phone]);
             }
         } catch (\Throwable $e) {
             $this->sendResult = 'error:Send failed: ' . $e->getMessage();
-            Log::error('WaInbox exception: ' . $e->getMessage());
+            Log::error('WaInbox sendReply exception: ' . $e->getMessage());
         } finally {
             $this->sending = false;
         }
     }
 
+    // ── Attachment send (called from JS after upload) ─────────────────────
+
+    public function sendAttachment(string $mediaId, string $mediaType, string $fileName = '', string $caption = ''): void
+    {
+        if (empty($this->selectedPhone) || empty($mediaId)) {
+            $this->sendResult = 'error:Missing attachment data.';
+            return;
+        }
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            $this->sendResult = 'error:Platform WhatsApp credentials are not configured.';
+            return;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $this->selectedPhone);
+        if (strlen($phone) === 10) $phone = '91' . $phone;
+
+        $contact = DB::table('wa_contacts')->where('phone', $this->selectedPhone)->first();
+        $hotelId = $contact?->hotel_id;
+
+        $this->sending = true;
+
+        try {
+            if ($mediaType === 'image') {
+                $msgPayload = [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $phone,
+                    'type'              => 'image',
+                    'image'             => array_filter([
+                        'id'      => $mediaId,
+                        'caption' => $caption ?: null,
+                    ]),
+                ];
+            } else {
+                $msgPayload = [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $phone,
+                    'type'              => 'document',
+                    'document'          => array_filter([
+                        'id'       => $mediaId,
+                        'filename' => $fileName ?: null,
+                        'caption'  => $caption ?: null,
+                    ]),
+                ];
+            }
+
+            $response = Http::timeout(15)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", $msgPayload);
+
+            $body = $response->json();
+
+            if ($response->successful() && isset($body['messages'])) {
+                $note = ($mediaType === 'image' ? '📷 Image' : '📄 Document') . ($fileName ? ": {$fileName}" : '');
+                $this->logOutgoing($this->selectedPhone, $hotelId, $note, $body);
+                $this->updateContactPreview($this->selectedPhone, $note);
+                $this->sendResult = 'ok:' . ($mediaType === 'image' ? 'Image' : 'Document') . ' sent.';
+                $this->dispatch('wa-scroll-to-bottom');
+                $this->dispatch('wa-clear-attachment');
+            } else {
+                $errMsg           = $body['error']['message'] ?? 'Unknown API error';
+                $this->sendResult = 'error:Meta error: ' . $errMsg;
+            }
+        } catch (\Throwable $e) {
+            $this->sendResult = 'error:Send failed: ' . $e->getMessage();
+            Log::error('WaInbox sendAttachment exception: ' . $e->getMessage());
+        } finally {
+            $this->sending = false;
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private function logOutgoing(string $phone, ?int $hotelId, string $note, array $body): void
+    {
+        DB::table('whatsapp_logs')->insert([
+            'direction'  => 'outgoing',
+            'event_type' => 'message_sent',
+            'phone'      => $phone,
+            'hotel_id'   => $hotelId,
+            'status'     => 'ok',
+            'payload'    => json_encode($body),
+            'notes'      => $note,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function updateContactPreview(string $phone, string $text): void
+    {
+        DB::table('wa_contacts')->where('phone', $phone)->update([
+            'last_message_preview' => mb_substr($text, 0, 200),
+            'last_message_at'      => now(),
+            'updated_at'           => now(),
+        ]);
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────
+
     public function render()
     {
-        // ── Conversations from wa_contacts only (phone-based, real messages only) ──
-        // Only contacts who have actually sent a message appear here.
-        // wa_contacts.phone is unique → automatically deduplicates multi-hotel admins
-        // with the same phone number.
         $contacts = DB::table('wa_contacts')
             ->orderByDesc('last_message_at')
             ->get();
@@ -148,7 +269,6 @@ class WaInbox extends Component
                 default   => '#f1f5f9',
             };
 
-            // Hotel name for context
             $hotelName = null;
             if ($c->hotel_id) {
                 $hotelName = DB::table('hotels')->where('id', $c->hotel_id)->value('name');
@@ -170,11 +290,13 @@ class WaInbox extends Component
                     : 'No messages',
                 'unread'      => (int)($c->unread_count ?? 0),
                 'consented'   => !empty($c->consented_at),
-                'consented_at'=> $c->consented_at ?? null,
+                'lead_status' => $c->lead_status ?? null,
+                'bot_state'   => $c->bot_state ?? null,
+                'bot_service' => $c->bot_service_interest ?? null,
+                'bot_budget'  => $c->bot_budget ?? null,
             ];
         });
 
-        // ── Selected contact thread ───────────────────────────────────────
         $selectedContact = null;
         $messages        = collect();
         $within24h       = false;
@@ -183,7 +305,6 @@ class WaInbox extends Component
             $selectedContact = $conversations->firstWhere('phone', $this->selectedPhone);
 
             if ($selectedContact) {
-                // Fetch messages by phone (both logged by hotel_id and by phone field)
                 $messages = DB::table('whatsapp_logs')
                     ->where('phone', $this->selectedPhone)
                     ->whereIn('event_type', ['message_received', 'message_sent'])
@@ -198,10 +319,10 @@ class WaInbox extends Component
                             'tag_color' => $isOutgoing ? '#7c3aed' : $selectedContact->type_color,
                             'text'      => $log->notes ?? '',
                             'time'      => Carbon::parse($log->created_at)->format('d M, H:i'),
+                            'is_bot'    => !$isOutgoing ? false : (str_contains($log->notes ?? '', 'Bot:') || false),
                         ];
                     });
 
-                // 24h window — last incoming from this phone
                 $lastIncoming = DB::table('whatsapp_logs')
                     ->where('phone', $this->selectedPhone)
                     ->where('direction', 'incoming')
@@ -215,11 +336,11 @@ class WaInbox extends Component
         $totalUnread = DB::table('wa_contacts')->sum('unread_count');
 
         return view('livewire.platform.wa-inbox', [
-            'conversations'  => $conversations,
-            'selectedContact'=> $selectedContact,
-            'messages'       => $messages,
-            'within24h'      => $within24h,
-            'totalUnread'    => (int) $totalUnread,
+            'conversations'   => $conversations,
+            'selectedContact' => $selectedContact,
+            'messages'        => $messages,
+            'within24h'       => $within24h,
+            'totalUnread'     => (int) $totalUnread,
         ]);
     }
 }

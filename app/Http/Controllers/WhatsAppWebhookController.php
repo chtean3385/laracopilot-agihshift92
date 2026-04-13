@@ -7,17 +7,51 @@ use App\Models\WhatsAppLog;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppWebhookController extends Controller
 {
+    // ── Bot question definitions ──────────────────────────────────────────
+
+    private const BOT_GREETING = "👋 Hello! Welcome to *Dreams Technology*.\n\nWe help businesses grow with cutting-edge technology solutions.\n\nMay I know your *good name*, please?";
+
+    private const BOT_SERVICE_Q = "Great to meet you, *{name}*! 😊\n\nHow can we help you today?\n\nPlease reply with the number:\n1️⃣ Website Design\n2️⃣ Mobile Application\n3️⃣ ERP / CRM\n4️⃣ Digital Marketing\n5️⃣ Others";
+
+    private const BOT_TIMELINE_Q = "Perfect choice! 👍\n\nHow quickly would you like to get started?\n\nPlease reply with the number:\n1️⃣ Immediately (within 1 week)\n2️⃣ Soon (1–4 weeks)\n3️⃣ Planning ahead (1–3 months)\n4️⃣ Just exploring for now";
+
+    private const BOT_BUDGET_Q = "Excellent! Almost done 🙌\n\nWhat is your approximate budget for this project?\n\nPlease reply with the number:\n1️⃣ Less than ₹25,000\n2️⃣ ₹25,000 – ₹1,00,000\n3️⃣ ₹1,00,000 – ₹5,00,000\n4️⃣ ₹5,00,000 and above";
+
+    private const BOT_SERVICE_OPTIONS = [
+        '1' => 'Website Design',
+        '2' => 'Mobile Application',
+        '3' => 'ERP / CRM',
+        '4' => 'Digital Marketing',
+        '5' => 'Others',
+    ];
+
+    private const BOT_TIMELINE_OPTIONS = [
+        '1' => 'Immediately (within 1 week)',
+        '2' => 'Soon (1–4 weeks)',
+        '3' => 'Planning ahead (1–3 months)',
+        '4' => 'Just exploring for now',
+    ];
+
+    private const BOT_BUDGET_OPTIONS = [
+        '1' => 'Less than ₹25,000',
+        '2' => '₹25,000 – ₹1,00,000',
+        '3' => '₹1,00,000 – ₹5,00,000',
+        '4' => '₹5,00,000 and above',
+    ];
+
+    // ── Webhook verification ──────────────────────────────────────────────
+
     public function verify(Request $request)
     {
         $mode      = $request->query('hub_mode')         ?? $request->query('hub.mode');
         $challenge = $request->query('hub_challenge')    ?? $request->query('hub.challenge');
         $token     = $request->query('hub_verify_token') ?? $request->query('hub.verify_token');
 
-        // Browser visit with no Meta params — show a helpful info page
         if (!$mode && !$challenge && !$token) {
             $platform    = PlatformWhatsAppSetting::instance();
             $webhookUrl  = url('/webhook/whatsapp');
@@ -30,7 +64,7 @@ class WhatsAppWebhookController extends Controller
                 . 'ol li{margin-bottom:8px;}'
                 . '</style></head><body>'
                 . '<h1>⚡ WhatsApp Webhook — Active</h1>'
-                . '<p>This endpoint receives real-time events from Meta (message delivery status, template approvals, incoming messages).</p>'
+                . '<p>This endpoint receives real-time events from Meta.</p>'
                 . '<div class="box"><strong>📋 Webhook URL:</strong><br><br><code>' . $webhookUrl . '</code></div>'
                 . '<div class="box"><strong>🔑 Verify Token:</strong> ' . $tokenStatus . '</div>'
                 . '</body></html>',
@@ -55,12 +89,12 @@ class WhatsAppWebhookController extends Controller
         return response('Forbidden', 403);
     }
 
+    // ── Webhook receiver ──────────────────────────────────────────────────
+
     public function receive(Request $request)
     {
         $platform = PlatformWhatsAppSetting::instance();
-
-        // Bypass signature check if toggled (dev mode / Replit proxy strips the header)
-        $skipSig = $platform?->skip_signature_check ?? false;
+        $skipSig  = $platform?->skip_signature_check ?? false;
 
         if (!$skipSig && !$this->verifySignature($request, $platform)) {
             Log::warning('WhatsApp webhook: invalid signature — request rejected');
@@ -84,7 +118,7 @@ class WhatsAppWebhookController extends Controller
                     }
 
                     if ($field === 'messages') {
-                        $this->handleIncomingMessages($value);
+                        $this->handleIncomingMessages($value, $platform);
                     }
                 }
             }
@@ -95,6 +129,8 @@ class WhatsAppWebhookController extends Controller
 
         return response()->json(['status' => 'ok']);
     }
+
+    // ── Template status handler ───────────────────────────────────────────
 
     protected function handleTemplateStatusUpdate(array $value): void
     {
@@ -117,26 +153,33 @@ class WhatsAppWebhookController extends Controller
 
         if (!$metaStatus) return;
 
-        $updated = WhatsAppTemplate::where('meta_template_id', (string) $templateId)
+        WhatsAppTemplate::where('meta_template_id', (string) $templateId)
             ->update([
                 'meta_status'     => $metaStatus,
                 'approval_status' => $metaStatus === 'approved' ? 'approved' : 'rejected',
             ]);
-
-        Log::info('WhatsApp template status updated', [
-            'meta_template_id' => $templateId,
-            'event'            => $event,
-            'rows_updated'     => $updated,
-        ]);
     }
 
-    protected function handleIncomingMessages(array $value): void
+    // ── Incoming message handler ──────────────────────────────────────────
+
+    protected function handleIncomingMessages(array $value, ?object $platform = null): void
     {
         $messages = $value['messages'] ?? [];
         foreach ($messages as $message) {
             $phone = $message['from'] ?? null;
             $type  = $message['type'] ?? 'unknown';
-            $text  = $message['text']['body'] ?? null;
+            $text  = null;
+
+            // Extract text from various message types
+            if ($type === 'text') {
+                $text = $message['text']['body'] ?? null;
+            } elseif ($type === 'interactive') {
+                $text = $message['interactive']['button_reply']['title']
+                     ?? $message['interactive']['list_reply']['title']
+                     ?? null;
+            } elseif ($type === 'button') {
+                $text = $message['button']['text'] ?? null;
+            }
 
             Log::info('WhatsApp incoming message', ['from' => $phone, 'type' => $type, 'text' => $text]);
 
@@ -147,7 +190,7 @@ class WhatsAppWebhookController extends Controller
             if ($phone) {
                 $hotel = DB::table('hotels')
                     ->where('phone', $phone)
-                    ->orWhere('phone', ltrim($phone, '91')) // strip country code
+                    ->orWhere('phone', ltrim($phone, '91'))
                     ->first();
                 $hotelId = $hotel?->id;
             }
@@ -156,25 +199,184 @@ class WhatsAppWebhookController extends Controller
 
             if ($phone) {
                 $this->upsertWaContact($phone, $preview, $text);
+                // Run bot flow after contact is upserted
+                if ($platform) {
+                    $this->runBotFlow($phone, $text, $platform);
+                }
             }
         }
 
-        // Delivery status updates
         $statuses = $value['statuses'] ?? [];
         foreach ($statuses as $status) {
-            $phone  = $status['recipient_id'] ?? null;
-            $state  = $status['status'] ?? 'unknown';
-            $msgId  = $status['id'] ?? null;
+            $phone = $status['recipient_id'] ?? null;
+            $state = $status['status'] ?? 'unknown';
+            $msgId = $status['id'] ?? null;
 
             WhatsAppLog::record('outgoing', 'delivery_status', 'ok', $status, $phone, null,
                 "Msg {$msgId} → {$state}");
         }
     }
 
+    // ── Bot flow state machine ────────────────────────────────────────────
+
+    protected function runBotFlow(string $phone, ?string $text, object $platform): void
+    {
+        if (!$platform->saas_token || !$platform->saas_phone_number_id) return;
+
+        $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
+        if (!$contact) return;
+
+        // Skip bot for hotel owners and already-completed flows
+        if ($contact->contact_type === 'owner') return;
+        if ($contact->bot_state === 'completed')  return;
+
+        $state   = $contact->bot_state;
+        $input   = trim($text ?? '');
+
+        try {
+            if ($state === null || $state === '') {
+                // First ever message — send greeting
+                $this->botSend($platform, $phone, self::BOT_GREETING);
+                DB::table('wa_contacts')->where('phone', $phone)
+                    ->update(['bot_state' => 'awaiting_name', 'updated_at' => now()]);
+                return;
+            }
+
+            if ($state === 'awaiting_name') {
+                if ($input === '') return;
+                $name = ucwords(strtolower($input));
+                $msg  = str_replace('{name}', $name, self::BOT_SERVICE_Q);
+                $this->botSend($platform, $phone, $msg);
+                DB::table('wa_contacts')->where('phone', $phone)->update([
+                    'display_name' => $name,
+                    'bot_state'    => 'awaiting_service',
+                    'updated_at'   => now(),
+                ]);
+                return;
+            }
+
+            if ($state === 'awaiting_service') {
+                $choice = self::BOT_SERVICE_OPTIONS[$input] ?? null;
+                if (!$choice) {
+                    // Nudge with partial text match
+                    foreach (self::BOT_SERVICE_OPTIONS as $k => $v) {
+                        if (stripos($input, $v) !== false || stripos($input, (string)$k) !== false) {
+                            $choice = $v;
+                            break;
+                        }
+                    }
+                }
+                if (!$choice) {
+                    $this->botSend($platform, $phone, "Please reply with a number *1 to 5* to choose your service. 😊");
+                    return;
+                }
+                $this->botSend($platform, $phone, self::BOT_TIMELINE_Q);
+                DB::table('wa_contacts')->where('phone', $phone)->update([
+                    'bot_service_interest' => $choice,
+                    'bot_state'            => 'awaiting_timeline',
+                    'updated_at'           => now(),
+                ]);
+                return;
+            }
+
+            if ($state === 'awaiting_timeline') {
+                $choice = self::BOT_TIMELINE_OPTIONS[$input] ?? null;
+                if (!$choice) {
+                    foreach (self::BOT_TIMELINE_OPTIONS as $k => $v) {
+                        if (stripos($input, $v) !== false || stripos($input, (string)$k) !== false) {
+                            $choice = $v;
+                            break;
+                        }
+                    }
+                }
+                if (!$choice) {
+                    $this->botSend($platform, $phone, "Please reply with a number *1 to 4* for your preferred timeline. 😊");
+                    return;
+                }
+                $this->botSend($platform, $phone, self::BOT_BUDGET_Q);
+                DB::table('wa_contacts')->where('phone', $phone)->update([
+                    'bot_timeline' => $choice,
+                    'bot_state'    => 'awaiting_budget',
+                    'updated_at'   => now(),
+                ]);
+                return;
+            }
+
+            if ($state === 'awaiting_budget') {
+                $choice = self::BOT_BUDGET_OPTIONS[$input] ?? null;
+                if (!$choice) {
+                    foreach (self::BOT_BUDGET_OPTIONS as $k => $v) {
+                        if (stripos($input, $v) !== false || stripos($input, (string)$k) !== false) {
+                            $choice = $v;
+                            break;
+                        }
+                    }
+                }
+                if (!$choice) {
+                    $this->botSend($platform, $phone, "Please reply with a number *1 to 4* for your budget range. 😊");
+                    return;
+                }
+
+                // Hot lead if budget option 3 or 4 (₹1 lac+)
+                $leadStatus = in_array($input, ['3', '4']) ? 'hot' : 'warm';
+
+                $displayName = $contact->display_name ?? 'there';
+                $service     = $contact->bot_service_interest ?? 'your project';
+
+                if ($leadStatus === 'hot') {
+                    $confirmation = "🎉 Thank you, *{$displayName}*!\n\nOur team will contact you very soon to discuss your *{$service}* project.\n\n🔥 Based on your responses, you've been flagged as a *priority lead* — expect a call from us shortly!\n\nHave a great day! 😊";
+                } else {
+                    $confirmation = "🎉 Thank you, *{$displayName}*!\n\nWe've received your details for *{$service}*. Our team will reach out to discuss your requirements.\n\nHave a great day! 😊";
+                }
+
+                $this->botSend($platform, $phone, $confirmation);
+                DB::table('wa_contacts')->where('phone', $phone)->update([
+                    'bot_budget'  => $choice,
+                    'lead_status' => $leadStatus,
+                    'bot_state'   => 'completed',
+                    'updated_at'  => now(),
+                ]);
+                return;
+            }
+
+        } catch (\Throwable $e) {
+            Log::error('Bot flow error for ' . $phone . ': ' . $e->getMessage());
+        }
+    }
+
+    // ── Bot send helper ───────────────────────────────────────────────────
+
+    protected function botSend(object $platform, string $phone, string $text): void
+    {
+        $numericPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (strlen($numericPhone) === 10) {
+            $numericPhone = '91' . $numericPhone;
+        }
+
+        $response = Http::timeout(10)
+            ->withToken($platform->saas_token)
+            ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                'messaging_product' => 'whatsapp',
+                'to'                => $numericPhone,
+                'type'              => 'text',
+                'text'              => ['body' => $text, 'preview_url' => false],
+            ]);
+
+        $body = $response->json();
+
+        WhatsAppLog::record('outgoing', 'message_sent', $response->successful() ? 'ok' : 'error',
+            $body, $phone, null, mb_substr($text, 0, 200));
+
+        if (!$response->successful()) {
+            Log::warning('Bot send failed', ['phone' => $phone, 'error' => $body]);
+        }
+    }
+
+    // ── Upsert wa_contact ─────────────────────────────────────────────────
+
     protected function upsertWaContact(string $phone, string $preview, ?string $text): void
     {
         try {
-            // Resolve contact type and hotel
             $normalPhone = preg_replace('/[^0-9]/', '', $phone);
             $shortPhone  = strlen($normalPhone) > 10 ? substr($normalPhone, -10) : $normalPhone;
 
@@ -192,7 +394,6 @@ class WhatsAppWebhookController extends Controller
                 $contactType = 'owner';
                 $displayName = $hotel->name . ' (Owner)';
             } else {
-                // Check customers table
                 $customer = DB::table('customers')
                     ->where(DB::raw("regexp_replace(phone, '[^0-9]', '', 'g')"), $normalPhone)
                     ->orWhere(DB::raw("right(regexp_replace(phone, '[^0-9]', '', 'g'), 10)"), $shortPhone)
@@ -208,10 +409,8 @@ class WhatsAppWebhookController extends Controller
                 }
             }
 
-            // Auto-consent if they replied "yes"
             $grantedConsent = $text && strtolower(trim($text)) === 'yes';
-
-            $existing = DB::table('wa_contacts')->where('phone', $phone)->first();
+            $existing       = DB::table('wa_contacts')->where('phone', $phone)->first();
 
             if ($existing) {
                 $update = [
@@ -235,7 +434,7 @@ class WhatsAppWebhookController extends Controller
                     'hotel_id'             => $hotelId,
                     'contact_type'         => $contactType,
                     'display_name'         => $displayName,
-                    'consented_at'         => now(), // first message = opt-in
+                    'consented_at'         => now(),
                     'last_message_at'      => now(),
                     'last_message_preview' => $preview,
                     'unread_count'         => 1,
@@ -247,6 +446,8 @@ class WhatsAppWebhookController extends Controller
             Log::error('upsertWaContact failed: ' . $e->getMessage());
         }
     }
+
+    // ── HMAC signature verification ───────────────────────────────────────
 
     protected function verifySignature(Request $request, ?object $platform = null): bool
     {
@@ -260,7 +461,7 @@ class WhatsAppWebhookController extends Controller
 
         $signature = $request->header('X-Hub-Signature-256');
         if (!$signature) {
-            Log::warning('WhatsApp webhook: X-Hub-Signature-256 header missing (proxy may have stripped it)');
+            Log::warning('WhatsApp webhook: X-Hub-Signature-256 header missing');
             return false;
         }
 

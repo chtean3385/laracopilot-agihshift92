@@ -393,4 +393,53 @@ class WhatsAppController extends Controller
         WhatsAppLog::where('created_at', '<', now()->subDays(30))->delete();
         return back()->with('success', 'Logs older than 30 days cleared.');
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Media Upload — uploads file to Meta and returns media_id
+    // File is NEVER stored locally; streamed directly to Meta's API.
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function uploadMedia(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|max:20480|mimes:jpeg,jpg,png,pdf',
+        ]);
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            return response()->json(['error' => 'Platform WhatsApp credentials not configured.'], 422);
+        }
+
+        $file     = $request->file('file');
+        $mime     = $file->getMimeType();
+        $origName = $file->getClientOriginalName();
+
+        try {
+            $response = Http::timeout(30)
+                ->withToken($platform->saas_token)
+                ->attach('file', file_get_contents($file->getRealPath()), $origName, ['Content-Type' => $mime])
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/media", [
+                    'messaging_product' => 'whatsapp',
+                    'type'              => $mime,
+                ]);
+
+            $body = $response->json();
+
+            if ($response->successful() && isset($body['id'])) {
+                return response()->json([
+                    'media_id' => $body['id'],
+                    'mime'     => $mime,
+                    'name'     => $origName,
+                    'type'     => str_starts_with($mime, 'image/') ? 'image' : 'document',
+                ]);
+            }
+
+            $err = $body['error']['message'] ?? 'Unknown Meta API error';
+            Log::warning('WA media upload failed', ['body' => $body]);
+            return response()->json(['error' => 'Meta upload error: ' . $err], 422);
+        } catch (\Throwable $e) {
+            Log::error('WA media upload exception: ' . $e->getMessage());
+            return response()->json(['error' => 'Upload failed: ' . $e->getMessage()], 500);
+        }
+    }
 }

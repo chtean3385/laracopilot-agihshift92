@@ -367,6 +367,7 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
 
     // WA Inbox (Task #54)
     Route::get('/wa-inbox', fn() => view('platform.wa-inbox.index'))->name('platform.wa-inbox');
+    Route::post('/wa/upload-media', [\App\Http\Controllers\Platform\WhatsAppController::class, 'uploadMedia'])->name('platform.wa.upload-media');
 
     // Push Notifications (Platform Admin)
     Route::get('/notifications/settings',  [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settings']    )->name('platform.notifications.settings');
