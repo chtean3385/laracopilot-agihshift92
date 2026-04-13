@@ -306,7 +306,7 @@ function renderRooms(types, nights, showPrices) {
             ${photoHtml}
             <div class="room-row">
                 <div style="flex:1;min-width:0;">
-                    <div class="room-name">${t.type}</div>
+                    <div class="room-name">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</div>
                     <div class="room-sub">Up to ${t.capacity} guests · ${nights} night${nights>1?'s':''}</div>
                     ${descHtml}
                     ${amenitiesHtml}

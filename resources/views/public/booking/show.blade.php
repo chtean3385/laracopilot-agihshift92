@@ -350,7 +350,7 @@ function renderRooms(types) {
         card.dataset.type = t.type;
         card.innerHTML = `
             <input type="radio" name="_room_type_radio" value="${t.type}">
-            <div class="room-name">${t.type}</div>
+            <div class="room-name">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</div>
             <div class="room-price">₹${t.price_per_night.toLocaleString('en-IN')}<small>/night</small></div>
             <div class="room-meta">Capacity: ${t.capacity} guests</div>
             <div class="room-total">Total for ${t.nights} night${t.nights>1?'s':''}: ₹${t.total_price.toLocaleString('en-IN')}</div>
