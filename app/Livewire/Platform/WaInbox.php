@@ -88,6 +88,28 @@ class WaInbox extends Component
         $this->editingContact = false;
     }
 
+    // ── Subscription toggle ───────────────────────────────────────────────
+
+    public function toggleSubscription(): void
+    {
+        if (empty($this->selectedPhone)) return;
+
+        $contact = DB::table('wa_contacts')->where('phone', $this->selectedPhone)->first();
+        if (!$contact) return;
+
+        $newState = !($contact->subscribed ?? true);
+
+        DB::table('wa_contacts')->where('phone', $this->selectedPhone)->update([
+            'subscribed'      => $newState,
+            'unsubscribed_at' => $newState ? null : now(),
+            'updated_at'      => now(),
+        ]);
+
+        $this->sendResult = $newState
+            ? 'ok:Contact re-subscribed. Bot messages will resume.'
+            : 'ok:Contact unsubscribed. Bot messages are paused for this contact.';
+    }
+
     // ── Text reply ────────────────────────────────────────────────────────
 
     public function sendReply(): void
@@ -275,25 +297,26 @@ class WaInbox extends Component
             }
 
             return (object) [
-                'phone'       => $c->phone,
-                'hotel_id'    => $c->hotel_id,
-                'hotel_name'  => $hotelName,
-                'name'        => $c->display_name ?? ($hotelName ?? $c->phone),
-                'type'        => $c->contact_type,
-                'type_label'  => $typeLabel,
-                'type_color'  => $typeColor,
-                'type_bg'     => $typeBg,
-                'preview'     => $c->last_message_preview ?? 'No messages yet',
-                'last_at'     => $c->last_message_at,
-                'time_ago'    => $c->last_message_at
+                'phone'        => $c->phone,
+                'hotel_id'     => $c->hotel_id,
+                'hotel_name'   => $hotelName,
+                'name'         => $c->display_name ?? ($hotelName ?? $c->phone),
+                'type'         => $c->contact_type,
+                'type_label'   => $typeLabel,
+                'type_color'   => $typeColor,
+                'type_bg'      => $typeBg,
+                'preview'      => $c->last_message_preview ?? 'No messages yet',
+                'last_at'      => $c->last_message_at,
+                'time_ago'     => $c->last_message_at
                     ? Carbon::parse($c->last_message_at)->diffForHumans()
                     : 'No messages',
-                'unread'      => (int)($c->unread_count ?? 0),
-                'consented'   => !empty($c->consented_at),
-                'lead_status' => $c->lead_status ?? null,
-                'bot_state'   => $c->bot_state ?? null,
-                'bot_service' => $c->bot_service_interest ?? null,
-                'bot_budget'  => $c->bot_budget ?? null,
+                'unread'       => (int)($c->unread_count ?? 0),
+                'consented'    => !empty($c->consented_at),
+                'subscribed'   => (bool)($c->subscribed ?? true),
+                'lead_status'  => $c->lead_status ?? null,
+                'bot_state'    => $c->bot_state ?? null,
+                'bot_service'  => $c->bot_service_interest ?? null,
+                'bot_budget'   => $c->bot_budget ?? null,
             ];
         });
 

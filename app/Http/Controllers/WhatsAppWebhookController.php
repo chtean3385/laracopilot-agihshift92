@@ -14,6 +14,8 @@ class WhatsAppWebhookController extends Controller
 {
     // ── Bot question definitions ──────────────────────────────────────────
 
+    private const WEBSITE_LINK = 'https://dreams-technology.com/';
+
     private const BOT_GREETING = "👋 Hello! Welcome to *Dreams Technology*.\n\nWe help businesses grow with cutting-edge technology solutions.\n\nMay I know your *good name*, please?";
 
     private const BOT_SERVICE_Q = "Great to meet you, *{name}*! 😊\n\nHow can we help you today?\n\nPlease reply with the number:\n1️⃣ Website Design\n2️⃣ Mobile Application\n3️⃣ ERP / CRM\n4️⃣ Digital Marketing\n5️⃣ Others";
@@ -199,8 +201,23 @@ class WhatsAppWebhookController extends Controller
 
             if ($phone) {
                 $this->upsertWaContact($phone, $preview, $text);
-                // Run bot flow after contact is upserted
-                if ($platform) {
+
+                // Handle STOP / START opt-out before bot flow
+                if ($platform && $text !== null) {
+                    $cmd = strtoupper(trim(preg_replace('/[^a-zA-Z]/', '', $text)));
+                    if ($cmd === 'STOP') {
+                        $this->handleOptOut($phone, $platform);
+                        return; // Do NOT run bot after opt-out
+                    }
+                    if ($cmd === 'START' || $cmd === 'SUBSCRIBE') {
+                        $this->handleOptIn($phone, $platform);
+                        return;
+                    }
+                }
+
+                // Skip bot messages for unsubscribed contacts
+                $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
+                if ($platform && ($contact?->subscribed ?? true)) {
                     $this->runBotFlow($phone, $text, $platform);
                 }
             }
@@ -329,12 +346,9 @@ class WhatsAppWebhookController extends Controller
 
                 $displayName = $contact->display_name ?? 'there';
                 $service     = $contact->bot_service_interest ?? 'your project';
+                $link        = self::WEBSITE_LINK;
 
-                if ($leadStatus === 'hot') {
-                    $confirmation = "🎉 Thank you, *{$displayName}*!\n\nOur team will contact you very soon to discuss your *{$service}* project.\n\n🔥 Based on your responses, you've been flagged as a *priority lead* — expect a call from us shortly!\n\nHave a great day! 😊";
-                } else {
-                    $confirmation = "🎉 Thank you, *{$displayName}*!\n\nWe've received your details for *{$service}*. Our team will reach out to discuss your requirements.\n\nHave a great day! 😊";
-                }
+                $confirmation = "🎉 Thank you, *{$displayName}*!\n\nOur team will be in touch with you shortly to discuss your *{$service}* project.\n\nMeanwhile, you can explore our services here:\n{$link}\n\nHave a great day! 😊\n\n_Reply *STOP* anytime to unsubscribe from our messages._";
 
                 $this->botSend($platform, $phone, $confirmation);
                 DB::table('wa_contacts')->where('phone', $phone)->update([
@@ -349,6 +363,34 @@ class WhatsAppWebhookController extends Controller
         } catch (\Throwable $e) {
             Log::error('Bot flow error for ' . $phone . ': ' . $e->getMessage());
         }
+    }
+
+    // ── Opt-out / Opt-in handlers ─────────────────────────────────────────
+
+    protected function handleOptOut(string $phone, object $platform): void
+    {
+        DB::table('wa_contacts')->where('phone', $phone)->update([
+            'subscribed'      => false,
+            'unsubscribed_at' => now(),
+            'updated_at'      => now(),
+        ]);
+
+        $msg = "You have been *unsubscribed* from Dreams Technology messages. 🚫\n\nWe will no longer send you proactive messages.\n\n_Reply *START* anytime to re-subscribe._";
+        $this->botSend($platform, $phone, $msg);
+        Log::info("WA opt-out: {$phone} has unsubscribed.");
+    }
+
+    protected function handleOptIn(string $phone, object $platform): void
+    {
+        DB::table('wa_contacts')->where('phone', $phone)->update([
+            'subscribed'      => true,
+            'unsubscribed_at' => null,
+            'updated_at'      => now(),
+        ]);
+
+        $msg = "You've been *re-subscribed* to Dreams Technology messages. ✅\n\nWelcome back! Reply *STOP* anytime to unsubscribe again.";
+        $this->botSend($platform, $phone, $msg);
+        Log::info("WA opt-in: {$phone} has re-subscribed.");
     }
 
     // ── Bot send helper ───────────────────────────────────────────────────

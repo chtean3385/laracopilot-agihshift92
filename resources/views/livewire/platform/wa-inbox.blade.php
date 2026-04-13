@@ -44,7 +44,8 @@
                         </div>
                         <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
                             <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:{{ $convo->type_bg }};color:{{ $convo->type_color }};flex-shrink:0;letter-spacing:.3px;">{{ strtoupper($convo->type_label) }}</span>
-                            @if($isHot)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fee2e2;color:#dc2626;flex-shrink:0;">HOT LEAD</span>@endif
+                            @if($isHot)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fee2e2;color:#dc2626;flex-shrink:0;">HOT</span>@endif
+                            @if(!$convo->subscribed)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f1f5f9;color:#94a3b8;flex-shrink:0;">STOPPED</span>@endif
                             <span style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">{{ $convo->preview }}</span>
                             @if($convo->unread > 0)
                             <span style="background:#25d366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;flex-shrink:0;min-width:18px;text-align:center;">{{ $convo->unread }}</span>
@@ -121,6 +122,21 @@
                     <span style="width:6px;height:6px;background:#15803d;border-radius:50%;"></span> 24h open
                 </span>
                 @endif
+                {{-- Subscription toggle --}}
+                @if($selectedContact->subscribed)
+                <button wire:click="toggleSubscription"
+                        style="height:28px;padding:0 10px;background:#dcfce7;border:1px solid #bbf7d0;border-radius:8px;cursor:pointer;color:#15803d;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;"
+                        title="Click to unsubscribe this contact from bot messages">
+                    <i class="fas fa-bell" style="font-size:10px;"></i> Subscribed
+                </button>
+                @else
+                <button wire:click="toggleSubscription"
+                        style="height:28px;padding:0 10px;background:#fee2e2;border:1px solid #fecaca;border-radius:8px;cursor:pointer;color:#dc2626;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;"
+                        title="Click to re-subscribe this contact to bot messages">
+                    <i class="fas fa-bell-slash" style="font-size:10px;"></i> Stopped
+                </button>
+                @endif
+
                 {{-- Edit button --}}
                 <button wire:click="openEditContact"
                         style="height:28px;padding:0 10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;color:#475569;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;"
@@ -203,6 +219,13 @@
             @php $isOk = str_starts_with($sendResult, 'ok:'); $resTxt = substr($sendResult, strpos($sendResult, ':') + 1); @endphp
             <div style="padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:8px;background:{{ $isOk ? '#dcfce7' : '#fee2e2' }};color:{{ $isOk ? '#15803d' : '#b91c1c' }};border:1px solid {{ $isOk ? '#bbf7d0' : '#fecaca' }};">
                 <i class="fas fa-{{ $isOk ? 'check-circle' : 'exclamation-circle' }}" style="margin-right:5px;"></i>{{ $resTxt }}
+            </div>
+            @endif
+
+            @if(!$selectedContact->subscribed)
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:11px;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-bell-slash"></i>
+                <span>This contact has <strong>unsubscribed</strong> (sent STOP). Auto-bot is paused. You can still send manual messages. Click <strong>Stopped</strong> above to re-subscribe.</span>
             </div>
             @endif
 
