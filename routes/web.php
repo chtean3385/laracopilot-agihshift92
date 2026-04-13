@@ -362,6 +362,7 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/hotels/{id}/send-quick-wa',      [\App\Http\Controllers\Platform\HotelController::class, 'sendQuickWA'])->name('platform.hotels.send-quick-wa');
     Route::post('/hotels/{id}/send-quick-push',    [\App\Http\Controllers\Platform\HotelController::class, 'sendQuickPushHotel'])->name('platform.hotels.send-quick-push');
     Route::post('/hotels/send-wa-all',             [\App\Http\Controllers\Platform\HotelController::class, 'sendWaAll'])->name('platform.hotels.send-wa-all');
+    Route::post('/hotels/{id}/module-toggle',      [\App\Http\Controllers\Platform\HotelController::class, 'moduleToggle'])->name('platform.hotels.module-toggle');
     Route::get('/wa-templates',                    [\App\Http\Controllers\Platform\HotelController::class, 'fetchApprovedWaTemplates'])->name('platform.wa-templates');
     Route::post('/users/{id}/toggle-wa-consent',   [\App\Http\Controllers\Platform\UserController::class, 'toggleWaConsent'])->name('platform.users.toggle-wa-consent');
 

@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-bold text-gray-900">Booking Widget</h1>
             <p class="text-sm text-gray-500 mt-0.5">Embed a booking form on your website so guests can book directly.</p>
         </div>
-        <a href="{{ route('admin.modules') }}"
+        <a href="{{ route('modules.index') }}"
            class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
             ← Back to Modules
         </a>

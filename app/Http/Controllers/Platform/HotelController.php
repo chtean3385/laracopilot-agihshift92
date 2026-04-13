@@ -1331,4 +1331,36 @@ class HotelController extends Controller
             'message' => "✅ Push sent to {$result['success']} device(s)" . ($result['failure'] > 0 ? " (failed: {$result['failure']})" : ''),
         ]);
     }
+
+    // ── Platform Admin: toggle a module on/off for a specific hotel ────────────
+    public function moduleToggle(\Illuminate\Http\Request $request, int $id): \Illuminate\Http\JsonResponse
+    {
+        $request->validate(['module' => 'required|string']);
+
+        $hotel = \App\Models\Hotel::findOrFail($id);
+        $module = $request->input('module');
+
+        $row = DB::table('modules')
+            ->where('hotel_id', $hotel->id)
+            ->where('module_name', $module)
+            ->first();
+
+        if (!$row) {
+            return response()->json(['success' => false, 'message' => "Module '{$module}' not found for hotel."], 404);
+        }
+
+        $newStatus = !$row->is_active;
+
+        DB::table('modules')
+            ->where('hotel_id', $hotel->id)
+            ->where('module_name', $module)
+            ->update(['is_active' => $newStatus, 'updated_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'module'  => $module,
+            'active'  => $newStatus,
+            'message' => "Module '{$module}' " . ($newStatus ? 'enabled' : 'disabled') . " for {$hotel->name}.",
+        ]);
+    }
 }

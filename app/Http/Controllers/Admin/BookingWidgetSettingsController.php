@@ -77,10 +77,15 @@ class BookingWidgetSettingsController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
 
-        $booking = Booking::findOrFail($id);
-        if ($booking->hotel_id !== session('crm_hotel_id')) abort(403);
+        $hotelId = session('crm_hotel_id');
 
-        $request->validate(['room_id' => 'required|exists:rooms,id']);
+        $booking = Booking::findOrFail($id);
+        if ($booking->hotel_id !== $hotelId) abort(403);
+
+        // Hotel-scoped room validation — prevents cross-tenant IDOR
+        $request->validate([
+            'room_id' => "required|integer|exists:rooms,id,hotel_id,{$hotelId}",
+        ]);
 
         $booking->update([
             'room_id' => $request->room_id,
@@ -91,7 +96,12 @@ class BookingWidgetSettingsController extends Controller
         DB::table('ota_booking_conflicts')
             ->where('booking_id', $id)
             ->where('resolved', false)
-            ->update(['resolved' => true, 'resolved_by' => session('crm_user_id'), 'resolved_at' => now()]);
+            ->update([
+                'resolved'    => true,
+                'resolved_by' => session('crm_user_id'),
+                'resolved_at' => now(),
+                'updated_at'  => now(),
+            ]);
 
         return back()->with('success', 'Booking confirmed and room assigned.');
     }
