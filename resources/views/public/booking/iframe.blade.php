@@ -258,8 +258,9 @@ function fetchRooms(ci, co) {
     .then(r => r.json())
     .then(data => {
         document.getElementById('roomsLoading').style.display = 'none';
-        const showPrices = data.show_prices !== false;
-        renderRooms(data.types || [], data.nights, showPrices);
+        const showPrices  = data.show_prices !== false;
+        const showPhotos  = data.show_room_photos === true;
+        renderRooms(data.types || [], data.nights, showPrices, showPhotos);
         document.getElementById('roomsList').style.display = 'block';
     })
     .catch(() => {
@@ -268,7 +269,7 @@ function fetchRooms(ci, co) {
     });
 }
 
-function renderRooms(types, nights, showPrices) {
+function renderRooms(types, nights, showPrices, showPhotos) {
     const list = document.getElementById('roomsList');
     list.innerHTML = '';
 
@@ -277,11 +278,12 @@ function renderRooms(types, nights, showPrices) {
         return;
     }
 
-    const showPhotos = data.show_room_photos ?? false;
+    showPhotos = !!showPhotos;
 
     types.forEach(t => {
         const card = document.createElement('div');
-        card.className = 'room-card' + (!t.available ? ' unavailable' : '');
+        card.className   = 'room-card' + (!t.available ? ' unavailable' : '');
+        card.dataset.type = t.type;
 
         const priceHtml = showPrices
             ? `<div class="room-price">₹${t.price_per_night.toLocaleString('en-IN')}<small>/night</small></div>`
@@ -319,14 +321,17 @@ function renderRooms(types, nights, showPrices) {
                 </div>
             </div>
         `;
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            document.getElementById('selectedRoomType').value = t.type;
-            document.getElementById('btnSubmit').disabled = false;
-            hideErr();
-        });
         list.appendChild(card);
+    });
+    // Delegated listener — fires regardless of which child element is clicked
+    list.addEventListener('click', function(e) {
+        const card = e.target.closest('.room-card');
+        if (!card || card.classList.contains('unavailable')) return;
+        document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        document.getElementById('selectedRoomType').value = card.dataset.type;
+        document.getElementById('btnSubmit').disabled = false;
+        hideErr();
     });
 }
 </script>

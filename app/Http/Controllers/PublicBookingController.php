@@ -176,7 +176,6 @@ JS;
         $rooms = Room::withoutGlobalScopes()
             ->where('hotel_id', $hotel->id)
             ->where('status', '!=', 'maintenance')
-            ->where('pricing_type', 'per_night')
             ->get();
 
         // Only confirmed/checked_in bookings block availability (pending bookings don't hold rooms)
@@ -206,20 +205,25 @@ JS;
         }
 
         $result = [];
-        foreach ($types as $typeName => $data) {
+        foreach ($types as $typeName => $typeData) {
             // Always return all types (available + sold-out) so guest can request even if dates are full
-            $r = $data['room'];
+            $r = $typeData['room'];
+            // Use best available price regardless of pricing_type
+            $price = (float) $r->price_per_night;
+            if ($price <= 0 && !empty($r->hourly_rate)) {
+                $price = (float) $r->hourly_rate;
+            }
             $result[] = [
                 'type'            => $typeName,
-                'price_per_night' => (float) $r->price_per_night,
-                'total_price'     => (float) $r->price_per_night * $nights,
+                'price_per_night' => $price,
+                'total_price'     => $price * $nights,
                 'nights'          => $nights,
                 'capacity'        => (int) $r->capacity,
                 'description'     => $r->description ?? '',
                 'amenities'       => $r->amenities ?? '',
                 'photo_url'       => $r->photo_url ?? null,
-                'available_count' => $data['available'],
-                'available'       => $data['available'] > 0,
+                'available_count' => $typeData['available'],
+                'available'       => $typeData['available'] > 0,
             ];
         }
 

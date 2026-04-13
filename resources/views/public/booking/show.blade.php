@@ -98,7 +98,7 @@
         }
         .room-card:hover { border-color: {{ $widgetSettings->primary_color }}; box-shadow: 0 4px 16px {{ $widgetSettings->primary_color }}22; }
         .room-card.selected { border-color: {{ $widgetSettings->primary_color }}; background: {{ $widgetSettings->primary_color }}0a; }
-        .room-card input[type=radio] { position: absolute; opacity: 0; }
+        .room-card input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
         .room-name { font-weight: 700; font-size: .95rem; color: #111827; }
         .room-price { font-size: 1.3rem; font-weight: 800; color: {{ $widgetSettings->primary_color }}; margin: 6px 0; }
         .room-price small { font-size: .75rem; font-weight: 500; color: #9ca3af; }
@@ -349,7 +349,6 @@ function renderRooms(types) {
         card.className = 'room-card';
         card.dataset.type = t.type;
         card.innerHTML = `
-            <input type="radio" name="_room_type_radio" value="${t.type}">
             <div class="room-name">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</div>
             <div class="room-price">₹${t.price_per_night.toLocaleString('en-IN')}<small>/night</small></div>
             <div class="room-meta">Capacity: ${t.capacity} guests</div>
@@ -357,8 +356,13 @@ function renderRooms(types) {
             ${t.available_count > 1 ? `<span class="badge-avail">${t.available_count} left</span>` : ''}
             <div class="check-icon"><svg viewBox="0 0 12 12"><polyline points="1,6 5,10 11,2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
         `;
-        card.addEventListener('click', () => selectRoom(card, t.type));
         grid.appendChild(card);
+    });
+    // Delegated listener — always fires regardless of inner element clicked
+    grid.addEventListener('click', function(e) {
+        const card = e.target.closest('.room-card');
+        if (!card) return;
+        selectRoom(card, card.dataset.type);
     });
 }
 
