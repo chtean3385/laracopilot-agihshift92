@@ -91,6 +91,28 @@
         <p class="subtitle">We've received your booking request. You'll hear from us soon.</p>
     @endif
 
+    {{-- Hotel Info --}}
+    <div class="detail-box" style="margin-bottom:12px;background:#f8fafc;border-color:#e2e8f0;">
+        <div style="font-size:.78rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">{{ $hotelSettings->resort_name ?? $hotel->name }}</div>
+        @if($hotelSettings->address ?? $hotel->address)
+        <div style="font-size:.8rem;color:#4b5563;margin-bottom:4px;">
+            <span style="color:#9ca3af;">📍</span> {{ $hotelSettings->address ?? $hotel->address }}
+        </div>
+        @endif
+        @if($hotelSettings->phone ?? $hotel->phone)
+        <div style="font-size:.8rem;color:#4b5563;margin-bottom:4px;">
+            <span style="color:#9ca3af;">📞</span>
+            <a href="tel:{{ $hotelSettings->phone ?? $hotel->phone }}" style="color:#4b5563;text-decoration:none;">{{ $hotelSettings->phone ?? $hotel->phone }}</a>
+        </div>
+        @endif
+        @if($hotelSettings->email ?? $hotel->email)
+        <div style="font-size:.8rem;color:#4b5563;">
+            <span style="color:#9ca3af;">✉️</span>
+            <a href="mailto:{{ $hotelSettings->email ?? $hotel->email }}" style="color:#4b5563;text-decoration:none;">{{ $hotelSettings->email ?? $hotel->email }}</a>
+        </div>
+        @endif
+    </div>
+
     {{-- Booking Details --}}
     <div class="detail-box">
         <div class="detail-row">
@@ -102,12 +124,32 @@
             <span class="detail-value">{{ $booking->customer->name ?? 'Guest' }}</span>
         </div>
         <div class="detail-row">
+            <span class="detail-label">Room Type</span>
+            <span class="detail-value">
+                @if($booking->room)
+                    {{ ucfirst($booking->room->type) }}
+                @else
+                    <span style="color:#d97706;">As Requested (Pending Assignment)</span>
+                @endif
+            </span>
+        </div>
+        <div class="detail-row">
             <span class="detail-label">Check-in</span>
-            <span class="detail-value">{{ $booking->check_in_date->format('D, d M Y') }}</span>
+            <span class="detail-value">
+                {{ $booking->check_in_date->format('D, d M Y') }}
+                @if($hotelSettings->check_in_time ?? null)
+                <span style="color:#9ca3af;font-size:.78rem;">after {{ $hotelSettings->check_in_time }}</span>
+                @endif
+            </span>
         </div>
         <div class="detail-row">
             <span class="detail-label">Check-out</span>
-            <span class="detail-value">{{ $booking->check_out_date->format('D, d M Y') }}</span>
+            <span class="detail-value">
+                {{ $booking->check_out_date->format('D, d M Y') }}
+                @if($hotelSettings->check_out_time ?? null)
+                <span style="color:#9ca3af;font-size:.78rem;">before {{ $hotelSettings->check_out_time }}</span>
+                @endif
+            </span>
         </div>
         <div class="detail-row">
             <span class="detail-label">Nights</span>

@@ -390,7 +390,7 @@ JS;
         $booking = Booking::withoutGlobalScopes()
             ->where('hotel_id', $hotel->id)
             ->where('booking_number', $ref)
-            ->with('customer')
+            ->with(['customer', 'room'])
             ->firstOrFail();
 
         $ws            = BookingWidgetSetting::where('hotel_id', $hotel->id)->first();

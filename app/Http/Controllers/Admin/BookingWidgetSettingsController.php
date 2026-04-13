@@ -16,7 +16,10 @@ class BookingWidgetSettingsController extends Controller
     public function index()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        if (!Module::isEnabled('booking-widget')) abort(404);
+        if (!Module::isEnabled('booking-widget')) {
+            return redirect()->route('modules.index')
+                ->with('info', 'Enable the Booking Widget module first, then click Configure.');
+        }
 
         $hotelId = session('crm_hotel_id');
         $hotel   = Hotel::findOrFail($hotelId);
@@ -38,7 +41,7 @@ class BookingWidgetSettingsController extends Controller
 
         $data = $request->validate([
             'widget_title'             => 'required|string|max:100',
-            'primary_color'            => 'required|string|max:10',
+            'primary_color'            => ['required', 'string', 'max:7', 'regex:/^#[0-9a-fA-F]{3,6}$/'],
             'button_text'              => 'required|string|max:50',
             'min_advance_hours'        => 'required|integer|min:0|max:168',
             'max_advance_days'         => 'required|integer|min:1|max:730',
