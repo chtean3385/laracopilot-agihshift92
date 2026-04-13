@@ -214,7 +214,7 @@
             @endif
 
             {{-- Attachment preview (managed by JS) --}}
-            <div id="wa-attach-preview" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div id="wa-attach-preview" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;margin-bottom:8px;align-items:center;gap:10px;flex-wrap:wrap;">
                 <div id="wa-attach-thumb" style="flex-shrink:0;"></div>
                 <div style="flex:1;min-width:0;">
                     <div id="wa-attach-name" style="font-size:12px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>

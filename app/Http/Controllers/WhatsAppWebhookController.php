@@ -303,22 +303,29 @@ class WhatsAppWebhookController extends Controller
             }
 
             if ($state === 'awaiting_budget') {
-                $choice = self::BOT_BUDGET_OPTIONS[$input] ?? null;
-                if (!$choice) {
+                $resolvedKey = null;
+                $choice      = null;
+
+                if (isset(self::BOT_BUDGET_OPTIONS[$input])) {
+                    $resolvedKey = $input;
+                    $choice      = self::BOT_BUDGET_OPTIONS[$input];
+                } else {
                     foreach (self::BOT_BUDGET_OPTIONS as $k => $v) {
                         if (stripos($input, $v) !== false || stripos($input, (string)$k) !== false) {
-                            $choice = $v;
+                            $resolvedKey = $k;
+                            $choice      = $v;
                             break;
                         }
                     }
                 }
+
                 if (!$choice) {
                     $this->botSend($platform, $phone, "Please reply with a number *1 to 4* for your budget range. 😊");
                     return;
                 }
 
-                // Hot lead if budget option 3 or 4 (₹1 lac+)
-                $leadStatus = in_array($input, ['3', '4']) ? 'hot' : 'warm';
+                // Hot lead if resolved key is 3 or 4 (₹1 lac+) — derived from resolved option, not raw input
+                $leadStatus = in_array($resolvedKey, ['3', '4']) ? 'hot' : 'warm';
 
                 $displayName = $contact->display_name ?? 'there';
                 $service     = $contact->bot_service_interest ?? 'your project';
