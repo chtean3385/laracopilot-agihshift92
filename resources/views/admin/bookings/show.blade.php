@@ -215,6 +215,36 @@
     </div>
 </div>
 
+{{-- ── Website Booking UTR / Payment References ─────────────────────────── --}}
+@if($booking->source === 'website' && $booking->paymentReferences && $booking->paymentReferences->count() > 0)
+<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b border-indigo-100 flex items-center gap-3" style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
+            <i class="fas fa-receipt text-white text-sm"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-gray-800 text-sm">Payment References (UTR / Transaction ID)</h3>
+            <p class="text-xs text-gray-500">Submitted by guest via website booking</p>
+        </div>
+    </div>
+    <div class="divide-y divide-gray-50">
+        @foreach($booking->paymentReferences as $ref)
+        <div class="px-6 py-3 flex items-center justify-between">
+            <div>
+                <div class="text-sm font-semibold text-gray-800 font-mono">{{ $ref->reference_number }}</div>
+                <div class="text-xs text-gray-400">{{ $ref->payment_method ?? 'UPI/Bank Transfer' }} · Submitted {{ $ref->created_at->format('d M Y h:i A') }}</div>
+                @if($ref->note)<div class="text-xs text-gray-500 mt-0.5">{{ $ref->note }}</div>@endif
+            </div>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                {{ $ref->verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                {{ $ref->verified ? '✓ Verified' : 'Pending Verification' }}
+            </span>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 {{-- ── Extra Billing Module ─────────────────────────────────────────────── --}}
 @if(\App\Models\Module::isEnabled('extra-billing'))
 <div id="extra-charges" class="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">

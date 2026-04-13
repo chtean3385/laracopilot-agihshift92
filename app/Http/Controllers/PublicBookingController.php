@@ -369,6 +369,7 @@ JS;
         }
 
         $this->notifyAdmin($hotel, $customer, $booking, $roomType, $hasConflict);
+        $this->notifyGuest($hotel, $customer, $booking, $roomType, $hasConflict);
 
         return redirect()->route('public.booking.confirm', [
             'slug' => $slug,
@@ -468,6 +469,80 @@ JS;
         return back()->with('payment_submitted', true);
     }
 
+    // ── Guest WA confirmation notification ────────────────────────────────────
+
+    private function notifyGuest(Hotel $hotel, Customer $customer, Booking $booking, string $roomType, bool $isConflict): void
+    {
+        try {
+            if (!$customer->phone) return;
+
+            $platform = PlatformWhatsAppSetting::instance();
+            if (!$platform || !$platform->is_saas_active || !$platform->saas_token || !$platform->saas_phone_number_id) {
+                return;
+            }
+
+            $guestPhone = preg_replace('/[^0-9]/', '', $customer->phone);
+            if (!$guestPhone) return;
+            if (!str_starts_with($guestPhone, '91') && strlen($guestPhone) === 10) {
+                $guestPhone = '91' . $guestPhone;
+            }
+
+            $hotelSettings = Setting::where('hotel_id', $hotel->id)->first();
+            $hotelName     = $hotelSettings->resort_name ?? $hotel->name;
+
+            $templateName = $isConflict ? 'website_booking_guest_conflict' : 'website_booking_guest_confirm';
+            $tmpl = DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->where('template_name', $templateName)
+                ->where('approval_status', 'approved')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$tmpl) {
+                Log::info("Website booking guest WA skipped: template '{$templateName}' not approved yet.", [
+                    'hotel_id' => $hotel->id, 'booking_number' => $booking->booking_number,
+                ]);
+                return;
+            }
+
+            $components = $isConflict ? [
+                ['type' => 'body', 'parameters' => [
+                    ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
+                    ['type' => 'text', 'text' => $hotelName],
+                    ['type' => 'text', 'text' => $booking->booking_number],
+                    ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
+                    ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
+                ]],
+            ] : [
+                ['type' => 'body', 'parameters' => [
+                    ['type' => 'text', 'text' => $customer->name ?? 'Guest'],
+                    ['type' => 'text', 'text' => $hotelName],
+                    ['type' => 'text', 'text' => $booking->booking_number],
+                    ['type' => 'text', 'text' => $roomType],
+                    ['type' => 'text', 'text' => $booking->check_in_date->format('d M Y')],
+                    ['type' => 'text', 'text' => $booking->check_out_date->format('d M Y')],
+                ]],
+            ];
+
+            \Illuminate\Support\Facades\Http::timeout(10)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $guestPhone,
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'       => $tmpl->meta_template_name ?? $templateName,
+                        'language'   => ['code' => 'en_US'],
+                        'components' => $components,
+                    ],
+                ]);
+        } catch (\Throwable $e) {
+            Log::warning('Website booking guest WA notification failed: ' . $e->getMessage(), [
+                'hotel_id' => $hotel->id,
+            ]);
+        }
+    }
+
     // ── Admin WA notification ─────────────────────────────────────────────────
 
     private function notifyAdmin(Hotel $hotel, Customer $customer, Booking $booking, string $roomType, bool $isConflict): void
@@ -478,7 +553,20 @@ JS;
                 return;
             }
 
-            $hotelPhone = preg_replace('/[^0-9]/', '', $hotel->phone ?? '');
+            // Resolve admin phone from hotel_users (is_hotel_admin=1) → fallback to hotels.phone
+            $adminUser = DB::table('hotel_users')
+                ->join('users', 'users.id', '=', 'hotel_users.user_id')
+                ->where('hotel_users.hotel_id', $hotel->id)
+                ->where('hotel_users.is_hotel_admin', 1)
+                ->whereNotNull('users.phone')
+                ->where('users.phone', '!=', '')
+                ->select('users.phone')
+                ->first();
+
+            $hotelPhone = $adminUser
+                ? preg_replace('/[^0-9]/', '', $adminUser->phone)
+                : preg_replace('/[^0-9]/', '', $hotel->phone ?? '');
+
             if (!$hotelPhone) return;
             if (!str_starts_with($hotelPhone, '91') && strlen($hotelPhone) === 10) {
                 $hotelPhone = '91' . $hotelPhone;
