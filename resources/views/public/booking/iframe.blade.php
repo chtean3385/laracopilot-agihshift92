@@ -37,16 +37,42 @@
             outline: none; border-color: {{ $widgetSettings->primary_color }};
             box-shadow: 0 0 0 3px {{ $widgetSettings->primary_color }}22;
         }
-        .phone-row { display: grid; grid-template-columns: 170px 1fr; gap: 8px; align-items: start; }
-        @media (max-width: 520px) { .phone-row { grid-template-columns: 1fr; } }
-        .phone-row select, .phone-row input { margin-bottom: 10px; }
-        .phone-search {
-            width: 100%;
-            margin-bottom: 8px;
-            padding: 8px 10px;
-            border: 1px solid #e5e7eb;
+        .phone-row {
+            display: flex;
+            align-items: stretch;
+            border: 1.5px solid #e5e7eb;
             border-radius: 8px;
-            font-size: .82rem;
+            overflow: hidden;
+            background: #fff;
+            margin-bottom: 10px;
+        }
+        .phone-row:focus-within {
+            border-color: {{ $widgetSettings->primary_color }};
+            box-shadow: 0 0 0 3px {{ $widgetSettings->primary_color }}22;
+        }
+        .phone-row select {
+            width: 158px;
+            border: 0;
+            border-right: 1px solid #e5e7eb;
+            border-radius: 0;
+            margin: 0;
+            background: #f9fafb;
+            flex-shrink: 0;
+        }
+        .phone-row input {
+            border: 0;
+            border-radius: 0;
+            margin: 0;
+            flex: 1;
+            min-width: 0;
+        }
+        @media (max-width: 520px) {
+            .phone-row { flex-direction: column; }
+            .phone-row select {
+                width: 100%;
+                border-right: 0;
+                border-bottom: 1px solid #e5e7eb;
+            }
         }
 
         .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
