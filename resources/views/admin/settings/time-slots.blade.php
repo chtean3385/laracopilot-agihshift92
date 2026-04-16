@@ -150,6 +150,17 @@
                 <input type="text" id="slotDesc" class="form-input" placeholder="e.g. Includes pool access">
             </div>
             <div id="slotError" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"></div>
+            <div id="slotWarning" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+                <div class="flex items-start gap-2">
+                    <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5 flex-shrink-0"></i>
+                    <div class="flex-1">
+                        <div class="font-semibold text-amber-800 mb-1">Slot saved, but time range overlaps with:</div>
+                        <ul id="slotWarningList" class="list-disc list-inside text-amber-700 space-y-0.5"></ul>
+                        <p class="text-amber-600 text-xs mt-2">Overlapping slots are allowed (e.g. 24-hour packages), but guests cannot be double-booked for the same room. Staff will see conflicts when creating bookings.</p>
+                        <button type="button" onclick="closeSlotModal(); window.location.reload();" class="mt-3 px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600">OK, understood</button>
+                    </div>
+                </div>
+            </div>
             <div class="flex gap-3 pt-2">
                 <button type="button" onclick="closeSlotModal()" class="btn-secondary flex-1">Cancel</button>
                 <button type="submit" id="slotSubmitBtn" class="btn-primary flex-1 justify-center">
@@ -242,7 +253,20 @@ document.getElementById('slotForm').addEventListener('submit', async function(e)
             body: JSON.stringify(body),
         });
         const data = await res.json();
-        if (data.success) { closeSlotModal(); window.location.reload(); }
+        if (data.success) {
+            if (data.warnings && data.warnings.length > 0) {
+                // Show overlap warning inside modal before reloading
+                const warnEl = document.getElementById('slotWarning');
+                const warnList = document.getElementById('slotWarningList');
+                warnList.innerHTML = data.warnings.map(w => `<li>${w}</li>`).join('');
+                warnEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Saved — Review Warning Above';
+            } else {
+                closeSlotModal();
+                window.location.reload();
+            }
+        }
         else { errEl.textContent = data.message || 'Failed to save.'; errEl.classList.remove('hidden'); }
     } catch (err) {
         errEl.textContent = 'Network error. Please try again.'; errEl.classList.remove('hidden');

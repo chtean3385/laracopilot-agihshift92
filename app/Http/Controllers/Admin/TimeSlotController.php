@@ -54,8 +54,10 @@ class TimeSlotController extends Controller
 
         ActivityLogger::log('Created', 'TimeSlot', 'Created time slot: ' . $slot->name);
 
+        $warnings = $this->checkSlotDefinitionOverlaps($slot);
+
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'slot' => $slot]);
+            return response()->json(['success' => true, 'slot' => $slot, 'warnings' => $warnings]);
         }
         return redirect()->route('time-slots.index')->with('success', 'Time slot added!');
     }
@@ -79,8 +81,10 @@ class TimeSlotController extends Controller
 
         ActivityLogger::log('Updated', 'TimeSlot', 'Updated time slot: ' . $timeSlot->name);
 
+        $warnings = $this->checkSlotDefinitionOverlaps($timeSlot);
+
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'slot' => $timeSlot->fresh()]);
+            return response()->json(['success' => true, 'slot' => $timeSlot->fresh(), 'warnings' => $warnings]);
         }
         return redirect()->route('time-slots.index')->with('success', 'Time slot updated!');
     }
@@ -134,5 +138,38 @@ class TimeSlotController extends Controller
         $addOn->delete();
         ActivityLogger::log('Deleted', 'AddOn', 'Deleted add-on: ' . $name);
         return response()->json(['success' => true]);
+    }
+
+    private function checkSlotDefinitionOverlaps(HotelTimeSlot $savedSlot): array
+    {
+        $others = HotelTimeSlot::where('id', '!=', $savedSlot->id)
+            ->where('is_active', true)
+            ->get();
+
+        $overlapping = [];
+        foreach ($others as $other) {
+            if ($this->slotsDefinitionOverlap($savedSlot, $other)) {
+                $overlapping[] = $other->name;
+            }
+        }
+        return $overlapping;
+    }
+
+    private function slotsDefinitionOverlap(HotelTimeSlot $a, HotelTimeSlot $b): bool
+    {
+        [$aStart, $aEnd] = $this->slotDefinitionRange($a);
+        [$bStart, $bEnd] = $this->slotDefinitionRange($b);
+        return $aStart < $bEnd && $bStart < $aEnd;
+    }
+
+    private function slotDefinitionRange(HotelTimeSlot $slot): array
+    {
+        $ref   = '2000-01-01';
+        $start = \Carbon\Carbon::parse($ref . ' ' . $slot->start_time);
+        $end   = \Carbon\Carbon::parse($ref . ' ' . $slot->end_time);
+        if ($slot->is_overnight || $end <= $start) {
+            $end->addDay();
+        }
+        return [$start, $end];
     }
 }

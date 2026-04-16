@@ -56,6 +56,44 @@ class SlotConflictService
     }
 
     /**
+     * Like getConflictingRoomIds() but also returns room number and guest name for each conflict.
+     *
+     * @return array[]  Each element: ['room_id'=>int, 'room_number'=>string, 'guest_name'=>string]
+     */
+    public function getConflictingRoomDetails(HotelTimeSlot $targetSlot, string $date, ?int $excludeBookingId = null): array
+    {
+        [$tStart, $tEnd] = $this->slotRange($targetSlot, $date);
+        $prevDate = Carbon::parse($date)->subDay()->toDateString();
+
+        $candidates = Booking::with(['timeSlot', 'room', 'customer'])
+            ->whereNotNull('time_slot_id')
+            ->whereIn('booking_date', [$prevDate, $date])
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->when($excludeBookingId, fn($q) => $q->where('id', '!=', $excludeBookingId))
+            ->get();
+
+        $seen    = [];
+        $details = [];
+        foreach ($candidates as $booking) {
+            $slot = $booking->timeSlot;
+            if (!$slot) continue;
+            [$bStart, $bEnd] = $this->slotRange($slot, $booking->booking_date->toDateString());
+            if ($tStart <= $bEnd && $bStart <= $tEnd) {
+                $rid = $booking->room_id;
+                if (!in_array($rid, $seen)) {
+                    $seen[]    = $rid;
+                    $details[] = [
+                        'room_id'    => $rid,
+                        'room_number'=> $booking->room?->room_number ?? '—',
+                        'guest_name' => $booking->customer?->name ?? 'Guest',
+                    ];
+                }
+            }
+        }
+        return $details;
+    }
+
+    /**
      * Returns an array of available slot IDs for a given room on a given date.
      * A slot is available if the room is NOT in the conflicting room IDs for that slot.
      *

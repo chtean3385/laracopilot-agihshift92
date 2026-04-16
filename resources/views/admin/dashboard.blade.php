@@ -592,14 +592,20 @@
                                         @endphp
                                         <td style="padding:8px;text-align:center;background:{{ $day['isToday'] ? '#faf5ff' : 'transparent' }};">
                                             @if($sd)
-                                            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:10px;background:{{ $bgMap[$sdColor] }};min-width:56px;">
-                                                <span style="font-weight:800;color:{{ $txtMap[$sdColor] }};font-size:14px;line-height:1;">{{ $sd['available'] }}/{{ $sd['total'] }}</span>
-                                                <span style="font-size:10px;color:#94a3b8;">{{ $sd['booked'] }} booked</span>
-                                                @if($sd['total'] > 0)
-                                                <div style="width:44px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
-                                                    <div style="height:100%;background:{{ $barMap[$sdColor] }};border-radius:2px;width:{{ $sdPct }}%;"></div>
+                                            <div class="slot-cell-wrap" style="position:relative;display:inline-block;"
+                                                 data-booked='@json($sd['booked_rooms'] ?? [])'
+                                                 data-free='@json($sd['free_rooms'] ?? [])'
+                                                 data-slot="{{ $sd['slot_name'] }}"
+                                                 data-day="{{ $day['label'] }}">
+                                                <div class="slot-cell-badge" style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:10px;background:{{ $bgMap[$sdColor] }};min-width:56px;cursor:pointer;">
+                                                    <span style="font-weight:800;color:{{ $txtMap[$sdColor] }};font-size:14px;line-height:1;">{{ $sd['available'] }}/{{ $sd['total'] }}</span>
+                                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['booked'] }} booked</span>
+                                                    @if($sd['total'] > 0)
+                                                    <div style="width:44px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
+                                                        <div style="height:100%;background:{{ $barMap[$sdColor] }};border-radius:2px;width:{{ $sdPct }}%;"></div>
+                                                    </div>
+                                                    @endif
                                                 </div>
-                                                @endif
                                             </div>
                                             @endif
                                         </td>
@@ -612,8 +618,52 @@
                                 <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Available (&lt;60% booked)</span></div>
                                 <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Filling up (60–99%)</span></div>
                                 <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Fully booked (100%)</span></div>
-                                <div style="margin-left:auto;"><span style="font-size:12px;color:#94a3b8;">Numbers show available/total slot rooms</span></div>
+                                <div style="margin-left:auto;"><span style="font-size:12px;color:#94a3b8;">Hover a cell for room detail</span></div>
                             </div>
+
+                            {{-- Slot cell hover tooltip --}}
+                            <div id="slotCellTooltip" style="display:none;position:fixed;z-index:9999;background:#1e293b;color:#fff;border-radius:12px;padding:12px 14px;font-size:12px;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;line-height:1.5;"></div>
+                            <script>
+                            (function() {
+                                var tip = document.getElementById('slotCellTooltip');
+                                document.querySelectorAll('.slot-cell-wrap').forEach(function(el) {
+                                    el.addEventListener('mouseenter', function(e) {
+                                        var booked = JSON.parse(el.dataset.booked || '[]');
+                                        var free   = JSON.parse(el.dataset.free   || '[]');
+                                        var slot   = el.dataset.slot;
+                                        var day    = el.dataset.day;
+                                        var html   = '<div style="font-weight:700;margin-bottom:6px;color:#a78bfa;">' + slot + ' · ' + day + '</div>';
+                                        if (booked.length > 0) {
+                                            html += '<div style="color:#fca5a5;font-weight:600;margin-bottom:3px;">Booked rooms:</div>';
+                                            booked.forEach(function(r) {
+                                                html += '<div style="padding:2px 0;color:#fecaca;">&#9679; Room ' + r.room_number + ' — ' + r.guest_name + '</div>';
+                                            });
+                                        }
+                                        if (free.length > 0) {
+                                            html += '<div style="color:#86efac;font-weight:600;margin-top:6px;margin-bottom:3px;">Free rooms:</div>';
+                                            free.forEach(function(r) {
+                                                html += '<div style="padding:2px 0;color:#bbf7d0;">&#9679; Room ' + r + '</div>';
+                                            });
+                                        }
+                                        if (booked.length === 0 && free.length === 0) {
+                                            html += '<div style="color:#94a3b8;">No room data</div>';
+                                        }
+                                        tip.innerHTML = html;
+                                        tip.style.display = 'block';
+                                        positionTip(e);
+                                    });
+                                    el.addEventListener('mousemove', positionTip);
+                                    el.addEventListener('mouseleave', function() { tip.style.display = 'none'; });
+                                });
+                                function positionTip(e) {
+                                    var x = e.clientX + 14, y = e.clientY + 14;
+                                    if (x + 260 > window.innerWidth)  x = e.clientX - 260;
+                                    if (y + 200 > window.innerHeight) y = e.clientY - 200;
+                                    tip.style.left = x + 'px';
+                                    tip.style.top  = y + 'px';
+                                }
+                            })();
+                            </script>
                         </div>
                     </div>
                     @endif

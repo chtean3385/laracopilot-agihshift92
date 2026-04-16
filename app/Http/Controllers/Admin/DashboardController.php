@@ -123,12 +123,13 @@ class DashboardController extends Controller
                 }
                 $slotWeekEnd = $slotWeekStart->copy()->addDays(6);
                 $dashboardSlots = HotelTimeSlot::where('is_active', true)->ordered()->get();
-                $slotRoomCount  = Room::where('pricing_type', 'per_slot')->count();
+                $slotRooms      = Room::where('pricing_type', 'per_slot')->orderBy('room_number')->get();
+                $slotRoomCount  = $slotRooms->count();
+                $slotRoomIds    = $slotRooms->pluck('id')->toArray();
 
                 if ($dashboardSlots->isNotEmpty() && $slotRoomCount > 0) {
                     $hasSlotModule = true;
                     $conflictSvc   = new SlotConflictService();
-                    $slotRoomIds   = Room::where('pricing_type', 'per_slot')->pluck('id')->toArray();
                     $cur = $slotWeekStart->copy();
                     while ($cur <= $slotWeekEnd) {
                         $ds      = $cur->toDateString();
@@ -140,20 +141,27 @@ class DashboardController extends Controller
                             'slots'    => [],
                         ];
                         foreach ($dashboardSlots as $slot) {
-                            $conflicting = $conflictSvc->getConflictingRoomIds($slot, $ds);
-                            $booked      = count(array_intersect($conflicting, $slotRoomIds));
-                            $total       = $slotRoomCount;
-                            $available   = $total - $booked;
-                            $pct         = $total > 0 ? round($booked / $total * 100) : 0;
-                            $color       = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                            $bookedDetails = $conflictSvc->getConflictingRoomDetails($slot, $ds);
+                            $bookedIds     = array_column($bookedDetails, 'room_id');
+                            // restrict to slot rooms only
+                            $bookedDetails = array_values(array_filter($bookedDetails, fn($d) => in_array($d['room_id'], $slotRoomIds)));
+                            $bookedIds     = array_column($bookedDetails, 'room_id');
+                            $booked        = count($bookedIds);
+                            $total         = $slotRoomCount;
+                            $available     = $total - $booked;
+                            $pct           = $total > 0 ? round($booked / $total * 100) : 0;
+                            $color         = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                            $freeRooms     = $slotRooms->filter(fn($r) => !in_array($r->id, $bookedIds))->pluck('room_number')->values()->all();
                             $dayData['slots'][] = [
-                                'slot_name' => $slot->name,
-                                'time'      => $slot->start_time . '–' . $slot->end_time,
-                                'available' => $available,
-                                'booked'    => $booked,
-                                'total'     => $total,
-                                'pct'       => $pct,
-                                'color'     => $color,
+                                'slot_name'    => $slot->name,
+                                'time'         => $slot->start_time . '–' . $slot->end_time,
+                                'available'    => $available,
+                                'booked'       => $booked,
+                                'total'        => $total,
+                                'pct'          => $pct,
+                                'color'        => $color,
+                                'booked_rooms' => $bookedDetails,
+                                'free_rooms'   => $freeRooms,
                             ];
                         }
                         $dashboardSlotAvailability[] = $dayData;

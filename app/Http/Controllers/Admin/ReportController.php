@@ -139,18 +139,24 @@ class ReportController extends Controller
             $ds = $cur->toDateString();
             $dayData = ['date' => $ds, 'label' => $cur->format('D, d M'), 'slots' => []];
 
+            $roomIds = $rooms->pluck('id')->toArray();
             foreach ($slots as $slot) {
-                $conflictingRoomIds = $conflictSvc->getConflictingRoomIds($slot, $ds);
-                $booked    = count(array_intersect($conflictingRoomIds, $rooms->pluck('id')->toArray()));
-                $available = $total - $booked;
+                $bookedDetails      = $conflictSvc->getConflictingRoomDetails($slot, $ds);
+                $bookedDetails      = array_values(array_filter($bookedDetails, fn($d) => in_array($d['room_id'], $roomIds)));
+                $bookedIds          = array_column($bookedDetails, 'room_id');
+                $booked             = count($bookedIds);
+                $available          = $total - $booked;
+                $freeRooms          = $rooms->filter(fn($r) => !in_array($r->id, $bookedIds))->pluck('room_number')->values()->all();
 
                 $dayData['slots'][] = [
-                    'slot_id'   => $slot->id,
-                    'slot_name' => $slot->name,
-                    'time'      => $slot->start_time . '–' . $slot->end_time,
-                    'available' => $available,
-                    'booked'    => $booked,
-                    'total'     => $total,
+                    'slot_id'      => $slot->id,
+                    'slot_name'    => $slot->name,
+                    'time'         => $slot->start_time . '–' . $slot->end_time,
+                    'available'    => $available,
+                    'booked'       => $booked,
+                    'total'        => $total,
+                    'booked_rooms' => $bookedDetails,
+                    'free_rooms'   => $freeRooms,
                 ];
             }
             $availability[] = $dayData;
