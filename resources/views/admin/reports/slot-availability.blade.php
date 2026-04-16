@@ -71,30 +71,27 @@
                             $color = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
                         @endphp
                         <td class="px-4 py-3 text-center">
-                            <div class="rpt-slot-cell inline-block" style="cursor:default;"
-                                 data-booked='@json($s['booked_rooms'] ?? [])'
-                                 data-free='@json($s['free_rooms'] ?? [])'
-                                 data-slot="{{ $s['slot_name'] }}"
-                                 data-day="{{ $day['label'] }}">
-                                <div class="inline-flex flex-col items-center gap-1">
-                                    <span class="font-bold text-{{ $color }}-600">
-                                        {{ $s['available'] }}/{{ $s['total'] }}
-                                    </span>
-                                    <span class="text-xs text-gray-400">{{ $s['booked'] }} booked</span>
-                                    @if($s['total'] > 0)
-                                    <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                        <div class="h-full bg-{{ $color }}-500 rounded-full" style="width:{{ $pct }}%"></div>
+                            @php
+                                $bookedRooms = $s['booked_rooms'] ?? [];
+                                $freeRooms   = $s['free_rooms']   ?? [];
+                                $colorMap = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
+                                $bgColorMap = ['green'=>'#f0fdf4','amber'=>'#fffbeb','red'=>'#fff1f2'];
+                            @endphp
+                            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;">
+                                <span style="font-weight:800;font-size:13px;color:{{ $colorMap[$color] }};background:{{ $bgColorMap[$color] }};padding:2px 10px;border-radius:999px;">
+                                    {{ $s['available'] }}<span style="font-weight:400;color:#94a3b8;font-size:11px;">/{{ $s['total'] }}</span>
+                                </span>
+                                <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+                                    @foreach($bookedRooms as $br)
+                                    <div title="{{ $br['guest_name'] }}" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:2px 6px;font-size:11px;line-height:1.4;color:#b91c1c;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:90px;">
+                                        <span style="font-weight:700;">R{{ $br['room_number'] }}</span> {{ \Illuminate\Support\Str::limit($br['guest_name'], 10, '') }}
                                     </div>
-                                    @endif
-                                    @if(count($s['booked_rooms'] ?? []) > 0)
-                                    <div class="mt-1 text-left w-full">
-                                        @foreach($s['booked_rooms'] as $br)
-                                        <div class="text-xs text-red-500 truncate" style="max-width:100px;" title="{{ $br['guest_name'] }}">
-                                            R{{ $br['room_number'] }}: {{ $br['guest_name'] }}
-                                        </div>
-                                        @endforeach
+                                    @endforeach
+                                    @foreach($freeRooms as $rn)
+                                    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 6px;font-size:11px;line-height:1.4;color:#15803d;text-align:left;white-space:nowrap;">
+                                        <span style="font-weight:700;">R{{ $rn }}</span> <span style="color:#4ade80;">free</span>
                                     </div>
-                                    @endif
+                                    @endforeach
                                 </div>
                             </div>
                         </td>

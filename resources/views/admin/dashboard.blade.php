@@ -590,21 +590,29 @@
                                             $txtMap = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
                                             $barMap = ['green'=>'#22c55e','amber'=>'#f59e0b','red'=>'#ef4444'];
                                         @endphp
-                                        <td style="padding:8px;text-align:center;background:{{ $day['isToday'] ? '#faf5ff' : 'transparent' }};">
+                                        <td style="padding:6px 4px;text-align:center;background:{{ $day['isToday'] ? '#faf5ff' : 'transparent' }};">
                                             @if($sd)
-                                            <div class="slot-cell-wrap" style="position:relative;display:inline-block;"
-                                                 data-booked='@json($sd['booked_rooms'] ?? [])'
-                                                 data-free='@json($sd['free_rooms'] ?? [])'
-                                                 data-slot="{{ $sd['slot_name'] }}"
-                                                 data-day="{{ $day['label'] }}">
-                                                <div class="slot-cell-badge" style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:10px;background:{{ $bgMap[$sdColor] }};min-width:56px;cursor:pointer;">
-                                                    <span style="font-weight:800;color:{{ $txtMap[$sdColor] }};font-size:14px;line-height:1;">{{ $sd['available'] }}/{{ $sd['total'] }}</span>
-                                                    <span style="font-size:10px;color:#94a3b8;">{{ $sd['booked'] }} booked</span>
-                                                    @if($sd['total'] > 0)
-                                                    <div style="width:44px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
-                                                        <div style="height:100%;background:{{ $barMap[$sdColor] }};border-radius:2px;width:{{ $sdPct }}%;"></div>
+                                            @php
+                                                $bookedRooms = $sd['booked_rooms'] ?? [];
+                                                $freeRooms   = $sd['free_rooms']   ?? [];
+                                            @endphp
+                                            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:70px;">
+                                                {{-- Count badge --}}
+                                                <span style="font-weight:800;color:{{ $txtMap[$sdColor] }};font-size:13px;line-height:1;background:{{ $bgMap[$sdColor] }};padding:2px 8px;border-radius:999px;">
+                                                    {{ $sd['available'] }}<span style="font-weight:400;color:#94a3b8;font-size:11px;">/{{ $sd['total'] }}</span>
+                                                </span>
+                                                {{-- Room pills --}}
+                                                <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+                                                    @foreach($bookedRooms as $br)
+                                                    <div title="{{ $br['guest_name'] }}" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:2px 5px;font-size:10px;line-height:1.3;color:#b91c1c;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:80px;">
+                                                        <span style="font-weight:700;">R{{ $br['room_number'] }}</span> {{ \Illuminate\Support\Str::limit($br['guest_name'], 8, '') }}
                                                     </div>
-                                                    @endif
+                                                    @endforeach
+                                                    @foreach($freeRooms as $rn)
+                                                    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 5px;font-size:10px;line-height:1.3;color:#15803d;text-align:left;white-space:nowrap;">
+                                                        <span style="font-weight:700;">R{{ $rn }}</span> <span style="color:#4ade80;">free</span>
+                                                    </div>
+                                                    @endforeach
                                                 </div>
                                             </div>
                                             @endif
@@ -618,7 +626,10 @@
                                 <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Available (&lt;60% booked)</span></div>
                                 <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Filling up (60–99%)</span></div>
                                 <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Fully booked (100%)</span></div>
-                                <div style="margin-left:auto;"><span style="font-size:12px;color:#94a3b8;">Hover a cell for room detail</span></div>
+                                <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+                                    <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#fee2e2;border:1px solid #fca5a5;"></span><span style="font-size:12px;color:#64748b;">Booked room</span>
+                                    <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#dcfce7;border:1px solid #86efac;"></span><span style="font-size:12px;color:#64748b;">Free room</span>
+                                </div>
                             </div>
 
                             {{-- Slot cell hover tooltip --}}
