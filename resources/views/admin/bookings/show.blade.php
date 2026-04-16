@@ -234,7 +234,14 @@
                         @endif
                         <div class="flex justify-between text-sm border-t pt-2"><span class="font-semibold">Balance Due</span><span class="font-bold {{ $bBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($bBalance) }}</span></div>
                     </div>
-                    <div class="mt-3"><span class="badge-{{ $booking->payment_status_color }}">{{ ucfirst($booking->payment_status) }}</span></div>
+                    <div class="mt-3 flex items-center gap-2 flex-wrap">
+                        <span class="badge-{{ $booking->payment_status_color }}">{{ ucfirst($booking->payment_status) }}</span>
+                        @if($booking->price_overridden)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                            <i class="fas fa-pen" style="font-size:9px;"></i> Custom price
+                        </span>
+                        @endif
+                    </div>
                 </div>
             </div>
 

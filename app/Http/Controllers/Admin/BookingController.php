@@ -226,6 +226,23 @@ class BookingController extends Controller
             ];
         }
 
+        // ── Custom price override (not applicable to per_hour) ─────────────
+        if ($pricingType !== 'per_hour') {
+            $customTotal      = (float) $request->input('custom_total', 0);
+            $calculatedTotal  = $bookingData['total_amount'];
+            $advAmt           = (float) ($bookingData['advance_payment'] ?? 0);
+            if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
+                $bookingData['total_amount']    = $customTotal;
+                $bookingData['balance_due']     = max(0, $customTotal - $advAmt);
+                $bookingData['payment_status']  = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
+                $bookingData['price_overridden'] = true;
+            } else {
+                $bookingData['price_overridden'] = false;
+            }
+        } else {
+            $bookingData['price_overridden'] = false;
+        }
+
         $booking = Booking::create($bookingData);
 
         // Save add-ons for slot/hourly bookings
@@ -412,6 +429,23 @@ class BookingController extends Controller
                 'extra_beds'      => $extraBeds,
                 'extra_bed_cost'  => $extraBedCost,
             ]);
+        }
+
+        // ── Custom price override (not applicable to per_hour) ─────────────
+        if ($pricingType !== 'per_hour') {
+            $customTotal     = (float) $request->input('custom_total', 0);
+            $calculatedTotal = $updateData['total_amount'];
+            $advAmt          = (float) ($updateData['advance_payment'] ?? $advancePayment);
+            if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
+                $updateData['total_amount']    = $customTotal;
+                $updateData['balance_due']     = max(0, $customTotal - $advAmt);
+                $updateData['payment_status']  = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
+                $updateData['price_overridden'] = true;
+            } else {
+                $updateData['price_overridden'] = false;
+            }
+        } else {
+            $updateData['price_overridden'] = false;
         }
 
         $booking->update($updateData);

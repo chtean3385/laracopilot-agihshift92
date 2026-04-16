@@ -224,6 +224,11 @@
                         </td>
                         <td class="lv-td">
                             <div style="font-weight:800;font-size:15px;color:#1e293b;">₹{{ number_format($booking->total_amount) }}</div>
+                            @if($booking->price_overridden)
+                            <div style="font-size:10px;color:#d97706;font-weight:600;margin-top:2px;display:flex;align-items:center;gap:3px;">
+                                <i class="fas fa-pen" style="font-size:8px;"></i> Custom price
+                            </div>
+                            @endif
                         </td>
                         <td class="lv-td lv-td-right">
                             <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">

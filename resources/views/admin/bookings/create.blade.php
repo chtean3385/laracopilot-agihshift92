@@ -222,10 +222,21 @@
                             </div>
                         </div>
                         @endif
-                        <div class="bg-white rounded-xl border border-violet-100 px-4 py-3 flex items-center gap-3">
-                            <i class="fas fa-rupee-sign text-violet-500"></i>
-                            <span class="text-sm text-gray-500">Slot Total:</span>
-                            <span id="slotTotalDisplay" class="text-xl font-bold text-violet-700">—</span>
+                        <div class="bg-white rounded-xl border border-violet-100 px-4 py-4 space-y-2">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-rupee-sign text-violet-500"></i>
+                                <span class="text-sm text-gray-500">Slot Total:</span>
+                                <span id="slotTotalDisplay" class="text-xl font-bold text-violet-700">—</span>
+                            </div>
+                            <div class="flex items-center gap-3 pt-1 border-t border-violet-50">
+                                <i class="fas fa-pen text-violet-300 text-xs"></i>
+                                <span class="text-xs text-gray-400">Override price:</span>
+                                <input type="number" id="slotCustomTotalInput" step="0.01" min="0"
+                                       class="flex-1 text-sm font-bold text-violet-600 bg-transparent border-b border-dashed border-violet-300 focus:outline-none focus:border-violet-500 py-0.5 text-center"
+                                       placeholder="Enter custom total to override">
+                                <button type="button" id="resetSlotTotalBtn" onclick="resetSlotCustomTotal()"
+                                        class="text-xs text-violet-500 hover:text-violet-700 underline hidden">↺ Reset</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -347,8 +358,15 @@
                         </div>
                         <div>
                             <div class="text-sm text-gray-500">Total Amount</div>
-                            <div id="totalDisplay" class="text-2xl font-bold text-cyan-600">—</div>
+                            <input type="number" id="customTotalInput" name="custom_total" step="0.01" min="0"
+                                   value="{{ old('custom_total') }}"
+                                   class="text-2xl font-bold text-cyan-600 bg-transparent border-b-2 border-dashed border-cyan-300 w-full text-center focus:outline-none focus:border-cyan-500 py-0.5"
+                                   placeholder="—">
                             <div id="mealCostLine" class="text-xs text-amber-600 font-semibold mt-1"></div>
+                            <div class="mt-1 text-center">
+                                <button type="button" id="resetTotalBtn" onclick="resetCustomTotal()"
+                                        class="text-xs text-cyan-500 hover:text-cyan-700 underline hidden">↺ Reset to calculated</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -522,6 +540,18 @@
         // Hourly rate tag
         const hrTag = document.getElementById('hourlyRateTag');
         if (hrTag && opt) hrTag.textContent = '₹' + parseFloat(opt.dataset.hourlyRate || 0).toLocaleString('en-IN') + '/hr';
+
+        // Reset custom-total override flags when pricing type changes
+        window._customTotalDirty     = false;
+        window._slotCustomTotalDirty = false;
+        const cti = document.getElementById('customTotalInput');
+        if (cti) { cti.value = ''; }
+        const sci = document.getElementById('slotCustomTotalInput');
+        if (sci) { sci.value = ''; }
+        const rb  = document.getElementById('resetTotalBtn');
+        const srb = document.getElementById('resetSlotTotalBtn');
+        if (rb)  rb.classList.add('hidden');
+        if (srb) srb.classList.add('hidden');
     }
 
     // Run on page load: disables hidden-section inputs from the start and
@@ -541,6 +571,16 @@
         document.querySelectorAll('.addon-check:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
         const el = document.getElementById('slotTotalDisplay');
         if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
+        // Sync to the slot custom override input (unless user manually overrode)
+        if (!window._slotCustomTotalDirty) {
+            const slotCustom = document.getElementById('slotCustomTotalInput');
+            if (slotCustom) slotCustom.value = total > 0 ? total.toFixed(2) : '';
+            // Also sync to the submittable hidden input
+            const hiddenInp = document.getElementById('customTotalInput');
+            if (hiddenInp) hiddenInp.value = total > 0 ? total.toFixed(2) : '';
+        }
+        const btn = document.getElementById('resetSlotTotalBtn');
+        if (btn) btn.classList.toggle('hidden', !window._slotCustomTotalDirty);
     }
 
     // Fetch available slot IDs for the currently selected room + date and
@@ -632,6 +672,48 @@
         if (ebLabel) ebLabel.textContent = hasExtraBed ? '₹' + extraBedPrice.toLocaleString('en-IN') + '/bed/night' : '';
     }
 
+    // Track whether the admin has manually overridden the price
+    window._customTotalDirty     = false;
+    window._slotCustomTotalDirty = false;
+
+    function setCustomTotal(val) {
+        const inp = document.getElementById('customTotalInput');
+        const btn = document.getElementById('resetTotalBtn');
+        if (!window._customTotalDirty && inp) {
+            inp.value = val > 0 ? val.toFixed(2) : '';
+        }
+        if (btn) btn.classList.toggle('hidden', !window._customTotalDirty);
+    }
+
+    function resetCustomTotal() {
+        window._customTotalDirty = false;
+        calculateTotal();
+        const btn = document.getElementById('resetTotalBtn');
+        if (btn) btn.classList.add('hidden');
+    }
+
+    function resetSlotCustomTotal() {
+        window._slotCustomTotalDirty = false;
+        calculateSlotTotal();
+        const btn = document.getElementById('resetSlotTotalBtn');
+        if (btn) btn.classList.add('hidden');
+    }
+
+    document.getElementById('customTotalInput')?.addEventListener('input', function() {
+        window._customTotalDirty = true;
+        const btn = document.getElementById('resetTotalBtn');
+        if (btn) btn.classList.remove('hidden');
+    });
+
+    document.getElementById('slotCustomTotalInput')?.addEventListener('input', function() {
+        window._slotCustomTotalDirty = true;
+        // Mirror to the hidden submittable input
+        const hiddenInp = document.getElementById('customTotalInput');
+        if (hiddenInp) hiddenInp.value = this.value;
+        const btn = document.getElementById('resetSlotTotalBtn');
+        if (btn) btn.classList.remove('hidden');
+    });
+
     function calculateTotal() {
         const checkin = document.getElementById('checkIn').value;
         const checkout = document.getElementById('checkOut').value;
@@ -655,7 +737,7 @@
             const total = nights * pricePerNight + mealCost + extraBedCost;
             document.getElementById('nightsCount').textContent = nights;
             document.getElementById('rateDisplay').textContent = pricePerNight ? '₹' + pricePerNight.toLocaleString('en-IN') : '—';
-            document.getElementById('totalDisplay').textContent = total ? '₹' + total.toLocaleString('en-IN') : '—';
+            setCustomTotal(total);
             const mealLine = document.getElementById('mealCostLine');
             let extras = [];
             if (mealCost > 0) extras.push('₹' + mealCost.toLocaleString('en-IN') + ' meals');

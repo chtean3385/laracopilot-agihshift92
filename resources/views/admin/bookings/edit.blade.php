@@ -122,6 +122,27 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Total Amount (₹)
+                        @if($booking->price_overridden)
+                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                            <i class="fas fa-pen text-amber-500 mr-1" style="font-size:9px;"></i>Custom price
+                        </span>
+                        @endif
+                    </label>
+                    @if($pricingType === 'per_hour')
+                    <input type="number" name="custom_total" value="{{ old('custom_total', $booking->total_amount) }}"
+                           class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
+                           min="0" step="0.01" readonly>
+                    <p class="text-xs text-amber-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Hourly billing is finalised at check-out.</p>
+                    @else
+                    <input type="number" name="custom_total" value="{{ old('custom_total', $booking->total_amount) }}"
+                           class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                           min="0" step="0.01">
+                    <p class="text-xs text-gray-400 mt-1">Edit to override the calculated price.</p>
+                    @endif
+                </div>
+                <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Advance Payment (₹)</label>
                     <input type="number" name="advance_payment" value="{{ old('advance_payment',$booking->advance_payment) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" min="0" step="0.01">
                 </div>
