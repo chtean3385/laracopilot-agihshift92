@@ -64,18 +64,15 @@ class AuthController extends Controller
             'crm_hotel_count' => $hotelUsers->count(),
         ]);
 
-        if ($hotelUsers->count() === 1) {
-            return $this->setHotelSession($hotelUsers->first(), $user);
-        }
-
-        // Multiple hotels — store options and send to picker
+        // Always store all hotel options so the sidebar switcher works
         session(['crm_hotel_options' => $hotelUsers->map(fn($hu) => [
             'hotel_id'   => $hu->hotel_id,
             'hotel_name' => $hu->hotel->name,
             'role'       => $hu->role,
         ])->values()->toArray()]);
 
-        return redirect()->route('select.hotel');
+        // Log directly into the first (default) hotel — user can switch via sidebar
+        return $this->setHotelSession($hotelUsers->first(), $user);
     }
 
     private function setHotelSession(HotelUser $hotelUser, User $user)
