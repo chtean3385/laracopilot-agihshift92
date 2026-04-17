@@ -36,9 +36,11 @@ class CheckOutController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
 
-        $booking = Booking::with(['customer', 'room', 'payments', 'timeSlot', 'bookingAddOns'])->findOrFail($bookingId);
+        $booking = Booking::with(['customer', 'room', 'payments', 'timeSlot', 'bookingAddOns', 'extraCharges'])->findOrFail($bookingId);
 
         $pricingType = $booking->room->pricing_type ?? 'per_night';
+
+        $extraChargesTotal = $booking->extraCharges->sum('total_price');
 
         if ($pricingType === 'per_night') {
             $checkinDate  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
@@ -49,7 +51,7 @@ class CheckOutController extends Controller
             $roomCost     = $actualNights * $booking->room->price_per_night;
             $mealCost     = (float)($booking->meal_cost ?? 0);
             $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
-            $actualTotal  = $roomCost + $mealCost + $extraBedCost;
+            $actualTotal  = $roomCost + $mealCost + $extraBedCost + $extraChargesTotal;
             $hoursBooked  = null;
         } elseif ($pricingType === 'per_hour') {
             // Calculate actual hours using system clock from check-in time to now
@@ -62,15 +64,15 @@ class CheckOutController extends Controller
             $roomCost     = $hoursBooked * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
             $mealCost     = 0;
             $extraBedCost = 0;
-            $actualTotal  = $roomCost;
+            $actualTotal  = $roomCost + $extraChargesTotal;
         } else {
-            // per_slot: total_amount stored at booking time
+            // per_slot: base cost stored at booking time (total_amount minus any extra charges already in it)
             $actualNights = 0;
             $hoursBooked  = null;
-            $roomCost     = (float) $booking->total_amount;
+            $roomCost     = max(0, (float) $booking->total_amount - $extraChargesTotal);
             $mealCost     = 0;
             $extraBedCost = 0;
-            $actualTotal  = $roomCost;
+            $actualTotal  = $roomCost + $extraChargesTotal;
         }
 
         $totalPaid  = $booking->payments->where('status', 'completed')->sum('amount');
@@ -78,7 +80,8 @@ class CheckOutController extends Controller
 
         return view('admin.checkout.show', compact(
             'booking', 'pricingType', 'actualNights', 'hoursBooked',
-            'actualTotal', 'roomCost', 'mealCost', 'extraBedCost', 'totalPaid', 'balanceDue'
+            'actualTotal', 'roomCost', 'mealCost', 'extraBedCost',
+            'extraChargesTotal', 'totalPaid', 'balanceDue'
         ));
     }
 
@@ -93,7 +96,7 @@ class CheckOutController extends Controller
             'override_hours' => 'nullable|integer|min:1|max:72',
         ]);
 
-        $booking = Booking::with(['room', 'payments', 'customer'])->findOrFail($bookingId);
+        $booking = Booking::with(['room', 'payments', 'customer', 'extraCharges', 'bookingAddOns'])->findOrFail($bookingId);
 
         if ($request->final_payment > 0) {
             Payment::create([
@@ -128,8 +131,25 @@ class CheckOutController extends Controller
 
         $settings   = Setting::first();
         $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
-        $gstAmount  = round($booking->total_amount * ($taxRate / 100), 2);
-        $grandTotal = $booking->total_amount + $gstAmount;
+
+        // Compute true base (same logic as show())
+        $extraChargesTotal = $booking->extraCharges->sum('total_price');
+        $pricingTypeProc   = $booking->room->pricing_type ?? 'per_night';
+        if ($pricingTypeProc === 'per_night') {
+            $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+            $checkoutDateProc = Carbon::parse($booking->check_out_date)->startOfDay();
+            $nightsProc       = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
+            $trueBase         = $nightsProc * $booking->room->price_per_night
+                                + (float)($booking->meal_cost ?? 0)
+                                + (float)($booking->extra_bed_cost ?? 0)
+                                + $extraChargesTotal;
+        } else {
+            // per_hour: total_amount updated above; per_slot: total_amount set at booking time (extra charges already incremented)
+            $trueBase = (float) $booking->total_amount;
+        }
+
+        $gstAmount  = round($trueBase * ($taxRate / 100), 2);
+        $grandTotal = $trueBase + $gstAmount;
 
         $isPaid     = $totalPaid >= $grandTotal;
         $balance    = max(0, $grandTotal - $totalPaid);
@@ -148,7 +168,7 @@ class CheckOutController extends Controller
             'invoice_number' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-INV-' . strtoupper(substr(uniqid(), -6)),
             'booking_id'     => $booking->id,
             'customer_id'    => $booking->customer_id,
-            'total_amount'   => $booking->total_amount,
+            'total_amount'   => $grandTotal,
             'paid_amount'    => $totalPaid,
             'balance'        => $balance,
             'status'         => $isPaid ? 'paid' : ($totalPaid > 0 ? 'partial' : 'unpaid'),

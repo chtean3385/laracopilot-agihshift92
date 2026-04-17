@@ -116,7 +116,21 @@
                     <span style="font-weight:600;">₹{{ number_format($extraBedCost) }}</span>
                 </div>
                 @endif
-                @if($mealCost > 0 || $extraBedCost > 0)
+                @if(($extraChargesTotal ?? 0) > 0)
+                @foreach($booking->extraCharges as $ec)
+                <div style="display:flex;justify-content:space-between;font-size:13px;">
+                    <span style="color:#be123c;"><i class="fas fa-plus-circle" style="margin-right:4px;font-size:11px;"></i>{{ $ec->name }}
+                        <span style="color:#94a3b8;font-size:11px;">({{ $ec->category }}{{ $ec->quantity != 1 ? ' ×'.$ec->quantity : '' }})</span>
+                    </span>
+                    <span style="font-weight:600;color:#be123c;">₹{{ number_format($ec->total_price) }}</span>
+                </div>
+                @endforeach
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;">
+                    <span>Extra Charges Total</span>
+                    <span style="font-weight:600;color:#be123c;">₹{{ number_format($extraChargesTotal) }}</span>
+                </div>
+                @endif
+                @if($mealCost > 0 || $extraBedCost > 0 || ($extraChargesTotal ?? 0) > 0)
                 <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px dashed #e2e8f0;padding-top:8px;">
                     <span style="color:#64748b;">Subtotal</span>
                     <span style="font-weight:700;">₹{{ number_format($actualTotal) }}</span>

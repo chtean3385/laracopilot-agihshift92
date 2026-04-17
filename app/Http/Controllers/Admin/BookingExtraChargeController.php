@@ -45,7 +45,7 @@ class BookingExtraChargeController extends Controller
                 'unit_price' => $data['unit_price'],
                 'total_price'=> $totalPrice,
                 'notes'      => $data['notes'] ?? null,
-                'added_by'   => auth()->id(),
+                'added_by'   => session('crm_user_id'),
             ]);
 
             $booking->increment('total_amount', $totalPrice);

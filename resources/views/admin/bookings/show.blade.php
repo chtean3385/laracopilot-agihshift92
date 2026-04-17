@@ -177,8 +177,21 @@
                         $bSettings          = \App\Models\Setting::first();
                         $bTaxRate           = ($bSettings && $bSettings->gst_number && $bSettings->tax_rate > 0) ? (float) $bSettings->tax_rate : 0;
                         $bExtraChargesTotal = $booking->extraCharges->sum('total_price');
-                        $bGst               = round($booking->total_amount * ($bTaxRate / 100), 2);
-                        $bGrandTotal        = $booking->total_amount + $bGst;
+
+                        // Compute true base from actual components (not from total_amount which may be stale)
+                        if ($pType === 'per_slot' && $booking->timeSlot) {
+                            $bBase = (float) $booking->timeSlot->base_price + $bExtraChargesTotal;
+                        } elseif ($pType === 'per_hour') {
+                            // For hourly, base is stored in total_amount (calculated at checkout); extra charges already incremented it
+                            $bBase = (float) $booking->total_amount;
+                        } else {
+                            // per_night: recompute from room rate × nights + addons
+                            $bRoomBase = $booking->room ? ($booking->nights * $booking->room->price_per_night) : 0;
+                            $bBase = $bRoomBase + (float)($booking->meal_cost ?? 0) + (float)($booking->extra_bed_cost ?? 0) + $bExtraChargesTotal;
+                        }
+
+                        $bGst               = round($bBase * ($bTaxRate / 100), 2);
+                        $bGrandTotal        = $bBase + $bGst;
                         $bTotalPaid         = $booking->payments->where('status','completed')->sum('amount');
                         $bBalance           = max(0, $bGrandTotal - $bTotalPaid);
                         $bOverpaid          = max(0, $bTotalPaid - $bGrandTotal);
@@ -222,7 +235,7 @@
                         </div>
                         @endif
                         @if($booking->meal_cost > 0 || $booking->extra_beds > 0 || $bExtraChargesTotal > 0)
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span class="font-medium">₹{{ number_format($booking->total_amount) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span class="font-medium">₹{{ number_format($bBase) }}</span></div>
                         @endif
                         @if($bTaxRate > 0)
                         <div class="flex justify-between text-sm"><span class="text-gray-500">GST ({{ $bTaxRate }}%)</span><span class="text-gray-600">₹{{ number_format($bGst) }}</span></div>
