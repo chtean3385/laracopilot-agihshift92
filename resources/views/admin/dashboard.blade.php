@@ -554,7 +554,7 @@
                                                 <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
                                                     @foreach($bookedRooms as $br)
                                                     <div title="{{ $br['guest_name'] ?? 'Guest' }}" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:2px 5px;font-size:10px;line-height:1.3;color:#b91c1c;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:80px;">
-                                                        <span style="font-weight:700;">R{{ $br['room_number'] ?? '—' }}</span> {{ \Illuminate\Support\Str::limit($br['guest_name'] ?? 'Guest', 8, '') }}
+                                                        <span style="font-weight:700;">R{{ $br['room_number'] ?? '—' }}</span>
                                                     </div>
                                                     @endforeach
                                                     @foreach($freeRooms as $rn)
