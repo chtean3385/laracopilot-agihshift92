@@ -90,6 +90,34 @@
                 /* Quick actions */
                 .qa-btn { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: all .18s; }
                 .qa-btn:hover { transform: translateX(4px); }
+                .shortcut-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+                .shortcut-card {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 12px 14px;
+                    border-radius: 16px;
+                    background: #fff;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+                    text-decoration: none;
+                    transition: transform .15s, box-shadow .15s, border-color .15s;
+                    min-height: 62px;
+                }
+                .shortcut-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.08); border-color: #cbd5e1; }
+                .shortcut-icon {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    color: #fff;
+                    font-size: 16px;
+                }
+                .shortcut-title { font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.15; }
+                .shortcut-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
 
                 /* ── Dashboard card ── */
                 .db-card {
@@ -160,6 +188,61 @@
                 </style>
 
                 <div class="dashboard-main" style="display:flex;flex-direction:column;gap:24px;">
+
+                    @php
+                        $dashboardShortcuts = [];
+                        if (Module::isEnabled('extra-billing')) {
+                            $dashboardShortcuts[] = ['route' => route('food-billing.index'), 'icon' => 'fa-utensils', 'title' => 'Food Billing', 'sub' => 'Food charges', 'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'];
+                        }
+                        if (Module::isEnabled('checkin')) {
+                            $dashboardShortcuts[] = ['route' => route('checkin.index'), 'icon' => 'fa-sign-in-alt', 'title' => 'Check In', 'sub' => 'Arrivals', 'bg' => 'linear-gradient(135deg,#06b6d4,#0284c7)'];
+                        }
+                        if (Module::isEnabled('checkout')) {
+                            $dashboardShortcuts[] = ['route' => route('checkout.index'), 'icon' => 'fa-sign-out-alt', 'title' => 'Check Out', 'sub' => 'Departures', 'bg' => 'linear-gradient(135deg,#f59e0b,#ef4444)'];
+                        }
+                        if (Module::isEnabled('payment_links')) {
+                            $dashboardShortcuts[] = ['route' => route('payment-links.index'), 'icon' => 'fa-credit-card', 'title' => 'Payments', 'sub' => 'Links', 'bg' => 'linear-gradient(135deg,#8b5cf6,#6366f1)'];
+                        }
+                        if (Module::isEnabled('whatsapp')) {
+                            $dashboardShortcuts[] = ['route' => route('whatsapp.templates.index'), 'icon' => 'fa-brands fa-whatsapp', 'title' => 'WhatsApp', 'sub' => 'Messages', 'bg' => 'linear-gradient(135deg,#22c55e,#16a34a)'];
+                        }
+                        if (Module::isEnabled('booking-widget')) {
+                            $dashboardShortcuts[] = ['route' => route('booking-widget.settings'), 'icon' => 'fa-calendar-check', 'title' => 'Booking Widget', 'sub' => 'Website', 'bg' => 'linear-gradient(135deg,#ec4899,#db2777)'];
+                        }
+                        if (Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing')) {
+                            $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time Slots', 'sub' => 'Slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#2563eb)'];
+                        }
+                        if (Module::isEnabled('channel_manager')) {
+                            $dashboardShortcuts[] = ['route' => route('channel-manager.index'), 'icon' => 'fa-globe', 'title' => 'OTA Sync', 'sub' => 'Channels', 'bg' => 'linear-gradient(135deg,#14b8a6,#0f766e)'];
+                        }
+                        if (Module::isEnabled('pathik')) {
+                            $dashboardShortcuts[] = ['route' => route('pathik.index'), 'icon' => 'fa-id-card', 'title' => 'Pathik', 'sub' => 'Portal', 'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'];
+                        }
+                        if (Module::isEnabled('reports.view')) {
+                            $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
+                        }
+                    @endphp
+
+                    @if(count($dashboardShortcuts) > 0)
+                    <div class="db-card">
+                        <div class="db-card-header">
+                            <div class="db-card-title">Shortcuts</div>
+                        </div>
+                        <div class="shortcut-grid">
+                            @foreach($dashboardShortcuts as $shortcut)
+                            <a href="{{ $shortcut['route'] }}" class="shortcut-card">
+                                <div class="shortcut-icon" style="background: {{ $shortcut['bg'] }};">
+                                    <i class="fas {{ $shortcut['icon'] }}"></i>
+                                </div>
+                                <div>
+                                    <div class="shortcut-title">{{ $shortcut['title'] }}</div>
+                                    <div class="shortcut-sub">{{ $shortcut['sub'] }}</div>
+                                </div>
+                            </a>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- KPI Row 1 --}}
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
