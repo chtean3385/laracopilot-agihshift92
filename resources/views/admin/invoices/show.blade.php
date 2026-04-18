@@ -91,7 +91,6 @@
                     <tr class="border-b border-gray-100">
                         <td class="px-4 py-3 text-sm">
                             {{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }} - {{ $invoice->booking->room->view ?? '' }}
-                            @if($invoice->booking->price_overridden)<span class="ml-2 text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">Custom Price</span>@endif
                         </td>
                         <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }} nights</td>
                         <td class="px-4 py-3 text-sm text-right">

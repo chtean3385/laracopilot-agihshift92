@@ -112,10 +112,7 @@
                         }
                     @endphp
                     <tr class="border-t border-gray-200">
-                        <td class="px-4 py-3 text-sm">
-                            {{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}
-                            @if($invoice->booking->price_overridden) <span class="text-xs text-gray-500">(custom price)</span>@endif
-                        </td>
+                        <td class="px-4 py-3 text-sm">{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}</td>
                         <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }}</td>
                         <td class="px-4 py-3 text-sm text-right">
                             @if($invoice->booking->price_overridden)—@else₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}@endif

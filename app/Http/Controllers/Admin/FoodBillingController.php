@@ -15,8 +15,9 @@ class FoodBillingController extends Controller
 
         $hotelId = session('crm_hotel_id');
 
-        $bookings = Booking::with(['room', 'customer', 'extraCharges'])
-            ->whereHas('room', fn($q) => $q->where('hotel_id', $hotelId))
+        $bookings = Booking::withoutGlobalScopes()
+            ->with(['room', 'customer', 'extraCharges'])
+            ->whereHas('room', fn($q) => $q->withoutGlobalScopes()->where('hotel_id', $hotelId))
             ->where('status', 'checked_in')
             ->orderBy('check_in_date')
             ->get();
