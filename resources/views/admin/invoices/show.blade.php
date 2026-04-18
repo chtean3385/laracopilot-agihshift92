@@ -94,7 +94,7 @@
                         </td>
                         <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }} nights</td>
                         <td class="px-4 py-3 text-sm text-right">
-                            @if($invoice->booking->price_overridden)—@else₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}@endif
+                            @if($invoice->booking->price_overridden)₹{{ number_format($invRoomCost) }}@else₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}@endif
                         </td>
                         <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invRoomCost) }}</td>
                     </tr>
@@ -121,6 +121,12 @@
                         <td class="px-4 py-3 text-sm font-bold text-right text-blue-700">₹{{ number_format($invoice->booking->extra_bed_cost) }}</td>
                     </tr>
                     @endif
+                    @if($invoice->booking->extraCharges->count() > 0)
+                    <tr class="border-b border-gray-100 bg-amber-50">
+                        <td colspan="4" class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-amber-700">
+                            Food Bill
+                        </td>
+                    </tr>
                     @foreach($invoice->booking->extraCharges as $xCharge)
                     <tr class="border-b border-gray-100 bg-amber-50">
                         <td class="px-4 py-3 text-sm text-gray-700">
@@ -132,6 +138,7 @@
                         <td class="px-4 py-3 text-sm font-bold text-right text-gray-800">₹{{ number_format($xCharge->total_price) }}</td>
                     </tr>
                     @endforeach
+                    @endif
                 </tbody>
             </table>
             </div>{{-- /overflow-x:auto --}}
