@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\PhoneHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerDocument;
@@ -37,6 +38,8 @@ class CustomerController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $hotelId = $this->currentHotelId();
+
+        $request->merge(['phone' => PhoneHelper::normalize($request->input('phone'))]);
 
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
@@ -99,6 +102,9 @@ class CustomerController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $hotelId  = $this->currentHotelId();
         $customer  = Customer::findOrFail($id);
+
+        $request->merge(['phone' => PhoneHelper::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')->ignore($id)],
@@ -140,6 +146,9 @@ class CustomerController extends Controller
         if (!$hotelId) {
             return response()->json(['error' => 'No hotel context is active. Please select a hotel first.'], 422);
         }
+
+        $request->merge(['phone' => PhoneHelper::normalize($request->input('phone'))]);
+
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
             'phone'   => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')],

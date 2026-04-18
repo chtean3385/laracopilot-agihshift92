@@ -30,7 +30,8 @@
                 </div>
                 <div>
                     <label class="form-label">Phone Number <span class="text-red-500">*</span></label>
-                    <input type="text" name="phone" value="{{ old('phone') }}" class="form-input @error('phone') border-red-400 @enderror" placeholder="+91 XXXXX XXXXX" required>
+                    <input type="text" name="phone" id="phoneInput" value="{{ old('phone') }}" class="form-input @error('phone') border-red-400 @enderror" placeholder="9876543210" required>
+                    <p class="text-xs text-gray-400 mt-1">Indian numbers: 10 digits (e.g. 9876543210). Foreign guests: include country code (e.g. +447911123456).</p>
                     @error('phone')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>

@@ -450,7 +450,8 @@
                 </div>
                 <div>
                     <label class="form-label">Phone Number <span class="text-red-500">*</span></label>
-                    <input type="text" id="qg_phone" name="phone" class="form-input" placeholder="+91 XXXXX XXXXX" required>
+                    <input type="text" id="qg_phone" name="phone" class="form-input" placeholder="9876543210" required>
+                    <p class="text-xs text-gray-400 mt-1">10-digit Indian mobile. Foreign guests: include country code (e.g. +447911123456).</p>
                 </div>
                 <div>
                     <label class="form-label">Email <span class="text-gray-400 font-normal text-xs">(optional)</span></label>

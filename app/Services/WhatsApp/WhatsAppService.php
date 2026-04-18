@@ -2,6 +2,7 @@
 
 namespace App\Services\WhatsApp;
 
+use App\Helpers\PhoneHelper;
 use App\Models\Booking;
 use App\Models\Module;
 use App\Models\PlatformWhatsAppSetting;
@@ -72,7 +73,7 @@ class WhatsAppService
             }
 
             $booking->load(['customer', 'room', 'invoice.booking.extraCharges', 'payments']);
-            $phone = $booking->customer->phone ?? null;
+            $phone = PhoneHelper::forWhatsApp($booking->customer->phone ?? '');
             if (!$phone) {
                 Log::info('WhatsApp sendForEvent skipped: customer has no phone number', $context);
                 return false;

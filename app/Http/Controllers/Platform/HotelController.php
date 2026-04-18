@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Helpers\PhoneHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\HotelWelcomeMail;
 use App\Models\HotelBackupSetting;
@@ -1168,10 +1169,7 @@ class HotelController extends Controller
             $templateLang = $templates[$templateKey]['language'];
         }
 
-        $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
-        if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
-            $phone = '91' . $phone;
-        }
+        $phone = PhoneHelper::forWhatsApp($hotel->phone);
 
         try {
             $response = Http::timeout(15)->withToken($platform->saas_token)
@@ -1244,10 +1242,7 @@ class HotelController extends Controller
         $seenPhones        = [];
 
         foreach ($hotels as $hotel) {
-            $phone = preg_replace('/[^0-9]/', '', $hotel->phone);
-            if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
-                $phone = '91' . $phone;
-            }
+            $phone = PhoneHelper::forWhatsApp($hotel->phone);
 
             if (strlen($phone) < 10) {
                 $skippedNoPhone++;

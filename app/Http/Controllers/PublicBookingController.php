@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PhoneHelper;
 use App\Models\Hotel;
 use App\Models\Room;
 use App\Models\Booking;
@@ -268,7 +269,7 @@ JS;
         $checkIn        = $request->check_in;
         $checkOut       = $request->check_out;
         $roomType       = $request->room_type;
-        $phone          = $request->phone;
+        $phone          = PhoneHelper::normalize($request->phone);
         $email          = $request->email;
 
         $checkInDt = Carbon::parse($checkIn)->startOfDay();
@@ -490,11 +491,8 @@ JS;
                 return;
             }
 
-            $guestPhone = preg_replace('/[^0-9]/', '', $customer->phone);
+            $guestPhone = PhoneHelper::forWhatsApp($customer->phone);
             if (!$guestPhone) return;
-            if (!str_starts_with($guestPhone, '91') && strlen($guestPhone) === 10) {
-                $guestPhone = '91' . $guestPhone;
-            }
 
             $hotelSettings = Setting::where('hotel_id', $hotel->id)->first();
             $hotelName     = $hotelSettings->resort_name ?? $hotel->name;
@@ -598,14 +596,8 @@ JS;
                 ->select('users.phone')
                 ->first();
 
-            $hotelPhone = $adminUser
-                ? preg_replace('/[^0-9]/', '', $adminUser->phone)
-                : preg_replace('/[^0-9]/', '', $hotel->phone ?? '');
-
+            $hotelPhone = PhoneHelper::forWhatsApp($adminUser->phone ?? $hotel->phone ?? '');
             if (!$hotelPhone) return;
-            if (!str_starts_with($hotelPhone, '91') && strlen($hotelPhone) === 10) {
-                $hotelPhone = '91' . $hotelPhone;
-            }
 
             $hotelSettings = Setting::where('hotel_id', $hotel->id)->first();
             $hotelName     = $hotelSettings->resort_name ?? $hotel->name;
