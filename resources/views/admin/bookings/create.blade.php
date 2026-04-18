@@ -173,32 +173,13 @@
                     </select>
                     @error('room_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                {{-- Whole Hotel custom price (shown when whole-hotel toggle is on) --}}
-                <div id="whCustomPriceWrapper" class="md:col-span-2 hidden">
-                    @php
-                        $whRoomsMeta = \App\Models\Room::where('hotel_id', session('crm_hotel_id'))
-                            ->where('status','!=','maintenance')
-                            ->get(['id','room_number','pricing_type','price_per_night','hourly_rate']);
-                        $whRoomCount = $whRoomsMeta->count();
-                        $whPerNightSum = $whRoomsMeta->where('pricing_type','per_night')->sum('price_per_night')
-                                        ?: $whRoomsMeta->sum('price_per_night');
-                    @endphp
-                    <script>
-                        window.whRoomsMeta = @json($whRoomsMeta->values());
-                        window.whPerNightSum = {{ (float) $whPerNightSum }};
-                    </script>
-                    <div>
-                        <label class="form-label">Total Amount <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">₹</span>
-                            <input type="number" name="custom_total" id="whCustomTotal" step="1" min="0"
-                                value="{{ old('custom_total') }}"
-                                placeholder="0"
-                                class="form-input pl-7">
-                        </div>
-                        @error('custom_total')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-                </div>
+                @php
+                    $whPerNightSum = \App\Models\Room::where('hotel_id', session('crm_hotel_id'))
+                        ->where('status','!=','maintenance')
+                        ->whereIn('pricing_type', ['per_night', null])
+                        ->sum('price_per_night') ?: 0;
+                @endphp
+                <script>window.whPerNightSum = {{ (float) $whPerNightSum }};</script>
                 {{-- Per Night date fields --}}
                 <div id="perNightFields" class="contents">
                 <div>
@@ -844,29 +825,19 @@
         const isOn        = toggle.checked;
         const hiddenInput = document.getElementById('isWholeHotelInput');
         const roomWrapper = document.getElementById('roomSelectWrapper');
-        const whWrapper   = document.getElementById('whCustomPriceWrapper');
         const perNight    = document.getElementById('perNightFields');
         const perSlot     = document.getElementById('perSlotFields');
         const perHour     = document.getElementById('perHourFields');
         const mealSection = document.getElementById('mealPlanSection');
         const extraBedSec = document.getElementById('extraBedSection');
-        const customTotalInput = document.getElementById('whCustomTotal');
 
         hiddenInput.value = isOn ? '1' : '0';
-
-        // The regular per-night custom total override shares the same name="custom_total"
-        const regularTotalInput = document.getElementById('customTotalInput');
 
         if (isOn) {
             // Hide room selector
             roomWrapper.classList.add('hidden');
             document.getElementById('roomSelect').required = false;
             document.getElementById('roomSelect').disabled = true;
-            // Show whole-hotel price wrapper
-            whWrapper.classList.remove('hidden');
-            if (customTotalInput) { customTotalInput.required = true; customTotalInput.disabled = false; }
-            // Disable the regular total input so it is not submitted alongside whCustomTotal
-            if (regularTotalInput) { regularTotalInput.disabled = true; regularTotalInput.required = false; }
             // Keep per-night date fields visible and required
             if (perNight) { perNight.classList.remove('hidden'); perNight.classList.add('contents'); setFieldsEnabled(perNight, true); document.getElementById('checkIn').required = true; document.getElementById('checkOut').required = true; }
             // Hide per-slot and per-hour fields
@@ -877,14 +848,10 @@
             if (extraBedSec)  extraBedSec.style.display  = 'none';
             calcWhSuggestedTotal();
         } else {
-            // Restore room selector and date fields
+            // Restore room selector
             roomWrapper.classList.remove('hidden');
             document.getElementById('roomSelect').required = true;
             document.getElementById('roomSelect').disabled = false;
-            // Hide whole-hotel price, re-enable regular total
-            whWrapper.classList.add('hidden');
-            if (customTotalInput) { customTotalInput.required = false; customTotalInput.disabled = true; customTotalInput.value = ''; }
-            if (regularTotalInput) { regularTotalInput.disabled = false; }
             updatePricingUI();
             updateMealOptions();
         }
@@ -893,24 +860,24 @@
     function calcWhSuggestedTotal() {
         const ci = document.getElementById('checkIn')?.value;
         const co = document.getElementById('checkOut')?.value;
-        const priceInput = document.getElementById('whCustomTotal');
+        const priceInput = document.getElementById('customTotalInput');
         if (!priceInput) return;
         if (ci && co) {
             const nights = Math.max(1, Math.ceil((new Date(co) - new Date(ci)) / 86400000));
             const perNightSum = window.whPerNightSum || 0;
             const suggested = Math.round(perNightSum * nights);
-            if (!priceInput._userEdited && suggested > 0) {
+            if (!priceInput._whUserEdited && suggested > 0) {
                 priceInput.value = suggested;
             }
         }
     }
 
-    // Mark as user-edited if they manually change the whole-hotel total
-    document.getElementById('whCustomTotal')?.addEventListener('input', function() { this._userEdited = true; });
-
     // Recalculate suggested total when dates change (whole-hotel mode)
     document.getElementById('checkIn').addEventListener('change', function() { if (document.getElementById('isWholeHotelInput').value === '1') calcWhSuggestedTotal(); });
     document.getElementById('checkOut').addEventListener('change', function() { if (document.getElementById('isWholeHotelInput').value === '1') calcWhSuggestedTotal(); });
+
+    // Track manual edits to Price Summary total so we don't overwrite in whole-hotel mode
+    document.getElementById('customTotalInput')?.addEventListener('input', function() { this._whUserEdited = true; });
 
     // ── Booking form submit: show loading state ─────────────────────────────
     document.getElementById('bookingForm').addEventListener('submit', function(e) {

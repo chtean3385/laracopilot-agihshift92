@@ -68,6 +68,8 @@
                 .cal-cell.in-month { background: #f8fafc; border: 1px solid #f1f5f9; }
                 .cal-cell.in-month:hover { background: #f1f5f9; }
                 .cal-cell.out-month { background: #fff; border: 1px solid #f8fafc; opacity: .4; }
+                .cal-cell.whole-hotel { background: linear-gradient(135deg,#fff1f2,#ffe4e6) !important; border: 1px solid #fca5a5 !important; }
+                .cal-cell.whole-hotel:hover { background: linear-gradient(135deg,#ffe4e6,#fecdd3) !important; }
                 .cal-day-num { font-size: 1rem; font-weight: 800; line-height: 1; }
                 /* Calendar tooltip */
                 #calTooltip {
@@ -706,13 +708,20 @@
                                                 'staying'  => $cell['staying_guests'],
                                             ]), ENT_QUOTES, 'UTF-8') : '';
                                         @endphp
+                                        @php $isWhDay = !empty($cell['whole_hotel']); @endphp
                                         <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
-                                           class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
+                                           class="cal-cell {{ $isWhDay ? 'whole-hotel' : ($cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month')) }}"
                                            @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif
                                            data-ds="{{ $cell['ds'] }}"
                                            onclick="event.preventDefault();openDaySummary('{{ $cell['ds'] }}')">
-                                            <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
+                                            <span class="cal-day-num" style="color:{{ $isWhDay ? '#b91c1c' : ($cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1')) }};">{{ $cell['day'] }}</span>
                                             <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
+                                                @if($isWhDay)
+                                                <div style="display:flex;align-items:center;gap:3px;">
+                                                    <span style="width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>
+                                                    <span style="font-size:10px;color:#b91c1c;font-weight:700;line-height:1;">Whole Hotel</span>
+                                                </div>
+                                                @else
                                                 @if($cell['checkins'] > 0)
                                                 <div style="display:flex;align-items:center;gap:4px;">
                                                     <span style="width:7px;height:7px;border-radius:50%;background:#06b6d4;flex-shrink:0;"></span>
@@ -730,6 +739,7 @@
                                                     <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;"></span>
                                                     <span style="font-size:11px;color:#047857;font-weight:700;line-height:1;">{{ $cell['staying'] }} stay</span>
                                                 </div>
+                                                @endif
                                                 @endif
                                             </div>
                                         </a>

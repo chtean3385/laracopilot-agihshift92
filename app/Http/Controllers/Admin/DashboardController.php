@@ -246,6 +246,14 @@ class DashboardController extends Controller
                 })
                 ->get();
 
+            // Whole-hotel bookings that overlap this calendar grid (for red day highlight)
+            $calWhBookings = Booking::where('is_whole_hotel', true)
+                ->whereNotIn('status', ['cancelled', 'checked_out'])
+                ->where('check_in_date', '<=', $calGridEnd->toDateString())
+                ->where('check_out_date', '>', $calGridStart->toDateString())
+                ->with('customer:id,name')
+                ->get();
+
             $calDays = [];
             $cur = $calGridStart->copy();
             while ($cur <= $calGridEnd) {
@@ -268,6 +276,9 @@ class DashboardController extends Controller
                     ])->values()->toArray();
                 };
 
+                $whForCalDay = $calWhBookings->first(
+                    fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
+                );
                 $calDays[] = [
                     'date'             => $cur->copy(),
                     'ds'               => $ds,
@@ -280,6 +291,8 @@ class DashboardController extends Controller
                     'checkin_guests'   => $buildTooltip($checkinBookings),
                     'checkout_guests'  => $buildTooltip($checkoutBookings),
                     'staying_guests'   => $buildTooltip($stayingBookings),
+                    'whole_hotel'      => $whForCalDay ? $whForCalDay->booking_number : null,
+                    'wh_guest'         => $whForCalDay ? ($whForCalDay->customer->name ?? 'Guest') : null,
                 ];
                 $cur->addDay();
             }
