@@ -372,129 +372,7 @@
                             </div>
                         </div>
 
-                        {{-- Recent Bookings --}}
-                        <div class="db-card" style="display:flex;flex-direction:column;">
-                            <div class="db-card-header">
-                                <span class="db-card-title">Recent Bookings</span>
-                                <a href="{{ route('bookings.index') }}" class="db-card-link">View All <i class="fas fa-arrow-right"></i></a>
-                            </div>
-                            <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-                                @forelse($recentBookings as $booking)
-                                <a href="{{ route('bookings.show', $booking->id) }}" class="booking-row">
-                                    <div class="booking-avatar">
-                                        {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
-                                    </div>
-                                    <div class="booking-info">
-                                        <div class="booking-name">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                                        <div class="booking-sub">Room {{ $booking->room->room_number ?? '—' }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
-                                    </div>
-                                    <div class="booking-meta">
-                                        @canDo('reports.view')
-                                        <div class="booking-amount">₹{{ number_format($booking->total_amount) }}</div>
-                                        @endCanDo
-                                        <span class="badge-{{ $booking->status_color }}" style="font-size:10px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
-                                    </div>
-                                </a>
-                                @empty
-                                <div style="text-align:center;padding:32px;color:#94a3b8;">
-                                    <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
-                                    <p style="font-size:14px;">No recent bookings</p>
-                                </div>
-                                @endforelse
-                            </div>
-                        </div>
-
-                        {{-- Booking Calendar --}}
-                        <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
-                        <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);">
-                            <div style="display:flex;align-items:center;gap:14px;">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(6,182,212,.3);">
-                                    <i class="fas fa-calendar-alt" style="color:#fff;font-size:16px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:16px;">Booking Calendar</div>
-                                    <div style="font-size:12px;color:#64748b;">{{ $calStart->format('F Y') }} — arrivals &amp; departures</div>
-                                </div>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <a href="{{ route('dashboard', ['cal_year'=>$prevMonth->year,'cal_month'=>$prevMonth->month]) }}"
-                                   style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
-                                    <i class="fas fa-chevron-left" style="font-size:12px;"></i>
-                                </a>
-                                <a href="{{ route('dashboard') }}"
-                                   style="padding:0 14px;height:36px;display:flex;align-items:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;font-size:13px;font-weight:600;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">Today</a>
-                                <a href="{{ route('dashboard', ['cal_year'=>$nextMonth->year,'cal_month'=>$nextMonth->month]) }}"
-                                   style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
-                                    <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-                                </a>
-                            </div>
-                        </div>
-                        <div style="padding:20px;">
-                            {{-- Day headers --}}
-                            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;">
-                                @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $dow)
-                                <div style="text-align:center;font-size:12px;font-weight:700;color:#94a3b8;padding:6px 0;letter-spacing:.04em;">{{ $dow }}</div>
-                                @endforeach
-                            </div>
-                            {{-- Weeks --}}
-                            @if(count($calWeeks) > 0)
-                            <div style="display:flex;flex-direction:column;gap:6px;">
-                                @foreach($calWeeks as $week)
-                                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
-                                    @foreach($week as $cell)
-                                    @php
-                                        $hasGuests = ($cell['checkins'] + $cell['checkouts'] + $cell['staying']) > 0;
-                                        $ttData = $hasGuests ? htmlspecialchars(json_encode([
-                                            'date'     => $cell['date']->format('D, d M Y'),
-                                            'checkins' => $cell['checkin_guests'],
-                                            'checkouts'=> $cell['checkout_guests'],
-                                            'staying'  => $cell['staying_guests'],
-                                        ]), ENT_QUOTES, 'UTF-8') : '';
-                                    @endphp
-                                    <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
-                                       class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
-                                       @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif
-                                       data-ds="{{ $cell['ds'] }}"
-                                       onclick="event.preventDefault();openDaySummary('{{ $cell['ds'] }}')">
-                                        <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
-                                        <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
-                                            @if($cell['checkins'] > 0)
-                                            <div style="display:flex;align-items:center;gap:4px;">
-                                                <span style="width:7px;height:7px;border-radius:50%;background:#06b6d4;flex-shrink:0;"></span>
-                                                <span style="font-size:11px;color:#0891b2;font-weight:700;line-height:1;">{{ $cell['checkins'] }} in</span>
-                                            </div>
-                                            @endif
-                                            @if($cell['checkouts'] > 0)
-                                            <div style="display:flex;align-items:center;gap:4px;">
-                                                <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></span>
-                                                <span style="font-size:11px;color:#b45309;font-weight:700;line-height:1;">{{ $cell['checkouts'] }} out</span>
-                                            </div>
-                                            @endif
-                                            @if($cell['staying'] > 0)
-                                            <div style="display:flex;align-items:center;gap:4px;">
-                                                <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;"></span>
-                                                <span style="font-size:11px;color:#047857;font-weight:700;line-height:1;">{{ $cell['staying'] }} stay</span>
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </a>
-                                    @endforeach
-                                </div>
-                                @endforeach
-                            </div>
-                            @else
-                            <div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">Calendar unavailable</div>
-                            @endif
-                            <div style="display:flex;align-items:center;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9;">
-                                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#06b6d4;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-in</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-out</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">In-house</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;margin-left:auto;"><span style="width:10px;height:10px;border-radius:50%;border:2px solid #22d3ee;background:#ecfeff;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Today</span></div>
-                            </div>
-                        </div>
-                    </div>
-                    @endCanDo
-
+                       
                     {{-- Quick Actions --}}
                     <div class="db-card">
                         <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
@@ -749,6 +627,128 @@
                         </div>
                     </div>
                     @endif
+                        {{-- Recent Bookings --}}
+                            <div class="db-card" style="display:flex;flex-direction:column;">
+                                <div class="db-card-header">
+                                    <span class="db-card-title">Recent Bookings</span>
+                                    <a href="{{ route('bookings.index') }}" class="db-card-link">View All <i class="fas fa-arrow-right"></i></a>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+                                    @forelse($recentBookings as $booking)
+                                    <a href="{{ route('bookings.show', $booking->id) }}" class="booking-row">
+                                        <div class="booking-avatar">
+                                            {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
+                                        </div>
+                                        <div class="booking-info">
+                                            <div class="booking-name">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
+                                            <div class="booking-sub">Room {{ $booking->room->room_number ?? '—' }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
+                                        </div>
+                                        <div class="booking-meta">
+                                            @canDo('reports.view')
+                                            <div class="booking-amount">₹{{ number_format($booking->total_amount) }}</div>
+                                            @endCanDo
+                                            <span class="badge-{{ $booking->status_color }}" style="font-size:10px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
+                                        </div>
+                                    </a>
+                                    @empty
+                                    <div style="text-align:center;padding:32px;color:#94a3b8;">
+                                        <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+                                        <p style="font-size:14px;">No recent bookings</p>
+                                    </div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                            {{-- Booking Calendar --}}
+                            <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+                            <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);">
+                                <div style="display:flex;align-items:center;gap:14px;">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(6,182,212,.3);">
+                                        <i class="fas fa-calendar-alt" style="color:#fff;font-size:16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:800;color:#1e293b;font-size:16px;">Booking Calendar</div>
+                                        <div style="font-size:12px;color:#64748b;">{{ $calStart->format('F Y') }} — arrivals &amp; departures</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <a href="{{ route('dashboard', ['cal_year'=>$prevMonth->year,'cal_month'=>$prevMonth->month]) }}"
+                                       style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
+                                        <i class="fas fa-chevron-left" style="font-size:12px;"></i>
+                                    </a>
+                                    <a href="{{ route('dashboard') }}"
+                                       style="padding:0 14px;height:36px;display:flex;align-items:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;font-size:13px;font-weight:600;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">Today</a>
+                                    <a href="{{ route('dashboard', ['cal_year'=>$nextMonth->year,'cal_month'=>$nextMonth->month]) }}"
+                                       style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #e2e8f0;color:#64748b;text-decoration:none;transition:all .15s;" onmouseenter="this.style.background='#f8fafc'" onmouseleave="this.style.background='transparent'">
+                                        <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div style="padding:20px;">
+                                {{-- Day headers --}}
+                                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;">
+                                    @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $dow)
+                                    <div style="text-align:center;font-size:12px;font-weight:700;color:#94a3b8;padding:6px 0;letter-spacing:.04em;">{{ $dow }}</div>
+                                    @endforeach
+                                </div>
+                                {{-- Weeks --}}
+                                @if(count($calWeeks) > 0)
+                                <div style="display:flex;flex-direction:column;gap:6px;">
+                                    @foreach($calWeeks as $week)
+                                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
+                                        @foreach($week as $cell)
+                                        @php
+                                            $hasGuests = ($cell['checkins'] + $cell['checkouts'] + $cell['staying']) > 0;
+                                            $ttData = $hasGuests ? htmlspecialchars(json_encode([
+                                                'date'     => $cell['date']->format('D, d M Y'),
+                                                'checkins' => $cell['checkin_guests'],
+                                                'checkouts'=> $cell['checkout_guests'],
+                                                'staying'  => $cell['staying_guests'],
+                                            ]), ENT_QUOTES, 'UTF-8') : '';
+                                        @endphp
+                                        <a href="{{ route('bookings.index', ['check_in_date'=>$cell['ds']]) }}"
+                                           class="cal-cell {{ $cell['isToday'] ? 'today' : ($cell['inMonth'] ? 'in-month' : 'out-month') }}"
+                                           @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif
+                                           data-ds="{{ $cell['ds'] }}"
+                                           onclick="event.preventDefault();openDaySummary('{{ $cell['ds'] }}')">
+                                            <span class="cal-day-num" style="color:{{ $cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1') }};">{{ $cell['day'] }}</span>
+                                            <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
+                                                @if($cell['checkins'] > 0)
+                                                <div style="display:flex;align-items:center;gap:4px;">
+                                                    <span style="width:7px;height:7px;border-radius:50%;background:#06b6d4;flex-shrink:0;"></span>
+                                                    <span style="font-size:11px;color:#0891b2;font-weight:700;line-height:1;">{{ $cell['checkins'] }} in</span>
+                                                </div>
+                                                @endif
+                                                @if($cell['checkouts'] > 0)
+                                                <div style="display:flex;align-items:center;gap:4px;">
+                                                    <span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></span>
+                                                    <span style="font-size:11px;color:#b45309;font-weight:700;line-height:1;">{{ $cell['checkouts'] }} out</span>
+                                                </div>
+                                                @endif
+                                                @if($cell['staying'] > 0)
+                                                <div style="display:flex;align-items:center;gap:4px;">
+                                                    <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;"></span>
+                                                    <span style="font-size:11px;color:#047857;font-weight:700;line-height:1;">{{ $cell['staying'] }} stay</span>
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </a>
+                                        @endforeach
+                                    </div>
+                                    @endforeach
+                                </div>
+                                @else
+                                <div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">Calendar unavailable</div>
+                                @endif
+                                <div style="display:flex;align-items:center;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9;">
+                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#06b6d4;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-in</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-out</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">In-house</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;"><span style="width:10px;height:10px;border-radius:50%;border:2px solid #22d3ee;background:#ecfeff;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Today</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        @endCanDo
 
                     {{-- Today's Arrivals & Departures --}}
                     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
