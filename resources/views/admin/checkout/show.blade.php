@@ -57,10 +57,19 @@
                     <span style="font-weight:800;font-size:20px;color:#0891b2;">{{ $actualNights }}</span>
                 </div>
                 @elseif($pricingType === 'per_hour')
+                @if($booking->price_overridden)
+                <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center;">
+                    <span style="color:#64748b;">Pricing</span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;">
+                        <i class="fas fa-lock" style="font-size:10px;"></i> Fixed rate agreed at booking
+                    </span>
+                </div>
+                @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Actual Hours Billed</span>
                     <span style="font-weight:800;font-size:20px;color:#7c3aed;">{{ $hoursBooked ?? '—' }}</span>
                 </div>
+                @endif
                 @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Time Slot</span>
@@ -90,12 +99,23 @@
                     <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>
                 @elseif($pricingType === 'per_hour')
+                @if($booking->price_overridden)
+                <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center;">
+                    <span style="color:#64748b;display:inline-flex;align-items:center;gap:5px;">
+                        <span style="display:inline-flex;align-items:center;gap:4px;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">
+                            <i class="fas fa-lock" style="font-size:9px;"></i> Fixed rate agreed at booking
+                        </span>
+                    </span>
+                    <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
+                </div>
+                @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">
                         {{ $hoursBooked ?? 0 }} actual hr{{ ($hoursBooked ?? 0) != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr
                     </span>
                     <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>
+                @endif
                 @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Slot: {{ $booking->timeSlot?->name ?? 'Fixed slot' }}
@@ -176,6 +196,17 @@
         <form id="checkoutForm" action="{{ route('checkout.process', $booking->id) }}" method="POST">
             @csrf
             @if($pricingType === 'per_hour')
+            @if($booking->price_overridden)
+            <div style="background:#fffbeb;border:1.5px solid #fbbf24;border-radius:12px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+                <div style="width:38px;height:38px;background:#f59e0b;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-lock" style="color:#fff;font-size:14px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:800;font-size:14px;color:#92400e;">Fixed rate agreed at booking</div>
+                    <div style="font-size:12px;color:#b45309;margin-top:2px;">A custom price of <strong>₹{{ number_format($roomCost) }}</strong> was set at the time of booking. Hours-based billing does not apply.</div>
+                </div>
+            </div>
+            @else
             <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:16px;margin-bottom:20px;">
                 <label class="form-label" style="color:#7c3aed;"><i class="fas fa-clock mr-1"></i>Actual Hours Stayed</label>
                 <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
@@ -193,6 +224,7 @@
                     @if($taxRate > 0)<span style="font-size:11px;color:#94a3b8;"> + {{ $taxRate }}% GST</span>@endif
                 </div>
             </div>
+            @endif
             @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>

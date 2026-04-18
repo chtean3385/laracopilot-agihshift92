@@ -210,7 +210,17 @@
                         </div>
                         @elseif($pType === 'per_hour')
                         @php $roomCost = max(0, $booking->total_amount - $bExtraChargesTotal); @endphp
-                        <div class="flex justify-between text-sm"><span class="text-gray-500"><i class="fas fa-hourglass-half text-amber-400 mr-1"></i>Hourly booking</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
+                        <div class="flex justify-between text-sm items-center">
+                            <span class="text-gray-500">
+                                <i class="fas fa-hourglass-half text-amber-400 mr-1"></i>Hourly booking
+                                @if($booking->price_overridden)
+                                <span class="inline-flex items-center gap-1 ml-1.5 px-1.5 py-0.5 rounded-md text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                                    <i class="fas fa-lock" style="font-size:8px;"></i> Fixed rate agreed at booking
+                                </span>
+                                @endif
+                            </span>
+                            <span class="font-medium">₹{{ number_format($roomCost) }}</span>
+                        </div>
                         @elseif($booking->price_overridden)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500"><i class="fas fa-pen text-amber-400 mr-1"></i>Room charge <span class="text-xs text-amber-600">(custom price)</span></span>
