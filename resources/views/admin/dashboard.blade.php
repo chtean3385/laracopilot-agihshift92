@@ -5,7 +5,7 @@
 
                 @section('content')
                 <style>
-                .kpi-grid { display: none !important; }
+                .kpi-grid { display: grid !important; }
 
                 /* Reorder dashboard sections using flex order */
                 .dashboard-main > :nth-child(4) { order: 1 !important; } /* Recent Bookings + Calendar (2-col grid) — FIRST */
@@ -235,7 +235,7 @@
                     @endif
 
                     {{-- KPI Row 1 --}}
-                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
+                    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:16px;">
                         {{-- Check-Ins --}}
                         <a href="{{ route('checkin.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
