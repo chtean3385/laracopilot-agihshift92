@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
+use App\Models\DashboardPreference;
 use App\Services\SlotConflictService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -301,6 +302,35 @@ class DashboardController extends Controller
             $calWeeks = [];
         }
 
+        // ── Dashboard preferences (per-user, fallback to hotel default) ─────────
+        $hotelId = (int) session('crm_hotel_id');
+        $userId  = (int) session('crm_user_id');
+
+        $dashPref = DashboardPreference::where('hotel_id', $hotelId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$dashPref) {
+            $dashPref = DashboardPreference::where('hotel_id', $hotelId)
+                ->whereNull('user_id')
+                ->where('is_hotel_default', true)
+                ->first();
+        }
+
+        $allWidgetKeys = [
+            'kpi-row-1', 'kpi-row-2', 'quick-actions',
+            'slot-availability', 'recent-bookings', 'booking-calendar',
+            'arrivals-departures', 'room-availability',
+        ];
+
+        $dashWidgetOrder   = $dashPref?->preferences['widget_order']   ?? $allWidgetKeys;
+        $dashHiddenWidgets = $dashPref?->preferences['hidden_widgets']  ?? [];
+        $dashIsPersonal    = $dashPref && $dashPref->user_id !== null;
+        $dashHotelDefault  = DashboardPreference::where('hotel_id', $hotelId)
+            ->whereNull('user_id')
+            ->where('is_hotel_default', true)
+            ->first();
+
         return view('admin.dashboard', compact(
             'todayCheckins', 'todayCheckouts', 'availableRooms', 'occupiedRooms',
             'maintenanceRooms', 'totalRooms', 'monthRevenue', 'todayRevenue',
@@ -308,7 +338,8 @@ class DashboardController extends Controller
             'recentBookings', 'occupancyRate', 'weeklyRevenue',
             'calWeeks', 'calStart', 'prevMonth', 'nextMonth',
             'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
-            'websitePendingCount'
+            'websitePendingCount',
+            'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys'
         ));
     }
 

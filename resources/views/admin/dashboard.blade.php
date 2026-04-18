@@ -7,12 +7,73 @@
                 <style>
                 .kpi-grid { display: grid !important; }
 
-                /* Reorder dashboard sections using flex order */
-                .dashboard-main > :nth-child(4) { order: 1 !important; } /* Recent Bookings + Calendar (2-col grid) — FIRST */
-                .dashboard-main > :nth-child(5) { order: 5 !important; } /* Quick Actions — LAST */
-                .dashboard-main > :nth-child(6) { order: 2 !important; } /* Slot Availability */
-                .dashboard-main > :nth-child(7) { order: 3 !important; } /* Today's Arrivals */
-                .dashboard-main > :nth-child(8) { order: 4 !important; } /* Room Availability Checker */
+                /* ── Widget wrapper ── */
+                .db-widget-wrap { transition: opacity .2s; }
+                .db-widget-wrap.db-widget-hidden { display: none !important; }
+                .db-widget-wrap.db-widget-dragging { opacity: .55; }
+
+                /* ── Customize panel ── */
+                #dbCustomizePanel {
+                    background: #fff;
+                    border-radius: 20px;
+                    box-shadow: 0 8px 40px rgba(0,0,0,.1);
+                    border: 1px solid #e2e8f0;
+                    overflow: hidden;
+                    margin-bottom: 8px;
+                    display: none;
+                }
+                #dbCustomizePanel.open { display: block; }
+                .db-cp-header {
+                    padding: 16px 22px;
+                    border-bottom: 1px solid #f1f5f9;
+                    background: linear-gradient(135deg,#f8fafc,#f1f5f9);
+                    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+                }
+                .db-cp-title { font-weight: 800; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+                .db-cp-body { padding: 16px 22px; display: flex; flex-direction: column; gap: 6px; }
+                .db-widget-item {
+                    display: flex; align-items: center; gap: 12px;
+                    padding: 10px 14px; border-radius: 12px;
+                    background: #f8fafc; border: 1.5px solid #f1f5f9;
+                    cursor: default; user-select: none;
+                    transition: background .15s, border-color .15s, box-shadow .15s;
+                }
+                .db-widget-item.sortable-chosen { background: #f0f9ff; border-color: #7dd3fc; box-shadow: 0 4px 16px rgba(6,182,212,.12); }
+                .db-widget-item.sortable-ghost { opacity: .4; }
+                .db-drag-handle {
+                    color: #94a3b8; cursor: grab; font-size: 15px; flex-shrink: 0;
+                    padding: 2px 4px; border-radius: 6px;
+                    transition: color .15s;
+                }
+                .db-drag-handle:hover { color: #475569; }
+                .db-widget-item-icon {
+                    width: 32px; height: 32px; border-radius: 10px;
+                    display: flex; align-items: center; justify-content: center;
+                    flex-shrink: 0; font-size: 13px; color: #fff;
+                }
+                .db-widget-item-label { flex: 1; font-size: 13px; font-weight: 700; color: #1e293b; }
+                .db-widget-item-sub { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 1px; }
+                .db-toggle {
+                    position: relative; width: 36px; height: 20px;
+                    background: #e2e8f0; border-radius: 999px;
+                    cursor: pointer; border: none; outline: none;
+                    transition: background .2s; flex-shrink: 0;
+                }
+                .db-toggle.on { background: #10b981; }
+                .db-toggle::after {
+                    content: ''; position: absolute; top: 2px; left: 2px;
+                    width: 16px; height: 16px; border-radius: 50%;
+                    background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+                    transition: transform .2s;
+                }
+                .db-toggle.on::after { transform: translateX(16px); }
+                .db-cp-save-badge {
+                    display: none; align-items: center; gap: 5px;
+                    font-size: 11px; color: #10b981; font-weight: 700;
+                    background: #f0fdf4; border-radius: 8px; padding: 4px 10px;
+                    border: 1px solid #bbf7d0;
+                }
+                .db-cp-save-badge.show { display: flex; }
 
                 .kpi-card {
                     border-radius: 20px;
@@ -189,7 +250,94 @@
                 }
                 </style>
 
-                <div class="dashboard-main" style="display:flex;flex-direction:column;gap:24px;">
+                @php
+                    $dashRole = session('crm_user_role');
+                    $canSetDefault = in_array($dashRole, ['Super Admin', 'Admin']);
+                    $widgetMeta = [
+                        'kpi-row-1'          => ['label' => 'KPI Row 1 — Check-ins & Rooms',   'icon' => 'fa-bed',           'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
+                        'kpi-row-2'          => ['label' => 'KPI Row 2 — Revenue & Guests',    'icon' => 'fa-rupee-sign',    'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'],
+                        'quick-actions'      => ['label' => 'Quick Actions',                   'icon' => 'fa-bolt',          'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)'],
+                        'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
+                        'recent-bookings'    => ['label' => 'Recent Bookings',                 'icon' => 'fa-list-alt',      'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
+                        'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
+                        'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
+                        'room-availability'  => ['label' => 'Room Availability Checker',      'icon' => 'fa-door-open',     'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
+                    ];
+                    $orderedWidgets = collect($dashWidgetOrder)->filter(fn($k) => array_key_exists($k, $widgetMeta))->values()->all();
+                    foreach (array_keys($widgetMeta) as $k) {
+                        if (!in_array($k, $orderedWidgets)) $orderedWidgets[] = $k;
+                    }
+                @endphp
+
+                {{-- ⚙ Customize bar ──────────────────────────────────────────────── --}}
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:4px;flex-wrap:wrap;">
+                    @if($dashIsPersonal)
+                    <span style="font-size:11px;color:#94a3b8;font-weight:600;background:#f8fafc;border-radius:8px;padding:4px 10px;border:1px solid #f1f5f9;">
+                        <i class="fas fa-user-cog" style="margin-right:4px;color:#7c3aed;"></i>Your custom layout
+                    </span>
+                    @elseif($dashHotelDefault)
+                    <span style="font-size:11px;color:#94a3b8;font-weight:600;background:#f8fafc;border-radius:8px;padding:4px 10px;border:1px solid #f1f5f9;">
+                        <i class="fas fa-hotel" style="margin-right:4px;color:#06b6d4;"></i>Hotel default layout
+                    </span>
+                    @endif
+                    <div id="dbSaveBadge" class="db-cp-save-badge"><i class="fas fa-check-circle"></i> Saved</div>
+                    <button onclick="dbToggleCustomize()" id="dbCustomizeBtn"
+                        style="display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:12px;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.05);"
+                        onmouseenter="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1'"
+                        onmouseleave="this.style.background='#fff';this.style.borderColor='#e2e8f0'">
+                        <i class="fas fa-sliders-h"></i> Customize
+                    </button>
+                </div>
+
+                {{-- ⚙ Customize panel ─────────────────────────────────────────────── --}}
+                <div id="dbCustomizePanel">
+                    <div class="db-cp-header">
+                        <div class="db-cp-title">
+                            <i class="fas fa-sliders-h" style="color:#7c3aed;"></i>
+                            Dashboard Customisation
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span style="font-size:12px;color:#94a3b8;">Drag to reorder &bull; Toggle to show/hide</span>
+                            @if($canSetDefault)
+                            <button onclick="dbSaveDefault()" id="dbSetDefaultBtn"
+                                style="padding:6px 14px;border-radius:10px;border:1.5px solid #ddd6fe;background:#faf5ff;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;"
+                                onmouseenter="this.style.background='#ede9fe'" onmouseleave="this.style.background='#faf5ff'">
+                                <i class="fas fa-hotel" style="margin-right:5px;"></i>Set as Hotel Default
+                            </button>
+                            @endif
+                            @if($dashIsPersonal)
+                            <button onclick="dbResetPrefs()" id="dbResetBtn"
+                                style="padding:6px 14px;border-radius:10px;border:1.5px solid #fca5a5;background:#fff1f2;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;"
+                                onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff1f2'">
+                                <i class="fas fa-undo" style="margin-right:5px;"></i>Reset to Default
+                            </button>
+                            @endif
+                            <button onclick="dbToggleCustomize()"
+                                style="padding:6px 12px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="db-cp-body" id="dbWidgetList">
+                        @foreach($orderedWidgets as $wKey)
+                        @php $wm = $widgetMeta[$wKey] ?? null; if (!$wm) continue; @endphp
+                        @if($wKey === 'slot-availability' && !$hasSlotModule)@continue@endif
+                        <div class="db-widget-item" data-widget-key="{{ $wKey }}">
+                            <span class="db-drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></span>
+                            <div class="db-widget-item-icon" style="background:{{ $wm['bg'] }};"><i class="fas {{ $wm['icon'] }}"></i></div>
+                            <div style="flex:1;min-width:0;">
+                                <div class="db-widget-item-label">{{ $wm['label'] }}</div>
+                            </div>
+                            <button class="db-toggle {{ !in_array($wKey, $dashHiddenWidgets) ? 'on' : '' }}"
+                                onclick="dbToggleWidget('{{ $wKey }}', this)"
+                                title="{{ !in_array($wKey, $dashHiddenWidgets) ? 'Click to hide' : 'Click to show' }}">
+                            </button>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="dashboard-main" id="dbMain" style="display:flex;flex-direction:column;gap:24px;">
 
                     @php
                         $dashboardShortcuts = [];
@@ -235,6 +383,7 @@
                     @endif
 
                     {{-- KPI Row 1 --}}
+                    <div data-widget="kpi-row-1" class="db-widget-wrap">
                     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:16px;">
                         {{-- Check-Ins --}}
                         <a href="{{ route('checkin.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
@@ -269,8 +418,10 @@
                             <div class="kpi-sub">{{ $occupancyRate }}% occupancy <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
                         </a>
                     </div>
+                    </div>{{-- /kpi-row-1 widget --}}
 
                     {{-- KPI Row 2: Financial + Operational --}}
+                    <div data-widget="kpi-row-2" class="db-widget-wrap">
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
                         @canDo('reports.view')
                         <a href="{{ route('reports.revenue') }}" class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
@@ -312,69 +463,11 @@
                         </a>
                         @endif
                     </div>
+                    </div>{{-- /kpi-row-2 widget --}}
 
-                    {{-- Occupancy + Revenue --}}
-                    @canDo('reports.view')
-                    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:stretch;" class="occ-rev-grid">
-
-                        {{-- Occupancy Circle (HIDDEN) --}}
-                        <div style="background:#fff;border-radius:20px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;display:none;flex-direction:column;align-items:center;">
-                            <div style="font-weight:800;color:#1e293b;font-size:15px;margin-bottom:20px;align-self:flex-start;width:100%;">Room Occupancy</div>
-                            <div style="position:relative;width:200px;height:200px;flex-shrink:0;">
-                                <svg viewBox="0 0 36 36" class="occ-svg" style="width:200px;height:200px;transform:rotate(-90deg);">
-                                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" stroke-width="3.2"/>
-                                    @php
-                                        $occ = (int)$occupancyRate;
-                                        $color1 = $occ >= 80 ? '#ef4444' : ($occ >= 50 ? '#f59e0b' : '#06b6d4');
-                                        $color2 = $occ >= 80 ? '#be185d' : ($occ >= 50 ? '#d97706' : '#3b82f6');
-                                    @endphp
-                                    <defs>
-                                        <linearGradient id="occGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" style="stop-color:{{ $color1 }}"/>
-                                            <stop offset="100%" style="stop-color:{{ $color2 }}"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <circle class="occ-ring" cx="18" cy="18" r="15.9" fill="none"
-                                        stroke="url(#occGrad)" stroke-width="3.2"
-                                        stroke-linecap="round"
-                                        stroke-dasharray="{{ $occ }}, 100"/>
-                                </svg>
-                                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                                    <div style="font-size:2.4rem;font-weight:900;color:#1e293b;line-height:1;">{{ $occupancyRate }}%</div>
-                                    <div style="font-size:.72rem;color:#94a3b8;font-weight:600;margin-top:2px;">Occupied</div>
-                                </div>
-                            </div>
-                            <div style="width:100%;margin-top:22px;display:flex;flex-direction:column;gap:10px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;">
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <div style="width:12px;height:12px;border-radius:50%;background:#10b981;"></div>
-                                        <span style="font-size:13px;color:#475569;">Available</span>
-                                    </div>
-                                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $availableRooms }}</span>
-                                </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;">
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <div style="width:12px;height:12px;border-radius:50%;background:#f43f5e;"></div>
-                                        <span style="font-size:13px;color:#475569;">Occupied</span>
-                                    </div>
-                                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $occupiedRooms }}</span>
-                                </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;">
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <div style="width:12px;height:12px;border-radius:50%;background:#f59e0b;"></div>
-                                        <span style="font-size:13px;color:#475569;">Maintenance</span>
-                                    </div>
-                                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $maintenanceRooms }}</span>
-                                </div>
-                                <div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;">
-                                    <span style="font-size:12px;color:#94a3b8;">Total Rooms</span>
-                                    <span style="font-weight:800;color:#1e293b;font-size:15px;">{{ $totalRooms }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                       
+                    {{-- Quick Actions widget --}}
+                    <div data-widget="quick-actions" class="db-widget-wrap">
+                    {{-- (Occupancy Circle removed — was hidden) --}}
                     {{-- Quick Actions --}}
                     <div class="db-card">
                         <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
@@ -480,8 +573,11 @@
                             @endif
                         </div>
                     </div>
+                    </div>{{-- /quick-actions widget --}}
 
                     {{-- Slot Availability Widget --}}
+                    @canDo('reports.view')
+                    <div data-widget="slot-availability" class="db-widget-wrap">
                     @if($hasSlotModule)
                     <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
                         <div style="padding:16px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#ede9fe);flex-wrap:wrap;gap:12px;">
@@ -629,7 +725,12 @@
                         </div>
                     </div>
                     @endif
-                        {{-- Recent Bookings --}}
+                    </div>{{-- /slot-availability widget --}}
+                    @endCanDo
+
+                    {{-- Recent Bookings --}}
+                    @canDo('bookings.view')
+                    <div data-widget="recent-bookings" class="db-widget-wrap">
                             <div class="db-card" style="display:flex;flex-direction:column;">
                                 <div class="db-card-header">
                                     <span class="db-card-title">Recent Bookings</span>
@@ -660,8 +761,12 @@
                                     @endforelse
                                 </div>
                             </div>
+                    </div>{{-- /recent-bookings widget --}}
+                    @endCanDo
 
-                            {{-- Booking Calendar --}}
+                    {{-- Booking Calendar --}}
+                    @canDo('reports.view')
+                    <div data-widget="booking-calendar" class="db-widget-wrap">
                             <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
                             <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);">
                                 <div style="display:flex;align-items:center;gap:14px;">
@@ -758,9 +863,11 @@
                                 </div>
                             </div>
                         </div>
-                        @endCanDo
+                    </div>{{-- /booking-calendar widget --}}
+                    @endCanDo
 
-                    {{-- Today's Arrivals & Departures --}}
+                    {{-- Today's Arrivals & Departures (always render for customisation) --}}
+                    <div data-widget="arrivals-departures" class="db-widget-wrap">
                     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
                     <div class="arrivals-grid">
                         @if($todayCheckins->count() > 0)
@@ -814,8 +921,10 @@
                         @endif
                     </div>
                     @endif
+                    </div>{{-- /arrivals-departures widget --}}
 
                     {{-- Room Availability Checker --}}
+                    <div data-widget="room-availability" class="db-widget-wrap">
                     <div class="db-card" style="overflow:hidden;padding:0;">
                         <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:10px;">
@@ -838,8 +947,9 @@
                             <div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:13px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
                         </div>
                     </div>
+                    </div>{{-- /room-availability widget --}}
 
-                </div>
+                </div>{{-- /dashboard-main --}}
 
                 {{-- Mobile responsiveness --}}
                 <style>
@@ -1118,4 +1228,191 @@
                 });
                 </script>
 
+                {{-- ⚙ Dashboard Preferences JS ─────────────────────────────── --}}
+                <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+                <script>
+                (function() {
+                    var SAVE_URL         = '{{ route("dashboard.preferences.save") }}';
+                    var SAVE_DEFAULT_URL = '{{ route("dashboard.preferences.save_default") }}';
+                    var RESET_URL        = '{{ route("dashboard.preferences.reset") }}';
+                    var CSRF             = '{{ csrf_token() }}';
+
+                    var savedOrder   = @json($dashWidgetOrder);
+                    var savedHidden  = @json($dashHiddenWidgets);
+                    var saveTimer    = null;
+                    var sortable     = null;
+
+                    // ── Apply stored order & visibility on page load ──────────────
+                    document.addEventListener('DOMContentLoaded', function() {
+                        applyPreferences(savedOrder, savedHidden);
+                    });
+
+                    function applyPreferences(order, hidden) {
+                        var main = document.getElementById('dbMain');
+                        if (!main) return;
+
+                        // Reorder: move widgets to match saved order
+                        if (order && order.length) {
+                            order.slice().reverse().forEach(function(key) {
+                                var el = main.querySelector('[data-widget="' + key + '"]');
+                                if (el) main.insertBefore(el, main.firstChild);
+                            });
+                        }
+
+                        // Show/hide
+                        main.querySelectorAll('[data-widget]').forEach(function(el) {
+                            var k = el.getAttribute('data-widget');
+                            if (hidden.indexOf(k) !== -1) {
+                                el.classList.add('db-widget-hidden');
+                            } else {
+                                el.classList.remove('db-widget-hidden');
+                            }
+                        });
+                    }
+
+                    // ── Toggle customize panel ────────────────────────────────────
+                    window.dbToggleCustomize = function() {
+                        var panel = document.getElementById('dbCustomizePanel');
+                        var open = panel.classList.toggle('open');
+                        var btn  = document.getElementById('dbCustomizeBtn');
+                        if (btn) {
+                            btn.style.background = open ? '#f0f9ff' : '#fff';
+                            btn.style.borderColor = open ? '#7dd3fc' : '#e2e8f0';
+                            btn.style.color = open ? '#0284c7' : '#475569';
+                        }
+                        if (open && !sortable) {
+                            initSortable();
+                        }
+                    };
+
+                    // ── Init SortableJS on the widget list ────────────────────────
+                    function initSortable() {
+                        var list = document.getElementById('dbWidgetList');
+                        if (!list || typeof Sortable === 'undefined') return;
+                        sortable = new Sortable(list, {
+                            handle: '.db-drag-handle',
+                            animation: 180,
+                            ghostClass: 'sortable-ghost',
+                            chosenClass: 'sortable-chosen',
+                            onEnd: function() {
+                                syncOrderFromPanel();
+                                scheduleSave();
+                            }
+                        });
+                    }
+
+                    // ── Toggle individual widget visibility ───────────────────────
+                    window.dbToggleWidget = function(key, btn) {
+                        var main   = document.getElementById('dbMain');
+                        var widget = main ? main.querySelector('[data-widget="' + key + '"]') : null;
+                        var isOn   = btn.classList.toggle('on');
+                        if (widget) {
+                            widget.classList.toggle('db-widget-hidden', !isOn);
+                        }
+                        btn.title = isOn ? 'Click to hide' : 'Click to show';
+                        scheduleSave();
+                    };
+
+                    // ── Read current order from panel list ────────────────────────
+                    function syncOrderFromPanel() {
+                        var list = document.getElementById('dbWidgetList');
+                        if (!list) return;
+                        var order = [];
+                        list.querySelectorAll('[data-widget-key]').forEach(function(item) {
+                            order.push(item.getAttribute('data-widget-key'));
+                        });
+                        // Also reorder actual dashboard widgets to match
+                        var main = document.getElementById('dbMain');
+                        if (main && order.length) {
+                            order.slice().reverse().forEach(function(key) {
+                                var el = main.querySelector('[data-widget="' + key + '"]');
+                                if (el) main.insertBefore(el, main.firstChild);
+                            });
+                        }
+                    }
+
+                    // ── Build current preferences from DOM ────────────────────────
+                    function currentPrefs() {
+                        var list    = document.getElementById('dbWidgetList');
+                        var order   = [];
+                        var hidden  = [];
+                        if (list) {
+                            list.querySelectorAll('[data-widget-key]').forEach(function(item) {
+                                var k   = item.getAttribute('data-widget-key');
+                                var btn = item.querySelector('.db-toggle');
+                                order.push(k);
+                                if (btn && !btn.classList.contains('on')) hidden.push(k);
+                            });
+                        }
+                        return { widget_order: order, hidden_widgets: hidden };
+                    }
+
+                    // ── Debounced auto-save ───────────────────────────────────────
+                    function scheduleSave() {
+                        clearTimeout(saveTimer);
+                        saveTimer = setTimeout(savePrefs, 800);
+                    }
+
+                    function savePrefs() {
+                        var prefs = currentPrefs();
+                        fetch(SAVE_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': CSRF,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify(prefs)
+                        }).then(function(r) {
+                            if (r.ok) showSaveBadge();
+                        });
+                    }
+
+                    // ── Set as hotel default ──────────────────────────────────────
+                    window.dbSaveDefault = function() {
+                        var prefs = currentPrefs();
+                        var btn   = document.getElementById('dbSetDefaultBtn');
+                        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Saving…'; }
+                        fetch(SAVE_DEFAULT_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': CSRF,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify(prefs)
+                        }).then(function(r) {
+                            if (r.ok) {
+                                showSaveBadge('Hotel default saved!');
+                                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-hotel" style="margin-right:5px;"></i>Set as Hotel Default'; }
+                            }
+                        });
+                    };
+
+                    // ── Reset to default ──────────────────────────────────────────
+                    window.dbResetPrefs = function() {
+                        if (!confirm('Reset your dashboard layout to the hotel default? Your personal preferences will be removed.')) return;
+                        fetch(RESET_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': CSRF,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({})
+                        }).then(function(r) {
+                            if (r.ok) window.location.reload();
+                        });
+                    };
+
+                    // ── Show "Saved" badge briefly ────────────────────────────────
+                    function showSaveBadge(text) {
+                        var badge = document.getElementById('dbSaveBadge');
+                        if (!badge) return;
+                        badge.innerHTML = '<i class="fas fa-check-circle"></i> ' + (text || 'Saved');
+                        badge.classList.add('show');
+                        setTimeout(function() { badge.classList.remove('show'); }, 2200);
+                    }
+                })();
+                </script>
                 @endsection

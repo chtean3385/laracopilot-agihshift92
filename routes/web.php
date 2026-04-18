@@ -212,6 +212,12 @@ Route::delete('/settings/add-ons/{id}',               [TimeSlotController::class
 Route::get('/calendar/day-summary',      [DashboardController::class, 'daySummary']       )->name('calendar.day_summary');
 Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvailability'])->name('dashboard.availability');
 
+// ── Dashboard preferences ───────────────────────────────────────────────────
+use App\Http\Controllers\Admin\DashboardPreferenceController;
+Route::post('/dashboard/preferences/save',         [DashboardPreferenceController::class, 'save']       )->name('dashboard.preferences.save');
+Route::post('/dashboard/preferences/save-default', [DashboardPreferenceController::class, 'saveDefault'])->name('dashboard.preferences.save_default');
+Route::post('/dashboard/preferences/reset',        [DashboardPreferenceController::class, 'reset']      )->name('dashboard.preferences.reset');
+
 // ── Slot Availability Report ────────────────────────────────────────────────
 Route::get('/reports/slot-availability',        [ReportController::class, 'slotAvailability']      )->middleware('permission:reports.view')->name('reports.slot_availability');
 Route::get('/reports/slot-availability/export', [ReportController::class, 'slotAvailabilityExport'])->middleware('permission:reports.view')->name('reports.slot_availability.export');
