@@ -338,9 +338,10 @@ class ReportController extends Controller
             fputcsv($out, ['Booking#', 'Room', 'Check-In', 'Check-Out', 'Guest Name', 'Relation', 'Age', 'Gender', 'Nationality', 'ID Type', 'ID Number', 'Has Signature', 'Has ID Document']);
             foreach ($bookings as $booking) {
                 $primary = $booking->customer;
+                $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '');
                 fputcsv($out, [
                     $booking->booking_number,
-                    $booking->room?->room_number ?? '',
+                    $roomLabel,
                     $booking->check_in_date?->format('d/m/Y'),
                     $booking->check_out_date?->format('d/m/Y'),
                     $primary->name ?? '',
@@ -356,7 +357,7 @@ class ReportController extends Controller
                 foreach ($booking->bookingGuests as $g) {
                     fputcsv($out, [
                         $booking->booking_number,
-                        $booking->room?->room_number ?? '',
+                        $roomLabel,
                         $booking->check_in_date?->format('d/m/Y'),
                         $booking->check_out_date?->format('d/m/Y'),
                         $g->name,

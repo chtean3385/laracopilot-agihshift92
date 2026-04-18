@@ -37,21 +37,32 @@
                         <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                         <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Guest</th>
                         <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Booking</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Room</th>
                         <th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Method</th>
                         <th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Amount</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     @forelse($payments as $p)
+                    @php $isWH = $p->booking && $p->booking->is_whole_hotel; @endphp
                     <tr class="hover:bg-slate-50">
                         <td class="px-6 py-3 text-xs text-gray-500">{{ $p->created_at->format('d M Y') }}</td>
                         <td class="px-6 py-3 text-sm font-medium">{{ $p->booking->customer->name ?? 'N/A' }}</td>
                         <td class="px-6 py-3 text-xs font-mono text-cyan-600">{{ $p->booking->booking_number ?? 'N/A' }}</td>
+                        <td class="px-6 py-3 text-sm">
+                            @if($isWH)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                                    <i class="fas fa-hotel" style="font-size:10px;"></i> Whole Hotel
+                                </span>
+                            @else
+                                {{ $p->booking->room?->room_number ?? '—' }}
+                            @endif
+                        </td>
                         <td class="px-6 py-3 text-sm">{{ ucfirst($p->payment_method) }}</td>
                         <td class="px-6 py-3 text-sm font-bold text-emerald-600 text-right">₹{{ number_format($p->amount) }}</td>
                     </tr>
                     @empty
-                    <tr><td colspan="5" class="px-6 py-12 text-center text-gray-400">No transactions in this period</td></tr>
+                    <tr><td colspan="6" class="px-6 py-12 text-center text-gray-400">No transactions in this period</td></tr>
                     @endforelse
                 </tbody>
             </table>
