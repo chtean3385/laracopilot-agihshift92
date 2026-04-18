@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\ActivityLogger;
-use App\Services\HotelContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +11,7 @@ class DataCleanupController extends Controller
 {
     private function hotelId(): int
     {
-        return app(HotelContext::class)->getHotel()->id;
+        return (int) session('crm_hotel_id');
     }
 
     public function index()
