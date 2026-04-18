@@ -52,10 +52,12 @@
 #primarySigPad, [id^="sigPad"] { touch-action:none; }
 
 /* Responsive grids */
-.ci-info-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.ci-page-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
 .ci-form-grid  { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:768px) {
+    .ci-page-grid  { grid-template-columns:1fr; }
+}
 @media(max-width:540px) {
-    .ci-info-grid  { grid-template-columns:1fr; }
     .ci-form-grid  { grid-template-columns:1fr; }
 }
 </style>
