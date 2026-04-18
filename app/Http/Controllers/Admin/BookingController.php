@@ -147,6 +147,7 @@ class BookingController extends Controller
             $advancePayment= $validated['advance_payment'] ?? 0;
             $bookingData   = [
                 'booking_number'  => $bookingNumber,
+                'hotel_id'        => session('crm_hotel_id'),
                 'customer_id'     => $validated['customer_id'],
                 'room_id'         => $validated['room_id'],
                 'check_in_date'   => $validated['booking_date'],
@@ -170,6 +171,7 @@ class BookingController extends Controller
             $advancePayment= 0;
             $bookingData   = [
                 'booking_number'  => $bookingNumber,
+                'hotel_id'        => session('crm_hotel_id'),
                 'customer_id'     => $validated['customer_id'],
                 'room_id'         => $validated['room_id'],
                 'check_in_date'   => $validated['booking_date'],
@@ -204,6 +206,7 @@ class BookingController extends Controller
             $advancePayment= $validated['advance_payment'] ?? 0;
             $bookingData   = [
                 'booking_number'  => $bookingNumber,
+                'hotel_id'        => session('crm_hotel_id'),
                 'customer_id'     => $validated['customer_id'],
                 'room_id'         => $validated['room_id'],
                 'check_in_date'   => $validated['check_in_date'],

@@ -103,11 +103,23 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php $prtRoomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room->price_per_night ?? 0); @endphp
+                    @php
+                        $prtExtraTotal = $invoice->booking->extraCharges->sum('total_price');
+                        if ($invoice->booking->price_overridden) {
+                            $prtRoomCost = max(0, (float)$invoice->booking->total_amount - $prtExtraTotal);
+                        } else {
+                            $prtRoomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room->price_per_night ?? 0);
+                        }
+                    @endphp
                     <tr class="border-t border-gray-200">
-                        <td class="px-4 py-3 text-sm">{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            {{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}
+                            @if($invoice->booking->price_overridden) <span class="text-xs text-gray-500">(custom price)</span>@endif
+                        </td>
                         <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }}</td>
-                        <td class="px-4 py-3 text-sm text-right">₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}</td>
+                        <td class="px-4 py-3 text-sm text-right">
+                            @if($invoice->booking->price_overridden)—@else₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}@endif
+                        </td>
                         <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($prtRoomCost) }}</td>
                     </tr>
                     @if($invoice->booking->meal_cost > 0)
@@ -147,8 +159,11 @@
             </div>{{-- /overflow-x:auto --}}
 
             @php
-                $gstAmount    = ($settings && $settings->gst_number) ? $invoice->total_amount * ($settings->tax_rate / 100) : 0;
-                $grandTotal   = $invoice->total_amount + $gstAmount;
+                $prtSubtotal  = $invoice->booking->price_overridden
+                    ? (float) $invoice->booking->total_amount
+                    : (float) $invoice->total_amount;
+                $gstAmount    = ($settings && $settings->gst_number) ? $prtSubtotal * ($settings->tax_rate / 100) : 0;
+                $grandTotal   = $prtSubtotal + $gstAmount;
                 $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
                 $overpayment    = max(0, $invoice->paid_amount - $grandTotal);
             @endphp
@@ -156,7 +171,7 @@
             {{-- Totals --}}
             <div class="flex justify-end">
                 <div class="w-full sm:w-56 text-sm space-y-1">
-                    <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($invoice->total_amount) }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($prtSubtotal) }}</span></div>
                     @if($settings && $settings->gst_number)
                     <div class="flex justify-between"><span class="text-gray-500">GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($gstAmount) }}</span></div>
                     @endif

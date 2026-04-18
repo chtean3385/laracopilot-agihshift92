@@ -150,7 +150,11 @@
                         @elseif($pType === 'per_hour')
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Hour</span><span class="font-bold text-amber-600">₹{{ number_format($booking->room->hourly_rate ?? 0) }}</span></div>
                         @else
+                        @if($booking->price_overridden)
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Custom Total</span><span class="font-bold text-amber-600">₹{{ number_format($booking->total_amount) }} <span class="text-xs font-normal text-amber-500">(custom)</span></span></div>
+                        @else
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room->price_per_night) }}</span></div>
+                        @endif
                         @endif
                     </div>
                     @else
@@ -333,118 +337,6 @@
         </div>
         @endforeach
     </div>
-</div>
-@endif
-
-{{-- ── Extra Billing Module ─────────────────────────────────────────────── --}}
-@if(\App\Models\Module::isEnabled('extra-billing'))
-<div id="extra-charges" class="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-amber-100 flex items-center justify-between" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
-                <i class="fas fa-utensils text-white text-sm"></i>
-            </div>
-            <div>
-                <h3 class="font-bold text-gray-800 text-sm">Food &amp; Extra Charges</h3>
-                <p class="text-xs text-gray-500">Add food, beverage &amp; extra charges to this bill</p>
-            </div>
-        </div>
-        @if($booking->extraCharges->count() > 0)
-        <span class="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">₹{{ number_format($booking->extraCharges->sum('total_price')) }} total</span>
-        @endif
-    </div>
-
-    {{-- Existing charges list --}}
-    @if($booking->extraCharges->count() > 0)
-    <div class="divide-y divide-gray-50">
-        @foreach($booking->extraCharges as $charge)
-        <div class="px-6 py-3 flex items-center justify-between group">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center flex-shrink-0">
-                    @php
-                        $catIcon = match($charge->category) {
-                            'food'      => 'fa-utensils',
-                            'drink'     => 'fa-wine-glass-alt',
-                            'laundry'   => 'fa-tshirt',
-                            'transport' => 'fa-car',
-                            'spa'       => 'fa-spa',
-                            'pharmacy'  => 'fa-pills',
-                            'service'   => 'fa-concierge-bell',
-                            'activity'  => 'fa-hiking',
-                            'parking'   => 'fa-parking',
-                            default     => 'fa-receipt',
-                        };
-                    @endphp
-                    <i class="fas {{ $catIcon }} text-rose-400 text-xs"></i>
-                </div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-700">{{ $charge->name }}</div>
-                    <div class="text-xs text-gray-400">
-                        {{ $charge->categoryLabel }}
-                        @if($charge->quantity != 1) · {{ number_format($charge->quantity, 0) }} × ₹{{ number_format($charge->unit_price) }} @endif
-                        @if($charge->notes) · <span class="italic">{{ $charge->notes }}</span> @endif
-                    </div>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="font-bold text-rose-600 text-sm">₹{{ number_format($charge->total_price) }}</div>
-                @if($booking->status === 'checked_in')
-                <form method="POST" action="{{ route('bookings.extra_charges.destroy', [$booking, $charge]) }}" onsubmit="return confirm('Remove this extra charge? This will reduce the booking total by ₹{{ number_format($charge->total_price) }}.')">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center">
-                        <i class="fas fa-trash text-xs"></i>
-                    </button>
-                </form>
-                @endif
-            </div>
-        </div>
-        @endforeach
-    </div>
-    @else
-    <div class="px-6 py-5 text-center text-gray-400 text-sm">No extra charges added yet</div>
-    @endif
-
-    {{-- Add new charge form (only for checked-in bookings) --}}
-    @if($booking->status === 'checked_in')
-    <div class="px-6 pb-6 pt-4 border-t border-gray-100">
-        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Add Extra Charge</p>
-        <form method="POST" action="{{ route('bookings.extra_charges.store', $booking) }}" class="space-y-3">
-            @csrf
-            <div class="grid grid-cols-2 gap-3">
-                <div class="col-span-2">
-                    <input type="text" name="name" placeholder="Description (e.g. Room Service — Dinner)" required
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-transparent"
-                        value="{{ old('name') }}">
-                </div>
-                <div>
-                    <select name="category" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white">
-                        @foreach(\App\Models\BookingExtraCharge::categories() as $key => $label)
-                        <option value="{{ $key }}" {{ old('category') == $key ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <input type="number" name="quantity" placeholder="Qty" step="0.01" min="0.01" value="{{ old('quantity', 1) }}" required
-                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300">
-                    </div>
-                    <div>
-                        <input type="number" name="unit_price" placeholder="₹ Price" step="0.01" min="0" value="{{ old('unit_price') }}" required
-                            class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300">
-                    </div>
-                </div>
-                <div class="col-span-2">
-                    <input type="text" name="notes" placeholder="Notes (optional)" maxlength="500"
-                        class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-                        value="{{ old('notes') }}">
-                </div>
-            </div>
-            <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">
-                <i class="fas fa-plus"></i> Add to Bill
-            </button>
-        </form>
-    </div>
-    @endif
 </div>
 @endif
 

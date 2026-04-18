@@ -16,7 +16,7 @@ class FoodBillingController extends Controller
         $hotelId = session('crm_hotel_id');
 
         $bookings = Booking::with(['room', 'customer', 'extraCharges'])
-            ->where('hotel_id', $hotelId)
+            ->whereHas('room', fn($q) => $q->where('hotel_id', $hotelId))
             ->where('status', 'checked_in')
             ->orderBy('check_in_date')
             ->get();
@@ -28,7 +28,9 @@ class FoodBillingController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         abort_unless(Module::isEnabled('extra-billing'), 403, 'Extra Billing module is not enabled.');
-        abort_unless($booking->hotel_id === session('crm_hotel_id'), 403);
+        $hotelId = session('crm_hotel_id');
+        $booking->loadMissing('room');
+        abort_unless((int)($booking->room->hotel_id ?? 0) === (int)$hotelId, 403);
 
         $booking->load(['room', 'customer', 'extraCharges']);
 
