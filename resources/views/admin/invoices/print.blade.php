@@ -143,7 +143,7 @@
                     @if($invoice->booking->extraCharges->count() > 0)
                     <tr class="border-t border-gray-100">
                         <td colspan="4" class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-gray-700">
-                            Food Bill
+                            Extra Service Charge + Food
                         </td>
                     </tr>
                     @foreach($invoice->booking->extraCharges as $xCharge)
