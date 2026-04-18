@@ -67,16 +67,18 @@
                         <td class="px-4 py-3 font-medium text-gray-700 whitespace-nowrap">{{ $day['label'] }}</td>
                         @foreach($day['slots'] as $s)
                         @php
-                            $pct = $s['total'] > 0 ? round($s['booked'] / $s['total'] * 100) : 0;
-                            $color = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                            $pct         = $s['total'] > 0 ? round($s['booked'] / $s['total'] * 100) : 0;
+                            $color       = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                            $bookedRooms = $s['booked_rooms'] ?? [];
+                            $freeRooms   = $s['free_rooms']   ?? [];
+                            $colorMap    = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
+                            $bgColorMap  = ['green'=>'#f0fdf4','amber'=>'#fffbeb','red'=>'#fff1f2'];
                         @endphp
-                        <td class="px-4 py-3 text-center">
-                            @php
-                                $bookedRooms = $s['booked_rooms'] ?? [];
-                                $freeRooms   = $s['free_rooms']   ?? [];
-                                $colorMap = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
-                                $bgColorMap = ['green'=>'#f0fdf4','amber'=>'#fffbeb','red'=>'#fff1f2'];
-                            @endphp
+                        <td class="px-4 py-3 text-center rpt-slot-cell cursor-help"
+                            data-booked="{{ json_encode($bookedRooms) }}"
+                            data-free="{{ json_encode($freeRooms) }}"
+                            data-slot="{{ $s['slot_name'] }}"
+                            data-day="{{ $day['label'] }}">
                             <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;">
                                 <span style="font-weight:800;font-size:13px;color:{{ $colorMap[$color] }};background:{{ $bgColorMap[$color] }};padding:2px 10px;border-radius:999px;">
                                     {{ $s['available'] }}<span style="font-weight:400;color:#94a3b8;font-size:11px;">/{{ $s['total'] }}</span>

@@ -175,6 +175,85 @@ class ReportController extends Controller
         return $this->slotAvailability($request->merge(['export' => 'csv']));
     }
 
+    public function slotBookings(Request $request)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        if (!Module::isEnabled('time-slot-pricing')) {
+            return redirect()->route('reports.index')->with('error', 'Time Slot Pricing module is not enabled.');
+        }
+
+        $from  = $request->date_from ? Carbon::parse($request->date_from) : Carbon::today()->subDays(6);
+        $to    = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::today();
+        $filterSlot = $request->slot_id;
+
+        $query = Booking::with(['customer', 'room', 'timeSlot', 'payments'])
+            ->whereNotNull('time_slot_id')
+            ->whereBetween('booking_date', [$from->toDateString(), $to->toDateString()]);
+
+        if ($filterSlot) {
+            $query->where('time_slot_id', $filterSlot);
+        }
+
+        $bookings = $query->orderByDesc('booking_date')->orderByDesc('id')->get();
+        $slots    = HotelTimeSlot::where('is_active', true)->ordered()->get();
+
+        $totalBookings  = $bookings->count();
+        $totalRevenue   = $bookings->sum('total_amount');
+        $avgRevenue     = $totalBookings > 0 ? $totalRevenue / $totalBookings : 0;
+
+        $slotBreakdown = [];
+        foreach ($slots as $slot) {
+            $slotBks = $bookings->where('time_slot_id', $slot->id);
+            $slotBreakdown[] = [
+                'slot'     => $slot,
+                'count'    => $slotBks->count(),
+                'revenue'  => $slotBks->sum('total_amount'),
+                'statuses' => $slotBks->groupBy('status')->map->count(),
+            ];
+        }
+
+        $statusBreakdown = $bookings->groupBy('status')->map->count();
+
+        if ($request->export === 'csv') {
+            return $this->exportSlotBookingsCsv($bookings, $from, $to);
+        }
+
+        return view('admin.reports.slot-bookings', compact(
+            'bookings', 'slots', 'from', 'to',
+            'totalBookings', 'totalRevenue', 'avgRevenue',
+            'slotBreakdown', 'statusBreakdown', 'filterSlot'
+        ));
+    }
+
+    public function slotBookingsExport(Request $request)
+    {
+        return $this->slotBookings($request->merge(['export' => 'csv']));
+    }
+
+    private function exportSlotBookingsCsv($bookings, $from, $to)
+    {
+        $filename = 'slot-bookings-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv';
+        $headers  = ['Content-Type' => 'text/csv', 'Content-Disposition' => "attachment; filename=\"$filename\""];
+        $callback = function () use ($bookings) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Booking#', 'Date', 'Room', 'Slot', 'Time', 'Guest', 'Status', 'Amount']);
+            foreach ($bookings as $b) {
+                fputcsv($out, [
+                    $b->booking_number,
+                    $b->booking_date?->format('d/m/Y'),
+                    $b->room?->room_number ?? '—',
+                    $b->timeSlot?->name ?? '—',
+                    ($b->timeSlot ? $b->timeSlot->start_time . '–' . $b->timeSlot->end_time : '—'),
+                    $b->customer?->name ?? '—',
+                    ucfirst($b->status),
+                    number_format($b->total_amount, 2),
+                ]);
+            }
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
     private function exportSlotAvailabilityCsv($availability, $slots, $from, $to)
     {
         $filename = 'slot-availability-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv';

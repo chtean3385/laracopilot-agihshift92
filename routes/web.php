@@ -208,6 +208,8 @@ Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvai
 // ── Slot Availability Report ────────────────────────────────────────────────
 Route::get('/reports/slot-availability',        [ReportController::class, 'slotAvailability']      )->middleware('permission:reports.view')->name('reports.slot_availability');
 Route::get('/reports/slot-availability/export', [ReportController::class, 'slotAvailabilityExport'])->middleware('permission:reports.view')->name('reports.slot_availability.export');
+Route::get('/reports/slot-bookings',            [ReportController::class, 'slotBookings']           )->middleware('permission:reports.view')->name('reports.slot_bookings');
+Route::get('/reports/slot-bookings/export',     [ReportController::class, 'slotBookingsExport']     )->middleware('permission:reports.view')->name('reports.slot_bookings.export');
 
 // ── WhatsApp — Setup Wizard ────────────────────────────────────────────────
 Route::get('/whatsapp/setup',                           [WhatsAppSetupController::class, 'index']            )->name('whatsapp.setup');

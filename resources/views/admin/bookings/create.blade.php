@@ -197,7 +197,7 @@
                             </div>
                             <div>
                                 <label class="form-label">Time Slot <span class="text-red-500">*</span></label>
-                                <select name="time_slot_id" id="timeSlotSelect" class="form-input" onchange="calculateSlotTotal()">
+                                <select name="time_slot_id" id="timeSlotSelect" class="form-input" onchange="calculateSlotTotal(); updateSlotBadge();">
                                     <option value="">Select a time slot...</option>
                                     @foreach($timeSlots as $slot)
                                     <option value="{{ $slot->id }}" data-price="{{ $slot->base_price }}"
@@ -206,6 +206,7 @@
                                     </option>
                                     @endforeach
                                 </select>
+                                <div id="slotAvailBadge" class="hidden mt-2 flex items-center gap-2 text-sm rounded-xl px-3 py-2 font-medium border"></div>
                             </div>
                         </div>
                         @if($addOns->isNotEmpty())
@@ -643,8 +644,31 @@
                     }
                 }
             });
+            updateSlotBadge();
         })
         .catch(function() { /* silently ignore network errors */ });
+    }
+
+    function updateSlotBadge() {
+        var slotSel = document.getElementById('timeSlotSelect');
+        var badge   = document.getElementById('slotAvailBadge');
+        if (!slotSel || !badge) return;
+        if (!slotSel.value) {
+            badge.className = 'hidden mt-2 flex items-center gap-2 text-sm rounded-xl px-3 py-2 font-medium border';
+            badge.innerHTML = '';
+            return;
+        }
+        var selectedOpt = slotSel.options[slotSel.selectedIndex];
+        if (selectedOpt && selectedOpt.disabled) {
+            badge.className = 'mt-2 flex items-center gap-2 text-sm rounded-xl px-3 py-2 font-medium border bg-red-50 border-red-200 text-red-700';
+            badge.innerHTML = '<i class="fas fa-exclamation-circle text-red-500"></i><span>Conflict — this room already has an overlapping booking on this date.</span>';
+        } else if (selectedOpt && slotSel.value) {
+            badge.className = 'mt-2 flex items-center gap-2 text-sm rounded-xl px-3 py-2 font-medium border bg-green-50 border-green-200 text-green-700';
+            badge.innerHTML = '<i class="fas fa-check-circle text-green-500"></i><span>Available — room is free for this slot.</span>';
+        } else {
+            badge.className = 'hidden mt-2 flex items-center gap-2 text-sm rounded-xl px-3 py-2 font-medium border';
+            badge.innerHTML = '';
+        }
     }
 
     function updateMealOptions() {

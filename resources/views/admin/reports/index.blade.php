@@ -46,6 +46,14 @@
         <p class="text-gray-400 text-sm mt-1">Time-slot occupancy by date — available vs booked</p>
         <div class="mt-4 text-violet-500 text-sm font-semibold">View Report <i class="fas fa-arrow-right ml-1"></i></div>
     </a>
+    <a href="{{ route('reports.slot_bookings') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group">
+        <div class="w-14 h-14 bg-gradient-to-br from-fuchsia-500 to-violet-600 rounded-2xl flex items-center justify-center mb-4 shadow-md">
+            <i class="fas fa-receipt text-white text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 group-hover:text-fuchsia-600 transition-colors">Slot Bookings Report</h3>
+        <p class="text-gray-400 text-sm mt-1">Revenue, per-slot breakdown & full booking list</p>
+        <div class="mt-4 text-fuchsia-500 text-sm font-semibold">View Report <i class="fas fa-arrow-right ml-1"></i></div>
+    </a>
     @endif
 </div>
 @endsection
