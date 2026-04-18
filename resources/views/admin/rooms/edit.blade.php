@@ -20,7 +20,7 @@
                 <div>
                     <label class="form-label">Room Type <span class="text-red-500">*</span></label>
                     <select name="type" class="form-input" required>
-                        @foreach(['standard'=>'Standard','deluxe'=>'Deluxe','suite'=>'Suite','villa'=>'Villa','penthouse'=>'Penthouse','cottage'=>'Cottage','bhk'=>'BHK'] as $val=>$lbl)
+                        @foreach(['standard'=>'Standard','deluxe'=>'Deluxe','non-ac'=>'Non-Ac','suite'=>'Suite','villa'=>'Villa','penthouse'=>'Penthouse','cottage'=>'Cottage','bhk'=>'BHK'] as $val=>$lbl)
                         <option value="{{ $val }}" {{ old('type', $room->type) == $val ? 'selected' : '' }}>{{ $lbl }}</option>
                         @endforeach
                     </select>
