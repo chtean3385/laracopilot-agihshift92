@@ -97,8 +97,13 @@
 <div class="max-w-4xl">
     <a href="{{ route('bookings.index') }}" class="btn-secondary text-sm mb-5 inline-flex"><i class="fas fa-arrow-left mr-2"></i>Back to Bookings</a>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50">
+        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 flex items-center justify-between">
             <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-plus text-cyan-500 mr-2"></i>Booking Details</h3>
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none" title="Book entire property for the selected dates">
+                <input type="hidden" name="is_whole_hotel" id="isWholeHotelInput" value="{{ old('is_whole_hotel', '0') }}">
+                <input type="checkbox" id="wholeHotelToggle" class="w-3.5 h-3.5 accent-amber-500 cursor-pointer" onclick="toggleWholeHotel()"{{ old('is_whole_hotel') == '1' ? ' checked' : '' }}>
+                <span class="text-xs font-medium text-amber-700"><i class="fas fa-hotel mr-1"></i>Whole Hotel / Villa</span>
+            </label>
         </div>
         {{-- Validation error banner --}}
         @if($errors->any())
@@ -133,15 +138,6 @@
                         @endforeach
                     </select>
                     @error('customer_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-                {{-- Whole Hotel Toggle --}}
-                <div class="md:col-span-2">
-                    <div class="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer" onclick="toggleWholeHotel()">
-                        <input type="checkbox" id="wholeHotelToggle" class="w-4 h-4 text-amber-500 rounded" onclick="event.stopPropagation();toggleWholeHotel()">
-                        <input type="hidden" name="is_whole_hotel" id="isWholeHotelInput" value="{{ old('is_whole_hotel', '0') }}">
-                        <label for="wholeHotelToggle" class="text-sm font-semibold text-amber-800 cursor-pointer"><i class="fas fa-hotel text-amber-500 mr-1"></i> Book Whole Hotel / Villa</label>
-                        <span class="text-xs text-amber-600 ml-auto">Blocks all rooms for the selected period</span>
-                    </div>
                 </div>
                 <div id="roomSelectWrapper">
                     <label class="form-label">Room <span class="text-red-500">*</span></label>
@@ -191,26 +187,19 @@
                         window.whRoomsMeta = @json($whRoomsMeta->values());
                         window.whPerNightSum = {{ (float) $whPerNightSum }};
                     </script>
-                    <div class="border border-amber-200 bg-amber-50 rounded-xl p-4 space-y-3">
-                        <div class="flex items-center gap-2 text-xs text-amber-700">
-                            <i class="fas fa-hotel text-amber-500"></i>
-                            <span><strong id="whBlockedRoomCount">{{ $whRoomCount }}</strong> room(s) will be blocked for the entire period</span>
+                    <div class="border border-amber-200 bg-amber-50 rounded-xl p-4">
+                        <label class="form-label">Total Amount <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">₹</span>
+                            <input type="number" name="custom_total" id="whCustomTotal" step="1" min="0"
+                                value="{{ old('custom_total') }}"
+                                placeholder="0"
+                                class="form-input pl-7">
                         </div>
-                        <div>
-                            <label class="form-label">Total Price for Whole Hotel / Villa <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">₹</span>
-                                <input type="number" name="custom_total" id="whCustomTotal" step="1" min="0"
-                                    value="{{ old('custom_total') }}"
-                                    placeholder="Auto-calculated from room rates — you can override"
-                                    class="form-input pl-7">
-                            </div>
-                            <p id="whAutoCalcHint" class="text-xs text-amber-600 mt-1 hidden">
-                                <i class="fas fa-calculator mr-1"></i>
-                                Auto-calculated: <span id="whAutoCalcAmt" class="font-semibold"></span> (₹{{ number_format($whPerNightSum) }}/night × nights). Edit to override.
-                            </p>
-                            @error('custom_total')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
+                        <p id="whAutoCalcHint" class="text-xs text-amber-600 mt-1 hidden">
+                            <span id="whAutoCalcAmt" class="font-semibold"></span> auto-filled · edit to override
+                        </p>
+                        @error('custom_total')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
                 {{-- Per Night date fields --}}

@@ -138,6 +138,14 @@ class DashboardController extends Controller
                 $slotRoomCount  = $slotRooms->count();
                 $slotRoomIds    = $slotRooms->pluck('id')->toArray();
 
+                // Pre-load whole-hotel bookings that cover any day in this week
+                $whBookingsWeek = Booking::where('is_whole_hotel', true)
+                    ->whereNotIn('status', ['cancelled', 'checked_out'])
+                    ->where('check_in_date', '<=', $slotWeekEnd->toDateString())
+                    ->where('check_out_date', '>', $slotWeekStart->toDateString())
+                    ->with('customer:id,name')
+                    ->get();
+
                 if ($dashboardSlots->isNotEmpty() && $slotRoomCount > 0) {
                     $hasSlotModule = true;
                     $conflictSvc   = new SlotConflictService();
@@ -151,7 +159,29 @@ class DashboardController extends Controller
                             'isToday'  => $cur->isToday(),
                             'slots'    => [],
                         ];
+
+                        // Check if a whole-hotel booking covers this specific day
+                        $whForDay = $whBookingsWeek->first(
+                            fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
+                        );
+
                         foreach ($dashboardSlots as $slot) {
+                            if ($whForDay) {
+                                // Whole hotel booked — mark ALL slots as 100% full (red)
+                                $dayData['slots'][] = [
+                                    'slot_name'      => $slot->name,
+                                    'time'           => $slot->start_time . '–' . $slot->end_time,
+                                    'available'      => 0,
+                                    'booked'         => $slotRoomCount,
+                                    'total'          => $slotRoomCount,
+                                    'pct'            => 100,
+                                    'color'          => 'red',
+                                    'booked_rooms'   => $slotRooms->map(fn($r) => ['room_id' => $r->id, 'room_number' => $r->room_number, 'guest' => $whForDay->customer->name ?? '—'])->values()->toArray(),
+                                    'free_rooms'     => [],
+                                    'whole_hotel_bk' => $whForDay->booking_number,
+                                ];
+                                continue;
+                            }
                             $bookedDetails = $conflictSvc->getConflictingRoomDetails($slot, $ds);
                             $bookedIds     = array_column($bookedDetails, 'room_id');
                             // restrict to slot rooms only
