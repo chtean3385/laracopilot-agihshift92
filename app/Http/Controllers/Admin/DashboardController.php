@@ -86,7 +86,7 @@ class DashboardController extends Controller
         try {
             $recentBookings = Booking::with(['customer' => fn($q) => $q->withTrashed(), 'room'])
                 ->orderBy('created_at', 'desc')
-                ->take(8)
+                ->take(5)
                 ->get();
         } catch (\Exception $e) {
             $recentBookings = collect();

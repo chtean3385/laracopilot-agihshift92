@@ -8,8 +8,8 @@
                 .kpi-grid { display: none !important; }
 
                 /* Reorder dashboard sections using flex order */
-                .dashboard-main > :nth-child(4) { order: 5 !important; } /* Recent Bookings + Calendar (2-col grid) — LAST */
-                .dashboard-main > :nth-child(5) { order: 1 !important; } /* Quick Actions */
+                .dashboard-main > :nth-child(4) { order: 1 !important; } /* Recent Bookings + Calendar (2-col grid) — FIRST */
+                .dashboard-main > :nth-child(5) { order: 5 !important; } /* Quick Actions — LAST */
                 .dashboard-main > :nth-child(6) { order: 2 !important; } /* Slot Availability */
                 .dashboard-main > :nth-child(7) { order: 3 !important; } /* Today's Arrivals */
                 .dashboard-main > :nth-child(8) { order: 4 !important; } /* Room Availability Checker */
