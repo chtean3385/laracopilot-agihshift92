@@ -76,8 +76,13 @@
                     <input type="text" name="gst_number" value="{{ old('gst_number', $settings->gst_number) }}" class="form-input">
                 </div>
                 <div>
-                    <label class="form-label">Tax Rate (%) <span class="text-red-500">*</span></label>
+                    <label class="form-label">Room Tax / GST Rate (%) <span class="text-red-500">*</span></label>
                     <input type="number" name="tax_rate" value="{{ old('tax_rate', $settings->tax_rate) }}" step="0.01" min="0" max="100" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Restaurant / Food GST Rate (%)</label>
+                    <input type="number" name="food_tax_rate" value="{{ old('food_tax_rate', $settings->food_tax_rate ?? 5) }}" step="0.01" min="0" max="100" class="form-input" placeholder="5">
+                    <p class="text-xs text-gray-400 mt-1">Applied separately on food &amp; extra service charges in invoices. Default: 5%</p>
                 </div>
                 <div>
                     <label class="form-label">Currency Symbol <span class="text-red-500">*</span></label>

@@ -12,7 +12,7 @@ class Setting extends Model
     protected $fillable = [
         'hotel_id',
         'resort_name', 'tagline', 'address', 'phone', 'email', 'website',
-        'gst_number', 'tax_rate', 'currency', 'currency_symbol',
+        'gst_number', 'tax_rate', 'food_tax_rate', 'currency', 'currency_symbol',
         'check_in_time', 'check_out_time', 'cancellation_policy', 'logo',
     ];
 }

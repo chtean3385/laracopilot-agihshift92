@@ -166,7 +166,12 @@
                 $prtSubtotal  = $invoice->booking->price_overridden
                     ? (float) $invoice->booking->total_amount
                     : (float) $invoice->total_amount;
-                $gstAmount    = ($settings && $settings->gst_number) ? $prtSubtotal * ($settings->tax_rate / 100) : 0;
+                $prtFoodBase  = $prtExtraTotal ?? 0;
+                $prtRoomBase  = $prtSubtotal - $prtFoodBase;
+                $roomGst      = ($settings && $settings->gst_number) ? $prtRoomBase * ($settings->tax_rate / 100) : 0;
+                $foodTaxRate  = $settings->food_tax_rate ?? 5;
+                $foodGst      = ($settings && $settings->gst_number && $prtFoodBase > 0) ? $prtFoodBase * ($foodTaxRate / 100) : 0;
+                $gstAmount    = $roomGst + $foodGst;
                 $grandTotal   = $prtSubtotal + $gstAmount;
                 $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
                 $overpayment    = max(0, $invoice->paid_amount - $grandTotal);
@@ -177,7 +182,10 @@
                 <div class="w-full sm:w-56 text-sm space-y-1">
                     <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span>₹{{ number_format($prtSubtotal) }}</span></div>
                     @if($settings && $settings->gst_number)
-                    <div class="flex justify-between"><span class="text-gray-500">GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($gstAmount) }}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Room GST ({{ $settings->tax_rate }}%)</span><span>₹{{ number_format($roomGst) }}</span></div>
+                    @if($prtFoodBase > 0)
+                    <div class="flex justify-between"><span class="text-gray-500">Food & Service GST ({{ $foodTaxRate }}%)</span><span>₹{{ number_format($foodGst) }}</span></div>
+                    @endif
                     @endif
                     <div class="flex justify-between border-t pt-1"><span class="font-bold">Total</span><span class="font-bold">₹{{ number_format($grandTotal) }}</span></div>
                     <div class="flex justify-between text-emerald-600"><span>Amount Paid</span><span class="font-bold">₹{{ number_format($invoice->paid_amount) }}</span></div>

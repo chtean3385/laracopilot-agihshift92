@@ -27,6 +27,7 @@ class SettingController extends Controller
                 'website'             => 'www.azureparadise.com',
                 'gst_number'          => '30AABCU9603R1ZX',
                 'tax_rate'            => '12',
+                'food_tax_rate'       => '5',
                 'currency'            => 'INR',
                 'currency_symbol'     => 'Rs',
                 'check_in_time'       => '14:00',
@@ -51,6 +52,7 @@ class SettingController extends Controller
             'check_in_time'   => 'required|string',
             'check_out_time'  => 'required|string',
             'tax_rate'        => 'required|string|max:10',
+            'food_tax_rate'   => 'nullable|string|max:10',
             'currency_symbol' => 'required|string|max:10',
             'logo'            => 'nullable|file|max:2048|mimes:jpg,jpeg,png,gif,svg,webp',
         ]);
