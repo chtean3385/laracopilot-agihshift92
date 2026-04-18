@@ -53,7 +53,7 @@
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500"><i class="fas fa-door-open mr-1"></i>Room</span>
-                    <span class="font-semibold">{{ $booking->room->room_number }} • {{ ucfirst($booking->room->type) }}</span>
+                    <span class="font-semibold">{{ $booking->is_whole_hotel ? 'Whole Hotel / Villa' : ($booking->room?->room_number . ' • ' . ucfirst($booking->room?->type ?? '')) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500"><i class="fas fa-calendar mr-1"></i>Check-In</span>

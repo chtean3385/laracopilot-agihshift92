@@ -64,7 +64,7 @@
                 <div class="sm:text-right">
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Booking Details</p>
                     <p class="font-mono text-cyan-600 font-bold">{{ $invoice->booking->booking_number }}</p>
-                    <p class="text-gray-600 text-sm">Room {{ $invoice->booking->room->room_number ?? '' }}</p>
+                    <p class="text-gray-600 text-sm">{{ $invoice->booking->is_whole_hotel ? 'Whole Hotel / Villa' : ('Room ' . ($invoice->booking->room?->room_number ?? '')) }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->check_in_date->format('d M Y') }} → {{ $invoice->booking->check_out_date->format('d M Y') }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->nights }} night(s)</p>
                 </div>
@@ -81,20 +81,26 @@
                 </thead>
                 <tbody>
                     @php
+                        $invIsWH = (bool) $invoice->booking->is_whole_hotel;
                         $invExtraTotal = $invoice->booking->extraCharges->sum('total_price');
-                        if ($invoice->booking->price_overridden) {
+                        if ($invIsWH || $invoice->booking->price_overridden) {
                             $invRoomCost = max(0, (float)$invoice->booking->total_amount - $invExtraTotal);
                         } else {
-                            $invRoomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room->price_per_night ?? 0);
+                            $invRoomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room?->price_per_night ?? 0);
                         }
                     @endphp
                     <tr class="border-b border-gray-100">
                         <td class="px-4 py-3 text-sm">
-                            {{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }} - {{ $invoice->booking->room->view ?? '' }}
+                            @if($invIsWH)
+                                Whole Hotel / Villa — {{ \App\Models\Room::where('hotel_id', $invoice->booking->hotel_id)->count() }} room(s)
+                                @if($invoice->booking->nights > 0)({{ $invoice->booking->nights }} night(s))@endif
+                            @else
+                                {{ ucfirst($invoice->booking->room?->type ?? '') }} Room {{ $invoice->booking->room?->room_number ?? '' }} - {{ $invoice->booking->room?->view ?? '' }}
+                            @endif
                         </td>
-                        <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights }} nights</td>
+                        <td class="px-4 py-3 text-sm text-right">{{ $invoice->booking->nights ?: 1 }}</td>
                         <td class="px-4 py-3 text-sm text-right">
-                            @if($invoice->booking->price_overridden)₹{{ number_format($invRoomCost) }}@else₹{{ number_format($invoice->booking->room->price_per_night ?? 0) }}@endif
+                            @if($invIsWH || $invoice->booking->price_overridden)₹{{ number_format($invRoomCost) }}@else₹{{ number_format($invoice->booking->room?->price_per_night ?? 0) }}@endif
                         </td>
                         <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invRoomCost) }}</td>
                     </tr>

@@ -28,7 +28,7 @@
             </div>
             <div class="flex justify-between py-2 border-b border-gray-50">
                 <span class="text-sm text-gray-500">Room</span>
-                <span class="text-sm font-semibold">{{ $payment->booking->room->room_number ?? 'N/A' }}</span>
+                <span class="text-sm font-semibold">{{ $payment->booking->room?->room_number ?? 'N/A' }}</span>
             </div>
             <div class="flex justify-between py-2 border-b border-gray-50">
                 <span class="text-sm text-gray-500">Method</span>

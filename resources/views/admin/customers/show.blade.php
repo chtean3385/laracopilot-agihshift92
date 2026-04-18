@@ -221,7 +221,7 @@
                 {{-- Room bubble --}}
                 <div style="width:50px;height:50px;background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
                     <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:600;line-height:1;">ROOM</div>
-                    <div style="font-size:16px;font-weight:900;color:#fff;line-height:1.1;">{{ $booking->room->room_number }}</div>
+                    <div style="font-size:16px;font-weight:900;color:#fff;line-height:1.1;">{{ $booking->room?->room_number }}</div>
                 </div>
                 {{-- Booking # and dates --}}
                 <div style="flex:1;min-width:0;">

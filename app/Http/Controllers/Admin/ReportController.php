@@ -288,7 +288,7 @@ class ReportController extends Controller
                 $primary = $booking->customer;
                 fputcsv($out, [
                     $booking->booking_number,
-                    $booking->room->room_number ?? '',
+                    $booking->room?->room_number ?? '',
                     $booking->check_in_date?->format('d/m/Y'),
                     $booking->check_out_date?->format('d/m/Y'),
                     $primary->name ?? '',
@@ -304,7 +304,7 @@ class ReportController extends Controller
                 foreach ($booking->bookingGuests as $g) {
                     fputcsv($out, [
                         $booking->booking_number,
-                        $booking->room->room_number ?? '',
+                        $booking->room?->room_number ?? '',
                         $booking->check_in_date?->format('d/m/Y'),
                         $booking->check_out_date?->format('d/m/Y'),
                         $g->name,

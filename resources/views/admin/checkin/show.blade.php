@@ -140,11 +140,11 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Room</span>
-                    <span style="font-weight:900;font-size:22px;color:#0f172a;line-height:1;">{{ $booking->room->room_number }}</span>
+                    <span style="font-weight:900;font-size:22px;color:#0f172a;line-height:1;">{{ $booking->room?->room_number }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Type</span>
-                    <span style="font-weight:600;">{{ ucfirst($booking->room->type) }}</span>
+                    <span style="font-weight:600;">{{ ucfirst($booking->room?->type) }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Check-In</span>
@@ -749,8 +749,8 @@ function sendToPathikCheckin() {
         nights:      {{ $booking->nights }},
         adults:      {{ $booking->adults }},
         children:    {{ $booking->children }},
-        room_number: {!! json_encode((string)$booking->room->room_number) !!},
-        room_type:   {!! json_encode($booking->room->type) !!},
+        room_number: {!! json_encode((string)$booking->room?->room_number) !!},
+        room_type:   {!! json_encode($booking->room?->type) !!},
     };
     Object.keys(d).forEach(function(k) { form.append(k, d[k]); });
     fetch('{{ route('pathik.pending.store') }}', {

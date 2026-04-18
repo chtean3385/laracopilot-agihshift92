@@ -80,7 +80,7 @@
                 </div>
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-sm text-gray-500">Booking #</span><span class="text-sm font-mono font-bold text-cyan-600">{{ $booking->booking_number }}</span></div>
-                    @php $rm = $booking->room; $pType = $rm?->pricing_type ?? 'per_night'; @endphp
+                    @php $rm = $booking->room; $pType = $booking->is_whole_hotel ? ($booking->whole_hotel_pricing_type ?? 'per_night') : ($rm?->pricing_type ?? 'per_night'); @endphp
                     @if($pType === 'per_slot' && $booking->booking_date)
                         <div class="flex justify-between"><span class="text-sm text-gray-500">Booking Date</span><span class="text-sm font-semibold">{{ $booking->booking_date->format('d M Y') }}</span></div>
                         <div class="flex justify-between"><span class="text-sm text-gray-500">Time Slot</span>
@@ -138,9 +138,34 @@
         <div class="lg:col-span-2 space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="font-bold text-gray-800 mb-4">Room</h3>
-                    @if($booking->room)
-                    <div class="text-4xl font-black text-gray-800 mb-1">{{ $booking->room->room_number }}</div>
+                    <h3 class="font-bold text-gray-800 mb-4">
+                        Room
+                        @if($booking->is_whole_hotel)
+                        <span class="ml-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold text-amber-800 bg-amber-100 border border-amber-200 rounded-full"><i class="fas fa-hotel text-amber-500"></i> Whole Hotel</span>
+                        @endif
+                    </h3>
+                    @if($booking->is_whole_hotel)
+                    <div class="flex flex-col items-center justify-center py-4 text-center">
+                        <div class="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+                            <i class="fas fa-hotel text-amber-500 text-2xl"></i>
+                        </div>
+                        <p class="text-lg font-black text-amber-700">Whole Hotel / Villa</p>
+                        <p class="text-xs text-gray-500 mt-1">All rooms blocked for this period</p>
+                        @php
+                            $whRoomCount = \App\Models\Room::where('hotel_id', $booking->hotel_id)->count();
+                        @endphp
+                        <div class="mt-3 space-y-1 w-full text-sm">
+                            <div class="flex justify-between"><span class="text-gray-500">Pricing Type</span><span class="font-medium">{{ ucfirst(str_replace('_', ' ', $booking->whole_hotel_pricing_type ?? 'per night')) }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Rooms Covered</span><span class="font-medium">{{ $whRoomCount }}</span></div>
+                            @if($booking->price_overridden)
+                            <div class="flex justify-between"><span class="text-gray-500">Custom Total</span><span class="font-bold text-amber-600">₹{{ number_format($booking->total_amount) }}</span></div>
+                            @else
+                            <div class="flex justify-between"><span class="text-gray-500">Total</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->total_amount) }}</span></div>
+                            @endif
+                        </div>
+                    </div>
+                    @elseif($booking->room)
+                    <div class="text-4xl font-black text-gray-800 mb-1">{{ $booking->room?->room_number }}</div>
                     <span class="badge-{{ $booking->room->type_color }}">{{ ucfirst($booking->room->type) }}</span>
                     <div class="mt-4 space-y-2">
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Floor</span><span class="font-medium">{{ $booking->room->floor }}</span></div>
@@ -184,8 +209,8 @@
 
                         // Compute true base — respect custom price override if set
                         // NOTE: total_amount is incremented by BookingExtraChargeController when charges are added
-                        if ($pType === 'per_hour') {
-                            // Hourly: base is in total_amount (set at checkout or overridden at booking); extra charges already incremented it
+                        if ($pType === 'per_hour' || $booking->is_whole_hotel) {
+                            // Hourly or whole-hotel: base is in total_amount (set at checkout or booking); extra charges already incremented it
                             $bBase = (float) $booking->total_amount;
                         } elseif ($booking->price_overridden) {
                             // Custom price set at booking — total_amount already includes any extra charges added later
@@ -205,7 +230,12 @@
                         $bOverpaid          = max(0, $bTotalPaid - $bGrandTotal);
                     @endphp
                     <div class="space-y-2">
-                        @if($pType === 'per_slot' && $booking->timeSlot)
+                        @if($booking->is_whole_hotel)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500"><i class="fas fa-hotel text-amber-400 mr-1"></i>Whole Hotel / Villa</span>
+                            <span class="font-medium">₹{{ number_format($booking->total_amount) }}</span>
+                        </div>
+                        @elseif($pType === 'per_slot' && $booking->timeSlot)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">
                                 <i class="fas fa-clock text-violet-400 mr-1"></i>{{ $booking->timeSlot->name }}

@@ -73,7 +73,7 @@
     <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
         <div style="display:flex;align-items:center;gap:12px;">
             <span style="font-size:12px;font-weight:800;color:#0891b2;background:#e0f2fe;padding:4px 10px;border-radius:20px;">{{ $booking->booking_number }}</span>
-            <span style="font-size:13px;font-weight:700;color:#1e293b;"><i class="fas fa-door-open" style="color:#64748b;margin-right:5px;"></i>Room {{ $booking->room->room_number ?? 'N/A' }}</span>
+            <span style="font-size:13px;font-weight:700;color:#1e293b;"><i class="fas fa-door-open" style="color:#64748b;margin-right:5px;"></i>Room {{ $booking->room?->room_number ?? 'N/A' }}</span>
             <span style="font-size:12px;color:#64748b;"><i class="fas fa-calendar" style="margin-right:4px;"></i>{{ $booking->check_in_date?->format('d M Y') }} → {{ $booking->check_out_date?->format('d M Y') }}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">

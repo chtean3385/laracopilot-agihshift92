@@ -4,11 +4,21 @@
 @section('page-subtitle','{{ $booking->booking_reference }}')
 
 @section('content')
-@php $pricingType = $booking->room?->pricing_type ?? 'per_night'; @endphp
+@php $pricingType = $booking->is_whole_hotel ? ($booking->whole_hotel_pricing_type ?? 'per_night') : ($booking->room?->pricing_type ?? 'per_night'); @endphp
 <div class="max-w-3xl">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        @if($booking->is_whole_hotel)
+        <div class="mb-4 flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+            <i class="fas fa-hotel text-amber-500"></i>
+            <span class="font-semibold">Whole Hotel / Villa Booking</span>
+            <span class="text-xs text-amber-600 ml-1">— Room selection not applicable</span>
+        </div>
+        @endif
         <form action="{{ route('bookings.update',$booking->id) }}" method="POST" class="space-y-5">
             @csrf @method('PUT')
+            @if($booking->is_whole_hotel)
+            <input type="hidden" name="is_whole_hotel" value="1">
+            @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Guest *</label>
@@ -18,6 +28,7 @@
                         @endforeach
                     </select>
                 </div>
+                @if(!$booking->is_whole_hotel)
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Room *</label>
                     <select name="room_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
@@ -36,6 +47,7 @@
                     </select>
                     <p class="text-xs text-slate-400 mt-1">Only rooms of the same pricing type are shown.</p>
                 </div>
+                @endif
 
                 {{-- Per Night: check-in/out dates --}}
                 @if($pricingType === 'per_night')
@@ -86,7 +98,7 @@
                             <i class="fas fa-hourglass-half text-amber-500"></i>
                             <h4 class="font-bold text-slate-700">Hourly Booking
                                 @if($booking->room)
-                                <span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold ml-1">₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr</span>
+                                <span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold ml-1">₹{{ number_format($booking->room?->hourly_rate ?? 0) }}/hr</span>
                                 @endif
                             </h4>
                         </div>

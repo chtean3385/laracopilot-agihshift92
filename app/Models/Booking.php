@@ -23,6 +23,7 @@ class Booking extends Model
         'meal_breakfast', 'meal_lunch', 'meal_dinner', 'meal_cost',
         'extra_beds', 'extra_bed_cost',
         'source', 'ota_conflict',
+        'is_whole_hotel', 'whole_hotel_pricing_type',
     ];
 
     protected $casts = [
@@ -43,6 +44,7 @@ class Booking extends Model
         'extra_bed_cost'     => 'decimal:2',
         'hours_booked'       => 'integer',
         'ota_conflict'       => 'boolean',
+        'is_whole_hotel'     => 'boolean',
     ];
 
     public function customer()
@@ -92,6 +94,7 @@ class Booking extends Model
 
     public function isSlotBooking(): bool { return !is_null($this->time_slot_id); }
     public function isHourlyBooking(): bool { return !is_null($this->hours_booked) && $this->hours_booked > 0; }
+    public function isWholeHotel(): bool { return (bool) $this->is_whole_hotel; }
 
     public function getStatusColorAttribute()
     {

@@ -53,7 +53,7 @@
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Room</span>
-                    <span class="font-semibold">{{ $booking->room->room_number }} • {{ ucfirst($booking->room->type) }}</span>
+                    <span class="font-semibold">{{ $booking->is_whole_hotel ? 'Whole Hotel / Villa' : ($booking->room?->room_number . ' • ' . ucfirst($booking->room?->type ?? '')) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Checkout Due</span>
@@ -61,13 +61,14 @@
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Balance Due</span>
-                    @if(($booking->room->pricing_type ?? 'per_night') === 'per_hour')
+                    @php $coRoomPT = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night'); @endphp
+                    @if($coRoomPT === 'per_hour')
                     <span class="font-bold text-violet-600"><i class="fas fa-clock mr-1 text-xs"></i>Billed at checkout</span>
                     @else
                     <span class="font-bold {{ $booking->balance_due > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($booking->balance_due) }}</span>
                     @endif
                 </div>
-                @if(($booking->room->pricing_type ?? 'per_night') === 'per_hour' && $booking->actual_checkin_at)
+                @if($coRoomPT === 'per_hour' && $booking->actual_checkin_at)
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Checked In At</span>
                     <span class="font-semibold text-violet-600">{{ $booking->actual_checkin_at->format('h:i A') }}</span>

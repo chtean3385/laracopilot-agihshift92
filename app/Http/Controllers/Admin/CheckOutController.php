@@ -38,7 +38,7 @@ class CheckOutController extends Controller
 
         $booking = Booking::with(['customer', 'room', 'payments', 'timeSlot', 'bookingAddOns', 'extraCharges'])->findOrFail($bookingId);
 
-        $pricingType = $booking->room->pricing_type ?? 'per_night';
+        $pricingType = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
 
         $extraChargesTotal = $booking->extraCharges->sum('total_price');
 
@@ -48,13 +48,13 @@ class CheckOutController extends Controller
             $actualNights = $checkinDate->diffInDays($checkoutDate);
             // Same-day checkout counts as 1 night minimum
             if ($actualNights < 1) $actualNights = 1;
-            if ($booking->price_overridden) {
-                // Custom flat rate was agreed at booking — total_amount includes extra charges (via increment)
+            if ($booking->price_overridden || $booking->is_whole_hotel) {
+                // Custom flat rate OR whole-hotel booking — total_amount includes extra charges (via increment)
                 $roomCost     = max(0, (float)$booking->total_amount - $extraChargesTotal);
                 $mealCost     = 0;
                 $extraBedCost = 0;
             } else {
-                $roomCost     = $actualNights * $booking->room->price_per_night;
+                $roomCost     = $actualNights * ($booking->room?->price_per_night ?? 0);
                 $mealCost     = (float)($booking->meal_cost ?? 0);
                 $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
             }
@@ -75,7 +75,7 @@ class CheckOutController extends Controller
                 $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
                 $hoursBooked   = max(1, (int) ceil($actualMinutes / 60));
                 $addOnTotal    = $booking->bookingAddOns()->sum('price');
-                $roomCost      = $hoursBooked * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+                $roomCost      = $hoursBooked * ($booking->room?->hourly_rate ?? 0) + $addOnTotal;
             }
             $actualTotal  = $roomCost + $extraChargesTotal;
         } else {
@@ -125,7 +125,8 @@ class CheckOutController extends Controller
         }
 
         // For per_hour rooms: if admin pre-set a flat price, keep it; otherwise calculate from actual hours
-        if (($booking->room->pricing_type ?? 'per_night') === 'per_hour') {
+        $bookingPricingType = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+        if ($bookingPricingType === 'per_hour') {
             if ($booking->price_overridden) {
                 // Custom flat rate was set at booking time — just record the actual elapsed hours
                 $checkinAt     = $booking->actual_checkin_at
@@ -136,7 +137,7 @@ class CheckOutController extends Controller
             } elseif ($request->filled('override_hours') && (int) $request->override_hours >= 1) {
                 $actualHours     = (int) $request->override_hours;
                 $addOnTotal      = $booking->bookingAddOns()->sum('price');
-                $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+                $calculatedTotal = $actualHours * ($booking->room?->hourly_rate ?? 0) + $addOnTotal;
                 $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             } else {
                 $checkinAt     = $booking->actual_checkin_at
@@ -144,7 +145,7 @@ class CheckOutController extends Controller
                 $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
                 $actualHours   = max(1, (int) ceil($actualMinutes / 60));
                 $addOnTotal      = $booking->bookingAddOns()->sum('price');
-                $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+                $calculatedTotal = $actualHours * ($booking->room?->hourly_rate ?? 0) + $addOnTotal;
                 $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             }
             $booking->refresh();
@@ -157,12 +158,12 @@ class CheckOutController extends Controller
 
         // Compute true base (same logic as show())
         $extraChargesTotal = $booking->extraCharges->sum('total_price');
-        $pricingTypeProc   = $booking->room->pricing_type ?? 'per_night';
-        if ($pricingTypeProc === 'per_night') {
+        $pricingTypeProc   = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+        if ($pricingTypeProc === 'per_night' && !$booking->is_whole_hotel) {
             $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
             $checkoutDateProc = Carbon::parse($booking->check_out_date)->startOfDay();
             $nightsProc       = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
-            $trueBase         = $nightsProc * $booking->room->price_per_night
+            $trueBase         = $nightsProc * ($booking->room?->price_per_night ?? 0)
                                 + (float)($booking->meal_cost ?? 0)
                                 + (float)($booking->extra_bed_cost ?? 0)
                                 + $extraChargesTotal;
@@ -185,7 +186,9 @@ class CheckOutController extends Controller
             'checkout_notes'     => $request->notes,
         ]);
 
-        $booking->room->update(['status' => 'available']);
+        if ($booking->room) {
+            $booking->room->update(['status' => 'available']);
+        }
 
         $invoice = Invoice::create([
             'invoice_number' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-INV-' . strtoupper(substr(uniqid(), -6)),
@@ -198,7 +201,8 @@ class CheckOutController extends Controller
             'issued_at'      => now(),
         ]);
 
-        ActivityLogger::log('Checked Out', 'Check-Out', 'Checked out: ' . $booking->customer->name . ' — Room ' . $booking->room->room_number . ' (Invoice #' . $invoice->invoice_number . ')');
+        $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '?');
+        ActivityLogger::log('Checked Out', 'Check-Out', 'Checked out: ' . $booking->customer->name . ' — Room ' . $roomLabel . ' (Invoice #' . $invoice->invoice_number . ')');
         WhatsAppService::sendForEvent('checkout.done', $booking);
 
         return redirect()->route('invoices.show', $invoice->id)

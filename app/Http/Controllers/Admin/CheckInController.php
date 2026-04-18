@@ -52,7 +52,9 @@ class CheckInController extends Controller
             'actual_checkin_at'=> now(),
             'checkin_notes'    => $request->notes,
         ]);
-        $booking->room->update(['status' => 'occupied']);
+        if ($booking->room) {
+            $booking->room->update(['status' => 'occupied']);
+        }
         if ($request->additional_payment > 0) {
             Payment::create([
                 'booking_id'     => $booking->id,
@@ -72,7 +74,8 @@ class CheckInController extends Controller
             ]);
         }
         $booking->load('customer');
-        ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — Room ' . $booking->room->room_number . ' (Booking #' . $booking->booking_number . ')');
+        $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '?');
+        ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — Room ' . $roomLabel . ' (Booking #' . $booking->booking_number . ')');
         WhatsAppService::sendForEvent('checkin.done', $booking);
         return redirect()->route('checkin.index')->with('success', 'Check-in completed for ' . $booking->customer->name . '!');
     }

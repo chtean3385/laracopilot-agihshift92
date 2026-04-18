@@ -169,7 +169,13 @@
                             </div>
                         </td>
                         <td class="lv-td">
-                            @if($booking->room)
+                            @if($booking->is_whole_hotel)
+                            <div class="lv-room-pill" style="background:#fef3c7;color:#92400e;">
+                                <span class="lv-room-pill-label"><i class="fas fa-hotel"></i></span>
+                                <span class="lv-room-pill-num">WH</span>
+                            </div>
+                            <div class="lv-secondary" style="margin-top:4px;color:#b45309;font-weight:600;">Whole Hotel</div>
+                            @elseif($booking->room)
                             <div class="lv-room-pill">
                                 <span class="lv-room-pill-label">RM</span>
                                 <span class="lv-room-pill-num">{{ $booking->room->room_number }}</span>

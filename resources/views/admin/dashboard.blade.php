@@ -641,7 +641,7 @@
                                         </div>
                                         <div class="booking-info">
                                             <div class="booking-name">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                                            <div class="booking-sub">Room {{ $booking->room->room_number ?? '—' }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
+                                            <div class="booking-sub">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
                                         </div>
                                         <div class="booking-meta">
                                             @canDo('reports.view')
@@ -766,7 +766,7 @@
                                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border-radius:12px;">
                                     <div>
                                         <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                                        <div style="font-size:12px;color:#64748b;">Room {{ $booking->room->room_number }} &bull; {{ $booking->nights }} night(s)</div>
+                                        <div style="font-size:12px;color:#64748b;">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }} &bull; {{ $booking->nights }} night(s)</div>
                                     </div>
                                     @canDo('checkin.process')
                                     <a href="{{ route('checkin.show', $booking->id) }}" style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(6,182,212,.3);">Check In</a>
@@ -790,7 +790,7 @@
                                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:12px;">
                                     <div>
                                         <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                                        <div style="font-size:12px;color:#64748b;">Room {{ $booking->room->room_number }}
+                                        <div style="font-size:12px;color:#64748b;">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }}
                                             @canDo('reports.view') &bull; Due: ₹{{ number_format($booking->balance_due) }} @endCanDo
                                         </div>
                                     </div>

@@ -120,14 +120,29 @@ td { padding: 9px 12px; font-size: 12px; color: #374151; border-bottom: 1px soli
         </thead>
         <tbody>
             @php
-                $pricingType = $invoice->booking->room->pricing_type ?? 'per_night';
+                $isWH = (bool) $invoice->booking->is_whole_hotel;
+                $pricingType = $isWH
+                    ? ($invoice->booking->whole_hotel_pricing_type ?? 'per_night')
+                    : ($invoice->booking->room?->pricing_type ?? 'per_night');
             @endphp
-            @if($pricingType === 'per_night')
+            @if($isWH)
+                @php
+                    $whRoomCount = \App\Models\Room::where('hotel_id', $invoice->booking->hotel_id)->count();
+                @endphp
                 <tr>
-                    <td>{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}</td>
+                    <td>Whole Hotel / Villa — {{ $whRoomCount }} room(s)
+                        @if($invoice->booking->nights > 0) ({{ $invoice->booking->nights }} night(s))@endif
+                    </td>
+                    <td class="right">1</td>
+                    <td class="right">—</td>
+                    <td class="right">&#8377;{{ number_format($invoice->booking->total_amount) }}</td>
+                </tr>
+            @elseif($pricingType === 'per_night')
+                <tr>
+                    <td>{{ ucfirst($invoice->booking->room?->type ?? '') }} Room {{ $invoice->booking->room?->room_number ?? '' }}</td>
                     <td class="right">{{ $invoice->booking->nights }}</td>
-                    <td class="right">&#8377;{{ number_format($invoice->booking->room->price_per_night ?? 0) }}</td>
-                    <td class="right">&#8377;{{ number_format(($invoice->booking->nights ?? 0) * ($invoice->booking->room->price_per_night ?? 0)) }}</td>
+                    <td class="right">&#8377;{{ number_format($invoice->booking->room?->price_per_night ?? 0) }}</td>
+                    <td class="right">&#8377;{{ number_format(($invoice->booking->nights ?? 0) * ($invoice->booking->room?->price_per_night ?? 0)) }}</td>
                 </tr>
                 @if($invoice->booking->meal_cost > 0)
                 <tr>
@@ -141,20 +156,20 @@ td { padding: 9px 12px; font-size: 12px; color: #374151; border-bottom: 1px soli
                 <tr>
                     <td>Extra Beds × {{ $invoice->booking->extra_beds }}</td>
                     <td class="right">{{ $invoice->booking->nights }}</td>
-                    <td class="right">&#8377;{{ number_format($invoice->booking->room->extra_bed_price ?? 0) }}/bed</td>
+                    <td class="right">&#8377;{{ number_format($invoice->booking->room?->extra_bed_price ?? 0) }}/bed</td>
                     <td class="right">&#8377;{{ number_format($invoice->booking->extra_bed_cost ?? 0) }}</td>
                 </tr>
                 @endif
             @elseif($pricingType === 'per_hour')
                 <tr>
-                    <td>{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }} (Hourly)</td>
+                    <td>{{ ucfirst($invoice->booking->room?->type ?? '') }} Room {{ $invoice->booking->room?->room_number ?? '' }} (Hourly)</td>
                     <td class="right">{{ $invoice->booking->hours_booked ?? 1 }} hr(s)</td>
-                    <td class="right">&#8377;{{ number_format($invoice->booking->room->hourly_rate ?? 0) }}/hr</td>
+                    <td class="right">&#8377;{{ number_format($invoice->booking->room?->hourly_rate ?? 0) }}/hr</td>
                     <td class="right">&#8377;{{ number_format($invoice->total_amount) }}</td>
                 </tr>
             @else
                 <tr>
-                    <td>{{ ucfirst($invoice->booking->room->type ?? '') }} Room {{ $invoice->booking->room->room_number ?? '' }}</td>
+                    <td>{{ ucfirst($invoice->booking->room?->type ?? '') }} Room {{ $invoice->booking->room?->room_number ?? '' }}</td>
                     <td class="right">1</td>
                     <td class="right">—</td>
                     <td class="right">&#8377;{{ number_format($invoice->total_amount) }}</td>

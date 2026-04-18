@@ -134,7 +134,16 @@
                     </select>
                     @error('customer_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div>
+                {{-- Whole Hotel Toggle --}}
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl cursor-pointer" onclick="toggleWholeHotel()">
+                        <input type="checkbox" id="wholeHotelToggle" class="w-4 h-4 text-amber-500 rounded" onclick="event.stopPropagation();toggleWholeHotel()">
+                        <input type="hidden" name="is_whole_hotel" id="isWholeHotelInput" value="{{ old('is_whole_hotel', '0') }}">
+                        <label for="wholeHotelToggle" class="text-sm font-semibold text-amber-800 cursor-pointer"><i class="fas fa-hotel text-amber-500 mr-1"></i> Book Whole Hotel / Villa</label>
+                        <span class="text-xs text-amber-600 ml-auto">Blocks all rooms for the selected period</span>
+                    </div>
+                </div>
+                <div id="roomSelectWrapper">
                     <label class="form-label">Room <span class="text-red-500">*</span></label>
                     <select name="room_id" id="roomSelect" class="@error('room_id') border-red-400 @enderror" required>
                         <option value="">Search room by number or type...</option>
@@ -167,6 +176,69 @@
                         @endforeach
                     </select>
                     @error('room_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                {{-- Whole Hotel section (shown when toggle is on) --}}
+                <div id="wholeHotelSection" class="md:col-span-2 hidden">
+                    @php
+                        $whRoomsJson = $rooms->map(fn($r) => [
+                            'id'             => $r->id,
+                            'room_number'    => $r->room_number,
+                            'pricing_type'   => $r->pricing_type ?? 'per_night',
+                            'price_per_night'=> (float) ($r->price_per_night ?? 0),
+                            'hourly_rate'    => (float) ($r->hourly_rate ?? 0),
+                        ])->toArray();
+                    @endphp
+                    <script>var whRoomsData = @json($whRoomsJson);</script>
+                    <div class="border border-amber-200 bg-amber-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-hotel text-amber-500"></i>
+                            <h4 class="font-bold text-gray-700">Whole Hotel / Villa Booking</h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="form-label">Pricing Type</label>
+                                <select name="whole_hotel_pricing_type" id="whPricingType" class="form-input" onchange="updateWholeHotelDateFields()">
+                                    <option value="per_night">Per Night</option>
+                                    @if($slotModuleOn)<option value="per_slot">Per Slot</option>@endif
+                                    @if($hourlyModuleOn)<option value="per_hour">Per Hour</option>@endif
+                                </select>
+                            </div>
+                            <div id="whCheckInWrapper">
+                                <label class="form-label">Check-In Date</label>
+                                <input type="date" name="wh_check_in_date" id="whCheckIn" class="form-input" min="{{ date('Y-m-d') }}" onchange="calcWhTotal()">
+                            </div>
+                            <div id="whCheckOutWrapper">
+                                <label class="form-label">Check-Out Date</label>
+                                <input type="date" name="wh_check_out_date" id="whCheckOut" class="form-input" onchange="calcWhTotal()">
+                            </div>
+                            @if($slotModuleOn)
+                            <div id="whBookingDateWrapper" class="hidden">
+                                <label class="form-label">Booking Date</label>
+                                <input type="date" name="wh_booking_date" id="whBookingDate" class="form-input" min="{{ date('Y-m-d') }}" onchange="calcWhTotal()">
+                            </div>
+                            <div id="whSlotWrapper" class="hidden">
+                                <label class="form-label">Time Slot</label>
+                                <select name="wh_time_slot_id" id="whSlotSelect" class="form-input" onchange="calcWhTotal()">
+                                    <option value="">Select slot...</option>
+                                    @foreach($timeSlots as $ts)
+                                    <option value="{{ $ts->id }}" data-price="{{ $ts->base_price }}">{{ $ts->name }} (₹{{ number_format($ts->base_price) }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @endif
+                            @if($hourlyModuleOn)
+                            <div id="whStartTimeWrapper" class="hidden">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" name="wh_slot_start_time" id="whStartTime" class="form-input">
+                            </div>
+                            @endif
+                        </div>
+                        <div id="whPricePreview" class="text-sm text-amber-700 font-medium bg-amber-100 rounded-lg px-4 py-2 hidden">
+                            <i class="fas fa-calculator mr-1"></i>
+                            Estimated Total: <span id="whPreviewAmt" class="font-bold">₹0</span>
+                            <span id="whRoomCount" class="ml-2 text-xs text-amber-600"></span>
+                        </div>
+                    </div>
                 </div>
                 {{-- Per Night date fields --}}
                 <div id="perNightFields" class="contents">
@@ -807,8 +879,128 @@
     document.getElementById('checkIn').addEventListener('change', calculateTotal);
     document.getElementById('checkOut').addEventListener('change', calculateTotal);
 
-    // ── Booking form submit: show loading state ────────────────────────────
+    // ── Whole-Hotel toggle ─────────────────────────────────────────────────
+    function toggleWholeHotel() {
+        const toggle      = document.getElementById('wholeHotelToggle');
+        const isOn        = toggle.checked;
+        const hiddenInput = document.getElementById('isWholeHotelInput');
+        const roomWrapper = document.getElementById('roomSelectWrapper');
+        const whSection   = document.getElementById('wholeHotelSection');
+        const perNight    = document.getElementById('perNightFields');
+        const perSlot     = document.getElementById('perSlotFields');
+        const perHour     = document.getElementById('perHourFields');
+
+        hiddenInput.value = isOn ? '1' : '0';
+
+        if (isOn) {
+            // Show whole-hotel section, hide/disable room + regular date fields
+            roomWrapper.classList.add('hidden');
+            document.getElementById('roomSelect').required = false;
+            document.getElementById('roomSelect').disabled = true;
+            whSection.classList.remove('hidden');
+            if (perNight) { setFieldsEnabled(perNight, false); perNight.classList.add('hidden'); perNight.classList.remove('contents'); }
+            if (perSlot)  { setFieldsEnabled(perSlot,  false); perSlot.classList.add('hidden'); }
+            if (perHour)  { setFieldsEnabled(perHour,  false); perHour.classList.add('hidden'); }
+            updateWholeHotelDateFields();
+        } else {
+            // Restore room selector and regular date fields
+            roomWrapper.classList.remove('hidden');
+            document.getElementById('roomSelect').required = true;
+            document.getElementById('roomSelect').disabled = false;
+            whSection.classList.add('hidden');
+            updatePricingUI();
+        }
+    }
+
+    function updateWholeHotelDateFields() {
+        const pt = document.getElementById('whPricingType').value;
+        const ci = document.getElementById('whCheckInWrapper');
+        const co = document.getElementById('whCheckOutWrapper');
+        const bd = document.getElementById('whBookingDateWrapper');
+        const sl = document.getElementById('whSlotWrapper');
+        const st = document.getElementById('whStartTimeWrapper');
+
+        [ci, co, bd, sl, st].forEach(el => { if(el) { el.classList.add('hidden'); setFieldsEnabled(el, false); } });
+
+        if (pt === 'per_night') {
+            if(ci) { ci.classList.remove('hidden'); setFieldsEnabled(ci, true); }
+            if(co) { co.classList.remove('hidden'); setFieldsEnabled(co, true); }
+        } else if (pt === 'per_slot') {
+            if(bd) { bd.classList.remove('hidden'); setFieldsEnabled(bd, true); }
+            if(sl) { sl.classList.remove('hidden'); setFieldsEnabled(sl, true); }
+        } else if (pt === 'per_hour') {
+            if(bd) { bd.classList.remove('hidden'); setFieldsEnabled(bd, true); }
+            if(st) { st.classList.remove('hidden'); setFieldsEnabled(st, true); }
+        }
+        calcWhTotal();
+    }
+
+    function calcWhTotal() {
+        if (!window.whRoomsData) return;
+        const pt = document.getElementById('whPricingType')?.value || 'per_night';
+        let total = 0, roomCount = 0, label = '';
+
+        if (pt === 'per_night') {
+            const ci = document.getElementById('whCheckIn')?.value;
+            const co = document.getElementById('whCheckOut')?.value;
+            if (ci && co) {
+                const nights = Math.max(1, Math.ceil((new Date(co) - new Date(ci)) / 86400000));
+                const perNightRooms = whRoomsData.filter(r => r.pricing_type === 'per_night');
+                const sumRooms = perNightRooms.length > 0 ? perNightRooms : whRoomsData;
+                total = sumRooms.reduce((s, r) => s + r.price_per_night, 0) * nights;
+                roomCount = sumRooms.length;
+                label = roomCount + ' room(s) × ' + nights + ' night(s)';
+            }
+        } else if (pt === 'per_slot') {
+            const slotEl = document.getElementById('whSlotSelect');
+            const slotOpt = slotEl?.options[slotEl.selectedIndex];
+            if (slotOpt && slotOpt.value) {
+                const slotPrice = parseFloat(slotOpt.dataset.price || 0);
+                const slotRooms = whRoomsData.filter(r => r.pricing_type === 'per_slot');
+                const cnt = Math.max(1, slotRooms.length);
+                total = slotPrice * cnt;
+                roomCount = cnt;
+                label = cnt + ' room(s) × ₹' + slotPrice.toLocaleString('en-IN') + '/slot';
+            }
+        } else {
+            label = 'Calculated at checkout';
+        }
+
+        const preview = document.getElementById('whPricePreview');
+        const amtEl   = document.getElementById('whPreviewAmt');
+        const cntEl   = document.getElementById('whRoomCount');
+        if (preview && amtEl) {
+            if (total > 0 || label === 'Calculated at checkout') {
+                preview.classList.remove('hidden');
+                amtEl.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : 'TBD';
+                if (cntEl) cntEl.textContent = '(' + label + ')';
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+    }
+
+    // ── Booking form submit: show loading state + inject WH fields ─────────
     document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        const isWH = document.getElementById('isWholeHotelInput').value === '1';
+        if (isWH) {
+            const pt = document.getElementById('whPricingType').value;
+            const addH = (name, val) => {
+                const i = document.createElement('input');
+                i.type = 'hidden'; i.name = name; i.value = val || '';
+                this.appendChild(i);
+            };
+            if (pt === 'per_night') {
+                addH('check_in_date',  document.getElementById('whCheckIn')?.value || '');
+                addH('check_out_date', document.getElementById('whCheckOut')?.value || '');
+            } else if (pt === 'per_slot') {
+                addH('booking_date', document.getElementById('whBookingDate')?.value || '');
+                addH('time_slot_id', document.getElementById('whSlotSelect')?.value || '');
+            } else if (pt === 'per_hour') {
+                addH('booking_date',    document.getElementById('whBookingDate')?.value || '');
+                addH('slot_start_time', document.getElementById('whStartTime')?.value || '');
+            }
+        }
         const btn = this.querySelector('button[type="submit"]');
         if (btn) {
             btn.disabled = true;

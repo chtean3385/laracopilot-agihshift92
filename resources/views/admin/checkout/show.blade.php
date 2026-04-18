@@ -22,11 +22,11 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Room</span>
-                    <span style="font-weight:800;font-size:22px;color:#0f172a;">{{ $booking->room->room_number }}</span>
+                    <span style="font-weight:800;font-size:22px;color:#0f172a;">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '—') }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Room Type</span>
-                    <span style="font-weight:600;">{{ ucfirst($booking->room->type) }}</span>
+                    <span style="font-weight:600;">{{ $booking->is_whole_hotel ? 'All Rooms' : ucfirst($booking->room?->type ?? '—') }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Booking #</span>
@@ -104,7 +104,7 @@
                 </div>
                 @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
-                    <span style="color:#64748b;">{{ $actualNights }} night{{ $actualNights != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->price_per_night) }}/night</span>
+                    <span style="color:#64748b;">{{ $actualNights }} night{{ $actualNights != 1 ? 's' : '' }} × ₹{{ number_format($booking->room?->price_per_night ?? 0) }}/night</span>
                     <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>
                 @endif
@@ -121,7 +121,7 @@
                 @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">
-                        {{ $hoursBooked ?? 0 }} actual hr{{ ($hoursBooked ?? 0) != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr
+                        {{ $hoursBooked ?? 0 }} actual hr{{ ($hoursBooked ?? 0) != 1 ? 's' : '' }} × ₹{{ number_format($booking->room?->hourly_rate ?? 0) }}/hr
                     </span>
                     <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>
@@ -228,12 +228,12 @@
                         style="width:100px;padding:10px 14px;border:2px solid #7c3aed;border-radius:10px;font-size:18px;font-weight:800;color:#7c3aed;text-align:center;">
                     <div>
                         <div style="font-size:12px;color:#64748b;">Check-in: <strong style="color:#7c3aed;">{{ $booking->actual_checkin_at ? \Carbon\Carbon::parse($booking->actual_checkin_at)->format('h:i A') : '—' }}</strong></div>
-                        <div style="font-size:12px;color:#64748b;margin-top:2px;">Rate: <strong>₹{{ number_format($booking->room->hourly_rate ?? 0) }}/hr</strong></div>
+                        <div style="font-size:12px;color:#64748b;margin-top:2px;">Rate: <strong>₹{{ number_format($booking->room?->hourly_rate ?? 0) }}/hr</strong></div>
                         <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Adjust hours if needed — bill updates automatically.</div>
                     </div>
                 </div>
                 <div style="margin-top:10px;font-size:13px;color:#64748b;">
-                    Estimated total: <span id="hoursTotal" style="font-weight:800;color:#7c3aed;font-size:16px;">₹{{ number_format($hoursBooked * ($booking->room->hourly_rate ?? 0)) }}</span>
+                    Estimated total: <span id="hoursTotal" style="font-weight:800;color:#7c3aed;font-size:16px;">₹{{ number_format($hoursBooked * ($booking->room?->hourly_rate ?? 0)) }}</span>
                     @if($taxRate > 0)<span style="font-size:11px;color:#94a3b8;"> + {{ $taxRate }}% GST</span>@endif
                 </div>
             </div>
@@ -470,7 +470,7 @@ document.getElementById('coUpiModal').addEventListener('click', function(e) {
 })();
 
 // Hours override → recalculate estimated total display
-var _hourlyRate = {{ (float)($booking->room->hourly_rate ?? 0) }};
+var _hourlyRate = {{ (float)($booking->room?->hourly_rate ?? 0) }};
 var _taxRate    = {{ $taxRate }};
 var _addonTotal = {{ $booking->bookingAddOns ? $booking->bookingAddOns->sum('price') : 0 }};
 
