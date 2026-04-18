@@ -178,14 +178,17 @@
                         $bTaxRate           = ($bSettings && $bSettings->gst_number && $bSettings->tax_rate > 0) ? (float) $bSettings->tax_rate : 0;
                         $bExtraChargesTotal = $booking->extraCharges->sum('total_price');
 
-                        // Compute true base from actual components (not from total_amount which may be stale)
-                        if ($pType === 'per_slot' && $booking->timeSlot) {
-                            $bBase = (float) $booking->timeSlot->base_price + $bExtraChargesTotal;
-                        } elseif ($pType === 'per_hour') {
-                            // For hourly, base is stored in total_amount (calculated at checkout); extra charges already incremented it
+                        // Compute true base — respect custom price override if set
+                        if ($pType === 'per_hour') {
+                            // Hourly: base is in total_amount (set at checkout or overridden at booking); extra charges already incremented it
                             $bBase = (float) $booking->total_amount;
+                        } elseif ($booking->price_overridden) {
+                            // Custom price was set at booking — total_amount IS the agreed price (excluding extra charges)
+                            $bBase = (float) $booking->total_amount + $bExtraChargesTotal;
+                        } elseif ($pType === 'per_slot' && $booking->timeSlot) {
+                            $bBase = (float) $booking->timeSlot->base_price + $bExtraChargesTotal;
                         } else {
-                            // per_night: recompute from room rate × nights + addons
+                            // per_night standard: recompute from room rate × nights + addons
                             $bRoomBase = $booking->room ? ($booking->nights * $booking->room->price_per_night) : 0;
                             $bBase = $bRoomBase + (float)($booking->meal_cost ?? 0) + (float)($booking->extra_bed_cost ?? 0) + $bExtraChargesTotal;
                         }
@@ -208,6 +211,11 @@
                         @elseif($pType === 'per_hour')
                         @php $roomCost = max(0, $booking->total_amount - $bExtraChargesTotal); @endphp
                         <div class="flex justify-between text-sm"><span class="text-gray-500"><i class="fas fa-hourglass-half text-amber-400 mr-1"></i>Hourly booking</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
+                        @elseif($booking->price_overridden)
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500"><i class="fas fa-pen text-amber-400 mr-1"></i>Room charge <span class="text-xs text-amber-600">(custom price)</span></span>
+                            <span class="font-medium">₹{{ number_format($booking->total_amount) }}</span>
+                        </div>
                         @else
                         @php $roomCost = $booking->room ? $booking->nights * $booking->room->price_per_night : $booking->total_amount; @endphp
                         <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room ? $booking->room->price_per_night : 0) }}</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
