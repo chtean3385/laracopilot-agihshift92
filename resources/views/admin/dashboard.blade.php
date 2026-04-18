@@ -320,8 +320,11 @@
                     </div>
                     <div class="db-cp-body" id="dbWidgetList">
                         @foreach($orderedWidgets as $wKey)
-                        @php $wm = $widgetMeta[$wKey] ?? null; if (!$wm) continue; @endphp
-                        @if($wKey === 'slot-availability' && !$hasSlotModule)@continue@endif
+                        @php
+                            $wm = $widgetMeta[$wKey] ?? null;
+                            if (!$wm) continue;
+                            if ($wKey === 'slot-availability' && !$hasSlotModule) continue;
+                        @endphp
                         <div class="db-widget-item" data-widget-key="{{ $wKey }}">
                             <span class="db-drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></span>
                             <div class="db-widget-item-icon" style="background:{{ $wm['bg'] }};"><i class="fas {{ $wm['icon'] }}"></i></div>
