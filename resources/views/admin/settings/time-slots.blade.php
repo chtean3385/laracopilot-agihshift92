@@ -4,12 +4,12 @@
 @section('page-subtitle', 'Manage time-slot pricing blocks and room add-ons')
 
 @section('content')
-<div class="max-w-4xl space-y-6">
+<div class="space-y-6">
 
-    {{-- ── Time Slots Card (only if time-slot-pricing module is active) ── --}}
+    {{-- ── Time Slots Card ── --}}
     @if($showTimeSlots)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 flex items-center justify-between">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 flex items-center justify-between">
             <div>
                 <h3 class="font-bold text-gray-800"><i class="fas fa-clock text-violet-500 mr-2"></i>Time Slots</h3>
                 <p class="text-xs text-gray-400 mt-0.5">Define named time blocks guests can book (e.g. Day Use 9am–4pm)</p>
@@ -31,49 +31,67 @@
             </button>
         </div>
         @else
-        <div class="divide-y divide-gray-50" id="slotList">
-            @foreach($slots as $slot)
-            <div class="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors" id="slot-row-{{ $slot->id }}">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-semibold text-gray-800">{{ $slot->name }}</span>
-                        <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                            {{ $slot->start_time }} – {{ $slot->end_time }}{{ $slot->is_overnight ? ' (next day)' : '' }}
-                        </span>
-                        @if(!$slot->is_active)
-                        <span class="text-xs bg-red-100 text-red-600 rounded-full px-2 py-0.5">Disabled</span>
-                        @endif
-                    </div>
-                    @if($slot->description)
-                    <p class="text-xs text-gray-400 mt-0.5 truncate">{{ $slot->description }}</p>
-                    @endif
-                </div>
-                <div class="text-right shrink-0">
-                    <span class="font-bold text-violet-700">₹{{ number_format($slot->base_price) }}</span>
-                    <span class="text-xs text-gray-400 block">base price</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="toggleSlot({{ $slot->id }}, this)"
-                        class="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors {{ $slot->is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
-                        {{ $slot->is_active ? 'Active' : 'Inactive' }}
-                    </button>
-                    <button onclick="openSlotModal({{ json_encode($slot) }})" class="text-xs text-violet-600 hover:text-violet-800 px-2 py-1.5 rounded-lg hover:bg-violet-50 transition-colors">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteSlot({{ $slot->id }}, '{{ addslashes($slot->name) }}')" class="text-xs text-red-400 hover:text-red-600 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            @endforeach
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-left">
+                    <tr>
+                        <th class="px-5 py-3 font-semibold text-gray-500 whitespace-nowrap">Slot Name</th>
+                        <th class="px-5 py-3 font-semibold text-gray-500 whitespace-nowrap">Time Range</th>
+                        <th class="px-5 py-3 font-semibold text-gray-500 whitespace-nowrap">Description</th>
+                        <th class="px-5 py-3 font-semibold text-gray-500 text-right whitespace-nowrap">Base Price</th>
+                        <th class="px-5 py-3 font-semibold text-gray-500 text-center whitespace-nowrap">Status</th>
+                        <th class="px-5 py-3 font-semibold text-gray-500 text-center whitespace-nowrap">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50" id="slotList">
+                    @foreach($slots as $slot)
+                    <tr class="hover:bg-gray-50 transition-colors" id="slot-row-{{ $slot->id }}">
+                        <td class="px-5 py-3">
+                            <span class="font-semibold text-gray-800">{{ $slot->name }}</span>
+                            @if($slot->is_overnight)
+                            <span class="ml-2 text-xs bg-indigo-100 text-indigo-600 rounded-full px-2 py-0.5 font-medium">Overnight</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3 whitespace-nowrap">
+                            <span class="font-mono text-sm text-violet-700 bg-violet-50 rounded-lg px-3 py-1">
+                                {{ $slot->start_time }} – {{ $slot->end_time }}
+                                @if($slot->is_overnight)<span class="text-xs text-violet-400 ml-1">(+1 day)</span>@endif
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-gray-400 text-xs max-w-xs truncate">
+                            {{ $slot->description ?: '—' }}
+                        </td>
+                        <td class="px-5 py-3 text-right whitespace-nowrap">
+                            <span class="font-bold text-violet-700 text-base">₹{{ number_format($slot->base_price) }}</span>
+                        </td>
+                        <td class="px-5 py-3 text-center">
+                            <button onclick="toggleSlot({{ $slot->id }}, this)"
+                                class="text-xs px-3 py-1.5 rounded-full font-semibold transition-colors {{ $slot->is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200' }}">
+                                {{ $slot->is_active ? 'Active' : 'Inactive' }}
+                            </button>
+                        </td>
+                        <td class="px-5 py-3 text-center whitespace-nowrap">
+                            <button onclick="openSlotModal({{ json_encode($slot) }})"
+                                class="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-800 px-3 py-1.5 rounded-lg hover:bg-violet-50 transition-colors font-medium">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="deleteSlot({{ $slot->id }}, '{{ addslashes($slot->name) }}')"
+                                class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors font-medium ml-1">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
         @endif
     </div>
-    @endif {{-- end $showTimeSlots --}}
+    @endif
 
-    {{-- ── Add-Ons Card (always visible when either module is active) ── --}}
+    {{-- ── Add-Ons Card ── --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 flex items-center justify-between">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 flex items-center justify-between">
             <div>
                 <h3 class="font-bold text-gray-800"><i class="fas fa-plus-circle text-amber-500 mr-2"></i>Room Add-Ons</h3>
                 <p class="text-xs text-gray-400 mt-0.5">Chargeable extras (e.g. AC +₹200) that staff can add to any slot or hourly booking</p>
@@ -90,18 +108,30 @@
                 No add-ons yet. Add chargeable extras like "AC", "Heater", "Extra Towels".
             </div>
             @else
-            <div class="divide-y divide-gray-50">
-                @foreach($addOns as $ao)
-                <div class="flex items-center gap-4 px-6 py-3" id="addon-row-{{ $ao->id }}">
-                    <div class="flex-1">
-                        <span class="font-medium text-gray-800">{{ $ao->name }}</span>
-                    </div>
-                    <span class="font-bold text-amber-600">+₹{{ number_format($ao->price) }}</span>
-                    <button onclick="deleteAddOn({{ $ao->id }}, '{{ addslashes($ao->name) }}')" class="text-red-400 hover:text-red-600 text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-                @endforeach
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 border-b border-gray-100 text-left">
+                        <tr>
+                            <th class="px-5 py-3 font-semibold text-gray-500">Add-On Name</th>
+                            <th class="px-5 py-3 font-semibold text-gray-500 text-right">Price</th>
+                            <th class="px-5 py-3 font-semibold text-gray-500 text-center w-20">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach($addOns as $ao)
+                        <tr class="hover:bg-gray-50" id="addon-row-{{ $ao->id }}">
+                            <td class="px-5 py-3 font-medium text-gray-800">{{ $ao->name }}</td>
+                            <td class="px-5 py-3 text-right font-bold text-amber-600">+₹{{ number_format($ao->price) }}</td>
+                            <td class="px-5 py-3 text-center">
+                                <button onclick="deleteAddOn({{ $ao->id }}, '{{ addslashes($ao->name) }}')"
+                                    class="text-xs text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors font-medium">
+                                    <i class="fas fa-trash mr-1"></i>Delete
+                                </button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
             @endif
         </div>
@@ -111,11 +141,11 @@
 
 {{-- ── Slot Modal ─────────────────────────────────────────────── --}}
 <div id="slotModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.45)">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 rounded-t-2xl">
-            <h3 id="slotModalTitle" class="font-bold text-gray-800"><i class="fas fa-clock text-violet-500 mr-2"></i>Add Time Slot</h3>
-            <button onclick="closeSlotModal()" class="text-gray-400 hover:text-gray-600 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
-                <i class="fas fa-times text-sm"></i>
+            <h3 id="slotModalTitle" class="font-bold text-gray-800 text-base"><i class="fas fa-clock text-violet-500 mr-2"></i>Add Time Slot</h3>
+            <button onclick="closeSlotModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-times"></i>
             </button>
         </div>
         <form id="slotForm" class="p-6 space-y-4">
@@ -123,7 +153,7 @@
             <input type="hidden" id="slotId" value="">
             <div>
                 <label class="form-label">Slot Name <span class="text-red-500">*</span></label>
-                <input type="text" id="slotName" class="form-input" placeholder="e.g. Day Use, Night Stay, Morning" required>
+                <input type="text" id="slotName" class="form-input" placeholder="e.g. Day Use, Night Stay, Morning Slot" required>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -135,19 +165,22 @@
                     <input type="time" id="slotEnd" class="form-input" required>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <input type="checkbox" id="slotOvernight" class="w-4 h-4 rounded text-violet-500">
-                <label for="slotOvernight" class="text-sm text-gray-700 cursor-pointer">
-                    Ends next day (overnight slot — e.g. 6pm–9am next morning)
+            <div class="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                <input type="checkbox" id="slotOvernight" class="w-4 h-4 rounded text-violet-500 shrink-0">
+                <label for="slotOvernight" class="text-sm text-gray-700 cursor-pointer leading-tight">
+                    <span class="font-medium">Ends next day</span>
+                    <span class="text-gray-400 block text-xs mt-0.5">Overnight slot — e.g. 10pm–8am next morning</span>
                 </label>
             </div>
-            <div>
-                <label class="form-label">Base Price (₹) <span class="text-red-500">*</span></label>
-                <input type="number" id="slotPrice" class="form-input" placeholder="500" min="0" step="0.01" required>
-            </div>
-            <div>
-                <label class="form-label">Description <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
-                <input type="text" id="slotDesc" class="form-input" placeholder="e.g. Includes pool access">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label">Base Price (₹) <span class="text-red-500">*</span></label>
+                    <input type="number" id="slotPrice" class="form-input" placeholder="500" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label class="form-label">Description <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
+                    <input type="text" id="slotDesc" class="form-input" placeholder="e.g. Includes pool access">
+                </div>
             </div>
             <div id="slotError" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"></div>
             <div id="slotWarning" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
@@ -155,13 +188,15 @@
                     <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5 flex-shrink-0"></i>
                     <div class="flex-1">
                         <div class="font-semibold text-amber-800 mb-1">Slot saved, but time range overlaps with:</div>
-                        <ul id="slotWarningList" class="list-disc list-inside text-amber-700 space-y-0.5"></ul>
-                        <p class="text-amber-600 text-xs mt-2">Overlapping slots are allowed (e.g. 24-hour packages), but guests cannot be double-booked for the same room. Staff will see conflicts when creating bookings.</p>
-                        <button type="button" onclick="closeSlotModal(); window.location.reload();" class="mt-3 px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600">OK, understood</button>
+                        <ul id="slotWarningList" class="list-disc list-inside text-amber-700 space-y-0.5 mb-2"></ul>
+                        <p class="text-amber-600 text-xs">Overlapping slots are allowed (e.g. 24-hour packages), but guests cannot be double-booked for the same room. Staff will see conflicts when creating bookings.</p>
+                        <button type="button" onclick="closeSlotModal(); window.location.reload();" class="mt-3 px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors">
+                            OK, understood
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="flex gap-3 pt-2">
+            <div class="flex gap-3 pt-1">
                 <button type="button" onclick="closeSlotModal()" class="btn-secondary flex-1">Cancel</button>
                 <button type="submit" id="slotSubmitBtn" class="btn-primary flex-1 justify-center">
                     <i class="fas fa-save mr-2"></i>Save Slot
@@ -176,8 +211,8 @@
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-2xl">
             <h3 class="font-bold text-gray-800"><i class="fas fa-plus-circle text-amber-500 mr-2"></i>Add Add-On</h3>
-            <button onclick="closeAddOnModal()" class="text-gray-400 hover:text-gray-600 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
-                <i class="fas fa-times text-sm"></i>
+            <button onclick="closeAddOnModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <i class="fas fa-times"></i>
             </button>
         </div>
         <form id="addOnForm" class="p-6 space-y-4">
@@ -191,7 +226,7 @@
                 <input type="number" id="aoPrice" class="form-input" placeholder="200" min="0" step="0.01" required>
             </div>
             <div id="aoError" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"></div>
-            <div class="flex gap-3 pt-2">
+            <div class="flex gap-3 pt-1">
                 <button type="button" onclick="closeAddOnModal()" class="btn-secondary flex-1">Cancel</button>
                 <button type="submit" id="aoSubmitBtn" class="btn-primary flex-1 justify-center">
                     <i class="fas fa-save mr-2"></i>Save
@@ -203,9 +238,9 @@
 
 @push('scripts')
 <script>
-// ── Time Slot Modal ─────────────────────────────────────────────────────────
 function openSlotModal(slot) {
     document.getElementById('slotError').classList.add('hidden');
+    document.getElementById('slotWarning').classList.add('hidden');
     if (slot) {
         document.getElementById('slotModalTitle').innerHTML = '<i class="fas fa-edit text-violet-500 mr-2"></i>Edit Time Slot';
         document.getElementById('slotId').value    = slot.id;
@@ -217,7 +252,7 @@ function openSlotModal(slot) {
         document.getElementById('slotDesc').value  = slot.description || '';
     } else {
         document.getElementById('slotModalTitle').innerHTML = '<i class="fas fa-clock text-violet-500 mr-2"></i>Add Time Slot';
-        document.getElementById('slotId').value    = '';
+        document.getElementById('slotId').value = '';
         document.getElementById('slotForm').reset();
     }
     document.getElementById('slotModal').classList.remove('hidden');
@@ -227,14 +262,14 @@ function closeSlotModal() { document.getElementById('slotModal').classList.add('
 
 document.getElementById('slotForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const id   = document.getElementById('slotId').value;
-    const btn  = document.getElementById('slotSubmitBtn');
-    const errEl = document.getElementById('slotError');
+    const id     = document.getElementById('slotId').value;
+    const btn    = document.getElementById('slotSubmitBtn');
+    const errEl  = document.getElementById('slotError');
     errEl.classList.add('hidden');
+    document.getElementById('slotWarning').classList.add('hidden');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
 
     const url    = id ? '{{ url("/settings/time-slots") }}/' + id : '{{ route("time-slots.store") }}';
-    const method = id ? 'PUT' : 'POST';
     const body   = {
         _token:       '{{ csrf_token() }}',
         name:         document.getElementById('slotName').value,
@@ -255,8 +290,7 @@ document.getElementById('slotForm').addEventListener('submit', async function(e)
         const data = await res.json();
         if (data.success) {
             if (data.warnings && data.warnings.length > 0) {
-                // Show overlap warning inside modal before reloading
-                const warnEl = document.getElementById('slotWarning');
+                const warnEl   = document.getElementById('slotWarning');
                 const warnList = document.getElementById('slotWarningList');
                 warnList.innerHTML = data.warnings.map(w => `<li>${w}</li>`).join('');
                 warnEl.classList.remove('hidden');
@@ -266,12 +300,16 @@ document.getElementById('slotForm').addEventListener('submit', async function(e)
                 closeSlotModal();
                 window.location.reload();
             }
+        } else {
+            errEl.textContent = data.message || 'Failed to save.';
+            errEl.classList.remove('hidden');
         }
-        else { errEl.textContent = data.message || 'Failed to save.'; errEl.classList.remove('hidden'); }
     } catch (err) {
-        errEl.textContent = 'Network error. Please try again.'; errEl.classList.remove('hidden');
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('hidden');
     }
-    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Slot';
+    btn.disabled = false;
+    if (!btn.innerHTML.includes('Saved')) btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Slot';
 });
 
 async function toggleSlot(id, btn) {
@@ -282,7 +320,8 @@ async function toggleSlot(id, btn) {
         const data = await res.json();
         if (data.success) {
             btn.textContent = data.is_active ? 'Active' : 'Inactive';
-            btn.className   = 'text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ' + (data.is_active ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200');
+            btn.className   = 'text-xs px-3 py-1.5 rounded-full font-semibold transition-colors ' +
+                (data.is_active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200');
         }
     } catch(e) {}
 }
@@ -299,9 +338,15 @@ async function deleteSlot(id, name) {
     } catch(e) {}
 }
 
-// ── Add-On Modal ────────────────────────────────────────────────────────────
-function openAddOnModal()  { document.getElementById('aoError').classList.add('hidden'); document.getElementById('addOnModal').classList.remove('hidden'); document.getElementById('aoName').focus(); }
-function closeAddOnModal() { document.getElementById('addOnModal').classList.add('hidden'); document.getElementById('addOnForm').reset(); }
+function openAddOnModal()  {
+    document.getElementById('aoError').classList.add('hidden');
+    document.getElementById('addOnModal').classList.remove('hidden');
+    document.getElementById('aoName').focus();
+}
+function closeAddOnModal() {
+    document.getElementById('addOnModal').classList.add('hidden');
+    document.getElementById('addOnForm').reset();
+}
 
 document.getElementById('addOnForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -309,7 +354,6 @@ document.getElementById('addOnForm').addEventListener('submit', async function(e
     const errEl = document.getElementById('aoError');
     errEl.classList.add('hidden');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-
     try {
         const res  = await fetch('{{ route("add-ons.store") }}', {
             method: 'POST',
