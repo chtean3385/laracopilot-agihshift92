@@ -53,10 +53,12 @@
 
 /* Responsive grids */
 .ci-info-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.ci-main-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
 .ci-form-grid  { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 @media(max-width:540px) {
     .ci-info-grid  { grid-template-columns:1fr; }
     .ci-form-grid  { grid-template-columns:1fr; }
+    .ci-main-grid  { grid-template-columns:1fr; }
 }
 </style>
 
@@ -74,9 +76,8 @@
         @endif
     </div>
 
-    {{-- ── Info cards grid ── --}}
-    <div class="ci-info-grid">
-
+    <div class="ci-main-grid">
+        <div class="ci-info-grid" style="margin-bottom:0;">
         {{-- Guest Details --}}
         <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:18px;">
             <h3 style="font-size:14px;font-weight:800;color:#1e293b;margin:0 0 12px;"><i class="fas fa-user" style="color:#06b6d4;margin-right:7px;"></i>Guest</h3>
@@ -171,7 +172,7 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>
 
     {{-- ── Additional Guests & Signatures ── --}}
     <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:18px;margin-bottom:14px;">
