@@ -133,20 +133,50 @@ class ReportController extends Controller
 
         $conflictSvc = new SlotConflictService();
 
+        // Prefetch whole-hotel bookings that overlap the date range
+        $hotelId = session('crm_hotel_id');
+        $whBookings = \App\Models\Booking::where('hotel_id', $hotelId)
+            ->where('is_whole_hotel', true)
+            ->whereNotIn('status', ['cancelled', 'checked_out'])
+            ->where('check_in_date', '<', $to->copy()->addDay()->toDateString())
+            ->where('check_out_date', '>', $from->toDateString())
+            ->get(['check_in_date', 'check_out_date', 'booking_number', 'customer_id'])
+            ->load('customer:id,name');
+
         $availability = [];
         $cur = $from->copy();
         while ($cur <= $to) {
             $ds = $cur->toDateString();
-            $dayData = ['date' => $ds, 'label' => $cur->format('D, d M'), 'slots' => []];
+            $dayData = ['date' => $ds, 'label' => $cur->format('D, d M'), 'slots' => [], 'whole_hotel' => null];
+
+            // Check if a whole-hotel booking covers this date
+            $whForDay = $whBookings->first(
+                fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
+            );
 
             $roomIds = $rooms->pluck('id')->toArray();
             foreach ($slots as $slot) {
-                $bookedDetails      = $conflictSvc->getConflictingRoomDetails($slot, $ds);
-                $bookedDetails      = array_values(array_filter($bookedDetails, fn($d) => in_array($d['room_id'], $roomIds)));
-                $bookedIds          = array_column($bookedDetails, 'room_id');
-                $booked             = count($bookedIds);
-                $available          = $total - $booked;
-                $freeRooms          = $rooms->filter(fn($r) => !in_array($r->id, $bookedIds))->pluck('room_number')->values()->all();
+                if ($whForDay) {
+                    // Whole hotel booked — all rooms blocked
+                    $bookedDetails = $rooms->map(fn($r) => [
+                        'room_id'     => $r->id,
+                        'room_number' => $r->room_number,
+                        'booking_number' => $whForDay->booking_number,
+                        'guest_name'  => $whForDay->customer?->name ?? '—',
+                        'whole_hotel' => true,
+                    ])->values()->all();
+                    $dayData['whole_hotel'] = $whForDay->booking_number;
+                    $available = 0;
+                    $booked    = $total;
+                    $freeRooms = [];
+                } else {
+                    $bookedDetails = $conflictSvc->getConflictingRoomDetails($slot, $ds);
+                    $bookedDetails = array_values(array_filter($bookedDetails, fn($d) => in_array($d['room_id'], $roomIds)));
+                    $bookedIds     = array_column($bookedDetails, 'room_id');
+                    $booked        = count($bookedIds);
+                    $available     = $total - $booked;
+                    $freeRooms     = $rooms->filter(fn($r) => !in_array($r->id, $bookedIds))->pluck('room_number')->values()->all();
+                }
 
                 $dayData['slots'][] = [
                     'slot_id'      => $slot->id,

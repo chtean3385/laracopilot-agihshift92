@@ -36,7 +36,7 @@
                     <tr class="hover:bg-slate-50">
                         <td class="px-6 py-3 text-xs font-mono text-cyan-600">{{ $b->booking_number }}</td>
                         <td class="px-6 py-3 text-sm font-medium">{{ $b->customer?->name ?? '(Deleted Guest)' }}</td>
-                        <td class="px-6 py-3 text-sm">{{ $b->room->room_number }}</td>
+                        <td class="px-6 py-3 text-sm">{{ $b->room?->room_number ?? 'Whole Hotel' }}</td>
                         <td class="px-6 py-3 text-sm">{{ $b->check_in_date->format('d M Y') }}</td>
                         <td class="px-6 py-3 text-sm">{{ $b->nights }}</td>
                         <td class="px-6 py-3 text-sm font-bold text-right">₹{{ number_format($b->total_amount) }}</td>
