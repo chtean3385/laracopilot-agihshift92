@@ -62,7 +62,7 @@
 }
 </style>
 
-<div style="max-width:600px;">
+<div style="max-width:none;width:100%;">
 
     {{-- ── Top action buttons ── --}}
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
