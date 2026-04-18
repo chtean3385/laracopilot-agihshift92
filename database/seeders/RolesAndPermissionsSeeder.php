@@ -71,6 +71,8 @@ class RolesAndPermissionsSeeder extends Seeder
             ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'Users',      'sort_order' => 29],
 
             ['slug' => 'whatsapp.send',     'label' => 'Send WhatsApp Messages',   'module' => 'WhatsApp',   'sort_order' => 30],
+
+            ['slug' => 'data.truncate',     'label' => 'Clear / Truncate Table Data', 'module' => 'Danger Zone', 'sort_order' => 99],
         ];
 
         foreach ($permissions as $p) {

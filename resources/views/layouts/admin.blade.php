@@ -957,6 +957,14 @@
             </a>
             @endCanDo
 
+            @canDo('data.truncate')
+            <a href="{{ route('data-cleanup.index') }}" class="nav-link {{ request()->routeIs('data-cleanup.*') ? 'active' : '' }}"
+               style="{{ request()->routeIs('data-cleanup.*') ? '' : 'border:1px solid rgba(220,38,38,.25);' }}">
+                <span class="icon"><i class="bi bi-trash3-fill" style="color:#dc2626;"></i></span>
+                <span style="{{ request()->routeIs('data-cleanup.*') ? '' : 'color:#dc2626;font-weight:600;' }}">Data Cleanup</span>
+            </a>
+            @endCanDo
+
             @canDo('roles.view')
             <a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-shield-halved"></i></span>

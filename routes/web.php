@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\HotelSwitchController;
 use App\Http\Controllers\Admin\SaHotelFilterController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\BookingExtraChargeController;
+use App\Http\Controllers\Admin\DataCleanupController;
 use App\Http\Controllers\Admin\FoodBillingController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\WhatsAppSetupController;
@@ -164,6 +165,12 @@ Route::middleware('permission:settings.view')->group(function () {
 Route::get('/activity-log', [ActivityLogController::class, 'index'])
     ->middleware('permission:activity_log.view')
     ->name('activity_log.index');
+
+// ── Data Cleanup ────────────────────────────────────────────────────────────
+Route::middleware('permission:data.truncate')->group(function () {
+    Route::get('/data-cleanup',  [DataCleanupController::class, 'index']   )->name('data-cleanup.index');
+    Route::post('/data-cleanup', [DataCleanupController::class, 'truncate'])->name('data-cleanup.truncate');
+});
 
 // ── Roles & Permissions ────────────────────────────────────────────────────
 Route::middleware('permission:roles.view')->group(function () {
