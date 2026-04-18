@@ -40,10 +40,21 @@ class DashboardController extends Controller
         }
 
         try {
-            $availableRooms   = Room::where('status', 'available')->count();
-            $occupiedRooms    = Room::where('status', 'occupied')->count();
             $maintenanceRooms = Room::where('status', 'maintenance')->count();
             $totalRooms       = Room::count();
+            $nonMaintenanceRooms = $totalRooms - $maintenanceRooms;
+            $wholeHotelActiveToday = Booking::where('is_whole_hotel', true)
+                ->whereNotIn('status', ['cancelled', 'checked_out'])
+                ->where('check_in_date', '<=', $today->toDateString())
+                ->where('check_out_date', '>', $today->toDateString())
+                ->exists();
+            if ($wholeHotelActiveToday) {
+                $occupiedRooms  = $nonMaintenanceRooms;
+                $availableRooms = 0;
+            } else {
+                $availableRooms = Room::where('status', 'available')->count();
+                $occupiedRooms  = Room::where('status', 'occupied')->count();
+            }
         } catch (\Exception $e) {
             $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = 0;
         }
@@ -319,21 +330,46 @@ class DashboardController extends Controller
             return response()->json(['error' => 'Invalid date'], 422);
         }
 
+        // Check if a whole-hotel booking covers this date
+        $wholeHotelBooking = Booking::with('customer')
+            ->where('is_whole_hotel', true)
+            ->whereNotIn('status', ['cancelled', 'checked_out'])
+            ->where('check_in_date', '<=', $d)
+            ->where('check_out_date', '>', $d)
+            ->first();
+
+        if ($wholeHotelBooking) {
+            $rooms = Room::where('status', '!=', 'maintenance')->orderBy('room_number')->get();
+            $occupied = $rooms->map(fn($room) => [
+                'id'           => $room->id,
+                'room_number'  => $room->room_number,
+                'type'         => ucfirst($room->type),
+                'pricing_type' => $room->pricing_type,
+                'guest'        => $wholeHotelBooking->customer->name ?? '—',
+                'status'       => $wholeHotelBooking->status,
+                'booking_url'  => route('bookings.show', $wholeHotelBooking->id),
+                'whole_hotel'  => true,
+            ])->values()->toArray();
+            return response()->json([
+                'date'           => Carbon::parse($d)->format('D, d M Y'),
+                'available'      => [],
+                'occupied'       => $occupied,
+                'whole_hotel_bk' => $wholeHotelBooking->booking_number,
+            ]);
+        }
+
         $rooms = Room::with(['bookings' => function ($q) use ($d) {
             $q->with('customer')
               ->whereIn('status', ['confirmed', 'checked_in'])
               ->where(function ($q2) use ($d) {
-                  // Per-night: occupies if check_in_date <= date AND check_out_date > date (or >= for same-day)
                   $q2->where(function ($q3) use ($d) {
                       $q3->whereDate('check_in_date', '<=', $d)
                          ->whereDate('check_out_date', '>', $d);
                   })
-                  // Per-night same-day: check_in_date = date AND check_out_date = date
                   ->orWhere(function ($q3) use ($d) {
                       $q3->whereDate('check_in_date', $d)
                          ->whereDate('check_out_date', $d);
                   })
-                  // Per-slot / per-hour: occupies if booking_date = date
                   ->orWhere(function ($q3) use ($d) {
                       $q3->whereDate('booking_date', $d)
                          ->whereNotNull('booking_date');

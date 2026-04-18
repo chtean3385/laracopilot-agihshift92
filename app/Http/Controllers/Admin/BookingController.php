@@ -581,193 +581,78 @@ class BookingController extends Controller
 
     protected function storeWholeHotel(Request $request)
     {
-        $hotelId       = session('crm_hotel_id');
-        $whPricingType = $request->input('whole_hotel_pricing_type', 'per_night');
+        $hotelId = session('crm_hotel_id');
 
-        $baseRules = [
+        $validated = $request->validate([
             'customer_id'     => 'required|exists:customers,id',
+            'check_in_date'   => 'required|date',
+            'check_out_date'  => 'required|date|after_or_equal:check_in_date',
             'adults'          => 'required|integer|min:1',
             'children'        => 'nullable|integer|min:0',
+            'custom_total'    => 'required|numeric|min:1',
             'advance_payment' => 'nullable|numeric|min:0',
             'special_requests'=> 'nullable|string',
-        ];
-        if ($whPricingType === 'per_slot') {
-            $rules = array_merge($baseRules, [
-                'booking_date' => 'required|date',
-                'time_slot_id' => 'required|exists:hotel_time_slots,id',
-            ]);
-        } elseif ($whPricingType === 'per_hour') {
-            $rules = array_merge($baseRules, [
-                'booking_date'    => 'required|date',
-                'slot_start_time' => 'required|string|regex:/^\d{2}:\d{2}$/',
-            ]);
-        } else {
-            $rules = array_merge($baseRules, [
-                'check_in_date'  => 'required|date',
-                'check_out_date' => 'required|date|after_or_equal:check_in_date',
-            ]);
-        }
-        $validated = $request->validate($rules);
+        ]);
 
         $allRooms = Room::where('hotel_id', $hotelId)->where('status', '!=', 'maintenance')->get();
 
-        if ($whPricingType === 'per_night') {
-            $ciDate = $validated['check_in_date'];
-            $coDate = $validated['check_out_date'];
-            $roomConflicts = Booking::where('hotel_id', $hotelId)
-                ->whereNotNull('room_id')
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->where('check_in_date', '<', $coDate)
-                ->where('check_out_date', '>', $ciDate)
-                ->with('room:id,room_number')
-                ->get();
-            $whConflict = Booking::where('hotel_id', $hotelId)
-                ->where('is_whole_hotel', true)
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->where('check_in_date', '<', $coDate)
-                ->where('check_out_date', '>', $ciDate)
-                ->first();
-            if ($whConflict) {
-                return back()->withInput()->withErrors(['check_in_date' => 'Blocked by whole-hotel reservation ' . $whConflict->booking_number . '. Cannot create another whole-hotel booking for this period.']);
-            }
-            if ($roomConflicts->count() > 0) {
-                $roomList = $roomConflicts->pluck('room.room_number')->filter()->unique()->sort()->implode(', ');
-                return back()->withInput()->withErrors(['check_in_date' => 'Rooms already booked in this period: ' . ($roomList ?: 'some rooms') . '. Check out or cancel those bookings first.']);
-            }
-        } elseif ($whPricingType === 'per_slot') {
-            $targetSlot        = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
-            $roomIds           = $allRooms->pluck('id')->toArray();
-            $conflictingRoomIds = (new \App\Services\SlotConflictService())->getConflictingRoomIds($targetSlot, $validated['booking_date']);
-            $occupied          = array_intersect($roomIds, array_filter($conflictingRoomIds));
-            $whConflict        = Booking::where('hotel_id', $hotelId)
-                ->where('is_whole_hotel', true)
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->whereDate('check_in_date', '<=', $validated['booking_date'])
-                ->whereDate('check_out_date', '>=', $validated['booking_date'])
-                ->first();
-            if ($whConflict) {
-                return back()->withInput()->withErrors(['time_slot_id' => 'Blocked by whole-hotel reservation ' . $whConflict->booking_number . '. Cannot create another whole-hotel booking for this date.']);
-            }
-            if (!empty($occupied)) {
-                $occupiedRooms = $allRooms->whereIn('id', $occupied)->pluck('room_number')->sort()->implode(', ');
-                return back()->withInput()->withErrors(['time_slot_id' => 'Rooms already booked for this slot: ' . ($occupiedRooms ?: 'some rooms') . '. Check out or cancel those bookings first.']);
-            }
-        } elseif ($whPricingType === 'per_hour') {
-            $bookingDate = $validated['booking_date'];
-            $roomConflicts = Booking::where('hotel_id', $hotelId)
-                ->whereNotNull('room_id')
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->whereDate('check_in_date', '<=', $bookingDate)
-                ->whereDate('check_out_date', '>=', $bookingDate)
-                ->with('room:id,room_number')
-                ->get();
-            $whConflict = Booking::where('hotel_id', $hotelId)
-                ->where('is_whole_hotel', true)
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->whereDate('check_in_date', '<=', $bookingDate)
-                ->whereDate('check_out_date', '>=', $bookingDate)
-                ->first();
-            if ($whConflict) {
-                return back()->withInput()->withErrors(['booking_date' => 'Blocked by whole-hotel reservation ' . $whConflict->booking_number . '. Cannot create another whole-hotel booking for this date.']);
-            }
-            if ($roomConflicts->count() > 0) {
-                $roomList = $roomConflicts->pluck('room.room_number')->filter()->unique()->sort()->implode(', ');
-                return back()->withInput()->withErrors(['booking_date' => 'Rooms already booked on this date: ' . ($roomList ?: 'some rooms') . '. Check out or cancel those bookings first.']);
-            }
+        // ── Conflict guard ─────────────────────────────────────────────────────
+        $ciDate = $validated['check_in_date'];
+        $coDate = $validated['check_out_date'];
+        $roomConflicts = Booking::where('hotel_id', $hotelId)
+            ->whereNotNull('room_id')
+            ->whereNotIn('status', ['cancelled', 'checked_out'])
+            ->where(function ($q) use ($ciDate, $coDate) {
+                $q->where(function ($q2) use ($ciDate, $coDate) {
+                    $q2->where('check_in_date', '<', $coDate)->where('check_out_date', '>', $ciDate);
+                })->orWhere(function ($q2) use ($ciDate, $coDate) {
+                    $q2->whereDate('booking_date', '>=', $ciDate)->whereDate('booking_date', '<=', $coDate)->whereNotNull('booking_date');
+                });
+            })
+            ->with('room:id,room_number')
+            ->get();
+        $whConflict = Booking::where('hotel_id', $hotelId)
+            ->where('is_whole_hotel', true)
+            ->whereNotIn('status', ['cancelled', 'checked_out'])
+            ->where('check_in_date', '<', $coDate)
+            ->where('check_out_date', '>', $ciDate)
+            ->first();
+        if ($whConflict) {
+            return back()->withInput()->withErrors(['check_in_date' => 'Blocked by whole-hotel reservation ' . $whConflict->booking_number . '. Cannot create another whole-hotel booking for this period.']);
+        }
+        if ($roomConflicts->count() > 0) {
+            $roomList = $roomConflicts->pluck('room.room_number')->filter()->unique()->sort()->implode(', ');
+            return back()->withInput()->withErrors(['check_in_date' => 'Rooms already have bookings in this period: ' . ($roomList ?: 'some rooms') . '. Check out or cancel those bookings first.']);
         }
 
-        $bookingPrefix = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
-        $bookingNumber = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
+        $bookingPrefix  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
+        $bookingNumber  = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
         $advancePayment = (float) ($validated['advance_payment'] ?? 0);
+        $customTotal    = (float) $validated['custom_total'];
+        $nights         = max(1, Carbon::parse($ciDate)->diffInDays(Carbon::parse($coDate)));
 
-        if ($whPricingType === 'per_slot') {
-            $slot        = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
-            $slotRooms   = $allRooms->where('pricing_type', 'per_slot');
-            $totalAmount = $slot->base_price * max(1, $slotRooms->count());
-            $bookingData = [
-                'booking_number'          => $bookingNumber,
-                'hotel_id'                => $hotelId,
-                'customer_id'             => $validated['customer_id'],
-                'room_id'                 => null,
-                'check_in_date'           => $validated['booking_date'],
-                'check_out_date'          => $validated['booking_date'],
-                'booking_date'            => $validated['booking_date'],
-                'time_slot_id'            => $validated['time_slot_id'],
-                'nights'                  => 0,
-                'adults'                  => $validated['adults'],
-                'children'                => $validated['children'] ?? 0,
-                'total_amount'            => $totalAmount,
-                'advance_payment'         => $advancePayment,
-                'balance_due'             => $totalAmount - $advancePayment,
-                'special_requests'        => $validated['special_requests'] ?? null,
-                'status'                  => 'confirmed',
-                'payment_status'          => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
-                'is_whole_hotel'          => true,
-                'whole_hotel_pricing_type'=> 'per_slot',
-                'meal_breakfast' => false, 'meal_lunch' => false, 'meal_dinner' => false,
-                'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
-            ];
-        } elseif ($whPricingType === 'per_hour') {
-            $bookingData = [
-                'booking_number'          => $bookingNumber,
-                'hotel_id'                => $hotelId,
-                'customer_id'             => $validated['customer_id'],
-                'room_id'                 => null,
-                'check_in_date'           => $validated['booking_date'],
-                'check_out_date'          => $validated['booking_date'],
-                'booking_date'            => $validated['booking_date'],
-                'slot_start_time'         => $validated['slot_start_time'],
-                'hours_booked'            => null,
-                'nights'                  => 0,
-                'adults'                  => $validated['adults'],
-                'children'                => $validated['children'] ?? 0,
-                'total_amount'            => 0,
-                'advance_payment'         => 0,
-                'balance_due'             => 0,
-                'special_requests'        => $validated['special_requests'] ?? null,
-                'status'                  => 'confirmed',
-                'payment_status'          => 'pending',
-                'is_whole_hotel'          => true,
-                'whole_hotel_pricing_type'=> 'per_hour',
-                'meal_breakfast' => false, 'meal_lunch' => false, 'meal_dinner' => false,
-                'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
-            ];
-        } else {
-            $nights      = max(1, Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date'])));
-            $perNightRooms = $allRooms->where('pricing_type', 'per_night');
-            $totalAmount = ($perNightRooms->count() > 0 ? $perNightRooms->sum('price_per_night') : $allRooms->sum('price_per_night')) * $nights;
-            $bookingData = [
-                'booking_number'          => $bookingNumber,
-                'hotel_id'                => $hotelId,
-                'customer_id'             => $validated['customer_id'],
-                'room_id'                 => null,
-                'check_in_date'           => $validated['check_in_date'],
-                'check_out_date'          => $validated['check_out_date'],
-                'nights'                  => $nights,
-                'adults'                  => $validated['adults'],
-                'children'                => $validated['children'] ?? 0,
-                'total_amount'            => $totalAmount,
-                'advance_payment'         => $advancePayment,
-                'balance_due'             => $totalAmount - $advancePayment,
-                'special_requests'        => $validated['special_requests'] ?? null,
-                'status'                  => 'confirmed',
-                'payment_status'          => $advancePayment >= $totalAmount ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
-                'is_whole_hotel'          => true,
-                'whole_hotel_pricing_type'=> 'per_night',
-                'meal_breakfast' => false, 'meal_lunch' => false, 'meal_dinner' => false,
-                'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
-            ];
-        }
-
-        $customTotal = (float) $request->input('custom_total', 0);
-        if ($customTotal > 0 && abs($customTotal - $bookingData['total_amount']) > 0.01) {
-            $bookingData['total_amount']     = $customTotal;
-            $bookingData['balance_due']      = max(0, $customTotal - $advancePayment);
-            $bookingData['payment_status']   = $advancePayment >= $customTotal ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending');
-            $bookingData['price_overridden'] = true;
-        } else {
-            $bookingData['price_overridden'] = false;
-        }
+        $bookingData = [
+            'booking_number'          => $bookingNumber,
+            'hotel_id'                => $hotelId,
+            'customer_id'             => $validated['customer_id'],
+            'room_id'                 => null,
+            'check_in_date'           => $ciDate,
+            'check_out_date'          => $coDate,
+            'nights'                  => $nights,
+            'adults'                  => $validated['adults'],
+            'children'                => $validated['children'] ?? 0,
+            'total_amount'            => $customTotal,
+            'advance_payment'         => $advancePayment,
+            'balance_due'             => max(0, $customTotal - $advancePayment),
+            'special_requests'        => $validated['special_requests'] ?? null,
+            'status'                  => 'confirmed',
+            'payment_status'          => $advancePayment >= $customTotal ? 'paid' : ($advancePayment > 0 ? 'partial' : 'pending'),
+            'is_whole_hotel'          => true,
+            'whole_hotel_pricing_type'=> 'per_night',
+            'price_overridden'        => true,
+            'meal_breakfast' => false, 'meal_lunch' => false, 'meal_dinner' => false,
+            'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
+        ];
 
         $booking = Booking::create($bookingData);
 
@@ -776,7 +661,7 @@ class BookingController extends Controller
                 'booking_id'     => $booking->id,
                 'customer_id'    => $bookingData['customer_id'],
                 'amount'         => $advancePayment,
-                'payment_method' => $request->payment_method ?? 'cash',
+                'payment_method' => $request->input('payment_method', 'cash'),
                 'payment_type'   => 'advance',
                 'status'         => 'completed',
                 'notes'          => 'Advance at booking',
@@ -785,7 +670,7 @@ class BookingController extends Controller
         }
 
         $customer = Customer::find($bookingData['customer_id']);
-        ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel (' . $whPricingType . ')');
+        ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa (' . $allRooms->count() . ' rooms)');
         WhatsAppService::sendForEvent('booking.created', $booking);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
     }
