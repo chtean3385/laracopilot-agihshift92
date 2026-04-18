@@ -101,6 +101,16 @@
                 .kpi-label { font-size: .78rem; font-weight: 600; color: rgba(255,255,255,.82); margin-top: 4px; }
                 .kpi-sub { font-size: .72rem; color: rgba(255,255,255,.65); margin-top: 6px; }
                 .kpi-icon { font-size: 1.8rem; opacity: .35; position: absolute; top: 18px; right: 20px; color: #fff; }
+                /* Compact 8-card row */
+                .kpi-card-sm { border-radius: 14px !important; padding: 14px 14px 12px !important; }
+                .kpi-card-sm .kpi-num  { font-size: 1.55rem !important; }
+                .kpi-card-sm .kpi-label{ font-size: .68rem !important; margin-top: 3px !important; }
+                .kpi-card-sm .kpi-sub  { font-size: .62rem !important; margin-top: 4px !important; }
+                .kpi-card-sm .kpi-icon { font-size: 1.3rem !important; top: 10px !important; right: 12px !important; }
+                .kpi-card-sm .kpi-shine  { width: 80px !important; height: 80px !important; top: -25px !important; right: -25px !important; }
+                .kpi-card-sm .kpi-shine2 { width: 60px !important; height: 60px !important; bottom: -18px !important; left: -12px !important; }
+                @media(max-width:900px){ .kpi-grid-8 { grid-template-columns: repeat(4,1fr) !important; } }
+                @media(max-width:540px){ .kpi-grid-8 { grid-template-columns: repeat(2,1fr) !important; } }
 
                 /* Occupancy circle animation */
                 @keyframes dashDraw {
@@ -254,8 +264,7 @@
                     $dashRole = session('crm_user_role');
                     $canSetDefault = in_array($dashRole, ['Super Admin', 'Admin']);
                     $widgetMeta = [
-                        'kpi-row-1'          => ['label' => 'KPI Row 1 — Check-ins & Rooms',   'icon' => 'fa-bed',           'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
-                        'kpi-row-2'          => ['label' => 'KPI Row 2 — Revenue & Guests',    'icon' => 'fa-rupee-sign',    'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'],
+                        'kpi-row-1'          => ['label' => 'KPI Stats — All 8 cards',           'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
                         'quick-actions'      => ['label' => 'Quick Actions',                   'icon' => 'fa-bolt',          'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)'],
                         'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                         'recent-bookings'    => ['label' => 'Recent Bookings',                 'icon' => 'fa-list-alt',      'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
@@ -385,88 +394,78 @@
                     </div>
                     @endif
 
-                    {{-- KPI Row 1 --}}
+                    {{-- KPI Stats — single compact row of 8 cards --}}
                     <div data-widget="kpi-row-1" class="db-widget-wrap">
-                    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);gap:16px;">
-                        {{-- Check-Ins --}}
-                        <a href="{{ route('checkin.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
+                    <div class="kpi-grid kpi-grid-8" style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
+                        <a href="{{ route('checkin.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-sign-in-alt kpi-icon"></i>
-                            <div class="kpi-label">Today's Check-Ins</div>
+                            <div class="kpi-label">Check-Ins</div>
                             <div class="kpi-num" data-count="{{ $todayCheckins->count() }}">{{ $todayCheckins->count() }}</div>
-                            <div class="kpi-sub">Pending arrival <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">Today</div>
                         </a>
-                        {{-- Check-Outs --}}
-                        <a href="{{ route('checkout.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
+                        <a href="{{ route('checkout.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-sign-out-alt kpi-icon"></i>
-                            <div class="kpi-label">Today's Check-Outs</div>
+                            <div class="kpi-label">Check-Outs</div>
                             <div class="kpi-num" data-count="{{ $todayCheckouts->count() }}">{{ $todayCheckouts->count() }}</div>
-                            <div class="kpi-sub">Pending departure <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">Today</div>
                         </a>
-                        {{-- Available Rooms --}}
-                        <a href="{{ route('rooms.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#10b981,#059669);">
+                        <a href="{{ route('rooms.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#10b981,#059669);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-door-open kpi-icon"></i>
-                            <div class="kpi-label">Available Rooms</div>
+                            <div class="kpi-label">Available</div>
                             <div class="kpi-num" data-count="{{ $availableRooms }}">{{ $availableRooms }}</div>
-                            <div class="kpi-sub">of {{ $totalRooms }} total <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">of {{ $totalRooms }} rooms</div>
                         </a>
-                        {{-- Occupied Rooms --}}
-                        <a href="{{ route('rooms.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#f43f5e,#be185d);">
+                        <a href="{{ route('rooms.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f43f5e,#be185d);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-bed kpi-icon"></i>
-                            <div class="kpi-label">Occupied Rooms</div>
+                            <div class="kpi-label">Occupied</div>
                             <div class="kpi-num" data-count="{{ $occupiedRooms }}">{{ $occupiedRooms }}</div>
-                            <div class="kpi-sub">{{ $occupancyRate }}% occupancy <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">{{ $occupancyRate }}% occ.</div>
                         </a>
-                    </div>
-                    </div>{{-- /kpi-row-1 widget --}}
-
-                    {{-- KPI Row 2: Financial + Operational --}}
-                    <div data-widget="kpi-row-2" class="db-widget-wrap">
-                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" class="kpi-grid">
                         @canDo('reports.view')
-                        <a href="{{ route('reports.revenue') }}" class="kpi-card" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+                        <a href="{{ route('reports.revenue') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-rupee-sign kpi-icon"></i>
-                            <div class="kpi-label">Today's Revenue</div>
+                            <div class="kpi-label">Today Revenue</div>
                             <div class="kpi-num" data-count="{{ $todayRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($todayRevenue) }}</div>
-                            <div class="kpi-sub">Collected today <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">Collected</div>
                         </a>
-                        <a href="{{ route('reports.revenue') }}" class="kpi-card" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
+                        <a href="{{ route('reports.revenue') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-chart-line kpi-icon"></i>
                             <div class="kpi-label">Month Revenue</div>
                             <div class="kpi-num" data-count="{{ $monthRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($monthRevenue) }}</div>
-                            <div class="kpi-sub">{{ now()->format('F Y') }} <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">{{ now()->format('M Y') }}</div>
                         </a>
                         @endCanDo
-                        <a href="{{ route('bookings.index', ['payment_status' => 'pending']) }}" class="kpi-card" style="background:linear-gradient(135deg,#d97706,#b45309);">
+                        <a href="{{ route('bookings.index', ['payment_status' => 'pending']) }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#d97706,#b45309);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-exclamation-triangle kpi-icon"></i>
-                            <div class="kpi-label">Pending Payments</div>
+                            <div class="kpi-label">Pending Pay</div>
                             <div class="kpi-num" data-count="{{ $pendingPayments }}">{{ $pendingPayments }}</div>
-                            <div class="kpi-sub">Needs attention <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">Needs attention</div>
                         </a>
-                        <a href="{{ route('customers.index') }}" class="kpi-card" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
+                        <a href="{{ route('customers.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-users kpi-icon"></i>
                             <div class="kpi-label">Total Guests</div>
                             <div class="kpi-num" data-count="{{ $totalCustomers }}">{{ $totalCustomers }}</div>
-                            <div class="kpi-sub">+{{ $newCustomersMonth }} this month <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">+{{ $newCustomersMonth }} this month</div>
                         </a>
                         @if(\App\Models\Module::isEnabled('booking-widget') && ($websitePendingCount ?? 0) > 0)
-                        <a href="{{ route('bookings.index') }}?status=website_pending" class="kpi-card" style="background:linear-gradient(135deg,#ec4899,#be185d);">
+                        <a href="{{ route('bookings.index') }}?status=website_pending" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#ec4899,#be185d);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-globe kpi-icon"></i>
-                            <div class="kpi-label">Website Bookings</div>
+                            <div class="kpi-label">Web Bookings</div>
                             <div class="kpi-num" data-count="{{ $websitePendingCount ?? 0 }}">{{ $websitePendingCount ?? 0 }}</div>
-                            <div class="kpi-sub">Pending confirmation <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:4px;opacity:.7;"></i></div>
+                            <div class="kpi-sub">Pending confirm</div>
                         </a>
                         @endif
                     </div>
-                    </div>{{-- /kpi-row-2 widget --}}
+                    </div>{{-- /kpi-row-1 widget --}}
 
                     {{-- Quick Actions widget --}}
                     <div data-widget="quick-actions" class="db-widget-wrap">
