@@ -103,7 +103,7 @@ class SlotConflictService
      */
     public function availableSlotIdsForRoom(int $roomId, string $date): array
     {
-        $slots = HotelTimeSlot::where('is_active', true)->ordered()->get();
+        $slots = HotelTimeSlot::query()->where('is_active', true)->ordered()->get();
         $available = [];
         foreach ($slots as $slot) {
             $conflicting = $this->getConflictingRoomIds($slot, $date);
