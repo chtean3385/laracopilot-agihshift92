@@ -89,7 +89,7 @@ class DataCleanupController extends Controller
         });
 
         $summary = implode(', ', $deleted);
-        ActivityLogger::log('data_truncate', "Cleared: {$summary}");
+        ActivityLogger::log('data_truncate', 'Data Cleanup', "Cleared: {$summary}");
 
         return redirect()->route('data-cleanup.index')
             ->with('success', 'Data cleared successfully: ' . $summary);
