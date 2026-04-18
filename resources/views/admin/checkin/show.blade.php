@@ -239,7 +239,7 @@
             <div class="ci-form-grid">
                 <div>
                     <label class="form-label">Payment at Check-In (₹)</label>
-                    @php $pricingType = $booking->room->pricing_type ?? 'per_night'; @endphp
+                    @php $pricingType = $booking->room?->pricing_type ?? 'per_night'; @endphp
                     <input type="number" name="additional_payment"
                         value="0"
                         min="0" step="0.01" class="form-input">

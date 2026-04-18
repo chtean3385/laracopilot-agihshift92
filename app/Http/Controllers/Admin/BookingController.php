@@ -344,14 +344,17 @@ class BookingController extends Controller
 
         // Use the booking's own room hotel_id — bypasses HotelContext so
         // superadmin scenarios resolve the correct module state.
-        $bookingHotelId = $booking->room?->hotel_id;
+        // For whole-hotel bookings, room_id is null — derive hotel context from booking.hotel_id
+        $bookingHotelId = $booking->room?->hotel_id ?? $booking->hotel_id;
         $slotModuleOn   = $bookingHotelId ? \App\Models\Module::withoutGlobalScopes()
             ->where('hotel_id', $bookingHotelId)->where('slug', 'time-slot-pricing')->where('is_enabled', true)->exists() : false;
         $hourlyModuleOn = $bookingHotelId ? \App\Models\Module::withoutGlobalScopes()
             ->where('hotel_id', $bookingHotelId)->where('slug', 'hourly-pricing')->where('is_enabled', true)->exists() : false;
 
         // Only show rooms of the same pricing_type to keep pricing context stable.
-        $pricingType = $booking->room?->pricing_type ?? 'per_night';
+        $pricingType = $booking->is_whole_hotel
+            ? ($booking->whole_hotel_pricing_type ?? 'per_night')
+            : ($booking->room?->pricing_type ?? 'per_night');
         $rooms = Room::where('pricing_type', $pricingType)->orderBy('room_number')->get();
 
         $timeSlots = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
@@ -415,6 +418,47 @@ class BookingController extends Controller
 
         $validated = $request->validate($rules);
         $advancePayment = (float) ($validated['advance_payment'] ?? $booking->advance_payment ?? 0);
+
+        // ── Whole-hotel conflict guards on individual-room update ───────────────
+        $updateStatus = $validated['status'] ?? $booking->status;
+        if (!in_array($updateStatus, ['cancelled', 'checked_out'])) {
+            if ($pricingType === 'per_slot') {
+                $whBlock = Booking::where('hotel_id', $room->hotel_id)
+                    ->where('id', '!=', $booking->id)
+                    ->where('is_whole_hotel', true)
+                    ->whereNotIn('status', ['cancelled', 'checked_out'])
+                    ->whereDate('check_in_date', '<=', $validated['booking_date'])
+                    ->whereDate('check_out_date', '>=', $validated['booking_date'])
+                    ->first();
+                if ($whBlock) {
+                    return back()->withInput()->withErrors(['booking_date' => 'Blocked by whole-hotel reservation ' . $whBlock->booking_number . '. Individual room bookings cannot overlap this date.']);
+                }
+            } elseif ($pricingType === 'per_hour') {
+                $whBlock = Booking::where('hotel_id', $room->hotel_id)
+                    ->where('id', '!=', $booking->id)
+                    ->where('is_whole_hotel', true)
+                    ->whereNotIn('status', ['cancelled', 'checked_out'])
+                    ->whereDate('check_in_date', '<=', $validated['booking_date'])
+                    ->whereDate('check_out_date', '>=', $validated['booking_date'])
+                    ->first();
+                if ($whBlock) {
+                    return back()->withInput()->withErrors(['booking_date' => 'Blocked by whole-hotel reservation ' . $whBlock->booking_number . '. Individual room bookings cannot overlap this date.']);
+                }
+            } elseif ($pricingType === 'per_night') {
+                $ciDate  = $validated['check_in_date'];
+                $coDate  = $validated['check_out_date'];
+                $whBlock = Booking::where('hotel_id', $room->hotel_id)
+                    ->where('id', '!=', $booking->id)
+                    ->where('is_whole_hotel', true)
+                    ->whereNotIn('status', ['cancelled', 'checked_out'])
+                    ->where('check_in_date', '<', $coDate)
+                    ->where('check_out_date', '>', $ciDate)
+                    ->first();
+                if ($whBlock) {
+                    return back()->withInput()->withErrors(['check_in_date' => 'Blocked by whole-hotel reservation ' . $whBlock->booking_number . '. Individual room bookings cannot overlap this period.']);
+                }
+            }
+        }
 
         if ($pricingType === 'per_slot') {
             $slot        = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
@@ -767,7 +811,7 @@ class BookingController extends Controller
         }
         $validated = $request->validate($rules);
 
-        // ── Conflict checks on update (excluding self) ──────────────────────────
+        // ── Conflict checks on update (excluding self) — all pricing types ────────
         if ($whPricingType === 'per_night' && !in_array($validated['status'], ['cancelled', 'checked_out'])) {
             $ciDate = $validated['check_in_date'];
             $coDate = $validated['check_out_date'];
@@ -792,6 +836,30 @@ class BookingController extends Controller
             if ($roomConflicts->count() > 0) {
                 $roomList = $roomConflicts->pluck('room.room_number')->filter()->unique()->sort()->implode(', ');
                 return back()->withInput()->withErrors(['check_in_date' => 'Rooms already booked in this period: ' . ($roomList ?: 'some rooms') . '. Cannot change dates to overlap with them.']);
+            }
+        } elseif (in_array($whPricingType, ['per_slot', 'per_hour']) && !in_array($validated['status'] ?? $booking->status, ['cancelled', 'checked_out'])) {
+            $bookingDate = $validated['booking_date'] ?? $booking->check_in_date;
+            $roomConflicts = Booking::where('hotel_id', $hotelId)
+                ->where('id', '!=', $booking->id)
+                ->whereNotNull('room_id')
+                ->whereNotIn('status', ['cancelled', 'checked_out'])
+                ->whereDate('check_in_date', '<=', $bookingDate)
+                ->whereDate('check_out_date', '>=', $bookingDate)
+                ->with('room:id,room_number')
+                ->get();
+            $whConflict = Booking::where('hotel_id', $hotelId)
+                ->where('id', '!=', $booking->id)
+                ->where('is_whole_hotel', true)
+                ->whereNotIn('status', ['cancelled', 'checked_out'])
+                ->whereDate('check_in_date', '<=', $bookingDate)
+                ->whereDate('check_out_date', '>=', $bookingDate)
+                ->first();
+            if ($whConflict) {
+                return back()->withInput()->withErrors(['booking_date' => 'Blocked by whole-hotel reservation ' . $whConflict->booking_number . '. Dates overlap with an existing whole-hotel booking.']);
+            }
+            if ($roomConflicts->count() > 0) {
+                $roomList = $roomConflicts->pluck('room.room_number')->filter()->unique()->sort()->implode(', ');
+                return back()->withInput()->withErrors(['booking_date' => 'Rooms already booked on this date: ' . ($roomList ?: 'some rooms') . '. Cannot change dates to overlap with them.']);
             }
         }
 
