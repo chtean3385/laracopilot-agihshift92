@@ -119,7 +119,7 @@ class BookingController extends Controller
         } else {
             $rules = array_merge($baseRules, [
                 'check_in_date'  => 'required|date',
-                'check_out_date' => 'required|date|after:check_in_date',
+                'check_out_date' => 'required|date|after_or_equal:check_in_date',
             ]);
         }
         $validated = $request->validate($rules);
@@ -357,7 +357,7 @@ class BookingController extends Controller
         } else {
             $rules = array_merge($baseRules, [
                 'check_in_date'  => 'required|date',
-                'check_out_date' => 'required|date|after:check_in_date',
+                'check_out_date' => 'required|date|after_or_equal:check_in_date',
             ]);
         }
 
