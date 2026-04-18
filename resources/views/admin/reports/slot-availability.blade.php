@@ -63,8 +63,17 @@
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     @foreach($availability as $day)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-gray-700 whitespace-nowrap">{{ $day['label'] }}</td>
+                    @php $isWhDay = isset($whDates[$day['date']]); $whInfo = $isWhDay ? $whDates[$day['date']] : null; @endphp
+                    <tr class="hover:bg-gray-50" style="{{ $isWhDay ? 'background:#fdf4ff;' : '' }}">
+                        <td class="px-4 py-3 font-medium text-gray-700 whitespace-nowrap">
+                            <div>{{ $day['label'] }}</div>
+                            @if($isWhDay)
+                            <div style="display:inline-flex;align-items:center;gap:4px;background:#fdf4ff;border:1px solid #e879f9;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;color:#a21caf;margin-top:3px;"
+                                 title="Whole Hotel Blocked · {{ $whInfo['booking_number'] }} · {{ $whInfo['guest_name'] }}">
+                                <i class="fas fa-building" style="font-size:9px;"></i> Whole Hotel
+                            </div>
+                            @endif
+                        </td>
                         @foreach($day['slots'] as $s)
                         @php
                             $pct         = $s['total'] > 0 ? round($s['booked'] / $s['total'] * 100) : 0;
@@ -78,7 +87,9 @@
                             data-booked="{{ json_encode($bookedRooms) }}"
                             data-free="{{ json_encode($freeRooms) }}"
                             data-slot="{{ $s['slot_name'] }}"
-                            data-day="{{ $day['label'] }}">
+                            data-day="{{ $day['label'] }}"
+                            data-whole-hotel="{{ $isWhDay ? json_encode(['booking_number'=>$whInfo['booking_number'],'guest_name'=>$whInfo['guest_name']]) : 'null' }}"
+                            style="{{ $isWhDay ? 'background:#fdf4ff;' : '' }}">
                             <div style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;">
                                 <span style="font-weight:800;font-size:13px;color:{{ $colorMap[$color] }};background:{{ $bgColorMap[$color] }};padding:2px 10px;border-radius:999px;">
                                     {{ $s['available'] }}<span style="font-weight:400;color:#94a3b8;font-size:11px;">/{{ $s['total'] }}</span>
@@ -116,11 +127,20 @@
     if (!tip) return;
     document.querySelectorAll('.rpt-slot-cell').forEach(function(el) {
         el.addEventListener('mouseenter', function(e) {
-            var booked = JSON.parse(el.dataset.booked || '[]');
-            var free   = JSON.parse(el.dataset.free   || '[]');
-            var slot   = el.dataset.slot;
-            var day    = el.dataset.day;
-            var html   = '<div style="font-weight:700;margin-bottom:6px;color:#a78bfa;">' + slot + ' · ' + day + '</div>';
+            var booked     = JSON.parse(el.dataset.booked || '[]');
+            var free       = JSON.parse(el.dataset.free   || '[]');
+            var slot       = el.dataset.slot;
+            var day        = el.dataset.day;
+            var whRaw  = el.dataset.wholeHotel || 'null';
+            var whData = whRaw !== 'null' ? JSON.parse(whRaw) : null;
+            var html = '<div style="font-weight:700;margin-bottom:6px;color:#a78bfa;">' + slot + ' · ' + day + '</div>';
+            if (whData) {
+                html += '<div style="background:#fdf4ff;border:1px solid #e879f9;border-radius:8px;padding:6px 10px;margin-bottom:6px;">';
+                html += '<div style="color:#e879f9;font-weight:800;font-size:11px;margin-bottom:3px;">&#127970; Whole Hotel Blocked</div>';
+                html += '<div style="color:#e879f9;">Ref: <strong>' + whData.booking_number + '</strong></div>';
+                html += '<div style="color:#e879f9;">Guest: <strong>' + whData.guest_name + '</strong></div>';
+                html += '</div>';
+            }
             if (booked.length > 0) {
                 html += '<div style="color:#fca5a5;font-weight:600;margin-bottom:3px;">Booked:</div>';
                 booked.forEach(function(r) {
@@ -133,7 +153,7 @@
                     html += '<div style="color:#bbf7d0;">&#9679; Room ' + r + '</div>';
                 });
             }
-            if (!booked.length && !free.length) html += '<div style="color:#94a3b8;">No room data</div>';
+            if (!whData && !booked.length && !free.length) html += '<div style="color:#94a3b8;">No room data</div>';
             tip.innerHTML = html;
             tip.style.display = 'block';
             posTip(e);

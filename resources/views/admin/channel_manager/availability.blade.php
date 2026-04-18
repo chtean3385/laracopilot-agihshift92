@@ -29,10 +29,11 @@
             </p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div style="display:flex;gap:8px;font-size:11px;align-items:center;">
+            <div style="display:flex;gap:8px;font-size:11px;align-items:center;flex-wrap:wrap;">
                 <span style="width:14px;height:14px;background:#dcfce7;border:1px solid #86efac;border-radius:3px;display:inline-block;"></span><span style="color:#64748b;">Available</span>
                 <span style="width:14px;height:14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:3px;display:inline-block;"></span><span style="color:#64748b;">Blocked</span>
                 <span style="width:14px;height:14px;background:#e0f2fe;border:1px solid #7dd3fc;border-radius:3px;display:inline-block;"></span><span style="color:#64748b;">Unmapped</span>
+                <span style="width:14px;height:14px;background:#fdf4ff;border:1px solid #e879f9;border-radius:3px;display:inline-block;"></span><span style="color:#64748b;">Whole Hotel</span>
             </div>
             @if($config->is_active)
             <form action="{{ route('channel_manager.availability.sync') }}" method="POST">
@@ -61,11 +62,13 @@
                     <tr style="background:#f8fafc;">
                         <th style="padding:10px 14px;text-align:left;font-weight:800;color:#1e293b;border-bottom:1px solid #e2e8f0;position:sticky;left:0;background:#f8fafc;z-index:2;min-width:100px;">Room</th>
                         @foreach($dates as $d)
-                        @php $dayObj = \Carbon\Carbon::parse($d); @endphp
-                        <th style="padding:6px 4px;text-align:center;font-weight:600;color:{{ $dayObj->isWeekend() ? '#dc2626' : '#64748b' }};border-bottom:1px solid #e2e8f0;min-width:36px;white-space:nowrap;">
+                        @php $dayObj = \Carbon\Carbon::parse($d); $isWh = isset($whDates[$d]); @endphp
+                        <th style="padding:6px 4px;text-align:center;font-weight:600;color:{{ $isWh ? '#a21caf' : ($dayObj->isWeekend() ? '#dc2626' : '#64748b') }};border-bottom:1px solid #e2e8f0;min-width:36px;white-space:nowrap;background:{{ $isWh ? '#fdf4ff' : 'transparent' }};"
+                            @if($isWh) title="Whole Hotel Blocked · {{ $whDates[$d]['booking_number'] }} · {{ $whDates[$d]['guest_name'] }}" @endif>
                             <div>{{ $dayObj->format('D') }}</div>
-                            <div style="font-weight:800;color:#1e293b;">{{ $dayObj->format('d') }}</div>
+                            <div style="font-weight:800;color:{{ $isWh ? '#a21caf' : '#1e293b' }};">{{ $dayObj->format('d') }}</div>
                             <div style="font-size:10px;">{{ $dayObj->format('M') }}</div>
+                            @if($isWh)<div style="font-size:9px;font-weight:800;color:#a21caf;margin-top:2px;">WH</div>@endif
                         </th>
                         @endforeach
                     </tr>
@@ -82,14 +85,27 @@
                         @endif
                     </td>
                     @foreach($dates as $d)
-                    @php $isBlocked = isset($blocked[$room->id][$d]); $isMapped = (bool)$room->channelMapping; @endphp
-                    <td style="padding:3px;text-align:center;">
+                    @php
+                        $isBlocked = isset($blocked[$room->id][$d]);
+                        $isMapped  = (bool)$room->channelMapping;
+                        $isWh      = isset($whDates[$d]);
+                        $whInfo    = $isWh ? $whDates[$d] : null;
+                    @endphp
+                    <td style="padding:3px;text-align:center;background:{{ $isWh ? '#fdf4ff' : 'transparent' }};">
+                        @if($isWh)
+                        <div style="width:28px;height:28px;border-radius:6px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;
+                            background:#fdf4ff;color:#a21caf;border:1px solid #e879f9;cursor:help;"
+                            title="Whole Hotel Blocked&#10;{{ $whInfo['booking_number'] }} · {{ $whInfo['guest_name'] }}">
+                            WH
+                        </div>
+                        @else
                         <div style="width:28px;height:28px;border-radius:6px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
                             background:{{ !$isMapped ? '#e0f2fe' : ($isBlocked ? '#fee2e2' : '#dcfce7') }};
                             color:{{ !$isMapped ? '#0369a1' : ($isBlocked ? '#dc2626' : '#16a34a') }};
                             border:1px solid {{ !$isMapped ? '#7dd3fc' : ($isBlocked ? '#fca5a5' : '#86efac') }};">
                             {{ !$isMapped ? '—' : ($isBlocked ? '✕' : '✓') }}
                         </div>
+                        @endif
                     </td>
                     @endforeach
                 </tr>

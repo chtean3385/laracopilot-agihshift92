@@ -193,11 +193,33 @@ class ReportController extends Controller
             $cur->addDay();
         }
 
+        $whBookings = Booking::where('is_whole_hotel', true)
+            ->whereNotIn('status', ['cancelled', 'checked_out'])
+            ->where('check_in_date', '<=', $to->toDateString())
+            ->where('check_out_date', '>', $from->toDateString())
+            ->with('customer:id,name')
+            ->get();
+        $whDates = [];
+        foreach ($whBookings as $wh) {
+            $d   = Carbon::parse($wh->check_in_date)->startOfDay();
+            $out = Carbon::parse($wh->check_out_date)->startOfDay();
+            while ($d->lessThan($out)) {
+                $ds = $d->toDateString();
+                if (!isset($whDates[$ds])) {
+                    $whDates[$ds] = [
+                        'booking_number' => $wh->booking_number,
+                        'guest_name'     => $wh->customer->name ?? 'Guest',
+                    ];
+                }
+                $d->addDay();
+            }
+        }
+
         if ($request->export === 'csv') {
             return $this->exportSlotAvailabilityCsv($availability, $slots, $from, $to);
         }
 
-        return view('admin.reports.slot-availability', compact('availability', 'slots', 'rooms', 'from', 'to'));
+        return view('admin.reports.slot-availability', compact('availability', 'slots', 'rooms', 'from', 'to', 'whDates'));
     }
 
     public function slotAvailabilityExport(Request $request)

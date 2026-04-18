@@ -115,9 +115,10 @@ class ChannelManagerController extends Controller
         $bookings = Booking::whereIn('status', ['confirmed', 'checked_in'])
             ->where('check_out_date', '>=', $start)
             ->where('check_in_date', '<=', $end)
-            ->get(['room_id', 'check_in_date', 'check_out_date']);
+            ->get(['room_id', 'check_in_date', 'check_out_date', 'is_whole_hotel']);
         $blocked = [];
         foreach ($bookings as $b) {
+            if ($b->is_whole_hotel) continue;
             $d = \Carbon\Carbon::parse($b->check_in_date);
             while ($d->lessThan(\Carbon\Carbon::parse($b->check_out_date))) {
                 $blocked[$b->room_id][$d->format('Y-m-d')] = true;
@@ -128,7 +129,30 @@ class ChannelManagerController extends Controller
         for ($i = 0; $i < 30; $i++) {
             $dates[] = now()->addDays($i)->format('Y-m-d');
         }
-        return view('admin.channel_manager.availability', compact('config', 'rooms', 'blocked', 'dates'));
+
+        $whBookings = Booking::where('is_whole_hotel', true)
+            ->whereNotIn('status', ['cancelled', 'checked_out'])
+            ->where('check_in_date', '<', $end)
+            ->where('check_out_date', '>', $start)
+            ->with('customer:id,name')
+            ->get();
+        $whDates = [];
+        foreach ($whBookings as $wh) {
+            $d = \Carbon\Carbon::parse($wh->check_in_date)->startOfDay();
+            $out = \Carbon\Carbon::parse($wh->check_out_date)->startOfDay();
+            while ($d->lessThan($out)) {
+                $ds = $d->format('Y-m-d');
+                if (!isset($whDates[$ds])) {
+                    $whDates[$ds] = [
+                        'booking_number' => $wh->booking_number,
+                        'guest_name'     => $wh->customer->name ?? 'Guest',
+                    ];
+                }
+                $d->addDay();
+            }
+        }
+
+        return view('admin.channel_manager.availability', compact('config', 'rooms', 'blocked', 'dates', 'whDates'));
     }
 
     public function availabilitySync(Request $request)
