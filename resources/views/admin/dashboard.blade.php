@@ -203,18 +203,6 @@
                         if (\App\Models\Module::isEnabled('payment_links')) {
                             $dashboardShortcuts[] = ['route' => route('payment_links.config'), 'icon' => 'fa-credit-card', 'title' => 'Payments', 'sub' => 'Links', 'bg' => 'linear-gradient(135deg,#8b5cf6,#6366f1)'];
                         }
-                        if (\App\Models\Module::isEnabled('whatsapp')) {
-                            $dashboardShortcuts[] = ['route' => route('whatsapp.templates.index'), 'icon' => 'fa-brands fa-whatsapp', 'title' => 'WhatsApp', 'sub' => 'Messages', 'bg' => 'linear-gradient(135deg,#22c55e,#16a34a)'];
-                        }
-                        if (\App\Models\Module::isEnabled('booking-widget')) {
-                            $dashboardShortcuts[] = ['route' => route('admin.booking-widget.settings'), 'icon' => 'fa-calendar-check', 'title' => 'Booking Widget', 'sub' => 'Website', 'bg' => 'linear-gradient(135deg,#ec4899,#db2777)'];
-                        }
-                        if (\App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing')) {
-                            $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time Slots', 'sub' => 'Slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#2563eb)'];
-                        }
-                        if (\App\Models\Module::isEnabled('channel_manager')) {
-                            $dashboardShortcuts[] = ['route' => route('channel_manager.index'), 'icon' => 'fa-globe', 'title' => 'OTA Sync', 'sub' => 'Channels', 'bg' => 'linear-gradient(135deg,#14b8a6,#0f766e)'];
-                        }
                         if (\App\Models\Module::isEnabled('pathik')) {
                             $dashboardShortcuts[] = ['route' => route('pathik.index'), 'icon' => 'fa-id-card', 'title' => 'Pathik', 'sub' => 'Portal', 'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'];
                         }
