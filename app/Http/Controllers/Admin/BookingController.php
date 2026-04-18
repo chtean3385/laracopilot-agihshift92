@@ -190,8 +190,8 @@ class BookingController extends Controller
                 'meal_cost' => 0, 'extra_beds' => 0, 'extra_bed_cost' => 0,
             ];
         } else {
-            // per_night — original flow
-            $nights        = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+            // per_night — same-day checkout counts as 1 night minimum
+            $nights        = max(1, Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date'])));
             $mealBreakfast = $request->boolean('meal_breakfast') && $room->has_breakfast;
             $mealLunch     = $request->boolean('meal_lunch')     && $room->has_lunch;
             $mealDinner    = $request->boolean('meal_dinner')    && $room->has_dinner;
@@ -226,19 +226,15 @@ class BookingController extends Controller
             ];
         }
 
-        // ── Custom price override (not applicable to per_hour) ─────────────
-        if ($pricingType !== 'per_hour') {
-            $customTotal      = (float) $request->input('custom_total', 0);
-            $calculatedTotal  = $bookingData['total_amount'];
-            $advAmt           = (float) ($bookingData['advance_payment'] ?? 0);
-            if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
-                $bookingData['total_amount']    = $customTotal;
-                $bookingData['balance_due']     = max(0, $customTotal - $advAmt);
-                $bookingData['payment_status']  = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
-                $bookingData['price_overridden'] = true;
-            } else {
-                $bookingData['price_overridden'] = false;
-            }
+        // ── Custom price override (all pricing types including per_hour) ────
+        $customTotal     = (float) $request->input('custom_total', 0);
+        $calculatedTotal = $bookingData['total_amount'];
+        $advAmt          = (float) ($bookingData['advance_payment'] ?? 0);
+        if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
+            $bookingData['total_amount']     = $customTotal;
+            $bookingData['balance_due']      = max(0, $customTotal - $advAmt);
+            $bookingData['payment_status']   = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
+            $bookingData['price_overridden'] = true;
         } else {
             $bookingData['price_overridden'] = false;
         }
@@ -405,8 +401,8 @@ class BookingController extends Controller
                 'payment_status'  => 'pending',
             ];
         } else {
-            // per_night — original flow
-            $nights        = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+            // per_night — same-day checkout counts as 1 night minimum
+            $nights        = max(1, Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date'])));
             $mealBreakfast = $request->boolean('meal_breakfast') && $room->has_breakfast;
             $mealLunch     = $request->boolean('meal_lunch')     && $room->has_lunch;
             $mealDinner    = $request->boolean('meal_dinner')    && $room->has_dinner;
@@ -431,19 +427,15 @@ class BookingController extends Controller
             ]);
         }
 
-        // ── Custom price override (not applicable to per_hour) ─────────────
-        if ($pricingType !== 'per_hour') {
-            $customTotal     = (float) $request->input('custom_total', 0);
-            $calculatedTotal = $updateData['total_amount'];
-            $advAmt          = (float) ($updateData['advance_payment'] ?? $advancePayment);
-            if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
-                $updateData['total_amount']    = $customTotal;
-                $updateData['balance_due']     = max(0, $customTotal - $advAmt);
-                $updateData['payment_status']  = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
-                $updateData['price_overridden'] = true;
-            } else {
-                $updateData['price_overridden'] = false;
-            }
+        // ── Custom price override (all pricing types including per_hour) ────
+        $customTotal     = (float) $request->input('custom_total', 0);
+        $calculatedTotal = $updateData['total_amount'];
+        $advAmt          = (float) ($updateData['advance_payment'] ?? $advancePayment);
+        if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
+            $updateData['total_amount']     = $customTotal;
+            $updateData['balance_due']      = max(0, $customTotal - $advAmt);
+            $updateData['payment_status']   = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
+            $updateData['price_overridden'] = true;
         } else {
             $updateData['price_overridden'] = false;
         }

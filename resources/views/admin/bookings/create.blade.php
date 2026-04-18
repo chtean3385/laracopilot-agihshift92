@@ -275,9 +275,19 @@
                             </div>
                         </div>
                         @endif
-                        <div class="bg-white rounded-xl border border-amber-100 px-4 py-3 flex items-center gap-3">
-                            <i class="fas fa-clock text-amber-500"></i>
-                            <span class="text-sm text-amber-700 font-medium">Billing will be calculated at check-out based on actual hours stayed at the rate shown above.</span>
+                        <div class="bg-white rounded-xl border border-amber-100 p-4 space-y-3">
+                            <div class="flex items-center gap-2 text-sm text-amber-700">
+                                <i class="fas fa-clock text-amber-500"></i>
+                                <span class="font-medium">Billing is calculated at check-out from actual hours. Optionally set a fixed total below to override.</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <label class="text-sm font-semibold text-gray-600 whitespace-nowrap">Custom Total (₹)</label>
+                                <input type="number" id="hourCustomTotalInput" step="0.01" min="0"
+                                       class="form-input flex-1 text-amber-700 font-bold"
+                                       placeholder="Leave blank to calculate at check-out">
+                                <button type="button" id="resetHourTotalBtn" onclick="resetHourCustomTotal()"
+                                        class="text-xs text-amber-500 hover:text-amber-700 underline hidden">↺ Clear</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -544,14 +554,19 @@
         // Reset custom-total override flags when pricing type changes
         window._customTotalDirty     = false;
         window._slotCustomTotalDirty = false;
+        window._hourCustomTotalDirty = false;
         const cti = document.getElementById('customTotalInput');
         if (cti) { cti.value = ''; }
         const sci = document.getElementById('slotCustomTotalInput');
         if (sci) { sci.value = ''; }
+        const hci = document.getElementById('hourCustomTotalInput');
+        if (hci) { hci.value = ''; }
         const rb  = document.getElementById('resetTotalBtn');
         const srb = document.getElementById('resetSlotTotalBtn');
+        const hrb = document.getElementById('resetHourTotalBtn');
         if (rb)  rb.classList.add('hidden');
         if (srb) srb.classList.add('hidden');
+        if (hrb) hrb.classList.add('hidden');
     }
 
     // Run on page load: disables hidden-section inputs from the start and
@@ -714,6 +729,25 @@
         if (btn) btn.classList.remove('hidden');
     });
 
+    document.getElementById('hourCustomTotalInput')?.addEventListener('input', function() {
+        window._hourCustomTotalDirty = true;
+        // Mirror to the hidden submittable input
+        const hiddenInp = document.getElementById('customTotalInput');
+        if (hiddenInp) hiddenInp.value = this.value;
+        const btn = document.getElementById('resetHourTotalBtn');
+        if (btn) btn.classList.remove('hidden');
+    });
+
+    function resetHourCustomTotal() {
+        window._hourCustomTotalDirty = false;
+        const hci = document.getElementById('hourCustomTotalInput');
+        if (hci) hci.value = '';
+        const hiddenInp = document.getElementById('customTotalInput');
+        if (hiddenInp) hiddenInp.value = '';
+        const btn = document.getElementById('resetHourTotalBtn');
+        if (btn) btn.classList.add('hidden');
+    }
+
     function calculateTotal() {
         const checkin = document.getElementById('checkIn').value;
         const checkout = document.getElementById('checkOut').value;
@@ -723,7 +757,7 @@
         if (checkin && checkout) {
             const d1 = new Date(checkin);
             const d2 = new Date(checkout);
-            const nights = Math.max(0, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
+            const nights = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
             let mealCost = 0;
             ['breakfast', 'lunch', 'dinner'].forEach(function(m) {
                 const cb = document.getElementById('meal_' + m);

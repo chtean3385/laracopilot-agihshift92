@@ -54,16 +54,22 @@ class CheckOutController extends Controller
             $actualTotal  = $roomCost + $mealCost + $extraBedCost + $extraChargesTotal;
             $hoursBooked  = null;
         } elseif ($pricingType === 'per_hour') {
-            // Calculate actual hours using system clock from check-in time to now
             $actualNights = 0;
-            $checkinAt    = $booking->actual_checkin_at
-                            ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
-            $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
-            $hoursBooked  = max(1, (int) ceil($actualMinutes / 60));
-            $addOnTotal   = $booking->bookingAddOns()->sum('price');
-            $roomCost     = $hoursBooked * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
             $mealCost     = 0;
             $extraBedCost = 0;
+            if ($booking->price_overridden) {
+                // Admin set a flat custom total at booking — use it as-is
+                $hoursBooked = $booking->hours_booked;
+                $roomCost    = (float) $booking->total_amount;
+            } else {
+                // Calculate actual hours using system clock from check-in time to now
+                $checkinAt     = $booking->actual_checkin_at
+                                 ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
+                $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
+                $hoursBooked   = max(1, (int) ceil($actualMinutes / 60));
+                $addOnTotal    = $booking->bookingAddOns()->sum('price');
+                $roomCost      = $hoursBooked * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+            }
             $actualTotal  = $roomCost + $extraChargesTotal;
         } else {
             // per_slot: base cost stored at booking time (total_amount minus any extra charges already in it)
@@ -111,19 +117,29 @@ class CheckOutController extends Controller
             ]);
         }
 
-        // For per_hour rooms, use override_hours from form (admin-confirmed) or fall back to elapsed time
+        // For per_hour rooms: if admin pre-set a flat price, keep it; otherwise calculate from actual hours
         if (($booking->room->pricing_type ?? 'per_night') === 'per_hour') {
-            if ($request->filled('override_hours') && (int) $request->override_hours >= 1) {
-                $actualHours = (int) $request->override_hours;
+            if ($booking->price_overridden) {
+                // Custom flat rate was set at booking time — just record the actual elapsed hours
+                $checkinAt     = $booking->actual_checkin_at
+                                 ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
+                $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
+                $actualHours   = max(1, (int) ceil($actualMinutes / 60));
+                $booking->update(['hours_booked' => $actualHours]);
+            } elseif ($request->filled('override_hours') && (int) $request->override_hours >= 1) {
+                $actualHours     = (int) $request->override_hours;
+                $addOnTotal      = $booking->bookingAddOns()->sum('price');
+                $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+                $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             } else {
                 $checkinAt     = $booking->actual_checkin_at
                                  ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
                 $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
                 $actualHours   = max(1, (int) ceil($actualMinutes / 60));
+                $addOnTotal      = $booking->bookingAddOns()->sum('price');
+                $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
+                $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             }
-            $addOnTotal      = $booking->bookingAddOns()->sum('price');
-            $calculatedTotal = $actualHours * ($booking->room->hourly_rate ?? 0) + $addOnTotal;
-            $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             $booking->refresh();
         }
 

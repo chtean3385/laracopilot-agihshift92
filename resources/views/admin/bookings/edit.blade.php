@@ -131,10 +131,10 @@
                         @endif
                     </label>
                     @if($pricingType === 'per_hour')
-                    <input type="number" name="custom_total" value="{{ old('custom_total', $booking->total_amount) }}"
-                           class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
-                           min="0" step="0.01" readonly>
-                    <p class="text-xs text-amber-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Hourly billing is finalised at check-out.</p>
+                    <input type="number" name="custom_total" value="{{ old('custom_total', $booking->price_overridden ? $booking->total_amount : '') }}"
+                           class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                           min="0" step="0.01" placeholder="Leave blank to calculate at check-out">
+                    <p class="text-xs text-amber-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Set a fixed total to override hourly billing, or leave blank to calculate at check-out.</p>
                     @else
                     <input type="number" name="custom_total" value="{{ old('custom_total', $booking->total_amount) }}"
                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
