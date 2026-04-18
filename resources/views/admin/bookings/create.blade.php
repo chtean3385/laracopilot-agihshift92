@@ -100,7 +100,6 @@
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 flex items-center justify-between">
             <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-plus text-cyan-500 mr-2"></i>Booking Details</h3>
             <label class="inline-flex items-center gap-2 cursor-pointer select-none" title="Book entire property for the selected dates">
-                <input type="hidden" name="is_whole_hotel" id="isWholeHotelInput" value="{{ old('is_whole_hotel', '0') }}">
                 <input type="checkbox" id="wholeHotelToggle" class="w-3.5 h-3.5 accent-amber-500 cursor-pointer" onclick="toggleWholeHotel()"{{ old('is_whole_hotel') == '1' ? ' checked' : '' }}>
                 <span class="text-xs font-medium text-amber-700"><i class="fas fa-hotel mr-1"></i>Whole Hotel / Villa</span>
             </label>
@@ -121,6 +120,7 @@
         @endif
         <form action="{{ route('bookings.store') }}" method="POST" class="p-6" id="bookingForm">
             @csrf
+            <input type="hidden" name="is_whole_hotel" id="isWholeHotelInput" value="{{ old('is_whole_hotel', '0') }}">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <div class="flex items-center justify-between mb-1">
