@@ -265,6 +265,7 @@
                     $canSetDefault = in_array($dashRole, ['Super Admin', 'Admin']);
                     $widgetMeta = [
                         'kpi-row-1'          => ['label' => 'KPI Stats — All 8 cards',           'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
+                        'shortcuts'          => ['label' => 'Shortcuts',                       'icon' => 'fa-th',            'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'],
                         'quick-actions'      => ['label' => 'Quick Actions',                   'icon' => 'fa-bolt',          'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)'],
                         'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                         'recent-bookings'    => ['label' => 'Recent Bookings',                 'icon' => 'fa-list-alt',      'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
@@ -373,6 +374,7 @@
                         }
                     @endphp
 
+                    <div data-widget="shortcuts" class="db-widget-wrap">
                     @if(count($dashboardShortcuts) > 0)
                     <div class="db-card">
                         <div class="db-card-header">
@@ -393,6 +395,7 @@
                         </div>
                     </div>
                     @endif
+                    </div>{{-- /shortcuts widget --}}
 
                     {{-- KPI Stats — single compact row of 8 cards --}}
                     <div data-widget="kpi-row-1" class="db-widget-wrap">

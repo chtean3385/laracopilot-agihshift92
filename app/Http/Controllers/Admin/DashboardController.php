@@ -318,7 +318,7 @@ class DashboardController extends Controller
         }
 
         $allWidgetKeys = [
-            'kpi-row-1', 'quick-actions',
+            'kpi-row-1', 'shortcuts', 'quick-actions',
             'slot-availability', 'recent-bookings', 'booking-calendar',
             'arrivals-departures', 'room-availability',
         ];
