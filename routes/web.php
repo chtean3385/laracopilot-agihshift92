@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\HotelSwitchController;
 use App\Http\Controllers\Admin\SaHotelFilterController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\BookingExtraChargeController;
+use App\Http\Controllers\Admin\FoodBillingController;
 use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\WhatsAppSetupController;
 use App\Http\Controllers\WhatsAppWebhookController;
@@ -115,6 +116,9 @@ Route::delete('/bookings/{id}',              [BookingController::class, 'destroy
 Route::get('/bookings/{id}',                 [BookingController::class, 'show']              )->name('bookings.show');
 Route::post('/bookings/{booking}/extra-charges',                [BookingExtraChargeController::class, 'store']  )->name('bookings.extra_charges.store');
 Route::delete('/bookings/{booking}/extra-charges/{charge}',    [BookingExtraChargeController::class, 'destroy'])->name('bookings.extra_charges.destroy');
+
+Route::get('/food-billing',           [FoodBillingController::class, 'index'])->name('food-billing.index');
+Route::get('/food-billing/{booking}', [FoodBillingController::class, 'show']) ->name('food-billing.show');
 
 // ── Check-In ───────────────────────────────────────────────────────────────
 Route::get('/checkin',       [CheckInController::class, 'index']  )->name('checkin.index');

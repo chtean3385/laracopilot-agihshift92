@@ -48,9 +48,16 @@ class CheckOutController extends Controller
             $actualNights = $checkinDate->diffInDays($checkoutDate);
             // Same-day checkout counts as 1 night minimum
             if ($actualNights < 1) $actualNights = 1;
-            $roomCost     = $actualNights * $booking->room->price_per_night;
-            $mealCost     = (float)($booking->meal_cost ?? 0);
-            $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
+            if ($booking->price_overridden) {
+                // Custom flat rate was agreed at booking — total_amount includes extra charges (via increment)
+                $roomCost     = max(0, (float)$booking->total_amount - $extraChargesTotal);
+                $mealCost     = 0;
+                $extraBedCost = 0;
+            } else {
+                $roomCost     = $actualNights * $booking->room->price_per_night;
+                $mealCost     = (float)($booking->meal_cost ?? 0);
+                $extraBedCost = (float)($booking->extra_bed_cost ?? 0);
+            }
             $actualTotal  = $roomCost + $mealCost + $extraBedCost + $extraChargesTotal;
             $hoursBooked  = null;
         } elseif ($pricingType === 'per_hour') {

@@ -94,10 +94,20 @@
             <h3 style="font-weight:800;color:#1e293b;margin-bottom:16px;font-size:15px;"><i class="fas fa-receipt" style="color:#f59e0b;margin-right:8px;"></i>Bill Summary</h3>
             <div style="display:flex;flex-direction:column;gap:10px;">
                 @if($pricingType === 'per_night')
+                @if($booking->price_overridden)
+                <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center;">
+                    <span style="color:#64748b;display:inline-flex;align-items:center;gap:5px;">
+                        <i class="fas fa-pen" style="color:#f59e0b;font-size:10px;"></i>
+                        Room charge <span style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">custom price</span>
+                    </span>
+                    <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
+                </div>
+                @else
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">{{ $actualNights }} night{{ $actualNights != 1 ? 's' : '' }} × ₹{{ number_format($booking->room->price_per_night) }}/night</span>
                     <span style="font-weight:700;">₹{{ number_format($roomCost) }}</span>
                 </div>
+                @endif
                 @elseif($pricingType === 'per_hour')
                 @if($booking->price_overridden)
                 <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center;">
@@ -137,17 +147,20 @@
                 </div>
                 @endif
                 @if(($extraChargesTotal ?? 0) > 0)
-                @foreach($booking->extraCharges as $ec)
-                <div style="display:flex;justify-content:space-between;font-size:13px;">
-                    <span style="color:#be123c;"><i class="fas fa-plus-circle" style="margin-right:4px;font-size:11px;"></i>{{ $ec->name }}
-                        <span style="color:#94a3b8;font-size:11px;">({{ $ec->category }}{{ $ec->quantity != 1 ? ' ×'.$ec->quantity : '' }})</span>
-                    </span>
-                    <span style="font-weight:600;color:#be123c;">₹{{ number_format($ec->total_price) }}</span>
-                </div>
-                @endforeach
-                <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;">
-                    <span>Extra Charges Total</span>
-                    <span style="font-weight:600;color:#be123c;">₹{{ number_format($extraChargesTotal) }}</span>
+                <div style="border-top:1px dashed #e2e8f0;padding-top:8px;margin-top:2px;">
+                    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">🍽 Food &amp; Extra Bill Summary</div>
+                    @foreach($booking->extraCharges as $ec)
+                    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+                        <span style="color:#475569;"><i class="fas fa-circle" style="margin-right:5px;font-size:7px;color:#94a3b8;"></i>{{ $ec->name }}
+                            @if($ec->quantity != 1)<span style="color:#94a3b8;font-size:11px;"> ×{{ $ec->quantity }}</span>@endif
+                        </span>
+                        <span style="font-weight:600;color:#1e293b;">₹{{ number_format($ec->total_price) }}</span>
+                    </div>
+                    @endforeach
+                    <div style="display:flex;justify-content:space-between;font-size:12px;border-top:1px dotted #e2e8f0;padding-top:5px;margin-top:3px;">
+                        <span style="color:#64748b;font-weight:600;">Food &amp; Extra Total</span>
+                        <span style="font-weight:700;color:#0f172a;">₹{{ number_format($extraChargesTotal) }}</span>
+                    </div>
                 </div>
                 @endif
                 @if($mealCost > 0 || $extraBedCost > 0 || ($extraChargesTotal ?? 0) > 0)

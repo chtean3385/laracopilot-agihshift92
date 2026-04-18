@@ -845,6 +845,13 @@
             </a>
             @endCanDo
 
+            @if(\App\Models\Module::isEnabled('extra-billing'))
+            <a href="{{ route('food-billing.index') }}" class="nav-link {{ request()->routeIs('food-billing.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-utensils"></i></span>
+                Food Billing
+            </a>
+            @endif
+
             @php
                 $showFinance = \App\Services\PermissionService::check('payments.view')
                     || \App\Services\PermissionService::check('invoices.view');

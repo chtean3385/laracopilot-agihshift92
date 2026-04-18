@@ -179,12 +179,13 @@
                         $bExtraChargesTotal = $booking->extraCharges->sum('total_price');
 
                         // Compute true base — respect custom price override if set
+                        // NOTE: total_amount is incremented by BookingExtraChargeController when charges are added
                         if ($pType === 'per_hour') {
                             // Hourly: base is in total_amount (set at checkout or overridden at booking); extra charges already incremented it
                             $bBase = (float) $booking->total_amount;
                         } elseif ($booking->price_overridden) {
-                            // Custom price was set at booking — total_amount IS the agreed price (excluding extra charges)
-                            $bBase = (float) $booking->total_amount + $bExtraChargesTotal;
+                            // Custom price set at booking — total_amount already includes any extra charges added later
+                            $bBase = (float) $booking->total_amount;
                         } elseif ($pType === 'per_slot' && $booking->timeSlot) {
                             $bBase = (float) $booking->timeSlot->base_price + $bExtraChargesTotal;
                         } else {
@@ -224,7 +225,7 @@
                         @elseif($booking->price_overridden)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500"><i class="fas fa-pen text-amber-400 mr-1"></i>Room charge <span class="text-xs text-amber-600">(custom price)</span></span>
-                            <span class="font-medium">₹{{ number_format($booking->total_amount) }}</span>
+                            <span class="font-medium">₹{{ number_format(max(0, (float)$booking->total_amount - $bExtraChargesTotal)) }}</span>
                         </div>
                         @else
                         @php $roomCost = $booking->room ? $booking->nights * $booking->room->price_per_night : $booking->total_amount; @endphp
@@ -248,7 +249,7 @@
                         @endif
                         @if($bExtraChargesTotal > 0)
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-500"><i class="fas fa-plus-circle text-rose-400 mr-1"></i>Extra Charges</span>
+                            <span class="text-gray-500"><i class="fas fa-utensils text-amber-400 mr-1"></i>Food &amp; Extra</span>
                             <span class="font-medium text-rose-600">₹{{ number_format($bExtraChargesTotal) }}</span>
                         </div>
                         @endif
@@ -337,19 +338,19 @@
 
 {{-- ── Extra Billing Module ─────────────────────────────────────────────── --}}
 @if(\App\Models\Module::isEnabled('extra-billing'))
-<div id="extra-charges" class="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-rose-100 flex items-center justify-between" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);">
+<div id="extra-charges" class="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-amber-100 flex items-center justify-between" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">
-                <i class="fas fa-plus-circle text-white text-sm"></i>
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                <i class="fas fa-utensils text-white text-sm"></i>
             </div>
             <div>
-                <h3 class="font-bold text-gray-800 text-sm">Extra Charges</h3>
-                <p class="text-xs text-gray-500">Add post-booking charges to this bill</p>
+                <h3 class="font-bold text-gray-800 text-sm">Food &amp; Extra Charges</h3>
+                <p class="text-xs text-gray-500">Add food, beverage &amp; extra charges to this bill</p>
             </div>
         </div>
         @if($booking->extraCharges->count() > 0)
-        <span class="text-xs font-bold text-rose-600 bg-rose-100 px-3 py-1 rounded-full">₹{{ number_format($booking->extraCharges->sum('total_price')) }} total</span>
+        <span class="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">₹{{ number_format($booking->extraCharges->sum('total_price')) }} total</span>
         @endif
     </div>
 

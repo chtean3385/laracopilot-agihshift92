@@ -111,14 +111,14 @@
                     </tr>
                     @endif
                     @foreach($invoice->booking->extraCharges as $xCharge)
-                    <tr class="border-b border-gray-100 bg-rose-50">
-                        <td class="px-4 py-3 text-sm text-rose-700">
-                            <i class="fas fa-plus-circle mr-1 text-rose-400"></i>{{ $xCharge->name }}
-                            @if($xCharge->notes)<span class="text-rose-400 text-xs ml-1">({{ $xCharge->notes }})</span>@endif
+                    <tr class="border-b border-gray-100 bg-amber-50">
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            <i class="fas fa-utensils mr-1 text-amber-500"></i>{{ $xCharge->name }}
+                            @if($xCharge->notes)<span class="text-gray-400 text-xs ml-1">({{ $xCharge->notes }})</span>@endif
                         </td>
-                        <td class="px-4 py-3 text-sm text-right text-rose-700">{{ number_format($xCharge->quantity, ($xCharge->quantity == intval($xCharge->quantity) ? 0 : 2)) }}</td>
-                        <td class="px-4 py-3 text-sm text-right text-rose-700">₹{{ number_format($xCharge->unit_price) }}</td>
-                        <td class="px-4 py-3 text-sm font-bold text-right text-rose-700">₹{{ number_format($xCharge->total_price) }}</td>
+                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($xCharge->quantity, ($xCharge->quantity == intval($xCharge->quantity) ? 0 : 2)) }}</td>
+                        <td class="px-4 py-3 text-sm text-right text-gray-600">₹{{ number_format($xCharge->unit_price) }}</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right text-gray-800">₹{{ number_format($xCharge->total_price) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
