@@ -81,15 +81,31 @@
                 </div>
                 <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @foreach($perms as $perm)
+                    @php
+                        $isSaasOnly  = $perm->slug === 'data.truncate';
+                        $isSuperAdmin = session('crm_user_role') === 'Super Admin';
+                        $isLocked    = $isSaasOnly && !$isSuperAdmin;
+                        $isChecked   = isset($rolePermissions) && in_array($perm->slug, $rolePermissions);
+                    @endphp
+                    @if($isLocked)
+                    {{-- Locked for hotel admins: shown read-only, excluded from submission --}}
+                    <div class="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/40 opacity-70"
+                         title="Only Platform Admin can enable this permission">
+                        <i class="fas fa-lock text-red-400 text-xs flex-shrink-0"></i>
+                        <span class="text-sm font-medium text-red-400">{{ $perm->label }}</span>
+                        <span class="ml-auto text-xs text-red-300 italic">SaaS Admin only</span>
+                    </div>
+                    @else
                     <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-cyan-200 hover:bg-cyan-50/30 cursor-pointer transition-all group">
                         <input type="checkbox"
                             name="permissions[]"
                             value="{{ $perm->slug }}"
                             data-module="{{ Str::slug($module) }}"
                             class="w-4 h-4 rounded accent-cyan-500"
-                            {{ isset($rolePermissions) && in_array($perm->slug, $rolePermissions) ? 'checked' : '' }}>
+                            {{ $isChecked ? 'checked' : '' }}>
                         <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ $perm->label }}</span>
                     </label>
+                    @endif
                     @endforeach
                 </div>
             </div>

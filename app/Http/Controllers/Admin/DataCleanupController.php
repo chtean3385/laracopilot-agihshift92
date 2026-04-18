@@ -65,7 +65,7 @@ class DataCleanupController extends Controller
 
             if (in_array('bookings', $tables)) {
                 $bookingIds = DB::table('bookings')->where('hotel_id', $hotelId)->pluck('id');
-                DB::table('channel_bookings')->whereIn('booking_id', $bookingIds)->delete();
+                DB::table('channel_bookings')->where('hotel_id', $hotelId)->delete();
                 DB::table('ota_booking_conflicts')->whereIn('booking_id', $bookingIds)->delete();
                 DB::table('booking_guests')->whereIn('booking_id', $bookingIds)->delete();
                 DB::table('booking_add_ons')->whereIn('booking_id', $bookingIds)->delete();
