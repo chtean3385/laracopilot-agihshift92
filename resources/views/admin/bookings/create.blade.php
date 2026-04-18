@@ -187,7 +187,7 @@
                         window.whRoomsMeta = @json($whRoomsMeta->values());
                         window.whPerNightSum = {{ (float) $whPerNightSum }};
                     </script>
-                    <div class="border border-amber-200 bg-amber-50 rounded-xl p-4">
+                    <div>
                         <label class="form-label">Total Amount <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">₹</span>
@@ -196,9 +196,6 @@
                                 placeholder="0"
                                 class="form-input pl-7">
                         </div>
-                        <p id="whAutoCalcHint" class="text-xs text-amber-600 mt-1 hidden">
-                            <span id="whAutoCalcAmt" class="font-semibold"></span> auto-filled · edit to override
-                        </p>
                         @error('custom_total')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
@@ -897,24 +894,14 @@
         const ci = document.getElementById('checkIn')?.value;
         const co = document.getElementById('checkOut')?.value;
         const priceInput = document.getElementById('whCustomTotal');
-        const hint = document.getElementById('whAutoCalcHint');
-        const hintAmt = document.getElementById('whAutoCalcAmt');
         if (!priceInput) return;
-
         if (ci && co) {
             const nights = Math.max(1, Math.ceil((new Date(co) - new Date(ci)) / 86400000));
             const perNightSum = window.whPerNightSum || 0;
             const suggested = Math.round(perNightSum * nights);
-            // Pre-populate if not manually edited
             if (!priceInput._userEdited && suggested > 0) {
                 priceInput.value = suggested;
             }
-            if (hint && hintAmt && suggested > 0) {
-                hintAmt.textContent = '₹' + suggested.toLocaleString('en-IN') + ' (' + nights + ' night' + (nights > 1 ? 's' : '') + ')';
-                hint.classList.remove('hidden');
-            }
-        } else {
-            if (hint) hint.classList.add('hidden');
         }
     }
 
