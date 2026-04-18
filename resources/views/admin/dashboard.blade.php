@@ -1301,7 +1301,7 @@
                             chosenClass: 'sortable-chosen',
                             onEnd: function() {
                                 syncOrderFromPanel();
-                                scheduleSave();
+                                savePrefs(); // immediate save on drag end
                             }
                         });
                     }
@@ -1353,13 +1353,19 @@
                     }
 
                     // ── Debounced auto-save ───────────────────────────────────────
+                    var pendingPrefs = null;
+
                     function scheduleSave() {
+                        pendingPrefs = currentPrefs();
                         clearTimeout(saveTimer);
-                        saveTimer = setTimeout(savePrefs, 800);
+                        saveTimer = setTimeout(function() {
+                            savePrefs(pendingPrefs);
+                            pendingPrefs = null;
+                        }, 200);
                     }
 
-                    function savePrefs() {
-                        var prefs = currentPrefs();
+                    function savePrefs(prefs) {
+                        prefs = prefs || currentPrefs();
                         fetch(SAVE_URL, {
                             method: 'POST',
                             headers: {
@@ -1369,9 +1375,18 @@
                             },
                             body: JSON.stringify(prefs)
                         }).then(function(r) {
-                            if (r.ok) showSaveBadge();
-                        });
+                            if (r.ok) { pendingPrefs = null; showSaveBadge(); }
+                        }).catch(function() {});
                     }
+
+                    // Flush any pending toggle save on page unload
+                    window.addEventListener('pagehide', function() {
+                        if (pendingPrefs) {
+                            clearTimeout(saveTimer);
+                            savePrefs(pendingPrefs);
+                            pendingPrefs = null;
+                        }
+                    });
 
                     // ── Set as hotel default ──────────────────────────────────────
                     window.dbSaveDefault = function() {
