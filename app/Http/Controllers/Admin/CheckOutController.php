@@ -72,10 +72,13 @@ class CheckOutController extends Controller
                 // Calculate actual hours using system clock from check-in time to now
                 $checkinAt     = $booking->actual_checkin_at
                                  ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
-                $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
-                $hoursBooked   = max(1, (int) ceil($actualMinutes / 60));
-                $addOnTotal    = $booking->bookingAddOns()->sum('price');
-                $roomCost      = $hoursBooked * ($booking->room?->hourly_rate ?? 0) + $addOnTotal;
+                $actualMinutes  = Carbon::parse($checkinAt)->diffInMinutes(now());
+                $hoursBooked    = max(1, (int) ceil($actualMinutes / 60));
+                $addOnTotal     = $booking->bookingAddOns()->sum('price');
+                $baseHourlyRate = $booking->is_whole_hotel
+                    ? \App\Models\Room::where('hotel_id', $booking->hotel_id)->where('status', '!=', 'maintenance')->sum('hourly_rate')
+                    : ($booking->room?->hourly_rate ?? 0);
+                $roomCost       = $hoursBooked * $baseHourlyRate + $addOnTotal;
             }
             $actualTotal  = $roomCost + $extraChargesTotal;
         } else {
@@ -137,7 +140,10 @@ class CheckOutController extends Controller
             } elseif ($request->filled('override_hours') && (int) $request->override_hours >= 1) {
                 $actualHours     = (int) $request->override_hours;
                 $addOnTotal      = $booking->bookingAddOns()->sum('price');
-                $calculatedTotal = $actualHours * ($booking->room?->hourly_rate ?? 0) + $addOnTotal;
+                $baseHourlyRate  = $booking->is_whole_hotel
+                    ? \App\Models\Room::where('hotel_id', $booking->hotel_id)->where('status', '!=', 'maintenance')->sum('hourly_rate')
+                    : ($booking->room?->hourly_rate ?? 0);
+                $calculatedTotal = $actualHours * $baseHourlyRate + $addOnTotal;
                 $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             } else {
                 $checkinAt     = $booking->actual_checkin_at
@@ -145,7 +151,10 @@ class CheckOutController extends Controller
                 $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
                 $actualHours   = max(1, (int) ceil($actualMinutes / 60));
                 $addOnTotal      = $booking->bookingAddOns()->sum('price');
-                $calculatedTotal = $actualHours * ($booking->room?->hourly_rate ?? 0) + $addOnTotal;
+                $baseHourlyRate  = $booking->is_whole_hotel
+                    ? \App\Models\Room::where('hotel_id', $booking->hotel_id)->where('status', '!=', 'maintenance')->sum('hourly_rate')
+                    : ($booking->room?->hourly_rate ?? 0);
+                $calculatedTotal = $actualHours * $baseHourlyRate + $addOnTotal;
                 $booking->update(['total_amount' => $calculatedTotal, 'hours_booked' => $actualHours]);
             }
             $booking->refresh();

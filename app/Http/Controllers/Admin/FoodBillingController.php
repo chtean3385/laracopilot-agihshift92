@@ -31,7 +31,8 @@ class FoodBillingController extends Controller
         abort_unless(Module::isEnabled('extra-billing'), 403, 'Extra Billing module is not enabled.');
         $hotelId = session('crm_hotel_id') ?: session('crm_sa_hotel_filter');
         $booking->loadMissing('room');
-        abort_unless((int)($booking->room?->hotel_id ?? 0) === (int)$hotelId, 403);
+        $bookingHotelId = $booking->hotel_id ?? $booking->room?->hotel_id;
+        abort_unless((int)($bookingHotelId ?? 0) === (int)$hotelId, 403);
 
         $booking->load(['room', 'customer', 'extraCharges']);
 
