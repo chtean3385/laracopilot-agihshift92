@@ -13,7 +13,7 @@ class FoodBillingController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         abort_unless(Module::isEnabled('extra-billing'), 403, 'Extra Billing module is not enabled.');
 
-        $hotelId = session('crm_hotel_id');
+        $hotelId = session('crm_hotel_id') ?: session('crm_sa_hotel_filter');
 
         $bookings = Booking::withoutGlobalScopes()
             ->with(['room', 'customer', 'extraCharges'])
@@ -29,7 +29,7 @@ class FoodBillingController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         abort_unless(Module::isEnabled('extra-billing'), 403, 'Extra Billing module is not enabled.');
-        $hotelId = session('crm_hotel_id');
+        $hotelId = session('crm_hotel_id') ?: session('crm_sa_hotel_filter');
         $booking->loadMissing('room');
         abort_unless((int)($booking->room->hotel_id ?? 0) === (int)$hotelId, 403);
 
