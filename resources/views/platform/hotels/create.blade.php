@@ -237,7 +237,8 @@
             <div style="display:flex;gap:10px;align-items:flex-start;">
                 <i class="fas fa-info-circle" style="color:#15803d;margin-top:2px;flex-shrink:0;"></i>
                 <div style="font-size:13px;color:#15803d;line-height:1.6;">
-                    <strong>Atomic provisioning:</strong> Submitting this form will create the hotel + default settings + 4 modules (WhatsApp, Payment Links, Pathik, Channel Manager) + 3 system roles (Admin, Manager, Receptionist) in a single database transaction. If any step fails, nothing is created.
+                    <strong>Atomic provisioning:</strong> Submitting this form will create the hotel + default settings + 4 modules (WhatsApp, Payment Links, Pathik, Channel Manager) + 3 system roles (Admin, Manager, Receptionist) in a single database transaction. If any step fails, nothing is created.<br>
+                    <span style="margin-top:6px;display:inline-block;"><strong>Slot Availability</strong> and <strong>Whole Hotel Booking</strong> modules are available separately — enable them per hotel via the module toggle. When enabled on a parent hotel, they are <em>auto-enabled for all sub-properties</em>.</span>
                 </div>
             </div>
         </div>

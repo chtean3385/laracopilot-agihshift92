@@ -19,7 +19,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('hotels', function (Blueprint $table) {
-            $table->dropColumn('parent_hotel_id');
+            if (Schema::hasColumn('hotels', 'parent_hotel_id')) {
+                // Drop the index explicitly before the column for cross-DB safety
+                try { $table->dropIndex(['parent_hotel_id']); } catch (\Throwable $e) { /* index may not exist */ }
+                $table->dropColumn('parent_hotel_id');
+            }
         });
     }
 };
