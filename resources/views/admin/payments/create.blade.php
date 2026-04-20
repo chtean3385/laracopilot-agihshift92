@@ -171,6 +171,9 @@
         allowEmptyOption: false,
         placeholder: 'Search by booking number or guest name...',
         maxOptions: 300,
+        @if($prefillBookingId)
+        items: ['{{ $prefillBookingId }}'],
+        @endif
     });
 </script>
 @endpush

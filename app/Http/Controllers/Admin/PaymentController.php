@@ -37,12 +37,17 @@ class PaymentController extends Controller
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $bookings = Booking::with('customer')
-            ->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
-            ->where('payment_status', '!=', 'paid')
-            ->get();
         $prefillBookingId = request('booking_id');
         $prefillAmount    = request('amount');
+        $bookings = Booking::with('customer', 'room')
+            ->whereIn('status', ['confirmed', 'checked_in', 'checked_out'])
+            ->where(function ($q) use ($prefillBookingId) {
+                $q->where('payment_status', '!=', 'paid');
+                if ($prefillBookingId) {
+                    $q->orWhere('id', $prefillBookingId);
+                }
+            })
+            ->get();
         return view('admin.payments.create', compact('bookings', 'prefillBookingId', 'prefillAmount'));
     }
 

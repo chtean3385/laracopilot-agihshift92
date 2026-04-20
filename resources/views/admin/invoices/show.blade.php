@@ -5,8 +5,21 @@
 @section('content')
 <div class="max-w-3xl space-y-5">
     @php
-        $previewGst     = ($settings && $settings->gst_number) ? $invoice->total_amount * ($settings->tax_rate / 100) : 0;
-        $previewGrand   = $invoice->total_amount + $previewGst;
+        // Compute pre-tax base from booking line items
+        // invoice->total_amount is the POST-GST grand total set at checkout — do NOT add GST on top of it
+        $_isWH2   = (bool)$invoice->booking->is_whole_hotel;
+        $_overr2  = (bool)$invoice->booking->price_overridden;
+        $_ext2    = $invoice->booking->extraCharges->sum('total_price');
+        if ($_isWH2 || $_overr2) {
+            $_roomPre = max(0, (float)$invoice->booking->total_amount - $_ext2);
+        } else {
+            $_roomPre = ($invoice->booking->nights ?? 0) * ($invoice->booking->room?->price_per_night ?? 0);
+        }
+        $_mealPre    = (float)($invoice->booking->meal_cost ?? 0);
+        $_bedPre     = $invoice->booking->extra_beds > 0 ? (float)($invoice->booking->extra_bed_cost ?? 0) : 0;
+        $_preBase    = $_roomPre + $_mealPre + $_bedPre + $_ext2;
+        $previewGst  = ($settings && $settings->gst_number) ? round($_preBase * ((float)($settings->tax_rate ?? 0) / 100), 2) : 0;
+        $previewGrand   = $_preBase + $previewGst;
         $previewBalance = max(0, $previewGrand - $invoice->paid_amount);
     @endphp
     <div class="flex items-center justify-between gap-3">
@@ -149,18 +162,21 @@
             </table>
             </div>{{-- /overflow-x:auto --}}
             @php
-                $invSubtotal  = $invoice->booking->price_overridden
-                    ? (float) $invoice->booking->total_amount
-                    : (float) $invoice->total_amount;
-                $invFoodBase  = $invExtraTotal ?? 0;
-                $invRoomBase  = $invSubtotal - $invFoodBase;
-                $roomGst      = ($settings && $settings->gst_number) ? $invRoomBase * ($settings->tax_rate / 100) : 0;
-                $foodTaxRate  = $settings->food_tax_rate ?? 5;
-                $foodGst      = ($settings && $settings->gst_number && $invFoodBase > 0) ? $invFoodBase * ($foodTaxRate / 100) : 0;
-                $gstAmount    = $roomGst + $foodGst;
-                $grandTotal   = $invSubtotal + $gstAmount;
-                $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
-                $overpayment = max(0, $invoice->paid_amount - $grandTotal);
+                // invoice->total_amount is POST-GST (set at checkout: base + tax).
+                // Recompute the pre-tax subtotal from actual booking line items.
+                $invMealCost     = (float)($invoice->booking->meal_cost ?? 0);
+                $invExtraBedCost = $invoice->booking->extra_beds > 0 ? (float)($invoice->booking->extra_bed_cost ?? 0) : 0;
+                // invRoomCost already computed above from nights×price (pre-tax)
+                $invSubtotal     = $invRoomCost + $invMealCost + $invExtraBedCost + $invExtraTotal;
+                $invFoodBase     = $invExtraTotal;
+                $invRoomBase     = $invRoomCost + $invMealCost + $invExtraBedCost;
+                $roomGst         = ($settings && $settings->gst_number) ? round($invRoomBase * ((float)($settings->tax_rate ?? 0) / 100), 2) : 0;
+                $foodTaxRate     = $settings->food_tax_rate ?? 5;
+                $foodGst         = ($settings && $settings->gst_number && $invFoodBase > 0) ? round($invFoodBase * ($foodTaxRate / 100), 2) : 0;
+                $gstAmount       = $roomGst + $foodGst;
+                $grandTotal      = $invSubtotal + $gstAmount;
+                $displayBalance  = max(0, $grandTotal - $invoice->paid_amount);
+                $overpayment     = max(0, $invoice->paid_amount - $grandTotal);
             @endphp
             <div class="flex justify-end">
                 <div class="w-full sm:w-64 space-y-2">
