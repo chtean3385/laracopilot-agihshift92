@@ -1,549 +1,389 @@
 @extends('layouts.admin')
 @section('title', 'Slot Search Engine')
 @section('page-title', 'Slot Search Engine')
-@section('page-subtitle', 'Search slot availability across date ranges, time slots and rooms.')
+@section('page-subtitle', 'Slot availability matrix — dates as columns, time slots as rows, all hotels merged.')
 
 @section('content')
+@push('styles')
 <style>
-/* ── Card shell ── */
-.ss-card {
-    background: #fff; border-radius: 20px; padding: 22px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.06); border: 1px solid #f1f5f9;
-    margin-bottom: 18px;
-}
+/* ── Layout ── */
+.ss-page { max-width:1440px;margin:0 auto;padding:24px 16px; }
+.ss-card { background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden; }
+
+/* ── Header ── */
+.ss-header { padding:18px 24px;border-bottom:1px solid #f1f5f9;background:linear-gradient(135deg,#f5f3ff,#ede9fe);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px; }
+.ss-header-icon { width:46px;height:46px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,.3);flex-shrink:0; }
+
 /* ── Filter bar ── */
-.ss-filter-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr auto;
-    gap: 12px; align-items: end;
-}
-@media(max-width:1100px){ .ss-filter-grid { grid-template-columns: 1fr 1fr 1fr; } }
-@media(max-width:680px) { .ss-filter-grid { grid-template-columns: 1fr 1fr; } }
-@media(max-width:420px) { .ss-filter-grid { grid-template-columns: 1fr; } }
+.ss-filter-bar { padding:16px 24px;border-bottom:1px solid #f1f5f9;background:#fafafa;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap; }
+.ss-filter-label { font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px; }
+.ss-filter-inp { border:1px solid #e2e8f0;border-radius:10px;padding:7px 11px;font-size:13px;color:#1e293b;outline:none;background:#fff;transition:border .15s;display:block; }
+.ss-filter-inp:focus { border-color:#a78bfa; }
+.ss-btn { display:inline-flex;align-items:center;gap:7px;padding:0 18px;height:38px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;text-decoration:none; }
+.ss-btn-primary { background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;box-shadow:0 3px 8px rgba(124,58,237,.3); }
+.ss-btn-primary:hover { opacity:.9;color:#fff; }
+.ss-btn-outline { background:#fff;border:1px solid #ddd6fe;color:#7c3aed; }
+.ss-btn-outline:hover { background:#f5f3ff;color:#7c3aed; }
+.ss-btn-pdf { background:#fff;border:1px solid #d1d5db;color:#374151; }
+.ss-btn-pdf:hover { background:#f9fafb;color:#374151; }
 
-.ss-label {
-    font-size: 11px; font-weight: 800; color: #475569;
-    display: block; margin-bottom: 5px;
-    text-transform: uppercase; letter-spacing: .05em;
-}
-.ss-input {
-    width: 100%; padding: 9px 12px; border-radius: 11px;
-    border: 1.5px solid #e2e8f0; background: #f8fafc;
-    font-size: 13px; color: #1e293b; font-weight: 600; outline: none;
-    transition: border-color .15s, box-shadow .15s; box-sizing: border-box;
-}
-.ss-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: #fff; }
+/* ── Summary bar ── */
+.ss-sum-bar { padding:12px 24px;border-bottom:1px solid #f1f5f9;background:#fff;display:flex;gap:14px;flex-wrap:wrap; }
+.ss-sum-pill { display:flex;align-items:center;gap:7px;padding:5px 13px;border-radius:30px;font-size:13px;font-weight:600; }
 
-/* ── Multi-select dropdown ── */
-.ss-select-wrap { position: relative; }
-.ss-multi-display {
-    width: 100%; padding: 9px 36px 9px 12px; border-radius: 11px;
-    border: 1.5px solid #e2e8f0; background: #f8fafc;
-    font-size: 13px; color: #1e293b; font-weight: 600;
-    cursor: pointer; user-select: none; min-height: 41px;
-    display: flex; align-items: center;
-    transition: border-color .15s; box-sizing: border-box;
-}
-.ss-multi-display:hover { border-color: #cbd5e1; }
-.ss-multi-display.open { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); background: #fff; }
-.ss-chevron {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    color: #94a3b8; font-size: 11px; pointer-events: none; transition: transform .15s;
-}
-.ss-multi-display.open + .ss-dropdown,
-.ss-dropdown.open { display: block; }
-.ss-dropdown {
-    position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 200;
-    background: #fff; border-radius: 12px; border: 1.5px solid #e2e8f0;
-    box-shadow: 0 8px 28px rgba(0,0,0,.13); display: none;
-    max-height: 220px; overflow-y: auto;
-}
-.ss-dropdown-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 600; color: #1e293b;
-    transition: background .1s;
-}
-.ss-dropdown-item:hover { background: #f8fafc; }
-.ss-dropdown-item input[type=checkbox] { width: 14px; height: 14px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0; }
-.ss-dropdown-item.select-all { border-bottom: 1px solid #f1f5f9; color: #7c3aed; font-size: 12px; }
-.ss-dropdown-item .ss-meta { color: #94a3b8; font-size: 11px; margin-left: 3px; }
+/* ── Matrix table ── */
+.ss-table-wrap { padding:20px;overflow-x:auto; }
+.ss-table { width:100%;border-collapse:collapse; }
+.ss-table th { font-size:12px;font-weight:700;color:#64748b;padding:8px 10px;border-bottom:2px solid #f1f5f9;white-space:nowrap;text-align:center; }
+.ss-table th.slot-col { text-align:left; }
+.ss-table th.today-col { color:#7c3aed;border-bottom-color:#a78bfa;background:linear-gradient(180deg,#f5f3ff,transparent); }
+.ss-slot-label { padding:10px 14px;white-space:nowrap;vertical-align:middle; }
+.ss-slot-name { font-weight:700;color:#1e293b;font-size:13px;line-height:1.3; }
+.ss-slot-time { font-size:11px;color:#94a3b8;margin-top:2px; }
+.ss-cell { text-align:center;padding:6px 4px;vertical-align:top; }
+.ss-cell.today-col { background:#faf5ff; }
+.ss-cell-inner { display:inline-flex;flex-direction:column;align-items:center;gap:4px;min-width:76px;cursor:default; }
+.ss-badge { font-weight:800;font-size:13px;line-height:1;padding:3px 10px;border-radius:999px;display:inline-block; }
+.ss-badge.green { background:#f0fdf4;color:#16a34a; }
+.ss-badge.amber { background:#fffbeb;color:#d97706; }
+.ss-badge.red   { background:#fff1f2;color:#dc2626; }
+.ss-pill { border-radius:6px;padding:2px 6px;font-size:10px;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:90px;display:block;margin-bottom:1px; }
+.ss-pill.booked { background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c; }
+.ss-pill.free   { background:#dcfce7;border:1px solid #86efac;color:#15803d; }
+.ss-wh-banner { margin-top:3px;border-radius:7px;padding:3px 7px;background:#fef3c7;border:1px solid #fde68a;font-size:9px;color:#92400e;line-height:1.4;max-width:90px;text-align:left; }
 
-/* ── Buttons ── */
-.ss-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 10px 20px; border-radius: 11px; border: none;
-    font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
-    transition: all .15s;
-}
-.ss-btn-primary { background: linear-gradient(135deg,#7c3aed,#6d28d9); color: #fff; }
-.ss-btn-primary:hover { background: linear-gradient(135deg,#6d28d9,#5b21b6); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(124,58,237,.35); }
-.ss-btn-secondary { background: #f8fafc; color: #475569; border: 1.5px solid #e2e8f0; }
-.ss-btn-secondary:hover { background: #f1f5f9; }
+/* ── Legend ── */
+.ss-legend { display:flex;align-items:center;gap:16px;padding:12px 20px;border-top:1px solid #f1f5f9;flex-wrap:wrap; }
+.ss-legend-item { display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b; }
+.ss-dot   { width:10px;height:10px;border-radius:50%;display:inline-block; }
+.ss-swatch{ width:10px;height:10px;border-radius:3px;display:inline-block; }
 
-/* ── Summary cards ── */
-.ss-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 18px; }
-.ss-sum-card { border-radius: 14px; padding: 13px 16px; text-align: center; border: 1.5px solid transparent; }
-.ss-sum-num   { font-size: 1.7rem; font-weight: 900; line-height: 1; }
-.ss-sum-label { font-size: 11px; font-weight: 700; margin-top: 4px; }
-.ss-sum-total  { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
-.ss-sum-avail  { background: #f0fdf4; border-color: #bbf7d0; color: #059669; }
-.ss-sum-partial{ background: #fffbeb; border-color: #fde68a; color: #d97706; }
-.ss-sum-full   { background: #fff1f2; border-color: #fca5a5; color: #dc2626; }
-.ss-sum-wh     { background: #faf5ff; border-color: #ddd6fe; color: #7c3aed; }
+/* ── Tooltip ── */
+#ssTooltip { display:none;position:fixed;z-index:9999;background:#1e293b;color:#fff;border-radius:12px;padding:12px 14px;font-size:12px;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;line-height:1.6; }
 
-/* ── Hotel group header ── */
-.ss-hotel-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 0; margin-bottom: 14px;
-    border-bottom: 2px solid #f1f5f9;
+/* ── PDF / print ── */
+.ss-pdf-header { display:none;padding:0 0 10px 0;border-bottom:1px solid #e5e7eb;margin-bottom:12px; }
+@media print {
+    body * { visibility:hidden; }
+    #ssPrintArea, #ssPrintArea * { visibility:visible; }
+    #ssPrintArea { position:fixed;top:0;left:0;width:100%;background:#fff;padding:0; }
+    .ss-filter-bar, .ss-header-actions, #ssTooltip, .no-print { display:none !important; }
+    .ss-table-wrap { padding:8px 0;overflow:visible !important; }
+    .ss-table { font-size:10px; }
+    .ss-pill { max-width:76px;font-size:9px; }
+    .ss-badge { font-size:11px;padding:2px 7px; }
+    .ss-card { box-shadow:none !important;border:1px solid #e5e7eb !important; }
+    .ss-header { print-color-adjust:exact;-webkit-print-color-adjust:exact; }
+    .ss-pdf-header { display:block !important; }
+    .ss-sum-bar { flex-wrap:nowrap; }
 }
-.ss-hotel-badge {
-    background: linear-gradient(135deg,#7c3aed,#6d28d9);
-    color: #fff; border-radius: 10px; padding: 4px 12px;
-    font-size: 12px; font-weight: 800;
-}
-
-/* ── Slot sub-header ── */
-.ss-slot-header {
-    display: flex; align-items: center; gap: 8px;
-    background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px;
-    padding: 9px 14px; margin-bottom: 10px; flex-wrap: wrap;
-}
-.ss-slot-name { font-size: 13px; font-weight: 800; color: #1e293b; }
-.ss-slot-time { font-size: 11px; color: #64748b; font-weight: 600; }
-
-/* ── Room-matrix table ── */
-.ss-matrix-wrap { overflow-x: auto; border-radius: 12px; border: 1.5px solid #f1f5f9; margin-bottom: 18px; }
-.ss-matrix {
-    width: 100%; border-collapse: collapse; min-width: 480px;
-}
-.ss-matrix th {
-    background: #f8fafc; padding: 9px 12px; text-align: left;
-    font-size: 11px; font-weight: 800; color: #64748b;
-    text-transform: uppercase; letter-spacing: .04em;
-    border-bottom: 1.5px solid #f1f5f9; white-space: nowrap;
-}
-.ss-matrix th.room-col { text-align: center; min-width: 90px; max-width: 120px; }
-.ss-matrix td {
-    padding: 9px 12px; border-bottom: 1px solid #f8fafc;
-    vertical-align: middle;
-}
-.ss-matrix tr:last-child td { border-bottom: none; }
-.ss-matrix tr:hover td { background: #fafafa; }
-.ss-matrix td.room-col { text-align: center; }
-
-/* ── Room pills ── */
-.ss-pill {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 700;
-    white-space: nowrap; cursor: default;
-}
-.ss-pill-free   { background: #f0fdf4; color: #059669; border: 1px solid #bbf7d0; }
-.ss-pill-booked { background: #fff1f2; color: #dc2626; border: 1px solid #fca5a5; cursor: pointer; text-decoration: none; }
-.ss-pill-booked:hover { background: #fee2e2; }
-.ss-pill-na     { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
-
-/* ── Whole-hotel banner row ── */
-.ss-wh-banner td {
-    background: linear-gradient(90deg,#fff1f2,#ffe4e6) !important;
-    border-left: 4px solid #f87171;
-}
-.ss-wh-text {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 800; color: #dc2626;
-}
-
-/* ── Date cell ── */
-.ss-date-cell { min-width: 90px; }
-.ss-date-day  { font-size: 13px; font-weight: 800; color: #0f172a; }
-.ss-date-sub  { font-size: 10px; color: #94a3b8; font-weight: 600; }
-.ss-today     { background: linear-gradient(135deg,#ecfeff,#e0f2fe) !important; }
-.ss-today .ss-date-day { color: #0891b2; }
-
-/* ── Empty / no-module states ── */
-.ss-empty { text-align: center; padding: 60px 24px; color: #94a3b8; }
-.ss-empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: .4; }
-.ss-empty-title { font-size: 16px; font-weight: 800; color: #64748b; margin-bottom: 8px; }
-.ss-empty-sub { font-size: 13px; }
 </style>
+@endpush
 
-@php
-    $allRooms   = $allRooms ?? collect();
-    $allSlots   = $allSlots ?? collect();
-    $matrix     = $matrix ?? null;
-    $summary    = $summary ?? null;
-    $isMultiHotel   = $isMultiHotel ?? false;
-    $availableHotels= $availableHotels ?? collect();
-    $dateFrom   = $dateFrom ?? \Carbon\Carbon::today()->toDateString();
-    $dateTo     = $dateTo   ?? \Carbon\Carbon::today()->addDays(7)->toDateString();
-    $slotIds    = $slotIds  ?? [];
-    $filterHotelIds = $filterHotelIds ?? [];
-    $statusFilter   = $statusFilter   ?? 'all';
-@endphp
+<div class="ss-page" id="ssPrintArea">
 
-@if($flatRooms->where('pricing_type', 'per_slot')->isEmpty())
-<div class="ss-card">
-    <div class="ss-empty">
-        <div class="ss-empty-icon"><i class="fas fa-clock"></i></div>
-        <div class="ss-empty-title">No Per-Slot Rooms Found</div>
-        <div class="ss-empty-sub">Add at least one room with <strong>per-slot pricing</strong> to use the Slot Search Engine.</div>
-        <a href="{{ route('rooms.index') }}" class="ss-btn ss-btn-primary" style="margin-top:18px;text-decoration:none;display:inline-flex;">
-            <i class="fas fa-door-open"></i> Manage Rooms
-        </a>
+{{-- Page heading --}}
+<div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;" class="no-print">
+    <div>
+        <h1 style="font-size:22px;font-weight:800;color:#1e293b;margin:0;">Slot Search Engine</h1>
+        <p style="font-size:13px;color:#64748b;margin:4px 0 0;">Slot availability matrix — time slots as rows, dates as columns, all hotels merged.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;color:#64748b;">{{ \Carbon\Carbon::now()->format('D, d M Y') }}</span>
+        <span style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">
+            {{ session('crm_hotel_name') }}
+        </span>
     </div>
 </div>
-@elseif($flatSlots->isEmpty())
+
+{{-- Main card --}}
 <div class="ss-card">
-    <div class="ss-empty">
-        <div class="ss-empty-icon"><i class="fas fa-clock"></i></div>
-        <div class="ss-empty-title">No Time Slots Configured</div>
-        <div class="ss-empty-sub">Define time slots in Settings before searching.</div>
-        <a href="{{ route('time-slots.index') }}" class="ss-btn ss-btn-primary" style="margin-top:18px;text-decoration:none;display:inline-flex;">
-            <i class="fas fa-clock"></i> Configure Slots
-        </a>
-    </div>
-</div>
-@else
 
-{{-- ── Filter card ── --}}
-<div class="ss-card">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#7c3aed,#6d28d9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0;">
-            <i class="fas fa-search"></i>
-        </div>
-        <div>
-            <div style="font-size:14px;font-weight:800;color:#1e293b;">Search Slot Availability</div>
-            <div style="font-size:11px;color:#94a3b8;">Filter by date range, time slot{{ $isMultiHotel ? ', hotel' : '' }} and status</div>
-        </div>
-    </div>
-
-    <form method="GET" action="{{ route('slot-search.index') }}" id="ssForm">
-        <div class="ss-filter-grid">
-
-            {{-- Date From --}}
+    {{-- ── Card header ── --}}
+    <div class="ss-header">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div class="ss-header-icon"><i class="fas fa-clock" style="color:#fff;font-size:17px;"></i></div>
             <div>
-                <label class="ss-label"><i class="fas fa-calendar" style="margin-right:4px;"></i>Date From</label>
-                <input type="date" name="date_from" class="ss-input"
-                    value="{{ $dateFrom }}"
-                    max="{{ \Carbon\Carbon::today()->addDays(90)->toDateString() }}"
-                    oninput="syncDateTo(this)">
-            </div>
-
-            {{-- Date To --}}
-            <div>
-                <label class="ss-label"><i class="fas fa-calendar-check" style="margin-right:4px;"></i>Date To</label>
-                <input type="date" name="date_to" id="ssDateTo" class="ss-input"
-                    value="{{ $dateTo }}"
-                    max="{{ \Carbon\Carbon::today()->addDays(90)->toDateString() }}">
-            </div>
-
-            {{-- Slot Multi-Select --}}
-            <div>
-                <label class="ss-label"><i class="fas fa-clock" style="margin-right:4px;"></i>Time Slots</label>
-                <div class="ss-select-wrap" id="slotWrap">
-                    <div class="ss-multi-display" id="slotDisplay" onclick="toggleDD('slot')">
-                        <span id="slotText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ count($slotIds) === 0 || count($slotIds) === $flatSlots->count() ? 'All Slots' : ($flatSlots->whereIn('id', $slotIds)->count() . ' slot(s) selected') }}</span>
-                        <i class="fas fa-chevron-down ss-chevron"></i>
-                    </div>
-                    <div class="ss-dropdown" id="slotDropdown">
-                        <div class="ss-dropdown-item select-all" onclick="selectAll('slot')">
-                            <input type="checkbox" id="slotAll" {{ count($slotIds) === 0 ? 'checked' : '' }}>
-                            <span>All Slots</span>
-                        </div>
-                        @foreach($flatSlots as $s)
-                        <div class="ss-dropdown-item" onclick="toggleCB('slot',{{ $s->id }})">
-                            <input type="checkbox" name="slot_ids[]" id="slot_{{ $s->id }}" value="{{ $s->id }}" {{ in_array($s->id, $slotIds) ? 'checked' : '' }}>
-                            <span>{{ $s->name }}<span class="ss-meta">{{ $s->start_time }}–{{ $s->end_time }}</span></span>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-
-            {{-- Hotel Multi-Select (only when managing 2+ hotels) --}}
-            @if($isMultiHotel)
-            <div>
-                <label class="ss-label"><i class="fas fa-hotel" style="margin-right:4px;"></i>Hotels</label>
-                <div class="ss-select-wrap" id="hotelWrap">
-                    <div class="ss-multi-display" id="hotelDisplay" onclick="toggleDD('hotel')">
-                        <span id="hotelText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ count($filterHotelIds) === 0 || count($filterHotelIds) === $availableHotels->count() ? 'All Hotels' : ($availableHotels->whereIn('id', $filterHotelIds)->count() . ' hotel(s)') }}</span>
-                        <i class="fas fa-chevron-down ss-chevron"></i>
-                    </div>
-                    <div class="ss-dropdown" id="hotelDropdown">
-                        <div class="ss-dropdown-item select-all" onclick="selectAll('hotel')">
-                            <input type="checkbox" id="hotelAll" {{ count($filterHotelIds) === 0 ? 'checked' : '' }}>
-                            <span>All Hotels</span>
-                        </div>
-                        @foreach($availableHotels as $h)
-                        <div class="ss-dropdown-item" onclick="toggleCB('hotel',{{ $h->id }})">
-                            <input type="checkbox" name="hotel_ids[]" id="hotel_{{ $h->id }}" value="{{ $h->id }}" {{ in_array($h->id, $filterHotelIds) ? 'checked' : '' }}>
-                            <span>{{ $h->name }}</span>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            {{-- Status + Buttons --}}
-            <div style="display:flex;flex-direction:column;gap:6px;">
-                <label class="ss-label"><i class="fas fa-filter" style="margin-right:4px;"></i>Status</label>
-                <div style="display:flex;gap:7px;flex-wrap:wrap;">
-                    <select name="status" class="ss-input" style="max-width:140px;flex-shrink:0;">
-                        <option value="all"    {{ $statusFilter === 'all'    ? 'selected' : '' }}>All</option>
-                        <option value="free"   {{ $statusFilter === 'free'   ? 'selected' : '' }}>Free Only</option>
-                        <option value="booked" {{ $statusFilter === 'booked' ? 'selected' : '' }}>Booked</option>
-                    </select>
-                    <button type="submit" class="ss-btn ss-btn-primary">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                    @if(request()->has('date_from'))
-                    <a href="{{ route('slot-search.index') }}" class="ss-btn ss-btn-secondary" style="text-decoration:none;">
-                        <i class="fas fa-times"></i>
-                    </a>
+                <div style="font-weight:800;color:#1e293b;font-size:16px;">Slot Availability Matrix</div>
+                <div style="font-size:12px;color:#6d28d9;">
+                    @if($matrix !== null)
+                        {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} &ndash; {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}
+                        &nbsp;&middot;&nbsp; {{ count($matrix) }} slot type{{ count($matrix) === 1 ? '' : 's' }}
+                        @if($isMultiHotel) &nbsp;&middot;&nbsp; {{ $availableHotels->count() }} hotels merged @endif
+                    @else
+                        Select a date range and click Search
                     @endif
                 </div>
             </div>
         </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" class="ss-header-actions">
+            @if($matrix !== null)
+            <button type="button" onclick="printSlotSearch()" class="ss-btn ss-btn-pdf">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+            @endif
+            <a href="{{ route('dashboard') }}" class="ss-btn ss-btn-outline">
+                <i class="fas fa-arrow-left" style="font-size:11px;"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    {{-- ── Filter bar ── --}}
+    <form method="GET" action="{{ route('slot-search.index') }}" class="ss-filter-bar no-print">
+        <div>
+            <span class="ss-filter-label">From Date</span>
+            <input type="date" name="date_from" value="{{ $dateFrom }}" class="ss-filter-inp" required>
+        </div>
+        <div>
+            <span class="ss-filter-label">To Date</span>
+            <input type="date" name="date_to" value="{{ $dateTo }}" class="ss-filter-inp" required>
+        </div>
+        @if($isMultiHotel)
+        <div>
+            <span class="ss-filter-label">Hotels</span>
+            <select name="hotel_ids[]" multiple class="ss-filter-inp" style="min-width:140px;height:38px;">
+                @foreach($availableHotels as $h)
+                <option value="{{ $h->id }}" {{ in_array($h->id, $filterHotelIds ?? []) ? 'selected' : '' }}>{{ $h->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+        @if($flatSlots->isNotEmpty())
+        <div>
+            <span class="ss-filter-label">Time Slots</span>
+            <select name="slot_ids[]" multiple class="ss-filter-inp" style="min-width:170px;height:38px;">
+                @foreach($flatSlots->unique(fn($s) => $s->name . '|' . $s->start_time)->values() as $slot)
+                <option value="{{ $slot->id }}" {{ in_array($slot->id, $slotIds ?? []) ? 'selected' : '' }}>
+                    {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }})
+                </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+        <div>
+            <span class="ss-filter-label">Status</span>
+            <select name="status" class="ss-filter-inp" style="min-width:120px;">
+                <option value="all"    {{ ($statusFilter ?? 'all') === 'all'    ? 'selected' : '' }}>All</option>
+                <option value="free"   {{ ($statusFilter ?? 'all') === 'free'   ? 'selected' : '' }}>Free Only</option>
+                <option value="booked" {{ ($statusFilter ?? 'all') === 'booked' ? 'selected' : '' }}>Booked Only</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+            <button type="submit" class="ss-btn ss-btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            <a href="{{ route('slot-search.index') }}" class="ss-btn ss-btn-outline">
+                <i class="fas fa-times" style="font-size:11px;"></i> Reset
+            </a>
+        </div>
     </form>
-</div>
 
-{{-- ── Results ── --}}
-@if($matrix !== null)
-
-    {{-- Summary cards --}}
-    @if($summary && $summary['total'] > 0)
-    <div class="ss-summary">
-        <div class="ss-sum-card ss-sum-total">
-            <div class="ss-sum-num">{{ $summary['total'] }}</div>
-            <div class="ss-sum-label">Slot-Days</div>
+    {{-- ── Summary bar ── --}}
+    @if($matrix !== null && !empty($summary))
+    <div class="ss-sum-bar">
+        <div class="ss-sum-pill" style="background:#f5f3ff;color:#6d28d9;">
+            <i class="fas fa-th" style="font-size:11px;"></i> {{ $summary['total'] }} slot-days searched
         </div>
-        <div class="ss-sum-card ss-sum-avail">
-            <div class="ss-sum-num" style="color:#059669;">{{ $summary['free'] }}</div>
-            <div class="ss-sum-label">Free</div>
+        <div class="ss-sum-pill" style="background:#f0fdf4;color:#16a34a;">
+            <i class="fas fa-check-circle" style="font-size:11px;"></i> {{ $summary['free'] }} free
         </div>
-        <div class="ss-sum-card ss-sum-full">
-            <div class="ss-sum-num" style="color:#dc2626;">{{ $summary['booked'] }}</div>
-            <div class="ss-sum-label">Booked</div>
+        <div class="ss-sum-pill" style="background:#fff1f2;color:#dc2626;">
+            <i class="fas fa-bed" style="font-size:11px;"></i> {{ $summary['booked'] }} booked
         </div>
-        @if($summary['wh'] > 0)
-        <div class="ss-sum-card ss-sum-wh">
-            <div class="ss-sum-num" style="color:#7c3aed;">{{ $summary['wh'] }}</div>
-            <div class="ss-sum-label">Whole Hotel</div>
+        @if(($summary['wh'] ?? 0) > 0)
+        <div class="ss-sum-pill" style="background:#fef9c3;color:#92400e;">
+            <i class="fas fa-hotel" style="font-size:11px;"></i> {{ $summary['wh'] }} whole-hotel day(s)
         </div>
         @endif
     </div>
     @endif
 
-    @if(empty($matrix))
-    <div class="ss-card">
-        <div class="ss-empty">
-            <div class="ss-empty-icon"><i class="fas fa-search"></i></div>
-            <div class="ss-empty-title">No Results Match Your Filters</div>
-            <div class="ss-empty-sub">Try adjusting your date range, slots, or status filter.</div>
+    {{-- ── PDF print header (only visible when printing) ── --}}
+    <div class="ss-pdf-header" id="ssPdfHeader" style="padding:16px 24px 10px;">
+        <strong style="font-size:15px;color:#1e293b;">Slot Availability Report — {{ session('crm_hotel_name') }}</strong><br>
+        <span style="font-size:12px;color:#64748b;">
+            Period: {{ isset($dateFrom) ? \Carbon\Carbon::parse($dateFrom)->format('d M Y') : '' }}
+            – {{ isset($dateTo) ? \Carbon\Carbon::parse($dateTo)->format('d M Y') : '' }}
+            &nbsp;|&nbsp; Generated: {{ \Carbon\Carbon::now()->format('d M Y h:i A') }}
+        </span>
+    </div>
+
+    {{-- ── Matrix / Empty states ── --}}
+    @if($matrix === null)
+    {{-- Initial state: no search yet --}}
+    <div style="text-align:center;padding:64px 24px;">
+        <div style="width:72px;height:72px;background:#f5f3ff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px;">
+            <i class="fas fa-search" style="font-size:28px;color:#7c3aed;"></i>
+        </div>
+        <div style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:8px;">Set your search criteria</div>
+        <div style="font-size:14px;color:#64748b;max-width:380px;margin:0 auto;line-height:1.6;">
+            Choose a date range above and click <strong>Search</strong> to see the slot availability matrix — time slots as rows, dates as columns, all hotels merged.
         </div>
     </div>
+
+    @elseif(empty($matrix))
+    {{-- Search returned no results --}}
+    <div style="text-align:center;padding:64px 24px;">
+        <div style="width:72px;height:72px;background:#f0fdf4;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px;">
+            <i class="fas fa-check-circle" style="font-size:28px;color:#16a34a;"></i>
+        </div>
+        <div style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:8px;">No results match your filters</div>
+        <div style="font-size:14px;color:#64748b;">Try adjusting the Status filter or date range, or make sure hotels have time slots and per-slot rooms configured.</div>
+    </div>
+
     @else
-
-    {{-- Hotel groups --}}
-    @foreach($matrix as $hotelData)
-    <div class="ss-card" style="padding:20px 20px 8px;">
-
-        {{-- Hotel header (only when multi-hotel) --}}
-        @if($isMultiHotel)
-        <div class="ss-hotel-header">
-            <span class="ss-hotel-badge"><i class="fas fa-hotel" style="margin-right:5px;"></i>{{ $hotelData['hotel_name'] }}</span>
-            <span style="font-size:12px;color:#94a3b8;font-weight:600;">{{ $hotelData['rooms']->count() }} rooms &bull; {{ count($hotelData['slots']) }} slot(s)</span>
-        </div>
-        @endif
-
-        {{-- Slot sections --}}
-        @foreach($hotelData['slots'] as $slotData)
-        @php $rooms = $hotelData['rooms']; @endphp
-        <div class="ss-slot-header">
-            <i class="fas fa-clock" style="color:#7c3aed;"></i>
-            <span class="ss-slot-name">{{ $slotData['slot_name'] }}</span>
-            <span class="ss-slot-time">{{ $slotData['slot_time'] }}</span>
-            <span style="margin-left:auto;font-size:11px;color:#94a3b8;">{{ count($slotData['dates']) }} day(s)</span>
-        </div>
-
-        <div class="ss-matrix-wrap">
-            <table class="ss-matrix">
-                <thead>
-                    <tr>
-                        <th class="ss-date-cell">Date</th>
-                        @foreach($rooms as $room)
-                        <th class="room-col" title="{{ ucfirst($room->type) }} &bull; {{ $room->pricing_type }}">
-                            {{ $room->room_number }}
-                            @if($room->pricing_type !== 'per_slot')
-                            <div style="font-size:9px;font-weight:600;color:#94a3b8;text-transform:none;letter-spacing:0;">{{ $room->pricing_type }}</div>
-                            @endif
-                        </th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach($slotData['dates'] as $ds => $dateData)
-                @php
-                    $dateObj = \Carbon\Carbon::parse($ds);
-                    $isToday = $dateObj->isToday();
-                @endphp
-                @if($dateData['whole_hotel'])
-                {{-- Whole-hotel banner row --}}
-                <tr class="ss-wh-banner {{ $isToday ? 'ss-today' : '' }}">
-                    <td class="ss-date-cell">
-                        <div class="ss-date-day">{{ $dateObj->format('d M') }}</div>
-                        <div class="ss-date-sub">{{ $dateObj->format('D, Y') }}</div>
-                    </td>
-                    <td colspan="{{ $rooms->count() }}">
-                        <div class="ss-wh-text">
-                            <i class="fas fa-hotel"></i>
-                            WHOLE HOTEL BOOKED &mdash;
-                            <strong>{{ $dateData['whole_hotel']['guest_name'] }}</strong>
-                            @if(!empty($dateData['whole_hotel']['check_in_date']) && !empty($dateData['whole_hotel']['check_out_date']))
-                            <span style="font-size:11px;color:#6d28d9;margin-left:6px;">
-                                ({{ \Carbon\Carbon::parse($dateData['whole_hotel']['check_in_date'])->format('d M') }}
-                                &ndash;
-                                {{ \Carbon\Carbon::parse($dateData['whole_hotel']['check_out_date'])->format('d M Y') }})
-                            </span>
-                            @endif
-                            <a href="{{ route('bookings.show', $dateData['whole_hotel']['booking_id']) }}"
-                                style="font-size:11px;font-weight:700;color:#7c3aed;text-decoration:none;margin-left:4px;"
-                                target="_blank" title="View booking">
-                                #{{ $dateData['whole_hotel']['booking_num'] }} <i class="fas fa-external-link-alt" style="font-size:9px;"></i>
-                            </a>
-                        </div>
-                    </td>
+    {{-- ──────────────────────────────────────────────────────
+         Slot × Date matrix — same style as dashboard widget
+         Rows    = unique time slot types (merged across hotels)
+         Columns = dates in the selected range
+    ────────────────────────────────────────────────────── --}}
+    <div class="ss-table-wrap">
+        <table class="ss-table">
+            <thead>
+                <tr>
+                    <th class="slot-col" style="text-align:left;min-width:160px;padding-left:14px;">Time Slot</th>
+                    @foreach($dates as $day)
+                    <th class="{{ $day['isToday'] ? 'today-col' : '' }}" style="min-width:90px;">
+                        <div>{{ $day['label'] }}</div>
+                        <div style="font-size:10px;font-weight:500;color:{{ $day['isToday'] ? '#8b5cf6' : '#94a3b8' }};">{{ $day['sublabel'] }}</div>
+                    </th>
+                    @endforeach
                 </tr>
-                @else
-                {{-- Regular per-room row --}}
-                <tr class="{{ $isToday ? 'ss-today' : '' }}">
-                    <td class="ss-date-cell">
-                        <div class="ss-date-day">{{ $dateObj->format('d M') }}</div>
-                        <div class="ss-date-sub">{{ $dateObj->format('D, Y') }}</div>
+            </thead>
+            <tbody>
+                @foreach($matrix as $slotRow)
+                <tr style="border-bottom:1px solid #f8fafc;">
+                    <td class="ss-slot-label">
+                        <div class="ss-slot-name">{{ $slotRow['slot_name'] }}</div>
+                        <div class="ss-slot-time">{{ $slotRow['slot_time'] }}</div>
                     </td>
-                    @foreach($rooms as $room)
-                    @php $cell = $dateData['rooms'][$room->id] ?? ['status' => 'na']; @endphp
-                    <td class="room-col">
-                        @if($cell['status'] === 'free')
-                            <span class="ss-pill ss-pill-free"><i class="fas fa-check-circle" style="font-size:9px;"></i> Free</span>
-                        @elseif($cell['status'] === 'booked')
-                            <a href="{{ route('bookings.show', $cell['booking_id']) }}"
-                                class="ss-pill ss-pill-booked" target="_blank"
-                                title="{{ ($cell['room_number'] ?? '') . ' – ' . ($cell['guest_name'] ?? 'Guest') }}">
-                                <i class="fas fa-user" style="font-size:9px;"></i>
-                                @if(!empty($cell['room_number']))Rm {{ $cell['room_number'] }} &ndash; @endif{{ \Illuminate\Support\Str::limit($cell['guest_name'] ?? 'Guest', 12) }}
-                            </a>
+                    @foreach($dates as $day)
+                    @php
+                        $ds          = $day['date'];
+                        $sd          = $slotRow['dates'][$ds] ?? null;
+                        $sdColor     = $sd ? $sd['color'] : 'green';
+                        $bookedRooms = $sd['booked_rooms'] ?? [];
+                        $freeRooms   = $sd['free_rooms']   ?? [];
+                        $whList      = $sd['whole_hotel_list'] ?? [];
+                    @endphp
+                    <td class="ss-cell {{ $day['isToday'] ? 'today-col' : '' }}">
+                        @if($sd)
+                        <div class="ss-cell-inner slot-cell-wrap"
+                             data-booked="{{ htmlspecialchars(json_encode($bookedRooms), ENT_QUOTES) }}"
+                             data-free="{{ htmlspecialchars(json_encode($freeRooms), ENT_QUOTES) }}"
+                             data-wh="{{ htmlspecialchars(json_encode($whList), ENT_QUOTES) }}"
+                             data-slot="{{ htmlspecialchars($slotRow['slot_name'], ENT_QUOTES) }}"
+                             data-day="{{ $day['label'] }} {{ $day['sublabel'] }}">
+                            {{-- Availability count badge --}}
+                            <span class="ss-badge {{ $sdColor }}">
+                                {{ $sd['available'] }}<span style="font-weight:400;color:#94a3b8;font-size:11px;">/{{ $sd['total'] }}</span>
+                            </span>
+                            {{-- Room pills --}}
+                            <div style="display:flex;flex-direction:column;width:100%;">
+                                @foreach($bookedRooms as $br)
+                                <div class="ss-pill booked" title="{{ $br['guest_name'] ?? '' }}">
+                                    <span style="font-weight:700;">R{{ $br['room_number'] }}</span>
+                                </div>
+                                @endforeach
+                                @foreach($freeRooms as $rn)
+                                <div class="ss-pill free">
+                                    <span style="font-weight:700;">R{{ $rn }}</span> <span style="color:#4ade80;font-size:9px;">free</span>
+                                </div>
+                                @endforeach
+                            </div>
+                            {{-- Whole-hotel banner --}}
+                            @if(!empty($whList))
+                            <div class="ss-wh-banner">
+                                <i class="fas fa-hotel" style="font-size:9px;"></i>
+                                Whole Hotel &mdash; {{ $whList[0]['guest_name'] ?? '' }}
+                            </div>
+                            @endif
+                        </div>
                         @else
-                            <span class="ss-pill ss-pill-na">N/A</span>
+                        <div style="color:#e2e8f0;font-size:11px;padding:4px 0;">—</div>
                         @endif
                     </td>
                     @endforeach
                 </tr>
-                @endif
                 @endforeach
-                </tbody>
-            </table>
-        </div>
-        @endforeach
-
+            </tbody>
+        </table>
     </div>
-    @endforeach
 
-    @endif {{-- end if empty matrix --}}
-
-@else
-{{-- Initial state — no search submitted --}}
-<div class="ss-card">
-    <div class="ss-empty">
-        <div class="ss-empty-icon"><i class="fas fa-magnifying-glass" style="font-size:2.8rem;"></i></div>
-        <div class="ss-empty-title">Ready to Search</div>
-        <div class="ss-empty-sub">
-            Pick your date range{{ $isMultiHotel ? ', hotels,' : '' }} and time slots, then click <strong>Search</strong>.
-            <br>Results show a room-by-room availability grid for each slot.
+    {{-- Legend --}}
+    <div class="ss-legend">
+        <div class="ss-legend-item"><span class="ss-dot" style="background:#22c55e;"></span> Available (&lt;60% booked)</div>
+        <div class="ss-legend-item"><span class="ss-dot" style="background:#f59e0b;"></span> Filling up (60–99%)</div>
+        <div class="ss-legend-item"><span class="ss-dot" style="background:#ef4444;"></span> Fully booked (100%)</div>
+        <div style="margin-left:auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div class="ss-legend-item"><span class="ss-swatch" style="background:#fee2e2;border:1px solid #fca5a5;"></span> Booked room</div>
+            <div class="ss-legend-item"><span class="ss-swatch" style="background:#dcfce7;border:1px solid #86efac;"></span> Free room</div>
+            <div class="ss-legend-item"><span class="ss-swatch" style="background:#fef3c7;border:1px solid #fde68a;"></span> Whole-hotel</div>
         </div>
-        <button onclick="document.getElementById('ssForm').submit()" class="ss-btn ss-btn-primary" style="margin-top:18px;">
-            <i class="fas fa-calendar-check"></i> View Today + Next 7 Days
-        </button>
     </div>
-</div>
-@endif
+    @endif
 
-@endif {{-- end if allRooms / allSlots --}}
+</div>{{-- /ss-card --}}
+</div>{{-- /ss-page --}}
+
+{{-- Hover tooltip --}}
+<div id="ssTooltip"></div>
 
 <script>
-// ── Dropdown toggle logic ────────────────────────────────────────────────────
-var openDD = null;
-function toggleDD(type) {
-    var dropdown = document.getElementById(type + 'Dropdown');
-    var display  = document.getElementById(type + 'Display');
-    if (!dropdown) return;
-    var isOpen = dropdown.classList.contains('open');
-    closeAllDD();
-    if (!isOpen) {
-        dropdown.classList.add('open');
-        display.classList.add('open');
-        openDD = type;
-    }
-}
-function closeAllDD() {
-    ['slot','hotel'].forEach(function(t) {
-        var d = document.getElementById(t + 'Dropdown');
-        var disp = document.getElementById(t + 'Display');
-        if (d) d.classList.remove('open');
-        if (disp) disp.classList.remove('open');
+(function () {
+    var tip = document.getElementById('ssTooltip');
+    document.querySelectorAll('.slot-cell-wrap').forEach(function (el) {
+        el.addEventListener('mouseenter', function (e) {
+            var booked = JSON.parse(el.dataset.booked || '[]');
+            var free   = JSON.parse(el.dataset.free   || '[]');
+            var wh     = JSON.parse(el.dataset.wh     || '[]');
+            var html   = '<div style="font-weight:700;margin-bottom:6px;color:#a78bfa;">'
+                       + el.dataset.slot + ' &bull; ' + el.dataset.day + '</div>';
+            if (wh.length) {
+                html += '<div style="color:#fcd34d;font-weight:600;margin-bottom:3px;"><i class="fas fa-hotel"></i> Whole Hotel Booking</div>';
+                wh.forEach(function (w) {
+                    html += '<div style="color:#fde68a;padding:1px 0;">Guest: ' + w.guest_name + '</div>';
+                });
+            }
+            if (booked.length) {
+                html += '<div style="color:#fca5a5;font-weight:600;margin:6px 0 3px;">Booked rooms:</div>';
+                booked.forEach(function (r) {
+                    html += '<div style="color:#fecaca;">&#9679; Room ' + r.room_number + ' &mdash; ' + r.guest_name + '</div>';
+                });
+            }
+            if (free.length) {
+                html += '<div style="color:#86efac;font-weight:600;margin:6px 0 3px;">Free rooms:</div>';
+                free.forEach(function (r) {
+                    html += '<div style="color:#bbf7d0;">&#9679; Room ' + r + '</div>';
+                });
+            }
+            if (!booked.length && !free.length && !wh.length) {
+                html += '<div style="color:#94a3b8;">No room data</div>';
+            }
+            tip.innerHTML = html;
+            tip.style.display = 'block';
+            posTip(e);
+        });
+        el.addEventListener('mousemove', posTip);
+        el.addEventListener('mouseleave', function () { tip.style.display = 'none'; });
     });
-    openDD = null;
-}
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('#slotWrap') && !e.target.closest('#hotelWrap')) closeAllDD();
-});
 
-function toggleCB(type, id) {
-    var cb = document.getElementById(type + '_' + id);
-    if (cb && event.target !== cb) cb.checked = !cb.checked;
-    updateAllChk(type);
-    updateText(type);
-}
-
-function selectAll(type) {
-    var allChk = document.getElementById(type + 'All');
-    var cbs    = document.querySelectorAll('input[name="' + type + '_ids[]"]');
-    var newState = !allChk.checked;
-    allChk.checked = newState;
-    cbs.forEach(function(cb) { cb.checked = !newState; });
-    updateText(type);
-}
-
-function updateAllChk(type) {
-    var allChk = document.getElementById(type + 'All');
-    if (!allChk) return;
-    var cbs = document.querySelectorAll('input[name="' + type + '_ids[]"]');
-    allChk.checked = Array.from(cbs).every(function(cb) { return !cb.checked; });
-}
-
-function updateText(type) {
-    var allChk  = document.getElementById(type + 'All');
-    var cbs     = document.querySelectorAll('input[name="' + type + '_ids[]"]');
-    var textEl  = document.getElementById(type + 'Text');
-    if (!textEl) return;
-    var selected = Array.from(cbs).filter(function(cb) { return cb.checked; });
-    if (!allChk || allChk.checked || selected.length === 0) {
-        textEl.textContent = type === 'slot' ? 'All Slots' : 'All Hotels';
-    } else if (selected.length === 1) {
-        var label = selected[0].parentElement.querySelector('span');
-        textEl.textContent = label ? label.textContent.trim().split('\n')[0].trim() : selected[0].value;
-    } else {
-        textEl.textContent = selected.length + (type === 'slot' ? ' slot(s) selected' : ' hotel(s)');
+    function posTip(e) {
+        var x = e.clientX + 16, y = e.clientY + 16;
+        if (x + 260 > window.innerWidth)  x = e.clientX - 270;
+        if (y + 220 > window.innerHeight) y = e.clientY - 230;
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
     }
-}
+})();
 
-// ── Date validation ──────────────────────────────────────────────────────────
-function syncDateTo(fromInput) {
-    var toInput = document.getElementById('ssDateTo');
-    if (toInput && fromInput.value && toInput.value < fromInput.value) {
-        toInput.value = fromInput.value;
-    }
+function printSlotSearch() {
+    var hdr = document.getElementById('ssPdfHeader');
+    if (hdr) hdr.style.display = 'block';
+    window.print();
+    setTimeout(function () {
+        if (hdr) hdr.style.removeProperty('display');
+    }, 800);
 }
 </script>
 @endsection
