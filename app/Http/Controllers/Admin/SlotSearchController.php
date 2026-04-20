@@ -44,7 +44,7 @@ class SlotSearchController extends Controller
             ->whereIn('hotel_id', $allHotelIds)
             ->where('status', '!=', 'maintenance')
             ->orderBy('hotel_id')->orderBy('room_number')
-            ->get(['id', 'hotel_id', 'room_number', 'pricing_type'])
+            ->get(['id', 'hotel_id', 'room_number', 'pricing_type', 'type'])
             ->groupBy('hotel_id');
 
         // ── QUERY 2: All active slots across available hotels (for filter UI + matrix) ──
@@ -192,10 +192,11 @@ class SlotSearchController extends Controller
 
             if ($rooms->isEmpty() || $slots->isEmpty()) continue;
 
+            $perSlotRoomIds  = $rooms->where('pricing_type', 'per_slot')->pluck('id')->values()->all();
+            if (empty($perSlotRoomIds)) continue; // skip hotels with no per_slot rooms
+
             $targetSlots     = !empty($slotIds) ? $slots->whereIn('id', $slotIds) : $slots;
             if ($targetSlots->isEmpty()) continue;
-
-            $perSlotRoomIds  = $rooms->where('pricing_type', 'per_slot')->pluck('id')->all();
 
             $hotelData = [
                 'hotel_id'   => $hotelId,

@@ -373,7 +373,7 @@
                             $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
                         }
                         if (\App\Models\Module::isEnabledForHotel('slot-search-engine', (int) session('crm_hotel_id'))) {
-                            $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Find availability', 'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'];
+                            $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Availability', 'sub' => 'Find availability', 'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'];
                         }
                     @endphp
 
