@@ -1,218 +1,201 @@
 @extends('layouts.admin')
 @section('title', 'Slot Search Engine')
 @section('page-title', 'Slot Search Engine')
-@section('page-subtitle', 'Multi-hotel slot availability — hotels as rows, slot types as columns.')
+@section('page-subtitle', 'Multi-hotel slot availability at a glance.')
 
 @section('content')
 @push('styles')
 <style>
-/* ── Root ── */
+/* ── Root variables ── */
 :root {
-  --c-green:  #16a34a; --c-green-bg:  #f0fdf4; --c-green-bd:  #86efac;
-  --c-amber:  #d97706; --c-amber-bg:  #fffbeb; --c-amber-bd:  #fcd34d;
-  --c-red:    #dc2626; --c-red-bg:    #fff1f2; --c-red-bd:    #fca5a5;
-  --c-purple: #7c3aed; --c-purple-lt: #f5f3ff; --c-purple-bd: #ddd6fe;
-  --c-slate:  #64748b; --c-border: #f1f5f9; --c-card: #fff;
+  --green:#16a34a; --green-bg:#dcfce7; --green-bd:#86efac; --green-dark:#15803d;
+  --red:#dc2626;   --red-bg:#fee2e2;   --red-bd:#fca5a5;   --red-dark:#b91c1c;
+  --amber:#d97706; --amber-bg:#fef9c3; --amber-bd:#fde68a;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-bd:#ddd6fe;
+  --slate:#64748b; --border:#e5e7eb;   --surface:#fff;
 }
 
-/* ── Page wrapper ── */
-.sse-wrap { max-width:1540px;margin:0 auto;padding:22px 14px; }
+/* ── Wrapper ── */
+.sse { max-width:1540px;margin:0 auto;padding:20px 14px; }
 
-/* ── KPI cards ── */
-.kpi-row { display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px; }
-.kpi-card { background:var(--c-card);border-radius:16px;padding:18px 20px;
-            border:1px solid var(--c-border);box-shadow:0 1px 6px rgba(0,0,0,.05);
-            display:flex;align-items:center;gap:14px; }
-.kpi-icon { width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-.kpi-label { font-size:11px;font-weight:600;color:var(--c-slate);text-transform:uppercase;letter-spacing:.6px;line-height:1; }
-.kpi-value { font-size:26px;font-weight:800;color:#1e293b;line-height:1.1;margin-top:4px; }
-.kpi-sub   { font-size:11px;color:var(--c-slate);margin-top:2px; }
+/* ── KPI strip ── */
+.sse-kpi { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px; }
+.kpi-chip { display:inline-flex;align-items:center;gap:8px;background:var(--surface);
+            border:1px solid var(--border);border-radius:12px;padding:9px 16px;
+            font-size:13px;font-weight:600;color:#1e293b;box-shadow:0 1px 4px rgba(0,0,0,.04);white-space:nowrap; }
+.kpi-chip .kc-val { font-size:19px;font-weight:800;line-height:1; }
+.kc-green { color:var(--green); }
+.kc-red   { color:var(--red); }
+.kc-purple{ color:var(--purple); }
 
-/* ── Card shell ── */
-.sse-card { background:var(--c-card);border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);
-            border:1px solid var(--c-border);overflow:hidden; }
+/* ── Card ── */
+.sse-card { background:var(--surface);border-radius:18px;border:1px solid var(--border);
+            box-shadow:0 2px 12px rgba(0,0,0,.05);overflow:hidden; }
 
 /* ── Card header ── */
-.sse-hdr { padding:16px 22px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);
-           border-bottom:1px solid var(--c-border);display:flex;align-items:center;
-           justify-content:space-between;gap:12px;flex-wrap:wrap; }
-.sse-hdr-icon { width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--c-purple),#6d28d9);
-               display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,.3);flex-shrink:0; }
+.sse-hdr { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+           padding:14px 20px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);
+           border-bottom:1px solid #ddd6fe; }
+.sse-hdr-left { display:flex;align-items:center;gap:12px; }
+.sse-hdr-icon { width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--purple),#6d28d9);
+                display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(124,58,237,.3); }
 
-/* ── Filter bar ── */
-.sse-filters { padding:14px 22px;border-bottom:1px solid var(--c-border);background:#fafafa;
-               display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap; }
-.ff-label { font-size:11px;font-weight:600;color:var(--c-slate);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px; }
-.ff-inp { border:1px solid #e2e8f0;border-radius:10px;padding:7px 11px;font-size:13px;color:#1e293b;
-          outline:none;background:#fff;transition:border .15s;display:block; }
-.ff-inp:focus { border-color:#a78bfa; }
-.btn { display:inline-flex;align-items:center;gap:7px;padding:0 18px;height:38px;border-radius:10px;
+/* ── Filter row ── */
+.sse-flt { display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;
+           padding:12px 20px;background:#fafafa;border-bottom:1px solid var(--border); }
+.flt-group { display:flex;flex-direction:column;gap:3px; }
+.flt-label { font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.5px; }
+.flt-inp { border:1px solid #e2e8f0;border-radius:9px;padding:6px 10px;font-size:13px;color:#1e293b;
+           outline:none;background:#fff;transition:border .15s;height:36px;display:flex;align-items:center; }
+.flt-inp:focus { border-color:#a78bfa; }
+.btn { display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;border-radius:9px;
        border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;text-decoration:none;white-space:nowrap; }
-.btn-purple { background:linear-gradient(135deg,var(--c-purple),#6d28d9);color:#fff;box-shadow:0 3px 8px rgba(124,58,237,.3); }
+.btn-purple { background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;box-shadow:0 2px 7px rgba(124,58,237,.3); }
 .btn-purple:hover { opacity:.9;color:#fff; }
-.btn-outline { background:#fff;border:1px solid var(--c-purple-bd);color:var(--c-purple); }
-.btn-outline:hover { background:var(--c-purple-lt);color:var(--c-purple); }
-.btn-ghost { background:#fff;border:1px solid #e2e8f0;color:#374151; }
-.btn-ghost:hover { background:#f9fafb; }
+.btn-ghost  { background:#fff;border:1px solid #e2e8f0;color:#374151; }
+.btn-ghost:hover { background:#f9fafb;color:#374151; }
 
-/* ── Hotel search box ── */
-.sse-searchbar { padding:12px 22px;border-bottom:1px solid var(--c-border);background:#fff;display:flex;align-items:center;gap:10px; }
-.sse-searchbox { flex:1;max-width:340px;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px 8px 38px;
-                 font-size:13px;color:#1e293b;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;
+/* ── Search / hotel filter bar ── */
+.sse-searchbar { display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--border); }
+.sse-searchbox { border:1px solid #e2e8f0;border-radius:9px;padding:7px 12px 7px 34px;font-size:13px;color:#1e293b;
+                 outline:none;width:240px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
                  transition:border .15s; }
 .sse-searchbox:focus { border-color:#a78bfa; }
+.hotel-count-lbl { font-size:12px;color:var(--slate); }
 
-/* ── Matrix table ── */
-.sse-table-wrap { overflow-x:auto;padding:0; }
-.sse-table { width:100%;border-collapse:collapse;table-layout:auto; }
+/* ── Table ── */
+.sse-tbl-wrap { overflow-x:auto; }
+.sse-tbl { width:100%;border-collapse:collapse; }
+.sse-tbl thead tr { border-bottom:2px solid var(--border); }
 
-/* Sticky slot header */
-.sse-table thead th { position:sticky;top:0;z-index:10;background:#fff;
-                      border-bottom:2px solid var(--c-border);padding:12px 10px;
-                      font-size:12px;font-weight:700;color:var(--c-slate);white-space:nowrap;text-align:center; }
-.sse-table thead th.hotel-col { text-align:left;min-width:200px;padding-left:18px; }
-.sse-table thead th .slot-head-name { font-size:12px;font-weight:700;color:#1e293b; }
-.sse-table thead th .slot-head-time { font-size:10px;color:var(--c-slate);margin-top:2px; }
+/* Column header */
+.sse-tbl thead th { padding:10px 12px;text-align:center;background:#fff;white-space:nowrap;
+                    position:sticky;top:0;z-index:5; }
+.sse-tbl thead th.col-hotel { text-align:left;min-width:210px;padding-left:18px; }
+.col-hdr-name { font-size:13px;font-weight:800;color:#1e293b;margin-bottom:5px; }
+.col-hdr-badges { display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap; }
+.col-agg-badge { display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;border:1px solid; }
+.col-agg-badge.green { background:var(--green-bg);color:var(--green);border-color:var(--green-bd); }
+.col-agg-badge.red   { background:var(--red-bg);  color:var(--red);  border-color:var(--red-bd); }
+.col-agg-badge.amber { background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd); }
+.col-agg-badge.wh    { background:#fef3c7;color:#92400e;border-color:#fde68a; }
 
 /* Hotel rows */
-.sse-hotel-row td { padding:0;border-bottom:1px solid #f8fafc; }
-.sse-hotel-row:hover td { background:#fafcff; }
-.hotel-name-cell { padding:14px 18px;cursor:pointer;white-space:nowrap;vertical-align:middle; }
-.hotel-chevron { display:inline-flex;align-items:center;justify-content:center;
-                 width:22px;height:22px;border-radius:6px;border:1px solid #e2e8f0;
-                 color:var(--c-slate);font-size:10px;margin-right:10px;transition:all .2s;flex-shrink:0;background:#fff; }
-.hotel-chevron.open { background:var(--c-purple-lt);border-color:var(--c-purple-bd);color:var(--c-purple);transform:rotate(90deg); }
-.hotel-name { font-size:14px;font-weight:700;color:#1e293b; }
-.hotel-meta { font-size:11px;color:var(--c-slate);margin-top:2px; }
+.sse-tbl tbody tr.hotel-row { border-bottom:1px solid #f3f4f6;transition:background .12s; }
+.sse-tbl tbody tr.hotel-row:hover { background:#f8f9ff; }
+.hotel-td { padding:12px 18px;white-space:nowrap;cursor:pointer; }
+.hotel-chevron-btn { display:inline-flex;align-items:center;justify-content:center;
+                     width:20px;height:20px;border-radius:5px;border:1px solid #e2e8f0;
+                     background:#fff;color:var(--slate);font-size:9px;margin-right:8px;
+                     transition:all .2s;flex-shrink:0;cursor:pointer; }
+.hotel-chevron-btn.open { background:var(--purple-bg);border-color:var(--purple-bd);color:var(--purple);transform:rotate(90deg); }
+.hotel-name-txt { font-size:14px;font-weight:700;color:#0f172a; }
+.hotel-sub-txt  { font-size:11px;color:var(--slate);margin-top:1px; }
+.wh-tag { display:inline-flex;align-items:center;gap:3px;background:#fef3c7;border:1px solid #fde68a;
+          color:#92400e;border-radius:20px;padding:1px 7px;font-size:9px;font-weight:700;margin-left:6px;vertical-align:middle; }
 
 /* Slot cells */
-.slot-cell { padding:10px 8px;text-align:center;cursor:pointer;vertical-align:middle;transition:background .15s; }
-.slot-cell:hover { background:#f5f3ff; }
-.slot-cell.na { cursor:default;color:#d1d5db;font-size:12px; }
-.slot-badge-wrap { display:inline-flex;flex-direction:column;align-items:center;gap:4px; }
-.slot-badge { display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:30px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s; }
-.slot-badge.green { background:var(--c-green-bg);color:var(--c-green);border:1px solid var(--c-green-bd); }
-.slot-badge.amber { background:var(--c-amber-bg);color:var(--c-amber);border:1px solid var(--c-amber-bd); }
-.slot-badge.red   { background:var(--c-red-bg);  color:var(--c-red);  border:1px solid var(--c-red-bd); }
-.slot-badge:hover { filter:brightness(.95);transform:scale(1.03); }
-.badge-icon { font-size:10px; }
-.badge-counts { display:flex;gap:6px;font-size:10px;font-weight:500; }
-.badge-free   { color:var(--c-green); }
-.badge-booked { color:var(--c-red); }
+.slot-td { padding:10px 8px;text-align:center;cursor:pointer;position:relative; }
+.slot-td:hover .slot-cell-inner { background:#f5f3ff; border-radius:10px; }
+.slot-td.na { cursor:default; }
+.slot-cell-inner { display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;border-radius:8px;transition:background .12s; }
+.count-chip { display:inline-flex;align-items:center;gap:3px;border-radius:20px;padding:4px 10px;font-size:13px;font-weight:800;border:1px solid; }
+.count-chip.green { background:var(--green-bg);color:var(--green);border-color:var(--green-bd); }
+.count-chip.red   { background:var(--red-bg);  color:var(--red);  border-color:var(--red-bd); }
+.count-chip.amber { background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd); }
 
-/* Room-expand rows */
-.room-expand-row { display:none; }
-.room-expand-row td { padding:0;background:#faf9ff;border-bottom:1px solid #ede9fe; }
-.room-expand-inner { padding:8px 18px 8px 52px;display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
-.room-slot-chip { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid; }
-.room-slot-chip.green { background:var(--c-green-bg);color:var(--c-green);border-color:var(--c-green-bd); }
-.room-slot-chip.amber { background:var(--c-amber-bg);color:var(--c-amber);border-color:var(--c-amber-bd); }
-.room-slot-chip.red   { background:var(--c-red-bg);color:var(--c-red);border-color:var(--c-red-bd); }
-.room-chip-label { font-size:11px;color:var(--c-slate);font-weight:600;min-width:70px;flex-shrink:0; }
+/* Room expand rows */
+.expand-row { display:none; }
+.expand-row td { padding:6px 18px 6px 50px;background:#f8f7ff;border-bottom:1px solid #ede9fe; }
+.expand-inner { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+.room-tag { font-size:11px;font-weight:700;color:#334155;min-width:60px; }
+.room-chip { display:inline-flex;align-items:center;gap:3px;border-radius:16px;padding:2px 9px;font-size:10px;font-weight:700;border:1px solid; }
+.room-chip.green { background:var(--green-bg);color:var(--green);border-color:var(--green-bd); }
+.room-chip.red   { background:var(--red-bg);  color:var(--red);  border-color:var(--red-bd); }
+.room-chip.amber { background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd); }
 
-/* WH badge */
-.wh-badge { display:inline-flex;align-items:center;gap:4px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px; }
-
-/* ── Side panel ── */
-#ssePanel { position:fixed;top:0;right:-420px;height:100%;width:410px;z-index:9000;
-             background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.12);transition:right .28s cubic-bezier(.4,0,.2,1);
-             overflow-y:auto;display:flex;flex-direction:column; }
-#ssePanel.open { right:0; }
-#ssePanelOverlay { display:none;position:fixed;inset:0;z-index:8999;background:rgba(0,0,0,.2); }
-#ssePanelOverlay.open { display:block; }
-.panel-hdr { padding:20px 20px 14px;border-bottom:1px solid var(--c-border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1; }
-.panel-close { width:34px;height:34px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c-slate);flex-shrink:0; }
-.panel-close:hover { background:#f1f5f9; }
-.panel-body { padding:16px 20px;flex:1; }
-.panel-slot-info { background:linear-gradient(135deg,var(--c-purple-lt),#ede9fe);border-radius:12px;padding:12px 14px;margin-bottom:16px; }
-.panel-section { margin-bottom:14px; }
-.panel-sec-title { font-size:11px;font-weight:700;color:var(--c-slate);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px; }
-.panel-room-pill { display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin:3px;border:1px solid; }
-.panel-room-pill.free   { background:var(--c-green-bg);color:var(--c-green);border-color:var(--c-green-bd); }
-.panel-room-pill.booked { background:var(--c-red-bg);color:var(--c-red);border-color:var(--c-red-bd); }
-.panel-room-pill.wh     { background:#fef3c7;color:#92400e;border-color:#fde68a; }
-.panel-date-row { padding:10px 12px;border-radius:10px;border:1px solid var(--c-border);margin-bottom:8px; }
-.panel-date-label { font-size:12px;font-weight:700;color:#1e293b;margin-bottom:6px; }
-.panel-wh-banner { background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#92400e;display:flex;align-items:center;gap:8px; }
+/* ── Inline popup card ── */
+#ssePopup { display:none;position:fixed;z-index:9999;width:310px;
+             background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.18);
+             border:1px solid var(--border);overflow:hidden;animation:ppIn .15s ease; }
+@keyframes ppIn { from { opacity:0;transform:scale(.96) translateY(-6px); } to { opacity:1;transform:none; } }
+.pp-hdr { display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+          padding:14px 16px 10px;border-bottom:1px solid var(--border); }
+.pp-hotel { font-size:14px;font-weight:800;color:#0f172a; }
+.pp-slot  { font-size:11px;color:var(--slate);margin-top:2px; }
+.pp-close { width:28px;height:28px;border-radius:8px;border:1px solid #e2e8f0;
+            background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+            color:var(--slate);flex-shrink:0;font-size:12px; }
+.pp-close:hover { background:#f1f5f9; }
+.pp-body { padding:12px 16px; }
+.pp-section-title { font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;
+                    letter-spacing:.6px;margin-bottom:6px;margin-top:10px; }
+.pp-section-title:first-child { margin-top:0; }
+.pp-room-pill { display:inline-flex;align-items:center;gap:4px;border-radius:7px;
+                padding:3px 8px;font-size:11px;font-weight:700;margin:2px;border:1px solid; }
+.pp-room-pill.free   { background:var(--green-bg);color:var(--green);border-color:var(--green-bd); }
+.pp-room-pill.booked { background:var(--red-bg);  color:var(--red);  border-color:var(--red-bd); }
+.pp-room-pill.wh     { background:#fef3c7;color:#92400e;border-color:#fde68a; }
+.pp-wh-bar { background:#fef9c3;border:1px solid #fde68a;border-radius:9px;padding:7px 11px;
+             font-size:12px;color:#92400e;display:flex;align-items:center;gap:7px;margin-bottom:8px; }
+.pp-pills-wrap { display:flex;flex-wrap:wrap;gap:3px; }
 
 /* ── Legend ── */
-.sse-legend { display:flex;align-items:center;gap:16px;padding:12px 22px;border-top:1px solid var(--c-border);flex-wrap:wrap; }
-.leg-item { display:flex;align-items:center;gap:6px;font-size:12px;color:var(--c-slate); }
-.leg-dot { width:10px;height:10px;border-radius:50%;display:inline-block; }
+.sse-legend { display:flex;align-items:center;gap:14px;padding:11px 20px;border-top:1px solid var(--border);flex-wrap:wrap; }
+.leg-item { display:flex;align-items:center;gap:5px;font-size:11px;color:var(--slate); }
+.leg-dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
 
-/* ── Empty states ── */
-.sse-empty { text-align:center;padding:60px 24px; }
-.sse-empty-icon { width:70px;height:70px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px; }
-
-/* ── Responsive ── */
-@media (max-width:900px) {
-  .kpi-row { grid-template-columns:repeat(2,1fr); }
-}
-@media (max-width:600px) {
-  .kpi-row { grid-template-columns:1fr; }
-  #ssePanel { width:96vw; }
-}
+/* ── Empty ── */
+.sse-empty { text-align:center;padding:56px 24px; }
+.sse-empty-ico { width:66px;height:66px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px; }
 
 /* ── Print ── */
 @media print {
-  #ssePanel, #ssePanelOverlay, .sse-filters, .sse-searchbar,
-  .sse-hdr-actions, .kpi-row, .no-print { display:none !important; }
-  .sse-table-wrap { overflow:visible !important; }
-  .sse-table { font-size:11px; }
-  .sse-card { box-shadow:none; }
+  #ssePopup,.sse-flt,.sse-searchbar,.sse-hdr-right,.sse-kpi,.no-print{display:none!important;}
+  .sse-tbl-wrap{overflow:visible!important;} .sse-tbl{font-size:10px;}
+  .sse-card{box-shadow:none!important;}
 }
 </style>
 @endpush
 
-<div class="sse-wrap" id="ssePrintArea">
+<div class="sse" id="ssePrintArea">
 
-{{-- ── KPI CARDS ── --}}
+{{-- ── KPI STRIP ── --}}
 @if($kpi)
-<div class="kpi-row">
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);">
-            <i class="fas fa-hotel" style="color:#fff;font-size:17px;"></i>
-        </div>
-        <div>
-            <div class="kpi-label">Hotels Searched</div>
-            <div class="kpi-value">{{ $kpi['total_hotels'] }}</div>
-            <div class="kpi-sub">{{ $availableHotels->count() }} available</div>
-        </div>
+<div class="sse-kpi no-print">
+    <div class="kpi-chip">
+        <i class="fas fa-hotel" style="color:var(--purple);font-size:14px;"></i>
+        <span style="color:var(--slate);font-weight:600;">Total Hotels</span>
+        <span class="kc-val kc-purple">{{ $kpi['total_hotels'] }}</span>
     </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:linear-gradient(135deg,#16a34a,#15803d);">
-            <i class="fas fa-check-circle" style="color:#fff;font-size:17px;"></i>
-        </div>
-        <div>
-            <div class="kpi-label">Free Room-Days</div>
-            <div class="kpi-value">{{ number_format($kpi['free_room_days']) }}</div>
-            <div class="kpi-sub">{{ 100 - $kpi['pct_booked'] }}% of capacity</div>
-        </div>
+    <div class="kpi-chip">
+        <i class="fas fa-check-circle" style="color:var(--green);font-size:14px;"></i>
+        <span style="color:var(--slate);font-weight:600;">Free Slots</span>
+        <span class="kc-val kc-green">{{ $kpi['free_slots'] }}</span>
+        <i class="fas fa-check" style="color:var(--green);font-size:11px;"></i>
     </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:linear-gradient(135deg,#dc2626,#b91c1c);">
-            <i class="fas fa-bed" style="color:#fff;font-size:17px;"></i>
-        </div>
-        <div>
-            <div class="kpi-label">Booked Room-Days</div>
-            <div class="kpi-value">{{ number_format($kpi['booked_room_days']) }}</div>
-            <div class="kpi-sub">{{ $kpi['pct_booked'] }}% occupancy</div>
-        </div>
+    <div class="kpi-chip">
+        <i class="fas fa-times-circle" style="color:var(--red);font-size:14px;"></i>
+        <span style="color:var(--slate);font-weight:600;">Booked Slots</span>
+        <span class="kc-val kc-red">{{ $kpi['booked_slots'] }}</span>
+        @if($kpi['pct_booked'] > 0)
+        <span style="font-size:11px;color:var(--red);">{{ $kpi['pct_booked'] }}%</span>
+        @endif
     </div>
-    <div class="kpi-card">
-        <div class="kpi-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
-            <i class="fas fa-calendar-alt" style="color:#fff;font-size:17px;"></i>
-        </div>
-        <div>
-            <div class="kpi-label">Date Range</div>
-            <div class="kpi-value" style="font-size:18px;">
-                {{ \Carbon\Carbon::parse($dateFrom)->format('d M') }}
-                <span style="font-weight:400;font-size:14px;color:var(--c-slate);">to</span>
-                {{ \Carbon\Carbon::parse($dateTo)->format('d M') }}
-            </div>
-            <div class="kpi-sub">{{ count($slotColumns ?? []) }} slot type(s)</div>
-        </div>
+    @if($isMultiHotel)
+    <div class="kpi-chip">
+        <i class="fas fa-building" style="color:var(--slate);font-size:13px;"></i>
+        <span style="color:var(--slate);font-weight:600;">All Hotels</span>
+        <i class="fas fa-check" style="color:var(--green);font-size:10px;"></i>
     </div>
+    @endif
+    @if($matrix !== null && count($matrix) > 0)
+    <div style="margin-left:auto;">
+        <button onclick="window.print()" class="btn btn-ghost no-print" style="font-size:12px;height:34px;padding:0 13px;">
+            <i class="fas fa-file-pdf"></i> PDF
+        </button>
+    </div>
+    @endif
 </div>
 @endif
 
@@ -221,341 +204,389 @@
 
     {{-- Card header --}}
     <div class="sse-hdr">
-        <div style="display:flex;align-items:center;gap:14px;">
-            <div class="sse-hdr-icon"><i class="fas fa-clock" style="color:#fff;font-size:17px;"></i></div>
+        <div class="sse-hdr-left">
+            <div class="sse-hdr-icon"><i class="fas fa-clock" style="color:#fff;font-size:16px;"></i></div>
             <div>
-                <div style="font-weight:800;color:#1e293b;font-size:16px;">Slot Availability Matrix</div>
-                <div style="font-size:12px;color:#6d28d9;">
-                    Hotels as rows &middot; Slot types as columns
-                    @if(isset($dateFrom) && isset($dateTo) && $matrix !== null)
-                    &middot; {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} – {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}
+                <div style="font-weight:800;color:#1e293b;font-size:15px;">Slot Search Engine</div>
+                <div style="font-size:11px;color:#6d28d9;">
+                    Hotels × Slot types availability matrix
+                    @if($matrix !== null && isset($dateFrom))
+                    &nbsp;&middot;&nbsp;
+                    {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} &ndash; {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}
                     @endif
                 </div>
             </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;" class="sse-hdr-actions no-print">
-            @if($matrix !== null)
-            <button onclick="window.print()" class="btn btn-ghost" type="button">
-                <i class="fas fa-file-pdf"></i> Export PDF
-            </button>
-            @endif
-            <a href="{{ route('dashboard') }}" class="btn btn-outline">
-                <i class="fas fa-arrow-left" style="font-size:11px;"></i> Dashboard
+        <div style="display:flex;gap:8px;" class="sse-hdr-right no-print">
+            <a href="{{ route('dashboard') }}" class="btn btn-ghost" style="font-size:12px;height:34px;padding:0 13px;">
+                <i class="fas fa-arrow-left" style="font-size:10px;"></i> Dashboard
             </a>
         </div>
     </div>
 
     {{-- Filter bar --}}
-    <form method="GET" action="{{ route('slot-search.index') }}" class="sse-filters no-print">
-        <div>
-            <span class="ff-label">From Date</span>
-            <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="ff-inp" required>
+    <form method="GET" action="{{ route('slot-search.index') }}" class="sse-flt no-print">
+        <div class="flt-group">
+            <span class="flt-label">From</span>
+            <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="flt-inp" required style="padding:0 10px;">
         </div>
-        <div>
-            <span class="ff-label">To Date</span>
-            <input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="ff-inp" required>
+        <div class="flt-group">
+            <span class="flt-label">To</span>
+            <input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="flt-inp" required style="padding:0 10px;">
         </div>
+        @if($flatSlots->isNotEmpty())
+        <div class="flt-group">
+            <span class="flt-label">Slot Type</span>
+            <select name="slot_ids[]" multiple class="flt-inp" style="min-width:150px;height:36px;">
+                @foreach($flatSlots->unique(fn($s) => $s->name.'|'.$s->start_time)->values() as $slot)
+                <option value="{{ $slot->id }}" {{ in_array($slot->id, $slotIds ?? []) ? 'selected' : '' }}>
+                    {{ $slot->name }}
+                </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
         @if($isMultiHotel)
-        <div>
-            <span class="ff-label">Hotels</span>
-            <select name="hotel_ids[]" multiple class="ff-inp" style="min-width:140px;height:38px;">
+        <div class="flt-group">
+            <span class="flt-label">Hotels</span>
+            <select name="hotel_ids[]" multiple class="flt-inp" style="min-width:140px;height:36px;">
                 @foreach($availableHotels as $h)
                 <option value="{{ $h->id }}" {{ in_array($h->id, $filterHotelIds ?? []) ? 'selected' : '' }}>{{ $h->name }}</option>
                 @endforeach
             </select>
         </div>
         @endif
-        @if($flatSlots->isNotEmpty())
-        <div>
-            <span class="ff-label">Slot Types</span>
-            <select name="slot_ids[]" multiple class="ff-inp" style="min-width:160px;height:38px;">
-                @foreach($flatSlots->unique(fn($s) => $s->name . '|' . $s->start_time)->values() as $slot)
-                <option value="{{ $slot->id }}" {{ in_array($slot->id, $slotIds ?? []) ? 'selected' : '' }}>
-                    {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }})
-                </option>
-                @endforeach
+        <div class="flt-group">
+            <span class="flt-label">Availability</span>
+            <select name="status" class="flt-inp" style="min-width:140px;">
+                <option value="all"     {{ ($statusFilter??'all')==='all'     ? 'selected':'' }}>Show All</option>
+                <option value="free"    {{ ($statusFilter??'all')==='free'    ? 'selected':'' }}>Available Only</option>
+                <option value="partial" {{ ($statusFilter??'all')==='partial' ? 'selected':'' }}>Partial</option>
+                <option value="booked"  {{ ($statusFilter??'all')==='booked'  ? 'selected':'' }}>Fully Booked</option>
             </select>
         </div>
-        @endif
-        <div>
-            <span class="ff-label">Availability</span>
-            <select name="status" class="ff-inp" style="min-width:130px;">
-                <option value="all"     {{ ($statusFilter ?? 'all') === 'all'     ? 'selected' : '' }}>All</option>
-                <option value="free"    {{ ($statusFilter ?? 'all') === 'free'    ? 'selected' : '' }}>Fully Free</option>
-                <option value="partial" {{ ($statusFilter ?? 'all') === 'partial' ? 'selected' : '' }}>Partial</option>
-                <option value="booked"  {{ ($statusFilter ?? 'all') === 'booked'  ? 'selected' : '' }}>Fully Booked</option>
-            </select>
-        </div>
-        <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="display:flex;gap:6px;align-items:flex-end;">
             <button type="submit" class="btn btn-purple">
-                <i class="fas fa-search"></i> Search
+                <i class="fas fa-search" style="font-size:11px;"></i> Search
             </button>
-            <a href="{{ route('slot-search.index') }}" class="btn btn-ghost" style="text-decoration:none;">
-                <i class="fas fa-undo" style="font-size:10px;"></i> Reset
+            <a href="{{ route('slot-search.index') }}" class="btn btn-ghost">
+                <i class="fas fa-undo" style="font-size:10px;"></i>
             </a>
         </div>
     </form>
 
-    {{-- Hotel search bar --}}
+    {{-- Hotel search (only when matrix is shown) --}}
     @if($matrix !== null && count($matrix) > 0)
     <div class="sse-searchbar no-print">
-        <input type="text" id="hotelSearchInput" class="sse-searchbox" placeholder="Search hotels…" oninput="filterHotels(this.value)">
-        <span style="font-size:12px;color:var(--c-slate);" id="hotelCount">{{ count($matrix) }} hotel{{ count($matrix) === 1 ? '' : 's' }}</span>
+        <input type="text" id="hotelSearch" class="sse-searchbox" placeholder="Search hotel name…" oninput="filterHotels(this.value)">
+        <span class="hotel-count-lbl" id="hotelCountLbl">{{ count($matrix) }} hotel{{ count($matrix)===1?'':'s' }}</span>
     </div>
     @endif
 
     {{-- ── MATRIX TABLE ── --}}
     @if($matrix === null)
-    {{-- Initial state --}}
     <div class="sse-empty">
-        <div class="sse-empty-icon" style="background:#f5f3ff;">
-            <i class="fas fa-search" style="font-size:28px;color:#7c3aed;"></i>
+        <div class="sse-empty-ico" style="background:var(--purple-bg);">
+            <i class="fas fa-search" style="font-size:26px;color:var(--purple);"></i>
         </div>
-        <div style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:8px;">Choose your search criteria</div>
-        <div style="font-size:14px;color:var(--c-slate);max-width:400px;margin:0 auto;line-height:1.7;">
-            Pick a date range and click <strong>Search</strong> to see availability across all hotels and slot types at a glance.
+        <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:8px;">Select dates and search</div>
+        <div style="font-size:13px;color:var(--slate);max-width:380px;margin:0 auto;line-height:1.7;">
+            Set a date range and click <strong>Search</strong> to see availability across all hotels and slot types at a glance.
         </div>
     </div>
 
     @elseif(empty($matrix))
     <div class="sse-empty">
-        <div class="sse-empty-icon" style="background:#f0fdf4;">
-            <i class="fas fa-check-circle" style="font-size:28px;color:#16a34a;"></i>
+        <div class="sse-empty-ico" style="background:var(--green-bg);">
+            <i class="fas fa-check-circle" style="font-size:26px;color:var(--green);"></i>
         </div>
-        <div style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:8px;">No hotels match your filters</div>
-        <div style="font-size:14px;color:var(--c-slate);">Try adjusting the availability filter or adding more hotels to your account.</div>
+        <div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:8px;">No hotels match your filters</div>
+        <div style="font-size:13px;color:var(--slate);">Try adjusting the availability filter or search criteria.</div>
     </div>
 
     @else
-    {{-- Availability matrix --}}
-    <div class="sse-table-wrap">
-        <table class="sse-table" id="sseMatrix">
+    <div class="sse-tbl-wrap">
+        <table class="sse-tbl" id="sseTbl">
+            {{-- ── Column headers ── --}}
             <thead>
                 <tr>
-                    <th class="hotel-col">
-                        <div style="font-size:12px;font-weight:700;color:var(--c-slate);">Hotel</div>
+                    <th class="col-hotel">
+                        <div style="font-size:12px;font-weight:700;color:var(--slate);">
+                            Hotel <i class="fas fa-sort" style="font-size:10px;margin-left:3px;opacity:.5;"></i>
+                        </div>
                     </th>
                     @foreach($slotColumns as $col)
-                    <th style="min-width:130px;">
-                        <div class="slot-head-name">{{ $col['name'] }}</div>
-                        <div class="slot-head-time">{{ $col['time'] }}</div>
+                    @php
+                        $agg = $columnAgg[$col['key']] ?? null;
+                        $aggStatus = $agg ? $agg['status'] : 'free';
+                    @endphp
+                    <th style="min-width:150px;padding-bottom:12px;">
+                        <div class="col-hdr-name">{{ $col['name'] }}</div>
+                        <div style="font-size:10px;color:var(--slate);margin-bottom:5px;">{{ $col['time'] }}</div>
+                        <div class="col-hdr-badges">
+                            @if($agg)
+                            <span class="col-agg-badge green">
+                                <i class="fas fa-check" style="font-size:8px;"></i> {{ $agg['total_free'] }} Free
+                            </span>
+                            @if($agg['total_booked'] > 0)
+                            <span class="col-agg-badge red">
+                                <i class="fas fa-times" style="font-size:8px;"></i> {{ $agg['total_booked'] }} Booked
+                            </span>
+                            @endif
+                            @if($agg['has_wh'])
+                            <span class="col-agg-badge wh">
+                                <i class="fas fa-hotel" style="font-size:8px;"></i> WH
+                            </span>
+                            @endif
+                            @endif
+                        </div>
                     </th>
                     @endforeach
                 </tr>
             </thead>
+
+            {{-- ── Hotel rows ── --}}
             <tbody>
-                @foreach($matrix as $hotelIdx => $hotel)
-                {{-- Hotel main row --}}
-                <tr class="sse-hotel-row" data-hotel-name="{{ strtolower($hotel['hotel_name']) }}" id="hotel-row-{{ $hotelIdx }}">
-                    {{-- Hotel name cell --}}
-                    <td>
-                        <div class="hotel-name-cell" onclick="toggleExpand({{ $hotelIdx }})">
-                            <span class="hotel-chevron" id="chevron-{{ $hotelIdx }}">&#8250;</span>
-                            <span class="hotel-name">{{ $hotel['hotel_name'] }}</span>
-                            @if($hotel['is_wh_any'])
-                            <span class="wh-badge"><i class="fas fa-hotel" style="font-size:8px;"></i> WH</span>
-                            @endif
-                            <div class="hotel-meta">{{ $hotel['rooms_count'] }} slot room{{ $hotel['rooms_count'] === 1 ? '' : 's' }}</div>
-                        </div>
-                    </td>
-                    {{-- Slot cells --}}
-                    @foreach($slotColumns as $col)
-                    @php $sd = $hotel['slots'][$col['key']] ?? null; @endphp
-                    @if($sd && $sd['has_slot'])
-                    <td class="slot-cell"
-                        onclick="openPanel({{ json_encode($hotel) }}, '{{ $col['key'] }}', '{{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }}', '{{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}')"
-                        title="Click for details">
-                        <div class="slot-badge-wrap">
-                            <span class="slot-badge {{ $sd['color'] }}">
-                                @if($sd['color'] === 'green')
-                                <i class="fas fa-check-circle badge-icon"></i>
-                                @elseif($sd['color'] === 'amber')
-                                <i class="fas fa-exclamation-circle badge-icon"></i>
-                                @else
-                                <i class="fas fa-times-circle badge-icon"></i>
+            @foreach($matrix as $hi => $hotel)
+            {{-- Hotel summary row --}}
+            <tr class="hotel-row" data-hotel-name="{{ strtolower($hotel['hotel_name']) }}" id="hrow-{{ $hi }}">
+                {{-- Hotel name cell --}}
+                <td class="hotel-td" onclick="toggleExpand({{ $hi }})">
+                    <div style="display:flex;align-items:flex-start;gap:0;">
+                        <span class="hotel-chevron-btn" id="chev-{{ $hi }}">&#8250;</span>
+                        <div>
+                            <div class="hotel-name-txt">
+                                {{ $hotel['hotel_name'] }}
+                                @if($hotel['is_wh_any'])
+                                <span class="wh-tag"><i class="fas fa-hotel" style="font-size:8px;"></i> WH</span>
                                 @endif
-                                {{ $sd['worst_free'] }} / {{ $sd['total_rooms'] }}
-                            </span>
-                            <div class="badge-counts">
-                                <span class="badge-free"><i class="fas fa-circle" style="font-size:7px;"></i> {{ $sd['worst_free'] }} free</span>
-                                <span class="badge-booked"><i class="fas fa-circle" style="font-size:7px;"></i> {{ $sd['worst_booked'] }} booked</span>
                             </div>
+                            <div class="hotel-sub-txt">{{ $hotel['rooms_count'] }} slot room{{ $hotel['rooms_count']===1?'':'s' }}</div>
                         </div>
-                    </td>
-                    @elseif($sd)
-                    <td class="slot-cell na">—</td>
-                    @else
-                    <td class="slot-cell na">—</td>
-                    @endif
-                    @endforeach
-                </tr>
-                {{-- Room-expand rows --}}
-                @foreach($hotel['rooms'] as $room)
-                <tr class="room-expand-row" id="expand-{{ $hotelIdx }}" data-hotel="{{ $hotelIdx }}">
-                    <td colspan="{{ count($slotColumns) + 1 }}">
-                        <div class="room-expand-inner">
-                            <span class="room-chip-label" style="font-weight:700;color:#1e293b;">
-                                <i class="fas fa-door-open" style="font-size:10px;color:var(--c-slate);"></i>
-                                R{{ $room['number'] }}
-                            </span>
-                            @foreach($slotColumns as $col)
-                            @php
-                                $sd = $hotel['slots'][$col['key']] ?? null;
-                                if (!$sd || !$sd['has_slot']) { $chipColor = 'no-slot'; $chipLabel = '—'; }
-                                else {
-                                    $bookedOnAnyDay = false;
-                                    foreach ($sd['dates'] as $ds => $dd) {
-                                        $isBooked = collect($dd['booked_rooms'])->contains(fn($br) => $br['room_number'] == $room['number']);
-                                        if ($isBooked) { $bookedOnAnyDay = true; break; }
-                                    }
-                                    $freeOnAnyDay = !$bookedOnAnyDay;
-                                    $chipColor = $bookedOnAnyDay ? ($freeOnAnyDay ? 'amber' : 'red') : 'green';
-                                    $chipLabel = $bookedOnAnyDay ? 'Has Bookings' : 'All Free';
-                                }
-                            @endphp
-                            @if($chipColor !== 'no-slot')
-                            <span class="room-slot-chip {{ $chipColor }}" style="font-size:10px;">
-                                {{ $col['name'] }}: <strong>{{ $chipLabel }}</strong>
-                            </span>
-                            @endif
-                            @endforeach
-                        </div>
-                    </td>
-                </tr>
+                    </div>
+                </td>
+                {{-- Slot cells --}}
+                @foreach($slotColumns as $col)
+                @php
+                    $sd = $hotel['slots'][$col['key']] ?? null;
+                    $cellData = $sd ? json_encode([
+                        'hotel'     => $hotel['hotel_name'],
+                        'slot_name' => $sd['slot_name'],
+                        'slot_time' => $sd['slot_time'],
+                        'worst_free'  => $sd['worst_free'],
+                        'worst_booked'=> $sd['worst_booked'],
+                        'total_rooms' => $sd['total_rooms'],
+                        'dates'       => $sd['dates'],
+                        'is_wh_any'  => $hotel['is_wh_any'],
+                    ]) : null;
+                @endphp
+                @if($sd && $sd['has_slot'])
+                <td class="slot-td"
+                    onclick="showPopup(event, {{ $cellData ? htmlspecialchars($cellData, ENT_QUOTES) : 'null' }})"
+                    title="{{ $sd['worst_free'] }} free · {{ $sd['worst_booked'] }} booked">
+                    <div class="slot-cell-inner">
+                        <span class="count-chip green">
+                            <i class="fas fa-check" style="font-size:9px;"></i> {{ $sd['worst_free'] }}
+                        </span>
+                        @if($sd['worst_booked'] > 0)
+                        <span class="count-chip red">
+                            <i class="fas fa-times" style="font-size:9px;"></i> {{ $sd['worst_booked'] }}
+                        </span>
+                        @else
+                        <span class="count-chip green" style="opacity:.4;">0</span>
+                        @endif
+                    </div>
+                </td>
+                @else
+                <td class="slot-td na" style="color:#d1d5db;font-size:13px;text-align:center;">—</td>
+                @endif
                 @endforeach
-                @endforeach
+            </tr>
+
+            {{-- Room-level expand rows --}}
+            @foreach($hotel['rooms'] as $room)
+            <tr class="expand-row" id="exp-{{ $hi }}">
+                <td colspan="{{ count($slotColumns) + 1 }}">
+                    <div class="expand-inner">
+                        <span class="room-tag">
+                            <i class="fas fa-door-open" style="font-size:9px;color:var(--slate);margin-right:3px;"></i>
+                            R{{ $room['number'] }}
+                        </span>
+                        @foreach($slotColumns as $col)
+                        @php
+                            $sd = $hotel['slots'][$col['key']] ?? null;
+                            if (!$sd || !$sd['has_slot']) continue;
+                            $isBooked = false; $isFree = false;
+                            foreach ($sd['dates'] as $dd) {
+                                $match = collect($dd['booked_rooms'])->contains(fn($br) => $br['room_number'] == $room['number']);
+                                if ($match) $isBooked = true; else $isFree = true;
+                            }
+                            $rc = $isBooked && $isFree ? 'amber' : ($isBooked ? 'red' : 'green');
+                            $rl = $isBooked && $isFree ? 'Mixed' : ($isBooked ? 'Booked' : 'Free');
+                        @endphp
+                        <span class="room-chip {{ $rc }}" title="{{ $col['name'] }}">
+                            {{ $col['name'] }}: {{ $rl }}
+                        </span>
+                        @endforeach
+                    </div>
+                </td>
+            </tr>
+            @endforeach
+            @endforeach
             </tbody>
         </table>
     </div>
 
     {{-- Legend --}}
     <div class="sse-legend">
-        <div class="leg-item"><span class="leg-dot" style="background:#22c55e;"></span> Fully Available (0% booked)</div>
-        <div class="leg-item"><span class="leg-dot" style="background:#f59e0b;"></span> Partial (some bookings)</div>
-        <div class="leg-item"><span class="leg-dot" style="background:#ef4444;"></span> Fully Booked (100%)</div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-            <span class="wh-badge"><i class="fas fa-hotel" style="font-size:8px;"></i> WH</span>
-            <span style="font-size:12px;color:var(--c-slate);">Whole-Hotel booking on at least one day</span>
+        <div class="leg-item"><span class="leg-dot" style="background:#22c55e;"></span> All free</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#f59e0b;"></span> Partial</div>
+        <div class="leg-item"><span class="leg-dot" style="background:#ef4444;"></span> Fully booked</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+            <span class="wh-tag"><i class="fas fa-hotel" style="font-size:8px;"></i> WH</span>
+            <span style="font-size:11px;color:var(--slate);">Whole-Hotel booking</span>
         </div>
     </div>
     @endif
 
 </div>{{-- /sse-card --}}
-</div>{{-- /sse-wrap --}}
+</div>{{-- /sse --}}
 
-{{-- ── SIDE PANEL (detail popup) ── --}}
-<div id="ssePanelOverlay" onclick="closePanel()"></div>
-<div id="ssePanel">
-    <div class="panel-hdr">
+{{-- ── INLINE POPUP ── --}}
+<div id="ssePopup">
+    <div class="pp-hdr">
         <div>
-            <div id="panelHotelName" style="font-size:15px;font-weight:800;color:#1e293b;"></div>
-            <div id="panelSlotInfo" style="font-size:12px;color:var(--c-slate);margin-top:2px;"></div>
+            <div class="pp-hotel" id="ppHotel"></div>
+            <div class="pp-slot"  id="ppSlot"></div>
         </div>
-        <button class="panel-close" onclick="closePanel()"><i class="fas fa-times"></i></button>
+        <button class="pp-close" onclick="closePopup()">&#10005;</button>
     </div>
-    <div class="panel-body" id="panelBody"></div>
+    <div class="pp-body" id="ppBody"></div>
 </div>
 
 <script>
-// ── Expand/collapse hotel rooms ──────────────────────────────
-function toggleExpand(idx) {
-    var rows = document.querySelectorAll('[id="expand-' + idx + '"]');
-    var chev = document.getElementById('chevron-' + idx);
-    var isOpen = chev.classList.contains('open');
-    rows.forEach(function(r) { r.style.display = isOpen ? 'none' : 'table-row'; });
-    chev.classList.toggle('open', !isOpen);
+// ── Expand/collapse ──────────────────────────────
+function toggleExpand(hi) {
+    var rows = document.querySelectorAll('#exp-' + hi);
+    var chev = document.getElementById('chev-' + hi);
+    var open = chev.classList.contains('open');
+    rows.forEach(function(r) { r.style.display = open ? 'none' : 'table-row'; });
+    chev.classList.toggle('open', !open);
 }
 
-// ── Hotel search filter ──────────────────────────────────────
+// ── Hotel search ─────────────────────────────────
 function filterHotels(q) {
-    q = q.toLowerCase().trim();
-    var rows = document.querySelectorAll('.sse-hotel-row');
-    var visible = 0;
+    q = (q || '').toLowerCase().trim();
+    var rows = document.querySelectorAll('.hotel-row');
+    var vis = 0;
     rows.forEach(function(r) {
-        var match = !q || r.dataset.hotelName.indexOf(q) !== -1;
-        r.style.display = match ? '' : 'none';
-        if (match) visible++;
-        // Also hide expand rows for hidden hotels
-        var idx = r.id.replace('hotel-row-', '');
-        var expRows = document.querySelectorAll('[id="expand-' + idx + '"]');
-        expRows.forEach(function(er) {
-            var chev = document.getElementById('chevron-' + idx);
-            if (!match || !chev || !chev.classList.contains('open')) er.style.display = 'none';
-        });
+        var show = !q || (r.dataset.hotelName || '').indexOf(q) !== -1;
+        r.style.display = show ? '' : 'none';
+        if (show) vis++;
+        // collapse hidden hotels' expand rows
+        var hi = r.id.replace('hrow-', '');
+        var chev = document.getElementById('chev-' + hi);
+        if (!show && chev && chev.classList.contains('open')) {
+            document.querySelectorAll('#exp-' + hi).forEach(function(er) { er.style.display = 'none'; });
+            chev.classList.remove('open');
+        }
     });
-    var cnt = document.getElementById('hotelCount');
-    if (cnt) cnt.textContent = visible + ' hotel' + (visible === 1 ? '' : 's');
+    var lbl = document.getElementById('hotelCountLbl');
+    if (lbl) lbl.textContent = vis + ' hotel' + (vis === 1 ? '' : 's');
 }
 
-// ── Side panel ───────────────────────────────────────────────
-var _panelData = null;
+// ── Inline popup ─────────────────────────────────
+var _pp = null;
+function showPopup(e, data) {
+    e.stopPropagation();
+    if (!data) return;
+    _pp = data;
 
-function openPanel(hotel, slotKey, dateFromLabel, dateToLabel) {
-    _panelData = { hotel: hotel, slotKey: slotKey };
-    var sd = hotel.slots[slotKey];
-    if (!sd) return;
+    document.getElementById('ppHotel').textContent = data.hotel;
+    document.getElementById('ppSlot').textContent  = data.slot_name + ' · ' + data.slot_time;
 
-    document.getElementById('panelHotelName').textContent = hotel.hotel_name;
-    document.getElementById('panelSlotInfo').textContent  = sd.slot_name + ' · ' + sd.slot_time + ' · ' + dateFromLabel + ' – ' + dateToLabel;
+    // Gather merged free/booked rooms across all dates
+    var allBooked = {}, allFree = {};
+    var hasWH = false;
+    var dates = data.dates || {};
+    Object.keys(dates).sort().forEach(function(ds) {
+        var dd = dates[ds];
+        if (dd.whole_hotel) { hasWH = true; return; }
+        (dd.booked_rooms || []).forEach(function(br) { allBooked[br.room_number] = br.guest_name; });
+        (dd.free_rooms || []).forEach(function(rn) { allFree[rn] = true; });
+        // remove from free if also booked
+        Object.keys(allBooked).forEach(function(rn) { delete allFree[rn]; });
+    });
 
     var body = '';
-
-    // Summary strip
-    body += '<div class="panel-slot-info" style="display:flex;gap:16px;margin-bottom:16px;">';
-    body += '<div style="text-align:center;"><div style="font-size:22px;font-weight:800;color:var(--c-purple);">' + sd.worst_free + '</div><div style="font-size:11px;color:var(--c-slate);">Min free rooms</div></div>';
-    body += '<div style="text-align:center;"><div style="font-size:22px;font-weight:800;color:#dc2626;">' + sd.worst_booked + '</div><div style="font-size:11px;color:var(--c-slate);">Max booked rooms</div></div>';
-    body += '<div style="text-align:center;"><div style="font-size:22px;font-weight:800;color:#1e293b;">' + sd.total_rooms + '</div><div style="font-size:11px;color:var(--c-slate);">Total rooms</div></div>';
-    body += '</div>';
-
-    // Per-date breakdown
-    body += '<div class="panel-sec-title">Day-by-day Breakdown</div>';
-    var dates = sd.dates || {};
-    var dateKeys = Object.keys(dates).sort();
-    if (dateKeys.length === 0) {
-        body += '<div style="color:var(--c-slate);font-size:13px;">No data for this date range.</div>';
-    } else {
-        dateKeys.forEach(function(ds) {
-            var dd = dates[ds];
-            var d = new Date(ds);
-            var dayLabel = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
-            var dotColor = dd.whole_hotel ? '#f59e0b' : (dd.available === 0 ? '#ef4444' : (dd.booked_count > 0 ? '#f59e0b' : '#22c55e'));
-            body += '<div class="panel-date-row">';
-            body += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
-            body += '<div class="panel-date-label" style="display:flex;align-items:center;gap:7px;"><span style="width:8px;height:8px;border-radius:50%;background:' + dotColor + ';display:inline-block;flex-shrink:0;"></span>' + dayLabel + '</div>';
-            if (dd.whole_hotel) {
-                body += '<span style="background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;"><i class="fas fa-hotel" style="font-size:8px;"></i> Whole Hotel</span>';
-            } else {
-                body += '<span style="font-size:12px;font-weight:600;color:' + (dd.available === 0 ? '#dc2626' : '#16a34a') + ';">' + dd.available + ' free</span>';
-            }
-            body += '</div>';
-            body += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-            (dd.booked_rooms || []).forEach(function(br) {
-                body += '<span class="panel-room-pill ' + (br.whole_hotel ? 'wh' : 'booked') + '" title="' + br.guest_name + '">';
-                body += '<i class="fas fa-circle" style="font-size:7px;"></i> R' + br.room_number;
-                body += '<span style="font-weight:400;margin-left:3px;font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + br.guest_name + '</span>';
-                body += '</span>';
-            });
-            (dd.free_rooms || []).forEach(function(rn) {
-                body += '<span class="panel-room-pill free"><i class="fas fa-circle" style="font-size:7px;"></i> R' + rn + '</span>';
-            });
-            body += '</div>';
-            body += '</div>';
-        });
+    if (hasWH) {
+        body += '<div class="pp-wh-bar"><i class="fas fa-hotel"></i> Whole Hotel booking on at least one day</div>';
     }
 
-    document.getElementById('panelBody').innerHTML = body;
-    document.getElementById('ssePanel').classList.add('open');
-    document.getElementById('ssePanelOverlay').classList.add('open');
+    // Summary counts
+    body += '<div style="display:flex;gap:12px;margin-bottom:12px;">';
+    body += '<div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--green);">' + data.worst_free + '</div><div style="font-size:10px;color:var(--slate);">Min free / day</div></div>';
+    body += '<div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--red);">' + data.worst_booked + '</div><div style="font-size:10px;color:var(--slate);">Max booked / day</div></div>';
+    body += '<div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:#1e293b;">' + data.total_rooms + '</div><div style="font-size:10px;color:var(--slate);">Total rooms</div></div>';
+    body += '</div>';
+
+    // Free rooms
+    var freeKeys = Object.keys(allFree);
+    body += '<div class="pp-section-title">Free Rooms (' + freeKeys.length + ')</div>';
+    body += '<div class="pp-pills-wrap">';
+    if (freeKeys.length === 0) {
+        body += '<span style="font-size:12px;color:var(--slate);">None free on all days</span>';
+    } else {
+        freeKeys.forEach(function(rn) {
+            body += '<span class="pp-room-pill free"><i class="fas fa-check" style="font-size:8px;"></i> R' + rn + '</span>';
+        });
+    }
+    body += '</div>';
+
+    // Booked rooms
+    var bookedKeys = Object.keys(allBooked);
+    body += '<div class="pp-section-title" style="margin-top:10px;">Booked Rooms (' + bookedKeys.length + ')</div>';
+    body += '<div class="pp-pills-wrap">';
+    if (bookedKeys.length === 0) {
+        body += '<span style="font-size:12px;color:var(--slate);">No rooms booked</span>';
+    } else {
+        bookedKeys.forEach(function(rn) {
+            body += '<span class="pp-room-pill booked" title="' + (allBooked[rn] || '') + '">';
+            body += '<i class="fas fa-times" style="font-size:8px;"></i> R' + rn;
+            body += '<span style="font-weight:400;font-size:10px;margin-left:3px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (allBooked[rn] || '') + '</span>';
+            body += '</span>';
+        });
+    }
+    body += '</div>';
+
+    document.getElementById('ppBody').innerHTML = body;
+
+    // Position popup near click
+    var pop = document.getElementById('ssePopup');
+    pop.style.display = 'block';
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var pw = 320, ph = 320;
+    var x = e.clientX + 12, y = e.clientY + 12;
+    if (x + pw > vw - 10) x = e.clientX - pw - 10;
+    if (y + ph > vh - 10) y = e.clientY - ph - 10;
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    pop.style.left = x + 'px';
+    pop.style.top  = y + 'px';
 }
 
-function closePanel() {
-    document.getElementById('ssePanel').classList.remove('open');
-    document.getElementById('ssePanelOverlay').classList.remove('open');
+function closePopup() {
+    document.getElementById('ssePopup').style.display = 'none';
+    _pp = null;
 }
 
-// Close panel on Escape
+// Close on outside click or Escape
+document.addEventListener('click', function(e) {
+    var pop = document.getElementById('ssePopup');
+    if (pop && pop.style.display !== 'none' && !pop.contains(e.target)) closePopup();
+});
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePanel();
+    if (e.key === 'Escape') closePopup();
 });
 </script>
 @endsection
