@@ -28,12 +28,12 @@ class SlotSearchController extends Controller
             return redirect()->route('dashboard')->with('warning', 'Slot Search Engine is not enabled for your hotel.');
         }
 
-        // Determine which hotels to search across
+        // Determine searchable hotels from session
         $hotelOptions    = session('crm_hotel_options', []);
         $availableHotels = collect();
         if (!empty($hotelOptions)) {
-            $hotelIds        = array_column($hotelOptions, 'hotel_id');
-            $availableHotels = Hotel::whereIn('id', $hotelIds)->where('status', 'active')->get(['id', 'name']);
+            $ids             = array_column($hotelOptions, 'hotel_id');
+            $availableHotels = Hotel::whereIn('id', $ids)->where('status', 'active')->get(['id', 'name']);
         }
         if ($availableHotels->isEmpty()) {
             $availableHotels = Hotel::where('id', $currentHotelId)->get(['id', 'name']);
@@ -42,7 +42,7 @@ class SlotSearchController extends Controller
         $isMultiHotel = $availableHotels->count() > 1;
         $allHotelIds  = $availableHotels->pluck('id')->all();
 
-        // ── QUERY 1: All rooms (per_slot) across available hotels ──
+        // ── Q1: All rooms across available hotels ──
         $allRooms = DB::table('rooms')
             ->whereIn('hotel_id', $allHotelIds)
             ->where('status', '!=', 'maintenance')
@@ -50,7 +50,7 @@ class SlotSearchController extends Controller
             ->get(['id', 'hotel_id', 'room_number', 'pricing_type', 'type'])
             ->groupBy('hotel_id');
 
-        // ── QUERY 2: All active slots across available hotels ──
+        // ── Q2: All active slots across available hotels ──
         $allSlots = DB::table('hotel_time_slots')
             ->whereIn('hotel_id', $allHotelIds)
             ->where('is_active', true)
@@ -61,37 +61,37 @@ class SlotSearchController extends Controller
         $flatRooms = $allRooms->flatten()->values();
         $flatSlots = $allSlots->flatten()->values();
 
-        // Default initial view (no search yet)
+        // Default landing (no search submitted yet)
         if (!$request->has('date_from')) {
-            return view('admin.slot-search', compact(
-                'flatRooms', 'flatSlots', 'availableHotels', 'isMultiHotel', 'allRooms', 'allSlots'
-            ) + [
-                'dateFrom'       => Carbon::today()->toDateString(),
-                'dateTo'         => Carbon::today()->addDays(7)->toDateString(),
-                'slotIds'        => [],
-                'filterHotelIds' => [],
-                'statusFilter'   => 'all',
-                'matrix'         => null,
-                'dates'          => [],
-                'summary'        => null,
+            return view('admin.slot-search', [
+                'flatRooms'       => $flatRooms,
+                'flatSlots'       => $flatSlots,
+                'availableHotels' => $availableHotels,
+                'isMultiHotel'    => $isMultiHotel,
+                'allRooms'        => $allRooms,
+                'allSlots'        => $allSlots,
+                'dateFrom'        => Carbon::today()->toDateString(),
+                'dateTo'          => Carbon::today()->addDays(6)->toDateString(),
+                'slotIds'         => [],
+                'filterHotelIds'  => [],
+                'statusFilter'    => 'all',
+                'matrix'          => null,
+                'slotColumns'     => [],
+                'kpi'             => null,
             ]);
         }
 
         // Filters
         $dateFrom       = $request->input('date_from', Carbon::today()->toDateString());
-        $dateTo         = $request->input('date_to',   Carbon::today()->addDays(7)->toDateString());
+        $dateTo         = $request->input('date_to',   Carbon::today()->addDays(6)->toDateString());
         $slotIds        = array_filter(array_map('intval', (array) $request->input('slot_ids', [])));
         $filterHotelIds = array_filter(array_map('intval', (array) $request->input('hotel_ids', [])));
-        $statusFilter   = in_array($request->input('status'), ['free', 'booked']) ? $request->input('status') : 'all';
+        $statusFilter   = in_array($request->input('status'), ['free', 'booked', 'partial'])
+                            ? $request->input('status') : 'all';
 
-        try {
-            $from = Carbon::parse($dateFrom);
-            $to   = Carbon::parse($dateTo);
-        } catch (\Exception $e) {
-            $from = Carbon::today();
-            $to   = Carbon::today()->addDays(7);
-        }
-        if ($to->lt($from))              $to = $from->copy()->addDays(7);
+        try { $from = Carbon::parse($dateFrom); } catch (\Exception $e) { $from = Carbon::today(); }
+        try { $to   = Carbon::parse($dateTo);   } catch (\Exception $e) { $to = $from->copy()->addDays(6); }
+        if ($to->lt($from))              $to = $from->copy()->addDays(6);
         if ($to->diffInDays($from) > 90) $to = $from->copy()->addDays(90);
         $dateFrom = $from->toDateString();
         $dateTo   = $to->toDateString();
@@ -101,47 +101,48 @@ class SlotSearchController extends Controller
             $searchHotelIds = array_values(array_intersect($searchHotelIds, $filterHotelIds));
         }
 
-        // Build date column headers
-        $dates = [];
-        foreach (CarbonPeriod::create($from, $to) as $d) {
-            $dates[] = [
-                'date'     => $d->toDateString(),
-                'label'    => $d->format('D'),
-                'sublabel' => $d->format('d M'),
-                'isToday'  => $d->isToday(),
-            ];
-        }
+        $searchRooms = $allRooms->only($searchHotelIds);
+        $searchSlots = $allSlots->only($searchHotelIds);
 
-        // Cache key versioned by booking changes
+        // Cache keyed by version + filters
         $versionParts = array_map(fn($hid) => Cache::get(Module::cacheVersionKey($hid), 0), $searchHotelIds);
-        $cacheKey = 'slot_search_' . md5(
+        $cacheKey = 'slot_search_v2_' . md5(
             implode(',', $searchHotelIds) . '|' . $dateFrom . '|' . $dateTo . '|' .
             implode(',', $slotIds) . '|' . $statusFilter . '|' . implode(',', $versionParts)
         );
 
-        $searchRooms = $allRooms->only($searchHotelIds);
-        $searchSlots = $allSlots->only($searchHotelIds);
-
-        $matrix = Cache::remember($cacheKey, 60, function () use (
+        $result = Cache::remember($cacheKey, 60, function () use (
             $from, $to, $slotIds, $searchHotelIds, $statusFilter,
-            $searchRooms, $searchSlots
+            $searchRooms, $searchSlots, $availableHotels
         ) {
-            return $this->buildMatrix($from, $to, $slotIds, $searchHotelIds, $statusFilter, $searchRooms, $searchSlots);
+            return $this->buildMatrix(
+                $from, $to, $slotIds, $searchHotelIds, $statusFilter,
+                $searchRooms, $searchSlots, $availableHotels
+            );
         });
 
-        $summary = $this->buildSummary($matrix);
-
-        return view('admin.slot-search', compact(
-            'flatRooms', 'flatSlots', 'availableHotels', 'isMultiHotel', 'allRooms', 'allSlots',
-            'dateFrom', 'dateTo', 'slotIds', 'filterHotelIds', 'statusFilter',
-            'matrix', 'dates', 'summary'
-        ));
+        return view('admin.slot-search', [
+            'flatRooms'       => $flatRooms,
+            'flatSlots'       => $flatSlots,
+            'availableHotels' => $availableHotels,
+            'isMultiHotel'    => $isMultiHotel,
+            'allRooms'        => $allRooms,
+            'allSlots'        => $allSlots,
+            'dateFrom'        => $dateFrom,
+            'dateTo'          => $dateTo,
+            'slotIds'         => $slotIds,
+            'filterHotelIds'  => $filterHotelIds,
+            'statusFilter'    => $statusFilter,
+            'matrix'          => $result['rows'],
+            'slotColumns'     => $result['columns'],
+            'kpi'             => $result['kpi'],
+        ]);
     }
 
     /**
-     * Slot-centric merged matrix — slots as rows, dates as columns, all hotels combined.
-     * Uses exactly 4 queries total (rooms + slots already loaded = Q1+Q2, then Q3+Q4 here).
-     * Slots with the same name+time are merged across hotels (unique slot types).
+     * Build hotel-rows × slot-columns matrix.
+     * Each cell (hotel × slot) has: worst_free, total_rooms, color, per-date breakdown.
+     * Returns: ['columns'=>[...slot types], 'rows'=>[...hotel rows], 'kpi'=>[...]]
      */
     private function buildMatrix(
         Carbon $from, Carbon $to,
@@ -149,16 +150,19 @@ class SlotSearchController extends Controller
         array  $searchHotelIds,
         string $statusFilter,
         $searchRooms,
-        $searchSlots
+        $searchSlots,
+        $availableHotels
     ): array {
         $lastDate = $to->toDateString();
         $prevDate = $from->copy()->subDay()->toDateString();
+        $period   = CarbonPeriod::create($from, $to);
+        $dateCount = $from->diffInDays($to) + 1;
 
-        // ── QUERY 3: Slot bookings with all needed data via JOINs (single query) ──
+        // ── Q3: Slot bookings (one query for all hotels + rooms + guest) ──
         $rawSlotBookings = DB::table('bookings as b')
-            ->join('rooms as r',            'r.id',   '=', 'b.room_id')
-            ->join('customers as c',         'c.id',   '=', 'b.customer_id')
-            ->join('hotel_time_slots as ts', 'ts.id',  '=', 'b.time_slot_id')
+            ->join('rooms as r',            'r.id',  '=', 'b.room_id')
+            ->join('customers as c',         'c.id',  '=', 'b.customer_id')
+            ->join('hotel_time_slots as ts', 'ts.id', '=', 'b.time_slot_id')
             ->whereIn('b.hotel_id', $searchHotelIds)
             ->whereNotNull('b.time_slot_id')
             ->whereBetween('b.booking_date', [$prevDate, $lastDate])
@@ -173,7 +177,7 @@ class SlotSearchController extends Controller
             ])
             ->groupBy('hotel_id');
 
-        // ── QUERY 4: Whole-hotel bookings with guest name via JOIN (single query) ──
+        // ── Q4: Whole-hotel bookings ──
         $rawWhBookings = DB::table('bookings as b')
             ->join('customers as c', 'c.id', '=', 'b.customer_id')
             ->where('b.is_whole_hotel', true)
@@ -188,165 +192,201 @@ class SlotSearchController extends Controller
             ])
             ->groupBy('hotel_id');
 
-        // All per_slot rooms across all search hotels (flat)
-        $allPerSlotRooms = $searchRooms->flatten()->values()->where('pricing_type', 'per_slot')->values();
-        $totalPerSlot    = $allPerSlotRooms->count();
-        $allPerSlotIds   = $allPerSlotRooms->pluck('id')->all();
-
-        // Hotel → per_slot room IDs map (for whole-hotel blocking)
-        $hotelRoomMap = [];
-        foreach ($searchHotelIds as $hid) {
-            $hotelRoomMap[$hid] = $searchRooms->get($hid, collect())
-                ->where('pricing_type', 'per_slot')->pluck('id')->all();
-        }
-
-        // All flat slots; group into unique slot types by (name|start|end)
-        $allFlatSlots  = $searchSlots->flatten()->values();
+        // ── Derive unique slot columns (across all hotels) ──
+        $allFlatSlots   = $searchSlots->flatten()->values();
         $uniqueSlotTypes = $allFlatSlots->groupBy(fn($s) => $s->name . '||' . $s->start_time . '||' . $s->end_time);
-
-        // Apply slot filter
         if (!empty($slotIds)) {
             $uniqueSlotTypes = $uniqueSlotTypes->filter(
-                fn($group) => $group->pluck('id')->intersect($slotIds)->isNotEmpty()
+                fn($g) => $g->pluck('id')->intersect($slotIds)->isNotEmpty()
             );
         }
 
-        $period = CarbonPeriod::create($from, $to);
-        $matrix = [];
+        // Build column meta list (ordered)
+        $slotColumns = [];
+        foreach ($uniqueSlotTypes as $key => $g) {
+            $f = $g->first();
+            $slotColumns[] = ['key' => $key, 'name' => $f->name, 'time' => $f->start_time . '–' . $f->end_time];
+        }
 
-        foreach ($uniqueSlotTypes as $key => $slotGroup) {
-            [$slotName, $slotStart, $slotEnd] = explode('||', $key);
-            $firstSlot    = $slotGroup->first();
-            $isOvernight  = (bool) $firstSlot->is_overnight;
-            $groupSlotIds = $slotGroup->pluck('id')->all();
+        // ── Build per-hotel rows ──
+        $rows           = [];
+        $kpiTotalRoomDays  = 0;
+        $kpiBookedRoomDays = 0;
 
-            $slotRow = [
-                'slot_name' => $slotName,
-                'slot_time' => $slotStart . '–' . $slotEnd,
-                'dates'     => [],
+        foreach ($searchHotelIds as $hid) {
+            $hotel = $availableHotels->firstWhere('id', $hid);
+            if (!$hotel) continue;
+
+            $hotelPerSlotRooms = $searchRooms->get($hid, collect())
+                ->where('pricing_type', 'per_slot')->values();
+            $hotelAllSlots = $searchSlots->get($hid, collect());
+            $roomCount     = $hotelPerSlotRooms->count();
+
+            $hotelSlotMap = [];     // slot_id => slot object
+            foreach ($hotelAllSlots as $s) { $hotelSlotMap[$s->id] = $s; }
+
+            // Whole-hotel bookings for this hotel (pre-indexed by date)
+            $whForHotel = $rawWhBookings->get($hid, collect());
+            $slotBksForHotel = $rawSlotBookings->get($hid, collect());
+
+            // Per-slot room ID → room_number map
+            $roomMap = []; // room_id => room_number
+            foreach ($hotelPerSlotRooms as $r) { $roomMap[$r->id] = $r->room_number; }
+            $hotelRoomIds = array_keys($roomMap);
+
+            $hotelRow = [
+                'hotel_id'    => $hid,
+                'hotel_name'  => $hotel->name,
+                'rooms_count' => $roomCount,
+                'rooms'       => $hotelPerSlotRooms->map(fn($r) => [
+                    'id'     => $r->id,
+                    'number' => $r->room_number,
+                    'type'   => $r->type,
+                ])->values()->all(),
+                'slots'       => [],
+                'is_wh_any'   => false,
             ];
 
-            foreach ($period as $date) {
-                $ds     = $date->toDateString();
-                $prevDs = $date->copy()->subDay()->toDateString();
+            foreach ($uniqueSlotTypes as $key => $slotGroup) {
+                [$slotName, $slotStart, $slotEnd] = explode('||', $key);
+                $isOvernight  = (bool) $slotGroup->first()->is_overnight;
+                $groupSlotIds = $slotGroup->pluck('id')->all();
 
-                // Slot time window for this date
-                [$tStart, $tEnd] = $this->slotRangeFromRaw($slotStart, $slotEnd, $isOvernight, $ds);
+                // Does this hotel have this slot?
+                $hotelHasSlot = $hotelAllSlots->pluck('id')->intersect($groupSlotIds)->isNotEmpty();
 
-                // Whole-hotel bookings for this day across all hotels → block all their per_slot rooms
-                $whBlockedRoomIds = [];
-                $whInfoList       = [];
-                foreach ($searchHotelIds as $hid) {
-                    $whForHotel = $rawWhBookings->get($hid, collect());
-                    $whForDay   = $whForHotel->first(
+                $totalRoomDays  = $roomCount * $dateCount;
+                $bookedRoomDays = 0;
+                $worstFree      = $roomCount;   // minimum free rooms on any day
+                $allDatesWH     = false;
+                $dateBreakdown  = [];
+
+                foreach ($period as $date) {
+                    $ds     = $date->toDateString();
+                    $prevDs = $date->copy()->subDay()->toDateString();
+
+                    // Whole-hotel check for this date
+                    $whForDay = $whForHotel->first(
                         fn($b) => $b->check_in_date <= $ds && $b->check_out_date > $ds
                     );
-                    if ($whForDay) {
-                        foreach ($hotelRoomMap[$hid] ?? [] as $roomId) {
-                            $whBlockedRoomIds[$roomId] = true;
-                        }
-                        $whInfoList[] = [
-                            'booking_id'    => $whForDay->booking_id,
-                            'booking_num'   => $whForDay->booking_number,
-                            'guest_name'    => $whForDay->guest_name,
-                            'check_in_date' => $whForDay->check_in_date,
-                            'check_out_date'=> $whForDay->check_out_date,
-                        ];
-                    }
-                }
 
-                // Per-slot bookings overlapping this slot window
-                $bookedRoomIds   = [];
-                $bookedRoomDetails = [];
-                foreach ($searchHotelIds as $hid) {
-                    $dayBks = ($rawSlotBookings->get($hid, collect()))->filter(
+                    if ($whForDay) {
+                        // All rooms blocked
+                        $bookedRoomDays += $roomCount;
+                        $worstFree = 0;
+                        $dateBreakdown[$ds] = [
+                            'available'   => 0,
+                            'booked_count'=> $roomCount,
+                            'booked_rooms'=> array_values(array_map(fn($rn) => [
+                                'room_number' => $rn,
+                                'guest_name'  => $whForDay->guest_name . ' (WH)',
+                                'whole_hotel' => true,
+                            ], $roomMap)),
+                            'free_rooms'  => [],
+                            'whole_hotel' => true,
+                            'wh_guest'    => $whForDay->guest_name,
+                        ];
+                        $hotelRow['is_wh_any'] = true;
+                        continue;
+                    }
+
+                    // Slot window
+                    [$tStart, $tEnd] = $this->slotRange($slotStart, $slotEnd, $isOvernight, $ds);
+
+                    // Find booked rooms for this slot + date
+                    $bookedIds = [];
+                    $bookedDetails = [];
+                    $dayBks = $slotBksForHotel->filter(
                         fn($b) => $b->booking_date === $ds || $b->booking_date === $prevDs
                     );
                     foreach ($dayBks as $b) {
                         if (!in_array($b->time_slot_id, $groupSlotIds)) continue;
                         if ($b->pricing_type !== 'per_slot') continue;
-                        [$bStart, $bEnd] = $this->slotRangeFromRaw($b->slot_start, $b->slot_end, (bool) $b->slot_overnight, $b->booking_date);
-                        if ($tStart <= $bEnd && $bStart <= $tEnd && $b->room_id && !isset($bookedRoomIds[$b->room_id])) {
-                            $bookedRoomIds[$b->room_id] = true;
-                            $bookedRoomDetails[] = [
+                        if (!in_array($b->room_id, $hotelRoomIds)) continue;
+                        [$bStart, $bEnd] = $this->slotRange($b->slot_start, $b->slot_end, (bool) $b->slot_overnight, $b->booking_date);
+                        if ($tStart <= $bEnd && $bStart <= $tEnd && !isset($bookedIds[$b->room_id])) {
+                            $bookedIds[$b->room_id] = true;
+                            $bookedDetails[] = [
                                 'room_number' => $b->room_number,
                                 'guest_name'  => $b->guest_name,
                                 'booking_id'  => $b->booking_id,
+                                'whole_hotel' => false,
                             ];
                         }
                     }
+
+                    $booked    = count($bookedIds);
+                    $available = $roomCount - $booked;
+                    $freeRooms = array_values(array_map(
+                        fn($rid) => $roomMap[$rid],
+                        array_filter($hotelRoomIds, fn($rid) => !isset($bookedIds[$rid]))
+                    ));
+
+                    $bookedRoomDays += $booked;
+                    $worstFree = min($worstFree, $available);
+
+                    $dateBreakdown[$ds] = [
+                        'available'    => $available,
+                        'booked_count' => $booked,
+                        'booked_rooms' => $bookedDetails,
+                        'free_rooms'   => $freeRooms,
+                        'whole_hotel'  => false,
+                    ];
                 }
 
-                // Add whole-hotel blocked rooms
-                foreach ($whBlockedRoomIds as $roomId => $_) {
-                    if (!isset($bookedRoomIds[$roomId])) {
-                        $bookedRoomIds[$roomId] = true;
-                        $room = $allPerSlotRooms->firstWhere('id', $roomId);
-                        if ($room) {
-                            $guestLabel = !empty($whInfoList) ? $whInfoList[0]['guest_name'] . ' (WH)' : 'Whole Hotel';
-                            $bookedRoomDetails[] = [
-                                'room_number' => $room->room_number,
-                                'guest_name'  => $guestLabel,
-                                'booking_id'  => $whInfoList[0]['booking_id'] ?? null,
-                            ];
-                        }
-                    }
-                }
+                $pct = $totalRoomDays > 0 ? round($bookedRoomDays / $totalRoomDays * 100) : 0;
+                $color = $pct >= 100 ? 'red'
+                       : ($pct > 0  ? 'amber'
+                       : 'green');
 
-                $bookedCount = count($bookedRoomIds);
-                $freeRooms   = $allPerSlotRooms
-                    ->filter(fn($r) => !isset($bookedRoomIds[$r->id]))
-                    ->pluck('room_number')->values()->all();
-                $rowStatus   = $bookedCount === 0 ? 'free' : 'booked';
+                $rowStatus = $worstFree === $roomCount ? 'free'
+                           : ($worstFree === 0 ? 'booked' : 'partial');
 
-                // Status filter
-                if ($statusFilter === 'free'   && $rowStatus !== 'free')   continue;
-                if ($statusFilter === 'booked' && $rowStatus !== 'booked') continue;
+                // Apply status filter
+                $passesFilter = match ($statusFilter) {
+                    'free'    => $rowStatus === 'free',
+                    'booked'  => $rowStatus === 'booked',
+                    'partial' => $rowStatus === 'partial',
+                    default   => true,
+                };
 
-                $pct   = $totalPerSlot > 0 ? round($bookedCount / $totalPerSlot * 100) : 0;
-                $color = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                $kpiTotalRoomDays  += $totalRoomDays;
+                $kpiBookedRoomDays += $bookedRoomDays;
 
-                $slotRow['dates'][$ds] = [
-                    'total'           => $totalPerSlot,
-                    'available'       => count($freeRooms),
-                    'booked_count'    => $bookedCount,
-                    'pct'             => $pct,
-                    'color'           => $color,
-                    'booked_rooms'    => $bookedRoomDetails,
-                    'free_rooms'      => $freeRooms,
-                    'whole_hotel_list'=> $whInfoList,
-                    'row_status'      => $rowStatus,
+                $hotelRow['slots'][$key] = [
+                    'slot_name'    => $slotName,
+                    'slot_time'    => $slotStart . '–' . $slotEnd,
+                    'total_rooms'  => $roomCount,
+                    'worst_free'   => $worstFree,
+                    'worst_booked' => $roomCount - $worstFree,
+                    'pct'          => $pct,
+                    'color'        => $color,
+                    'row_status'   => $rowStatus,
+                    'passes_filter'=> $passesFilter,
+                    'has_slot'     => $hotelHasSlot,
+                    'dates'        => $dateBreakdown,
                 ];
             }
 
-            if (!empty($slotRow['dates'])) {
-                $matrix[] = $slotRow;
-            }
+            // Apply hotel-level filter: skip hotel if NO slot passes
+            $anyPasses = count(array_filter($hotelRow['slots'], fn($s) => $s['passes_filter'])) > 0;
+            if ($statusFilter !== 'all' && !$anyPasses) continue;
+
+            $rows[] = $hotelRow;
         }
 
-        return $matrix;
+        $kpi = [
+            'total_hotels'    => count($rows),
+            'total_room_days' => $kpiTotalRoomDays,
+            'booked_room_days'=> $kpiBookedRoomDays,
+            'free_room_days'  => $kpiTotalRoomDays - $kpiBookedRoomDays,
+            'pct_booked'      => $kpiTotalRoomDays > 0 ? round($kpiBookedRoomDays / $kpiTotalRoomDays * 100) : 0,
+        ];
+
+        return ['columns' => $slotColumns, 'rows' => $rows, 'kpi' => $kpi];
     }
 
-    private function buildSummary(array $matrix): array
-    {
-        $total = $free = $booked = $wh = 0;
-        foreach ($matrix as $slotRow) {
-            foreach ($slotRow['dates'] as $dateData) {
-                $total++;
-                if (!empty($dateData['whole_hotel_list'])) {
-                    $wh++;
-                    $booked++;
-                } elseif ($dateData['row_status'] === 'free') {
-                    $free++;
-                } else {
-                    $booked++;
-                }
-            }
-        }
-        return compact('total', 'free', 'booked', 'wh');
-    }
-
-    private function slotRangeFromRaw(string $startTime, string $endTime, bool $isOvernight, string $date): array
+    private function slotRange(string $startTime, string $endTime, bool $isOvernight, string $date): array
     {
         $start = Carbon::parse($date . ' ' . $startTime);
         $end   = Carbon::parse($date . ' ' . $endTime);
