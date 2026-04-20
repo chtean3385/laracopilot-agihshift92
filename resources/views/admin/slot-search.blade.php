@@ -155,77 +155,133 @@
   .sse-tbl-wrap{overflow:visible!important;} .sse-tbl{font-size:10px;}
   .sse-card{box-shadow:none!important;}
 }
+
+/* ══ FULL-SCREEN OVERRIDE ══ */
+#sidebar,
+#sidebar-overlay { display:none !important; }
+
+#main-wrap {
+    margin-left: 0 !important;
+}
+
+#main-wrap > header { display:none !important; }
+
+/* Remove main content padding so topbar sits at very top */
+#main-wrap > main {
+    padding: 0 !important;
+}
+
+/* Page body flush to top */
+body { background:#f1f5f9; }
+
+/* Sticky full-width top bar */
+#sse-topbar {
+    position:sticky;
+    top:0;
+    z-index:40;
+    background:#fff;
+    border-bottom:1px solid #e5e7eb;
+    box-shadow:0 1px 6px rgba(0,0,0,.06);
+}
+
+/* Back arrow button */
+.sse-back-btn {
+    display:inline-flex;align-items:center;gap:7px;
+    background:none;border:none;cursor:pointer;
+    padding:0;color:#1e293b;font-size:13px;font-weight:700;
+    text-decoration:none;
+    transition:color .15s;
+    flex-shrink:0;
+}
+.sse-back-btn:hover { color:var(--purple); }
+.sse-back-arrow {
+    width:32px;height:32px;border-radius:9px;
+    background:#f1f5f9;border:1px solid #e2e8f0;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s;
+}
+.sse-back-btn:hover .sse-back-arrow { background:var(--purple-bg);border-color:var(--purple-bd); }
+
+/* Filter row in topbar */
+#sse-filter-row {
+    display:flex;align-items:center;gap:8px;flex-wrap:nowrap;
+    overflow-x:auto;
+    flex:1;
+    min-width:0;
+}
+#sse-filter-row::-webkit-scrollbar { height:0; }
+
+/* Remove the old separate card-header & filter strip when using topbar */
+.sse-card-no-hdr .sse-hdr { display:none; }
 </style>
 @endpush
 
-<div class="sse" id="ssePrintArea">
+{{-- ══ FULL-SCREEN STICKY TOPBAR ══ --}}
+<div id="sse-topbar" class="no-print">
 
-{{-- ── KPI STRIP ── --}}
-@if($kpi)
-<div class="sse-kpi no-print">
-    <div class="kpi-chip">
-        <i class="fas fa-hotel" style="color:var(--purple);font-size:14px;"></i>
-        <span style="color:var(--slate);font-weight:600;">Total Hotels</span>
-        <span class="kc-val kc-purple">{{ $kpi['total_hotels'] }}</span>
-    </div>
-    <div class="kpi-chip">
-        <i class="fas fa-check-circle" style="color:var(--green);font-size:14px;"></i>
-        <span style="color:var(--slate);font-weight:600;">Free Slots</span>
-        <span class="kc-val kc-green">{{ $kpi['free_slots'] }}</span>
-        <i class="fas fa-check" style="color:var(--green);font-size:11px;"></i>
-    </div>
-    <div class="kpi-chip">
-        <i class="fas fa-times-circle" style="color:var(--red);font-size:14px;"></i>
-        <span style="color:var(--slate);font-weight:600;">Booked Slots</span>
-        <span class="kc-val kc-red">{{ $kpi['booked_slots'] }}</span>
-        @if($kpi['pct_booked'] > 0)
-        <span style="font-size:11px;color:var(--red);">{{ $kpi['pct_booked'] }}%</span>
-        @endif
-    </div>
-    @if($isMultiHotel)
-    <div class="kpi-chip">
-        <i class="fas fa-building" style="color:var(--slate);font-size:13px;"></i>
-        <span style="color:var(--slate);font-weight:600;">All Hotels</span>
-        <i class="fas fa-check" style="color:var(--green);font-size:10px;"></i>
-    </div>
-    @endif
-    @if($matrix !== null && count($matrix) > 0)
-    <div style="margin-left:auto;">
-        <button onclick="window.print()" class="btn btn-ghost no-print" style="font-size:12px;height:34px;padding:0 13px;">
-            <i class="fas fa-file-pdf"></i> PDF
-        </button>
-    </div>
-    @endif
-</div>
-@endif
+    {{-- Row 1: back arrow + title + KPI chips --}}
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;">
 
-{{-- ── MAIN CARD ── --}}
-<div class="sse-card">
+        {{-- Back arrow --}}
+        <a href="{{ route('dashboard') }}" class="sse-back-btn" title="Back to Dashboard">
+            <span class="sse-back-arrow"><i class="fas fa-chevron-left" style="font-size:12px;color:#64748b;"></i></span>
+        </a>
 
-    {{-- Card header --}}
-    <div class="sse-hdr">
-        <div class="sse-hdr-left">
-            <div class="sse-hdr-icon"><i class="fas fa-clock" style="color:#fff;font-size:16px;"></i></div>
+        {{-- Title --}}
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--purple),#6d28d9);display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-clock" style="color:#fff;font-size:14px;"></i>
+            </div>
             <div>
-                <div style="font-weight:800;color:#1e293b;font-size:15px;">Slot Search Engine</div>
+                <div style="font-size:15px;font-weight:800;color:#0f172a;line-height:1.2;">Slot Search Engine</div>
                 <div style="font-size:11px;color:#6d28d9;">
-                    Hotels × Slot types availability matrix
                     @if($matrix !== null && isset($dateFrom))
-                    &nbsp;&middot;&nbsp;
-                    {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} &ndash; {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}
+                        {{ \Carbon\Carbon::parse($dateFrom)->format('d M') }} &ndash; {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}
+                    @else
+                        Hotels &times; Slot types matrix
                     @endif
                 </div>
             </div>
         </div>
-        <div style="display:flex;gap:8px;" class="sse-hdr-right no-print">
-            <a href="{{ route('dashboard') }}" class="btn btn-ghost" style="font-size:12px;height:34px;padding:0 13px;">
-                <i class="fas fa-arrow-left" style="font-size:10px;"></i> Dashboard
-            </a>
+
+        {{-- KPI chips --}}
+        @if($kpi)
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:8px;">
+            <div class="kpi-chip" style="padding:5px 12px;">
+                <i class="fas fa-hotel" style="color:var(--purple);font-size:12px;"></i>
+                <span style="color:var(--slate);font-weight:600;font-size:12px;">Hotels</span>
+                <span class="kc-val kc-purple" style="font-size:16px;">{{ $kpi['total_hotels'] }}</span>
+            </div>
+            <div class="kpi-chip" style="padding:5px 12px;">
+                <i class="fas fa-check-circle" style="color:var(--green);font-size:12px;"></i>
+                <span style="color:var(--slate);font-weight:600;font-size:12px;">Free</span>
+                <span class="kc-val kc-green" style="font-size:16px;">{{ $kpi['free_slots'] }}</span>
+            </div>
+            <div class="kpi-chip" style="padding:5px 12px;">
+                <i class="fas fa-times-circle" style="color:var(--red);font-size:12px;"></i>
+                <span style="color:var(--slate);font-weight:600;font-size:12px;">Booked</span>
+                <span class="kc-val kc-red" style="font-size:16px;">{{ $kpi['booked_slots'] }}</span>
+                @if($kpi['pct_booked'] > 0)
+                <span style="font-size:11px;color:var(--red);">{{ $kpi['pct_booked'] }}%</span>
+                @endif
+            </div>
         </div>
+        @endif
+
+        {{-- PDF export --}}
+        @if($matrix !== null && count($matrix) > 0)
+        <div style="margin-left:auto;">
+            <button onclick="window.print()" class="btn btn-ghost" style="font-size:12px;height:32px;padding:0 12px;">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+        </div>
+        @endif
     </div>
 
-    {{-- Filter bar --}}
-    <form method="GET" action="{{ route('slot-search.index') }}" class="sse-flt no-print">
+    {{-- Row 2: filter bar (always visible, fixed) --}}
+    <form method="GET" action="{{ route('slot-search.index') }}"
+          style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding:10px 20px;">
+
         <div class="flt-group">
             <span class="flt-label">From</span>
             <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="flt-inp" required style="padding:0 10px;">
@@ -234,10 +290,11 @@
             <span class="flt-label">To</span>
             <input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="flt-inp" required style="padding:0 10px;">
         </div>
+
         @if($flatSlots->isNotEmpty())
         <div class="flt-group">
             <span class="flt-label">Slot Type</span>
-            <select name="slot_ids[]" multiple class="flt-inp" style="min-width:150px;height:36px;">
+            <select name="slot_ids[]" multiple class="flt-inp" style="min-width:140px;">
                 @foreach($flatSlots->unique(fn($s) => $s->name.'|'.$s->start_time)->values() as $slot)
                 <option value="{{ $slot->id }}" {{ in_array($slot->id, $slotIds ?? []) ? 'selected' : '' }}>
                     {{ $slot->name }}
@@ -246,34 +303,43 @@
             </select>
         </div>
         @endif
+
         @if($isMultiHotel)
         <div class="flt-group">
             <span class="flt-label">Hotels</span>
-            <select name="hotel_ids[]" multiple class="flt-inp" style="min-width:140px;height:36px;">
+            <select name="hotel_ids[]" multiple class="flt-inp" style="min-width:130px;">
                 @foreach($availableHotels as $h)
                 <option value="{{ $h->id }}" {{ in_array($h->id, $filterHotelIds ?? []) ? 'selected' : '' }}>{{ $h->name }}</option>
                 @endforeach
             </select>
         </div>
         @endif
+
         <div class="flt-group">
             <span class="flt-label">Availability</span>
-            <select name="status" class="flt-inp" style="min-width:140px;">
+            <select name="status" class="flt-inp" style="min-width:130px;">
                 <option value="all"     {{ ($statusFilter??'all')==='all'     ? 'selected':'' }}>Show All</option>
                 <option value="free"    {{ ($statusFilter??'all')==='free'    ? 'selected':'' }}>Available Only</option>
                 <option value="partial" {{ ($statusFilter??'all')==='partial' ? 'selected':'' }}>Partial</option>
                 <option value="booked"  {{ ($statusFilter??'all')==='booked'  ? 'selected':'' }}>Fully Booked</option>
             </select>
         </div>
-        <div style="display:flex;gap:6px;align-items:flex-end;">
+
+        <div style="display:flex;gap:6px;align-items:flex-end;flex-shrink:0;">
             <button type="submit" class="btn btn-purple">
                 <i class="fas fa-search" style="font-size:11px;"></i> Search
             </button>
-            <a href="{{ route('slot-search.index') }}" class="btn btn-ghost">
+            <a href="{{ route('slot-search.index') }}" class="btn btn-ghost" title="Reset">
                 <i class="fas fa-undo" style="font-size:10px;"></i>
             </a>
         </div>
     </form>
+</div>
+
+<div class="sse" id="ssePrintArea" style="padding-top:16px;">
+
+{{-- ── MAIN CARD ── --}}
+<div class="sse-card">
 
     {{-- Hotel search (only when matrix is shown) --}}
     @if($matrix !== null && count($matrix) > 0)
@@ -606,5 +672,19 @@ document.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closePopup();
 });
+
+// Sync thead sticky top with topbar actual height
+function syncTheadTop() {
+    var bar = document.getElementById('sse-topbar');
+    if (!bar) return;
+    var h = bar.offsetHeight;
+    document.querySelectorAll('.sse-tbl thead th').forEach(function(th) {
+        th.style.top = h + 'px';
+    });
+}
+document.addEventListener('DOMContentLoaded', syncTheadTop);
+window.addEventListener('resize', syncTheadTop);
+// Run immediately (in case DOM is already ready)
+syncTheadTop();
 </script>
 @endsection
