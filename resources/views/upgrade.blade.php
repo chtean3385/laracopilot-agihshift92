@@ -28,7 +28,7 @@
         }
         .plan-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
             gap: 16px;
             margin-top: 24px;
         }
@@ -36,9 +36,10 @@
             background: rgba(255,255,255,.06);
             border: 1.5px solid rgba(255,255,255,.12);
             border-radius: 16px;
-            padding: 20px;
+            padding: 22px;
             cursor: pointer;
             transition: all .2s;
+            position: relative;
         }
         .plan-card:hover { border-color: rgba(139,92,246,.6); background: rgba(139,92,246,.12); transform: translateY(-2px); }
         .plan-card.selected { border-color: #8b5cf6; background: rgba(139,92,246,.18); }
@@ -61,7 +62,25 @@
             justify-content: center;
         }
         .btn-wa:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,211,102,.5); }
-        input[type="text"], textarea, select {
+        .btn-extend {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(245,158,11,.35);
+            transition: all .2s;
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-extend:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(245,158,11,.5); }
+        input[type="text"], textarea {
             background: rgba(255,255,255,.05);
             border: 1.5px solid rgba(255,255,255,.12);
             border-radius: 10px;
@@ -96,6 +115,20 @@
         @endif
     </div>
 
+    {{-- Flash messages --}}
+    @if(session('success'))
+    <div style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);border-radius:14px;padding:14px 20px;margin-bottom:20px;max-width:820px;width:100%;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-check-circle" style="color:#4ade80;font-size:18px;"></i>
+        <span style="color:#bbf7d0;font-size:14px;font-weight:600;">{{ session('success') }}</span>
+    </div>
+    @endif
+    @if(session('error'))
+    <div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:14px 20px;margin-bottom:20px;max-width:820px;width:100%;display:flex;align-items:center;gap:12px;">
+        <i class="fas fa-exclamation-circle" style="color:#f87171;font-size:18px;"></i>
+        <span style="color:#fca5a5;font-size:14px;font-weight:600;">{{ session('error') }}</span>
+    </div>
+    @endif
+
     {{-- Expired / locked banner --}}
     @if(session('trial_expired') || session('plan_expired'))
     <div class="card" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08);margin-bottom:20px;max-width:820px;">
@@ -105,21 +138,36 @@
             </div>
             <div>
                 @if(session('trial_expired'))
-                <div style="font-size:18px;font-weight:800;color:#fca5a5;margin-bottom:4px;">
-                    आपका ट्रायल समाप्त हो गया है
-                </div>
-                <div style="font-size:13px;color:rgba(252,165,165,.7);">
-                    Your free trial has expired. CRM access is temporarily locked. Contact us on WhatsApp to reactivate instantly.
-                </div>
+                <div style="font-size:18px;font-weight:800;color:#fca5a5;margin-bottom:4px;">आपका ट्रायल समाप्त हो गया है</div>
+                <div style="font-size:13px;color:rgba(252,165,165,.7);">Your free trial has expired. CRM access is temporarily locked. Contact us on WhatsApp to reactivate instantly.</div>
                 @else
-                <div style="font-size:18px;font-weight:800;color:#fca5a5;margin-bottom:4px;">
-                    आपका प्लान समाप्त हो गया है
-                </div>
-                <div style="font-size:13px;color:rgba(252,165,165,.7);">
-                    Your plan has expired. CRM access is temporarily locked. Renew your plan to resume operations.
-                </div>
+                <div style="font-size:18px;font-weight:800;color:#fca5a5;margin-bottom:4px;">आपका प्लान समाप्त हो गया है</div>
+                <div style="font-size:13px;color:rgba(252,165,165,.7);">Your plan has expired. CRM access is temporarily locked. Renew your plan to resume operations.</div>
                 @endif
             </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- "Give Me More Time" button — trial users only, one-time --}}
+    @if($canExtendTrial)
+    <div style="max-width:820px;width:100%;margin-bottom:20px;">
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:16px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:44px;height:44px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-hourglass-half" style="color:#fff;font-size:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:15px;font-weight:800;color:#fcd34d;">मुझे थोड़ा और समय चाहिए</div>
+                    <div style="font-size:12px;color:rgba(252,211,77,.65);margin-top:2px;">ट्रायल 3 दिन और बढ़ाएं — सिर्फ एक बार</div>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('upgrade.extend-trial') }}" onsubmit="return confirm('क्या आप अपना ट्रायल 3 दिन बढ़ाना चाहते हैं? यह विकल्प सिर्फ एक बार उपलब्ध है।')">
+                @csrf
+                <button type="submit" class="btn-extend" style="width:auto;padding:10px 24px;font-size:14px;">
+                    <i class="fas fa-clock"></i> 3 दिन बढ़ाएं (मुफ्त)
+                </button>
+            </form>
         </div>
     </div>
     @endif
@@ -135,27 +183,33 @@
             <p style="font-size:14px;color:rgba(255,255,255,.5);">नीचे से प्लान चुनें — हमारी टीम WhatsApp पर कुछ मिनटों में आपको सक्रिय कर देगी।</p>
         </div>
 
-        {{-- Plan selection (visual only — selected slug is written to hidden input) --}}
+        {{-- Plan cards — yearly price as main --}}
         @if($plans && $plans->count())
         <div class="plan-grid" id="planGrid">
             @foreach($plans as $plan)
-            @php $feats = is_string($plan->features) ? json_decode($plan->features, true) : []; @endphp
-            <div class="plan-card" onclick="selectPlan('{{ $plan->slug }}', '{{ addslashes($plan->label) }}', {{ $plan->monthly_price }})" data-slug="{{ $plan->slug }}">
-                <div style="font-size:14px;font-weight:800;color:#a78bfa;margin-bottom:6px;">{{ $plan->label }}</div>
-                <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px;">
-                    ₹{{ number_format($plan->monthly_price) }}<span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.4);">/माह</span>
+            @php
+                $feats = is_string($plan->features) ? json_decode($plan->features, true) : [];
+                $monthlyEquiv = round($plan->yearly_price / 12);
+            @endphp
+            <div class="plan-card" onclick="selectPlan('{{ $plan->slug }}', '{{ addslashes($plan->label) }}', {{ $plan->yearly_price }})" data-slug="{{ $plan->slug }}">
+                <div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">{{ $plan->label }}</div>
+                <div style="font-size:26px;font-weight:900;color:#fff;line-height:1;">
+                    ₹{{ number_format($plan->yearly_price) }}
+                    <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.4);">/वर्ष</span>
                 </div>
-                <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;">₹{{ number_format($plan->yearly_price) }}/वर्ष</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.38);margin-top:4px;margin-bottom:14px;">
+                    ≈ ₹{{ number_format($monthlyEquiv) }}/माह के बराबर
+                </div>
                 @if(is_array($feats) && count($feats))
                 <ul style="list-style:none;padding:0;">
                     @foreach(array_slice($feats, 0, 4) as $feat)
-                    <li style="font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;margin-bottom:3px;">
-                        <i class="fas fa-check" style="color:#4ade80;font-size:9px;"></i> {{ $feat }}
+                    <li style="font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+                        <i class="fas fa-check" style="color:#4ade80;font-size:9px;flex-shrink:0;"></i> {{ $feat }}
                     </li>
                     @endforeach
                 </ul>
                 @endif
-                <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);">
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);">
                     <span class="selected-badge" style="display:none;font-size:10px;font-weight:700;color:#a78bfa;background:rgba(139,92,246,.2);padding:3px 10px;border-radius:999px;">
                         <i class="fas fa-check"></i> चयनित
                     </span>
@@ -164,18 +218,13 @@
             @endforeach
         </div>
         @else
-        {{-- Fallback --}}
-        <div class="plan-grid" id="planGrid">
-            @foreach([['slug'=>'basic','label'=>'Basic','monthly'=>999],['slug'=>'standard','label'=>'Standard','monthly'=>1999],['slug'=>'premium','label'=>'Premium','monthly'=>2999]] as $fp)
-            <div class="plan-card" onclick="selectPlan('{{ $fp['slug'] }}', '{{ $fp['label'] }}', {{ $fp['monthly'] }})" data-slug="{{ $fp['slug'] }}">
-                <div style="font-size:14px;font-weight:800;color:#a78bfa;margin-bottom:6px;">{{ $fp['label'] }}</div>
-                <div style="font-size:22px;font-weight:900;color:#fff;">₹{{ number_format($fp['monthly']) }}<span style="font-size:12px;color:rgba(255,255,255,.4);">/माह</span></div>
-            </div>
-            @endforeach
+        <div style="text-align:center;padding:32px;color:rgba(255,255,255,.4);">
+            <i class="fas fa-exclamation-circle" style="font-size:28px;margin-bottom:10px;"></i>
+            <p>कोई प्लान उपलब्ध नहीं है। कृपया WhatsApp पर संपर्क करें।</p>
         </div>
         @endif
 
-        {{-- POST form that submits plan interest to server, which composes WA URL --}}
+        {{-- Contact form --}}
         <div style="margin-top:32px;padding-top:28px;border-top:1px solid rgba(255,255,255,.08);">
             <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:20px;text-align:center;">
                 <i class="fas fa-shield-halved" style="color:#4ade80;margin-right:4px;"></i>
@@ -231,7 +280,7 @@
         </div>
     </div>
 
-    {{-- Logout link --}}
+    {{-- Logout --}}
     <div style="margin-top:8px;">
         <form action="{{ route('logout') }}" method="POST" style="display:inline;">
             @csrf
@@ -244,7 +293,7 @@
 <script>
 var selectedPlan = '';
 
-function selectPlan(slug, label, monthly) {
+function selectPlan(slug, label, yearly) {
     selectedPlan = slug;
     document.getElementById('planSlugInput').value = slug;
     document.getElementById('noPlanWarning').style.display = 'none';

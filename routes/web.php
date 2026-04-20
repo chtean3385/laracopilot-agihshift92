@@ -71,6 +71,7 @@ Route::post('/select-hotel', [HotelSwitchController::class, 'select'])->name('se
 // ── Upgrade / Plan expired page (accessible even when trial locked) ─────────
 Route::get('/upgrade',         [\App\Http\Controllers\Admin\UpgradeController::class, 'index'])->name('upgrade');
 Route::post('/upgrade/request',[\App\Http\Controllers\Admin\UpgradeController::class, 'request'])->name('upgrade.request');
+Route::post('/upgrade/extend-trial',[\App\Http\Controllers\Admin\UpgradeController::class, 'extendTrial'])->name('upgrade.extend-trial');
 
 // ── Super Admin Hotel Filter ─────────────────────────────────────────────────
 Route::post('/super-admin/hotel-filter', [SaHotelFilterController::class, 'filter'])->name('sa.hotel.filter');
