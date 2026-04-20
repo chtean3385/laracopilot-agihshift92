@@ -76,7 +76,6 @@ externalPort = 3001
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "scripts/start.sh"]
-publicDir = "public"
 build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan view:clear && php artisan optimize && php artisan app:safe-migrate"]
 
 [postMerge]
