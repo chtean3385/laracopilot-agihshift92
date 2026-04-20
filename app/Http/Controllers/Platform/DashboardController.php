@@ -84,6 +84,8 @@ class DashboardController extends Controller
                 'hotels.plan_expires_at',
                 'hotels.phone',
                 'hotels.owner_wa_consent',
+                'hotels.billing_included_in_parent',
+                'hotels.parent_hotel_id',
             )
             ->selectRaw("(SELECT COUNT(*) FROM hotel_users WHERE hotel_users.hotel_id = hotels.id AND hotel_users.status = 'active') as user_count")
             ->selectRaw("(SELECT MAX(created_at) FROM activity_logs WHERE activity_logs.hotel_id = hotels.id) as last_activity")

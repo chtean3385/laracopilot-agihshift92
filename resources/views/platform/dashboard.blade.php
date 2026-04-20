@@ -181,8 +181,11 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
 
 @php
 
-    // MRR breakdown per plan for the banner — ACTIVE tenants only, using effective prices
-    $activePlanCounts = $hotelStats->where('status', 'active')->groupBy('plan');
+    // MRR breakdown per plan for the banner — ACTIVE standalone tenants only (exclude chain sub-hotels)
+    $activePlanCounts = $hotelStats
+        ->where('status', 'active')
+        ->filter(fn($h) => !$h->billing_included_in_parent)
+        ->groupBy('plan');
     $planBreakdown = [];
     $hasCustomPricing = false;
     foreach ($activePlanCounts as $slug => $hotels) {
@@ -213,7 +216,7 @@ document.getElementById('epOverlay').addEventListener('click', function(e) {
             </div>
             <div style="font-size:12px;color:#a78bfa;">
                 {!! implode(' &nbsp;·&nbsp; ', $planBreakdown) !!}
-                &nbsp;·&nbsp; {{ $activeHotels }} active tenant{{ $activeHotels !== 1 ? 's' : '' }}
+                &nbsp;·&nbsp; {{ $activeSubscriptions }} active tenant{{ $activeSubscriptions !== 1 ? 's' : '' }}
                 @if($hasCustomPricing)
                 &nbsp;<span style="font-size:10px;font-weight:700;background:rgba(250,204,21,.2);color:#fbbf24;padding:1px 7px;border-radius:4px;vertical-align:middle;">custom pricing applied</span>
                 @endif
