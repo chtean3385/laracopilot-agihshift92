@@ -367,22 +367,22 @@
                 </td>
                 {{-- Slot cells --}}
                 @foreach($slotColumns as $col)
-                @php
-                    $sd = $hotel['slots'][$col['key']] ?? null;
-                    $cellData = $sd ? json_encode([
-                        'hotel'     => $hotel['hotel_name'],
-                        'slot_name' => $sd['slot_name'],
-                        'slot_time' => $sd['slot_time'],
-                        'worst_free'  => $sd['worst_free'],
-                        'worst_booked'=> $sd['worst_booked'],
-                        'total_rooms' => $sd['total_rooms'],
-                        'dates'       => $sd['dates'],
-                        'is_wh_any'  => $hotel['is_wh_any'],
-                    ]) : null;
-                @endphp
+                @php $sd = $hotel['slots'][$col['key']] ?? null; @endphp
                 @if($sd && $sd['has_slot'])
-                <td class="slot-td"
-                    onclick="showPopup(event, {{ $cellData ? htmlspecialchars($cellData, ENT_QUOTES) : 'null' }})"
+                @php
+                    $cellJson = json_encode([
+                        'hotel'        => $hotel['hotel_name'],
+                        'slot_name'    => $sd['slot_name'],
+                        'slot_time'    => $sd['slot_time'],
+                        'worst_free'   => $sd['worst_free'],
+                        'worst_booked' => $sd['worst_booked'],
+                        'total_rooms'  => $sd['total_rooms'],
+                        'dates'        => $sd['dates'],
+                        'is_wh_any'    => $hotel['is_wh_any'],
+                    ], JSON_HEX_QUOT | JSON_HEX_APOS | JSON_HEX_AMP);
+                @endphp
+                <td class="slot-td sse-cell"
+                    data-cell="{{ $cellJson }}"
                     title="{{ $sd['worst_free'] }} free · {{ $sd['worst_booked'] }} booked">
                     <div class="slot-cell-inner">
                         <span class="count-chip green">
@@ -580,10 +580,28 @@ function closePopup() {
     _pp = null;
 }
 
-// Close on outside click or Escape
+// Event delegation — handle clicks on .sse-cell td elements
 document.addEventListener('click', function(e) {
     var pop = document.getElementById('ssePopup');
-    if (pop && pop.style.display !== 'none' && !pop.contains(e.target)) closePopup();
+    // Close popup on outside click
+    if (pop && pop.style.display !== 'none' && !pop.contains(e.target)) {
+        var td = e.target.closest('td.sse-cell');
+        if (!td) { closePopup(); return; }
+    }
+    // Open popup when a cell is clicked
+    var td = e.target.closest('td.sse-cell');
+    if (td) {
+        e.stopPropagation();
+        var raw = td.getAttribute('data-cell');
+        if (!raw) return;
+        try {
+            var data = JSON.parse(raw);
+            showPopup(e, data);
+        } catch(err) {
+            console.error('SSE popup parse error:', err, raw);
+        }
+        return;
+    }
 });
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closePopup();
