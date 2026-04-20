@@ -77,7 +77,6 @@ class SlotSearchController extends Controller
                 'statusFilter'    => 'all',
                 'matrix'          => null,
                 'slotColumns'     => [],
-                'columnAgg'       => [],
                 'kpi'             => null,
             ]);
         }
@@ -136,7 +135,6 @@ class SlotSearchController extends Controller
             'statusFilter'    => $statusFilter,
             'matrix'          => $result['rows'],
             'slotColumns'     => $result['columns'],
-            'columnAgg'       => $result['column_agg'],
             'kpi'             => $result['kpi'],
         ]);
     }
@@ -377,39 +375,15 @@ class SlotSearchController extends Controller
             $rows[] = $hotelRow;
         }
 
-        // ── Column-level aggregates (for column headers) ──
-        $columnAggregates = [];
-        $kpiFree = 0; $kpiBooked = 0;
-        foreach ($slotColumns as $col) {
-            $colFree = 0; $colBooked = 0; $colWh = false;
-            foreach ($rows as $row) {
-                $sd = $row['slots'][$col['key']] ?? null;
-                if ($sd && $sd['has_slot']) {
-                    $colFree   += $sd['worst_free'];
-                    $colBooked += $sd['worst_booked'];
-                    if ($row['is_wh_any']) $colWh = true;
-                }
-            }
-            $kpiFree   += $colFree;
-            $kpiBooked += $colBooked;
-            $colStatus  = $colBooked === 0 ? 'free' : ($colFree === 0 ? 'booked' : 'partial');
-            $columnAggregates[$col['key']] = [
-                'total_free'   => $colFree,
-                'total_booked' => $colBooked,
-                'has_wh'       => $colWh,
-                'status'       => $colStatus,
-            ];
-        }
-
         $kpi = [
-            'total_hotels'  => count($rows),
-            'free_slots'    => $kpiFree,
-            'booked_slots'  => $kpiBooked,
-            'pct_booked'    => ($kpiFree + $kpiBooked) > 0
-                                ? round($kpiBooked / ($kpiFree + $kpiBooked) * 100) : 0,
+            'total_hotels'    => count($rows),
+            'total_room_days' => $kpiTotalRoomDays,
+            'booked_room_days'=> $kpiBookedRoomDays,
+            'free_room_days'  => $kpiTotalRoomDays - $kpiBookedRoomDays,
+            'pct_booked'      => $kpiTotalRoomDays > 0 ? round($kpiBookedRoomDays / $kpiTotalRoomDays * 100) : 0,
         ];
 
-        return ['columns' => $slotColumns, 'column_agg' => $columnAggregates, 'rows' => $rows, 'kpi' => $kpi];
+        return ['columns' => $slotColumns, 'rows' => $rows, 'kpi' => $kpi];
     }
 
     private function slotRange(string $startTime, string $endTime, bool $isOvernight, string $date): array
