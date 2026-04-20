@@ -101,10 +101,82 @@
                     <textarea name="cancellation_policy" rows="3" class="form-input">{{ old('cancellation_policy', $settings->cancellation_policy) }}</textarea>
                 </div>
             </div>
+            {{-- Invoice Print Style --}}
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-file-invoice text-violet-500 mr-2"></i>Invoice Print Style</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('modern')">
+                        <input type="radio" name="invoice_style" value="modern" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'checked' : '' }}>
+                        <div>
+                            <div class="font-bold text-gray-700 text-sm">Modern (Current)</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Clean card layout with dark header. Works for all hotels.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'gst' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('gst')">
+                        <input type="radio" name="invoice_style" value="gst" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'gst' ? 'checked' : '' }}>
+                        <div>
+                            <div class="font-bold text-gray-700 text-sm">GST Tax Invoice</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Formal Indian GST format with CGST/SGST split, HSN codes, bank details &amp; advance summary.</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Bank & Invoice Details --}}
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-university text-emerald-500 mr-2"></i>Bank &amp; GST Invoice Details</h4>
+                <p class="text-xs text-gray-400 mb-4">Required for GST Tax Invoice format. Also printed on bank transfer receipts.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="form-label">Second Contact Number</label>
+                        <input type="text" name="contact_number" value="{{ old('contact_number', $settings->contact_number ?? '') }}" class="form-input" placeholder="e.g. +91 98765 43210">
+                    </div>
+                    <div>
+                        <label class="form-label">State / Code <span class="text-gray-400 font-normal text-xs">(e.g. GUJARAT/24)</span></label>
+                        <input type="text" name="state_code" value="{{ old('state_code', $settings->state_code ?? '') }}" class="form-input" placeholder="e.g. GUJARAT/24">
+                    </div>
+                    <div>
+                        <label class="form-label">HSN/SAC Code — Room <span class="text-gray-400 font-normal text-xs">(default 996311)</span></label>
+                        <input type="text" name="hsn_room" value="{{ old('hsn_room', $settings->hsn_room ?? '996311') }}" class="form-input" placeholder="996311">
+                    </div>
+                    <div>
+                        <label class="form-label">HSN/SAC Code — Food <span class="text-gray-400 font-normal text-xs">(default 996331)</span></label>
+                        <input type="text" name="hsn_food" value="{{ old('hsn_food', $settings->hsn_food ?? '996331') }}" class="form-input" placeholder="996331">
+                    </div>
+                    <div>
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" name="bank_name" value="{{ old('bank_name', $settings->bank_name ?? '') }}" class="form-input" placeholder="e.g. State Bank of India">
+                    </div>
+                    <div>
+                        <label class="form-label">Bank Account Number</label>
+                        <input type="text" name="bank_account_number" value="{{ old('bank_account_number', $settings->bank_account_number ?? '') }}" class="form-input" placeholder="e.g. 1234567890">
+                    </div>
+                    <div>
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" name="bank_ifsc" value="{{ old('bank_ifsc', $settings->bank_ifsc ?? '') }}" class="form-input" placeholder="e.g. SBIN0001234">
+                    </div>
+                </div>
+            </div>
+
             <div class="flex justify-end mt-6 pt-6 border-t border-gray-100">
                 <button type="submit" class="btn-primary"><i class="fas fa-save mr-2"></i>Save Settings</button>
             </div>
         </form>
+        <script>
+        function setStyle(val) {
+            document.querySelectorAll('input[name="invoice_style"]').forEach(function(r) {
+                var lbl = r.closest('label');
+                if (r.value === val) {
+                    r.checked = true;
+                    lbl.classList.add('border-violet-400','bg-violet-50');
+                    lbl.classList.remove('border-gray-200');
+                } else {
+                    lbl.classList.remove('border-violet-400','bg-violet-50');
+                    lbl.classList.add('border-gray-200');
+                }
+            });
+        }
+        </script>
         <script>
         document.getElementById('logoInput').addEventListener('change', function(e) {
             const file = e.target.files[0];

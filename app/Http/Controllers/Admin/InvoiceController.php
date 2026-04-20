@@ -43,7 +43,12 @@ class InvoiceController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
         $settings = Setting::first();
-        return view('admin.invoices.print', compact('invoice', 'settings'));
+
+        // Branch on hotel's invoice style setting
+        $style = $settings->invoice_style ?? 'modern';
+        $view  = $style === 'gst' ? 'admin.invoices.print-gst' : 'admin.invoices.print';
+
+        return view($view, compact('invoice', 'settings'));
     }
 
     public function destroy($id)
@@ -57,7 +62,6 @@ class InvoiceController extends Controller
 
         $invoice->delete();
 
-        // After invoice deletion, reset the booking's payment_status to reflect actual payments
         if ($booking) {
             $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
             $booking->update([
