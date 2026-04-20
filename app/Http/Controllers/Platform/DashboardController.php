@@ -24,9 +24,13 @@ class DashboardController extends Controller
         $suspendedHotels = DB::table('hotels')->where('status', 'suspended')->count();
         $trialHotels     = DB::table('hotels')->whereNotNull('trial_ends_at')->where('trial_ends_at', '>=', now())->count();
 
-        // Per-hotel revenue using custom pricing where set, otherwise plan default
+        // Per-hotel revenue — exclude hotels included in a parent subscription
         $activeHotels2 = DB::table('hotels')
             ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('billing_included_in_parent')
+                  ->orWhere('billing_included_in_parent', false);
+            })
             ->select('plan', 'billing_cycle', 'custom_monthly_price', 'custom_yearly_price')
             ->get();
 
@@ -53,7 +57,14 @@ class DashboardController extends Controller
         }
 
         $nextMonthRevenue = $mrr;
-        $activeSubscriptions = $activeHotels;
+        // Active subscriptions = active hotels NOT included in a parent subscription
+        $activeSubscriptions = DB::table('hotels')
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('billing_included_in_parent')
+                  ->orWhere('billing_included_in_parent', false);
+            })
+            ->count();
         $totalUsers       = DB::table('hotel_users')->where('status', 'active')->count();
 
         $hotelStats = DB::table('hotels')

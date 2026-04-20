@@ -36,6 +36,7 @@ class HotelController extends Controller
                 'hotels.created_at', 'hotels.trial_ends_at', 'hotels.plan_expires_at',
                 'hotels.owner_wa_consent',
             )
+            ->selectRaw('COALESCE(hotels.billing_included_in_parent, false) as billing_included_in_parent')
             ->selectRaw('(SELECT COUNT(*) FROM rooms WHERE rooms.hotel_id = hotels.id) as room_count')
             ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.hotel_id = hotels.id) as booking_count')
             ->selectRaw("(SELECT COUNT(*) FROM hotel_users WHERE hotel_users.hotel_id = hotels.id AND hotel_users.status = 'active') as user_count")
@@ -54,7 +55,12 @@ class HotelController extends Controller
             $query->where('hotels.status', $status);
         }
 
-        if ($planFilter !== '') {
+        if ($planFilter === 'custom') {
+            $query->where(function ($q) {
+                $q->where('hotels.custom_monthly_price', '>', 0)
+                  ->orWhere('hotels.custom_yearly_price', '>', 0);
+            });
+        } elseif ($planFilter !== '') {
             $query->where('hotels.plan', $planFilter);
         }
 
@@ -446,20 +452,21 @@ class HotelController extends Controller
         ]);
 
         DB::table('hotels')->where('id', $id)->update([
-            'name'                 => $data['name'],
-            'email'                => $data['email'] ?? null,
-            'phone'                => $data['phone'] ?? null,
-            'address'              => $data['address'] ?? null,
-            'owner_wa_consent'     => $request->boolean('owner_wa_consent'),
-            'plan'                 => $data['plan'],
-            'billing_cycle'        => $data['billing_cycle'],
-            'custom_monthly_price' => $data['custom_monthly_price'] ?: null,
-            'custom_yearly_price'  => $data['custom_yearly_price'] ?: null,
-            'max_rooms'            => $data['max_rooms'],
-            'max_users'            => $data['max_users'],
-            'status'               => $data['status'],
-            'admin_notes'          => $data['admin_notes'] ?? null,
-            'updated_at'           => now(),
+            'name'                        => $data['name'],
+            'email'                       => $data['email'] ?? null,
+            'phone'                       => $data['phone'] ?? null,
+            'address'                     => $data['address'] ?? null,
+            'owner_wa_consent'            => $request->boolean('owner_wa_consent'),
+            'plan'                        => $data['plan'],
+            'billing_cycle'               => $data['billing_cycle'],
+            'custom_monthly_price'        => $data['custom_monthly_price'] ?: null,
+            'custom_yearly_price'         => $data['custom_yearly_price'] ?: null,
+            'max_rooms'                   => $data['max_rooms'],
+            'max_users'                   => $data['max_users'],
+            'status'                      => $data['status'],
+            'admin_notes'                 => $data['admin_notes'] ?? null,
+            'billing_included_in_parent'  => $request->boolean('billing_included_in_parent'),
+            'updated_at'                  => now(),
         ]);
 
         // Save backup settings

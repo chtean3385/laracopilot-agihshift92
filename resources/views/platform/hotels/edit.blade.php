@@ -172,11 +172,11 @@
             </div>
 
             {{-- Custom Pricing Override --}}
-            <div style="background:#f8fafc;border:1.5px dashed #c7d2fe;border-radius:12px;padding:16px;">
+            <div style="background:#f8fafc;border:1.5px dashed #c7d2fe;border-radius:12px;padding:16px;margin-bottom:16px;">
                 <div style="font-size:12px;font-weight:700;color:#4338ca;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-tag"></i> Custom Pricing Override <span style="font-size:10px;font-weight:500;color:#94a3b8;">(optional — leave blank to use plan default)</span>
                 </div>
-                <div style="font-size:11px;color:#64748b;margin-bottom:14px;">Override the plan price for this specific hotel. Useful for special deals or promotions.</div>
+                <div style="font-size:11px;color:#64748b;margin-bottom:14px;">Override the plan price for this specific hotel. Useful for special deals or promotions. Setting a custom price shows a <strong>Custom</strong> badge on the plan in the hotel list.</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
                     <div>
                         <label style="display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Custom Monthly Price (Rs)</label>
@@ -194,6 +194,22 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Hotel Chain Billing --}}
+            @php $isBillingChild = old('billing_included_in_parent', $hotel->billing_included_in_parent ?? false); @endphp
+            <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;cursor:pointer;border:2px solid {{ $isBillingChild ? '#f59e0b' : '#f1f5f9' }};background:{{ $isBillingChild ? '#fffbeb' : '#f8fafc' }};transition:border-color .15s;" id="billing-child-label">
+                <input type="checkbox" name="billing_included_in_parent" value="1" {{ $isBillingChild ? 'checked' : '' }}
+                    id="billing_included_in_parent"
+                    onchange="document.getElementById('billing-child-label').style.borderColor=this.checked?'#f59e0b':'#f1f5f9';document.getElementById('billing-child-label').style.background=this.checked?'#fffbeb':'#f8fafc';"
+                    style="width:16px;height:16px;margin-top:1px;accent-color:#f59e0b;flex-shrink:0;cursor:pointer;">
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#92400e;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-link" style="color:#f59e0b;font-size:12px;"></i>
+                        Included in parent hotel subscription — no separate billing
+                    </div>
+                    <div style="font-size:11px;color:#78716c;margin-top:3px;">Check this if this hotel is part of a hotel chain and the owner pays through the main hotel's subscription. This hotel will be excluded from MRR, ARR, and active subscription counts on the platform dashboard.</div>
+                </div>
+            </label>
         </div>
 
         {{-- Hotel Admin Account --}}

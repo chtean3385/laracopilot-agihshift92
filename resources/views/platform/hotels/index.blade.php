@@ -44,6 +44,7 @@
         @foreach($plans as $slug => $planData)
         <option value="{{ $slug }}" {{ $planFilter === $slug ? 'selected' : '' }}>{{ $planData['label'] }}</option>
         @endforeach
+        <option value="custom" {{ $planFilter === 'custom' ? 'selected' : '' }}>Custom</option>
     </select>
     <button type="button" onclick="clearHotelFilters()" id="hotelClearBtn"
         style="padding:9px 14px;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:{{ ($search !== '' || $status !== '' || $planFilter !== '') ? 'inline-flex' : 'none' }};align-items:center;gap:5px;">
@@ -138,6 +139,7 @@
                     $effMonthly  = ($hotel->custom_monthly_price > 0) ? (float)$hotel->custom_monthly_price : ($plan['monthly_price'] ?? 0);
                     $effYearly   = ($hotel->custom_yearly_price  > 0) ? (float)$hotel->custom_yearly_price  : ($plan['yearly_price']  ?? 0);
                     $isCustom    = $hotel->custom_monthly_price > 0 || $hotel->custom_yearly_price > 0;
+                    $isBillingChild = (bool)($hotel->billing_included_in_parent ?? false);
                     $trialEnd    = $hotel->trial_ends_at  ? \Carbon\Carbon::parse($hotel->trial_ends_at)  : null;
                     $planExp     = $hotel->plan_expires_at ? \Carbon\Carbon::parse($hotel->plan_expires_at) : null;
                     $trialExp    = $trialEnd && $trialEnd->isPast();
@@ -146,7 +148,7 @@
                 <tr class="hotel-row"
                     data-search="{{ strtolower($hotel->name . ' ' . $hotel->slug . ' ' . $hotel->email . ' ' . $hotel->phone) }}"
                     data-status="{{ $hotel->status }}"
-                    data-plan="{{ $hotel->plan }}"
+                    data-plan="{{ $isCustom ? 'custom' : $hotel->plan }}"
                     style="border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background='transparent'" onclick="window.location='{{ route('platform.hotels.edit', $hotel->id) }}'" title="Click to edit {{ addslashes($hotel->name) }}">
 
                     <td style="padding:14px 20px;">
@@ -157,19 +159,35 @@
                             <div>
                                 <div style="font-size:14px;font-weight:700;color:#1e293b;">{{ $hotel->name }}</div>
                                 <div style="font-size:11px;color:#94a3b8;font-family:monospace;">{{ $hotel->slug }}</div>
+                                @if($isBillingChild)
+                                <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-top:2px;display:flex;align-items:center;gap:3px;"><i class="fas fa-link" style="font-size:9px;"></i> chain hotel</div>
+                                @endif
                             </div>
                         </div>
                     </td>
 
                     <td style="padding:14px;">
+                        @if($isCustom)
+                        <span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#fef3c7;color:#92400e;">
+                            Custom
+                        </span>
+                        @else
                         <span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:{{ $plan['badge_bg'] }};color:{{ $plan['badge_text'] }};">
                             {{ $plan['label'] }}
                         </span>
+                        @endif
                     </td>
 
                     {{-- Subscription pricing --}}
                     <td style="padding:14px;">
-                        @if($effMonthly > 0 || $effYearly > 0)
+                        @if($isBillingChild)
+                        <div style="display:flex;align-items:center;gap:5px;">
+                            <span style="font-size:12px;font-weight:700;color:#f59e0b;display:flex;align-items:center;gap:4px;">
+                                <i class="fas fa-link" style="font-size:10px;"></i> Included in parent
+                            </span>
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;margin-top:2px;">No separate subscription</div>
+                        @elseif($effMonthly > 0 || $effYearly > 0)
                         <div style="display:flex;align-items:center;gap:5px;">
                             @if($cycle === 'yearly')
                             <span style="font-size:13px;font-weight:700;color:#1e293b;">{{ $currencySymbol }} {{ number_format($effYearly) }}<span style="font-size:10px;font-weight:400;color:#94a3b8;">/yr</span></span>
