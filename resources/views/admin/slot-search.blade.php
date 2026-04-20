@@ -290,10 +290,9 @@
                 <label class="ss-label"><i class="fas fa-filter" style="margin-right:4px;"></i>Status</label>
                 <div style="display:flex;gap:7px;flex-wrap:wrap;">
                     <select name="status" class="ss-input" style="max-width:140px;flex-shrink:0;">
-                        <option value="all"       {{ $statusFilter === 'all'       ? 'selected' : '' }}>All</option>
-                        <option value="available" {{ $statusFilter === 'available' ? 'selected' : '' }}>Free Only</option>
-                        <option value="partial"   {{ $statusFilter === 'partial'   ? 'selected' : '' }}>Partial</option>
-                        <option value="full"      {{ $statusFilter === 'full'      ? 'selected' : '' }}>Fully Booked</option>
+                        <option value="all"    {{ $statusFilter === 'all'    ? 'selected' : '' }}>All</option>
+                        <option value="free"   {{ $statusFilter === 'free'   ? 'selected' : '' }}>Free Only</option>
+                        <option value="booked" {{ $statusFilter === 'booked' ? 'selected' : '' }}>Booked</option>
                     </select>
                     <button type="submit" class="ss-btn ss-btn-primary">
                         <i class="fas fa-search"></i> Search
@@ -320,16 +319,12 @@
             <div class="ss-sum-label">Slot-Days</div>
         </div>
         <div class="ss-sum-card ss-sum-avail">
-            <div class="ss-sum-num" style="color:#059669;">{{ $summary['available'] }}</div>
-            <div class="ss-sum-label">Available</div>
-        </div>
-        <div class="ss-sum-card ss-sum-partial">
-            <div class="ss-sum-num" style="color:#d97706;">{{ $summary['partial'] }}</div>
-            <div class="ss-sum-label">Partial</div>
+            <div class="ss-sum-num" style="color:#059669;">{{ $summary['free'] }}</div>
+            <div class="ss-sum-label">Free</div>
         </div>
         <div class="ss-sum-card ss-sum-full">
-            <div class="ss-sum-num" style="color:#dc2626;">{{ $summary['full'] }}</div>
-            <div class="ss-sum-label">Full</div>
+            <div class="ss-sum-num" style="color:#dc2626;">{{ $summary['booked'] }}</div>
+            <div class="ss-sum-label">Booked</div>
         </div>
         @if($summary['wh'] > 0)
         <div class="ss-sum-card ss-sum-wh">

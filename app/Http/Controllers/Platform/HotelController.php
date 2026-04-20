@@ -1371,6 +1371,17 @@ class HotelController extends Controller
                     ->where('hotel_id', $childId)
                     ->where('slug', $module)
                     ->update(['is_enabled' => $newStatus, 'updated_at' => now()]);
+            } else {
+                // Upsert: insert module row for child if it doesn't exist yet
+                DB::table('modules')->insert([
+                    'hotel_id'    => $childId,
+                    'slug'        => $module,
+                    'name'        => $row->name,
+                    'description' => $row->description,
+                    'is_enabled'  => $newStatus,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
             }
         }
 
