@@ -3,12 +3,28 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use App\Models\Module;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BookingExtraCharge;
 
 class Booking extends Model
 {
     use BelongsToHotel;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        $bump = function (self $booking) {
+            if ($booking->hotel_id) {
+                Module::bumpSearchCache((int) $booking->hotel_id);
+            }
+        };
+
+        static::created($bump);
+        static::updated($bump);
+        static::deleted($bump);
+    }
 
     protected $fillable = [
         'hotel_id',
