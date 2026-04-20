@@ -175,13 +175,13 @@
     $isMultiHotel   = $isMultiHotel ?? false;
     $availableHotels= $availableHotels ?? collect();
     $dateFrom   = $dateFrom ?? \Carbon\Carbon::today()->toDateString();
-    $dateTo     = $dateTo   ?? \Carbon\Carbon::today()->addDays(6)->toDateString();
+    $dateTo     = $dateTo   ?? \Carbon\Carbon::today()->addDays(7)->toDateString();
     $slotIds    = $slotIds  ?? [];
     $filterHotelIds = $filterHotelIds ?? [];
     $statusFilter   = $statusFilter   ?? 'all';
 @endphp
 
-@if($allRooms->isEmpty())
+@if($flatRooms->where('pricing_type', 'per_slot')->isEmpty())
 <div class="ss-card">
     <div class="ss-empty">
         <div class="ss-empty-icon"><i class="fas fa-clock"></i></div>
@@ -432,7 +432,7 @@
                                 class="ss-pill ss-pill-booked" target="_blank"
                                 title="{{ ($cell['room_number'] ?? '') . ' – ' . ($cell['guest_name'] ?? 'Guest') }}">
                                 <i class="fas fa-user" style="font-size:9px;"></i>
-                                @if(!empty($cell['room_number']))Rm {{ $cell['room_number'] }} &ndash; @endif{{ \Illuminate\Support\Str::limit($cell['guest_name'] ?? 'Guest', 10) }}
+                                @if(!empty($cell['room_number']))Rm {{ $cell['room_number'] }} &ndash; @endif{{ \Illuminate\Support\Str::limit($cell['guest_name'] ?? 'Guest', 12) }}
                             </a>
                         @else
                             <span class="ss-pill ss-pill-na">N/A</span>

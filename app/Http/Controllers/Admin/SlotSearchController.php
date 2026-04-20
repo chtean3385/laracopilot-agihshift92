@@ -64,7 +64,7 @@ class SlotSearchController extends Controller
                 'allRooms', 'allSlots'
             ) + [
                 'dateFrom'       => Carbon::today()->toDateString(),
-                'dateTo'         => Carbon::today()->addDays(6)->toDateString(),
+                'dateTo'         => Carbon::today()->addDays(7)->toDateString(),
                 'slotIds'        => [],
                 'filterHotelIds' => [],
                 'statusFilter'   => 'all',
@@ -75,7 +75,7 @@ class SlotSearchController extends Controller
 
         // Parse filters
         $dateFrom       = $request->input('date_from', Carbon::today()->toDateString());
-        $dateTo         = $request->input('date_to',   Carbon::today()->addDays(6)->toDateString());
+        $dateTo         = $request->input('date_to',   Carbon::today()->addDays(7)->toDateString());
         $slotIds        = array_filter(array_map('intval', (array) $request->input('slot_ids', [])));
         $filterHotelIds = array_filter(array_map('intval', (array) $request->input('hotel_ids', [])));
         $statusFilter   = in_array($request->input('status'), ['free', 'booked']) ? $request->input('status') : 'all';
