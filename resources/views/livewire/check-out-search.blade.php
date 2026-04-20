@@ -61,11 +61,31 @@
                 </div>
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Balance Due</span>
-                    @php $coRoomPT = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night'); @endphp
+                    @php
+                        $coRoomPT = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+                        if ($coRoomPT !== 'per_hour') {
+                            $coExtraCharges = $booking->extraCharges->sum('total_price');
+                            if ($booking->price_overridden || $booking->is_whole_hotel) {
+                                $coBase = max(0, (float)$booking->total_amount - $coExtraCharges);
+                            } else {
+                                $coCheckin  = \Carbon\Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+                                $coCheckout = \Carbon\Carbon::parse($booking->check_out_date)->startOfDay();
+                                $coNights   = max(1, $coCheckin->diffInDays($coCheckout));
+                                $coBase     = $coNights * ($booking->room?->price_per_night ?? 0)
+                                              + (float)($booking->meal_cost ?? 0)
+                                              + (float)($booking->extra_bed_cost ?? 0);
+                            }
+                            $coTrueBase  = $coBase + $coExtraCharges;
+                            $coGst       = round($coTrueBase * ($taxRate / 100), 2);
+                            $coGrandTotal = $coTrueBase + $coGst;
+                            $coPaid      = $booking->payments->where('status', 'completed')->sum('amount');
+                            $coBalance   = max(0, $coGrandTotal - $coPaid);
+                        }
+                    @endphp
                     @if($coRoomPT === 'per_hour')
                     <span class="font-bold text-violet-600"><i class="fas fa-clock mr-1 text-xs"></i>Billed at checkout</span>
                     @else
-                    <span class="font-bold {{ $booking->balance_due > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($booking->balance_due) }}</span>
+                    <span class="font-bold {{ $coBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($coBalance) }}</span>
                     @endif
                 </div>
                 @if($coRoomPT === 'per_hour' && $booking->actual_checkin_at)

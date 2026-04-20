@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\Booking;
+use App\Models\Setting;
+use Carbon\Carbon;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -24,7 +26,7 @@ class CheckOutSearch extends Component
 
     public function render()
     {
-        $query = Booking::with(['customer', 'room'])
+        $query = Booking::with(['customer', 'room', 'payments', 'extraCharges'])
             ->where('status', 'checked_in')
             ->orderBy('check_out_date');
 
@@ -39,6 +41,11 @@ class CheckOutSearch extends Component
 
         $pendingCheckouts = $query->paginate(12);
 
-        return view('livewire.check-out-search', compact('pendingCheckouts'));
+        $hotelId  = session('crm_hotel_id');
+        $settings = Setting::where('hotel_id', $hotelId)->first();
+        $taxRate  = ($settings && !empty($settings->gst_number) && $settings->tax_rate > 0)
+                    ? (float) $settings->tax_rate : 0;
+
+        return view('livewire.check-out-search', compact('pendingCheckouts', 'taxRate'));
     }
 }
