@@ -43,7 +43,7 @@
                         @endif
                     </div>
                     <div style="font-size:13px;color:#c4b5fd;margin-top:4px;">
-                        {{ $kpi['activeHotels'] }}/{{ $kpi['totalHotels'] }} hotels active · {{ $kpi['occupancyRate'] }}% occupancy
+                        {{ $kpi['activeHotels'] }}/{{ $kpi['totalHotels'] }} hotels active · {{ $kpi['activeSubscriptions'] }} subscription{{ $kpi['activeSubscriptions'] == 1 ? '' : 's' }} · {{ $kpi['occupancyRate'] }}% occupancy
                     </div>
                     @if($kpi['activeNow'] > 0)
                     <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:20px;padding:3px 10px;margin-top:6px;">
@@ -144,7 +144,7 @@
     @php
     $kpiCards = [
         ['Total Hotels',   $kpi['totalHotels'],      'fas fa-building',    'linear-gradient(135deg,#7c3aed,#5b21b6)', '#f5f3ff', null, null],
-        ['Active Hotels',  $kpi['activeHotels'],     'fas fa-check-circle','linear-gradient(135deg,#10b981,#059669)', '#dcfce7', null, null],
+        ['Active Hotels',  $kpi['activeHotels'],     'fas fa-check-circle','linear-gradient(135deg,#10b981,#059669)', '#dcfce7', null, $kpi['activeSubscriptions'].' subscription'.($kpi['activeSubscriptions'] == 1 ? '' : 's')],
         ['Dormant (2d+)',  $kpi['inactiveHotels'],   'fas fa-moon',        'linear-gradient(135deg,#f59e0b,#d97706)', '#fef3c7', null, null],
         ['On Trial',       $kpi['trialHotels'],      'fas fa-hourglass-half','linear-gradient(135deg,#3b82f6,#2563eb)','#dbeafe', null, null],
         ['Suspended',      $kpi['suspendedHotels'],  'fas fa-ban',         'linear-gradient(135deg,#ef4444,#dc2626)', '#fee2e2', null, null],
@@ -167,6 +167,9 @@
             <span style="font-size:11px;color:#94a3b8;font-weight:700;line-height:1.2;">{{ $label }}</span>
         </div>
         <div style="font-size:28px;font-weight:900;color:#0f172a;letter-spacing:-1px;">{{ $value }}</div>
+        @if($trendPct)
+        <div style="font-size:10px;color:#64748b;font-weight:600;margin-top:3px;background:#f0fdf4;border-radius:5px;padding:2px 6px;display:inline-block;">{{ $trendPct }}</div>
+        @endif
     </div>
     @endforeach
 

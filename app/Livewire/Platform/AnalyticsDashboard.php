@@ -445,6 +445,15 @@ class AnalyticsDashboard extends Component
         $activeHotels    = DB::table('hotels')->where('status', 'active')->count();
         $suspendedHotels = DB::table('hotels')->where('status', 'suspended')->count();
         $trialHotels     = DB::table('hotels')->whereNotNull('trial_ends_at')->where('trial_ends_at', '>=', $now)->count();
+
+        // Active subscriptions = active hotels that are NOT billed through a parent chain hotel
+        $activeSubscriptions = DB::table('hotels')
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('billing_included_in_parent')
+                  ->orWhere('billing_included_in_parent', false);
+            })
+            ->count();
         $inactiveHotels  = $totalHotels - DB::table('activity_logs')
             ->select('hotel_id')
             ->distinct()
@@ -478,7 +487,7 @@ class AnalyticsDashboard extends Component
         ));
 
         return compact(
-            'totalHotels', 'activeHotels', 'suspendedHotels', 'trialHotels', 'inactiveHotels',
+            'totalHotels', 'activeHotels', 'activeSubscriptions', 'suspendedHotels', 'trialHotels', 'inactiveHotels',
             'totalRooms', 'occupiedRooms', 'occupancyRate',
             'revMonth', 'revLast', 'revGrowth',
             'totalBookingsMonth', 'totalDevices', 'waEnabled',
