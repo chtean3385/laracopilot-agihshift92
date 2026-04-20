@@ -161,6 +161,11 @@
   .sse-table { font-size:11px; }
   .sse-card { box-shadow:none; }
 }
+
+/* ── Full-screen mode: hide sidebar on Slot Search page ── */
+#sidebar,
+#sidebar-overlay { display:none !important; }
+#main-wrap { margin-left:0 !important; }
 </style>
 @endpush
 
