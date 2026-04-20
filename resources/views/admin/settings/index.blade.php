@@ -8,6 +8,25 @@
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
             <h3 class="font-bold text-gray-800"><i class="fas fa-cog text-slate-500 mr-2"></i>Resort Configuration</h3>
         </div>
+        {{-- GST misconfiguration warning banner --}}
+        @if(($settings->invoice_style ?? 'modern') === 'gst' && (empty($settings->gst_number) || (float)($settings->tax_rate ?? 0) == 0))
+        <div class="mx-6 mt-6 p-4 bg-amber-50 border-2 border-amber-400 rounded-xl flex gap-3">
+            <i class="fas fa-exclamation-triangle text-amber-500 text-lg mt-0.5 flex-shrink-0"></i>
+            <div class="text-sm text-amber-800">
+                <p class="font-bold text-amber-900 mb-1">GST Invoice is ON — but required fields are missing!</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @if(empty($settings->gst_number))
+                        <li><strong>GST Number</strong> is empty — invoices will print without a GSTIN.</li>
+                    @endif
+                    @if((float)($settings->tax_rate ?? 0) == 0)
+                        <li><strong>GST Rate (Tax Rate)</strong> is 0% — no GST will be added to any billing.</li>
+                    @endif
+                </ul>
+                <p class="mt-2 text-amber-700">Fill in both fields below and save, otherwise GST will never be charged or shown on invoices.</p>
+            </div>
+        </div>
+        @endif
+
         <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data" class="p-6">
             @method('PUT')
             @csrf
@@ -120,6 +139,15 @@
                         </div>
                     </label>
                 </div>
+                {{-- Live warning shown when GST style is selected but fields are not filled --}}
+                <div id="gst-inline-warn" class="hidden mt-3 p-3 bg-red-50 border border-red-300 rounded-xl text-sm text-red-800 flex gap-2">
+                    <i class="fas fa-exclamation-circle text-red-500 mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <strong>Action required before saving:</strong>
+                        <ul id="gst-warn-list" class="list-disc list-inside mt-1 space-y-0.5"></ul>
+                        <p class="mt-1 text-red-700 text-xs">Scroll down to the GST fields and fill them in before saving, or invoices will have no GST applied.</p>
+                    </div>
+                </div>
             </div>
 
             {{-- Bank & Invoice Details --}}
@@ -163,6 +191,23 @@
             </div>
         </form>
         <script>
+        function checkGstWarn() {
+            var gstNum   = document.querySelector('input[name="gst_number"]');
+            var taxRate  = document.querySelector('input[name="tax_rate"]');
+            var warn     = document.getElementById('gst-inline-warn');
+            var list     = document.getElementById('gst-warn-list');
+            var isGst    = document.querySelector('input[name="invoice_style"][value="gst"]')?.checked;
+            if (!warn || !isGst) { warn && warn.classList.add('hidden'); return; }
+            var issues = [];
+            if (!gstNum || !gstNum.value.trim()) issues.push('GST Number is empty');
+            if (!taxRate || parseFloat(taxRate.value || 0) === 0) issues.push('Tax Rate is 0%');
+            if (issues.length > 0) {
+                list.innerHTML = issues.map(function(i){ return '<li>' + i + '</li>'; }).join('');
+                warn.classList.remove('hidden');
+            } else {
+                warn.classList.add('hidden');
+            }
+        }
         function setStyle(val) {
             document.querySelectorAll('input[name="invoice_style"]').forEach(function(r) {
                 var lbl = r.closest('label');
@@ -175,7 +220,15 @@
                     lbl.classList.add('border-gray-200');
                 }
             });
+            checkGstWarn();
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            checkGstWarn();
+            var gstNum  = document.querySelector('input[name="gst_number"]');
+            var taxRate = document.querySelector('input[name="tax_rate"]');
+            if (gstNum)  gstNum.addEventListener('input', checkGstWarn);
+            if (taxRate) taxRate.addEventListener('input', checkGstWarn);
+        });
         </script>
         <script>
         document.getElementById('logoInput').addEventListener('change', function(e) {
