@@ -18,6 +18,18 @@
         th, td { border: 1px solid #222; padding: 4px 6px; }
         .no-border td, .no-border th { border: none; }
         .inner-table th, .inner-table td { border: 1px solid #bbb; padding: 3px 5px; }
+        .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .bottom-flex { display: flex; gap: 16px; flex-wrap: wrap; }
+        .bottom-left { flex: 1; min-width: 240px; }
+        .bottom-right { width: 220px; flex-shrink: 0; }
+        @media (max-width: 640px) {
+            body { font-size: 11px; background: #fff; }
+            .page-wrap { border-radius: 0 !important; border: none !important; }
+            .inv-header-table td { display: block !important; width: 100% !important; text-align: left !important; }
+            .bottom-right { width: 100%; }
+            .no-print { padding: 8px 12px; }
+            .no-print a, .no-print button { font-size: 12px !important; padding: 7px 12px !important; }
+        }
     </style>
 </head>
 <body>
@@ -132,7 +144,7 @@
 
     {{-- ══ HEADER ══ --}}
     <div style="border-bottom:2px solid #111; padding: 12px 16px;">
-        <table class="no-border" style="width:100%;">
+        <table class="no-border inv-header-table" style="width:100%;">
             <tr>
                 <td style="width:65%; vertical-align:top;">
                     <div style="display:flex;align-items:center;gap:12px;">
@@ -171,8 +183,8 @@
     </div>
 
     {{-- ══ GUEST + ROOM DETAILS ══ --}}
-    <div style="padding:0 16px;">
-        <table style="width:100%;margin-top:0;border-left:none;border-right:none;">
+    <div style="padding:0 16px;" class="table-scroll">
+        <table style="width:100%;margin-top:0;border-left:none;border-right:none;min-width:480px;">
             <thead>
                 <tr style="background:#1e293b;color:#fff;">
                     <th colspan="4" style="padding:5px 8px;font-size:11px;letter-spacing:.5px;border-color:#1e293b;">GUEST DETAILS</th>
@@ -221,8 +233,8 @@
     </div>
 
     {{-- ══ PARTICULARS TABLE ══ --}}
-    <div style="padding:0 16px;margin-top:12px;">
-        <table style="font-size:11px;">
+    <div style="padding:0 16px;margin-top:12px;" class="table-scroll">
+        <table style="font-size:11px;min-width:560px;">
             <thead>
                 <tr style="background:#1e293b;color:#fff;text-align:center;">
                     <th style="width:28%;text-align:left;border-color:#1e293b;">Particular</th>
@@ -316,10 +328,10 @@
     </div>
 
     {{-- ══ TAX SUMMARY (right) + AMOUNT WORDS / BANK / ADVANCE (left) ══ --}}
-    <div style="padding:10px 16px 0; display:flex; gap:16px;">
+    <div style="padding:10px 16px 0;" class="bottom-flex">
 
         {{-- LEFT: Amount in words + bank + advances --}}
-        <div style="flex:1;">
+        <div class="bottom-left">
             <div style="border:1px solid #222;padding:7px 10px;margin-bottom:8px;">
                 <div style="font-size:10px;color:#64748b;text-transform:uppercase;margin-bottom:2px;">Amount in Words</div>
                 <div style="font-weight:700;font-size:12px;">{{ $amountWords }}</div>
@@ -361,7 +373,7 @@
         </div>
 
         {{-- RIGHT: Summary box --}}
-        <div style="width:220px;flex-shrink:0;">
+        <div class="bottom-right">
             <table class="inner-table" style="font-size:11px;width:100%;">
                 <tbody>
                     <tr style="background:#f8fafc;">
@@ -408,7 +420,7 @@
             <br><strong>Cancellation Policy:</strong> {{ $s->cancellation_policy }}
             @endif
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px;flex-wrap:wrap;gap:16px;">
             <div style="text-align:center;">
                 <div style="border-top:1px solid #555;margin-top:32px;padding-top:4px;font-size:11px;font-weight:600;min-width:160px;">
                     Signature of Guest

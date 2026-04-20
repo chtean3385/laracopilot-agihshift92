@@ -94,10 +94,12 @@ class CheckOutController extends Controller
         $totalPaid  = $booking->payments->where('status', 'completed')->sum('amount');
         $balanceDue = max(0, $actualTotal - $totalPaid);
 
+        $settings = Setting::where('hotel_id', $booking->hotel_id)->first();
+
         return view('admin.checkout.show', compact(
             'booking', 'pricingType', 'actualNights', 'hoursBooked',
             'actualTotal', 'roomCost', 'mealCost', 'extraBedCost',
-            'extraChargesTotal', 'totalPaid', 'balanceDue'
+            'extraChargesTotal', 'totalPaid', 'balanceDue', 'settings'
         ));
     }
 
