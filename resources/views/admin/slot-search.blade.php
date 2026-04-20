@@ -400,6 +400,13 @@
                             <i class="fas fa-hotel"></i>
                             WHOLE HOTEL BOOKED &mdash;
                             <strong>{{ $dateData['whole_hotel']['guest_name'] }}</strong>
+                            @if(!empty($dateData['whole_hotel']['check_in_date']) && !empty($dateData['whole_hotel']['check_out_date']))
+                            <span style="font-size:11px;color:#6d28d9;margin-left:6px;">
+                                ({{ \Carbon\Carbon::parse($dateData['whole_hotel']['check_in_date'])->format('d M') }}
+                                &ndash;
+                                {{ \Carbon\Carbon::parse($dateData['whole_hotel']['check_out_date'])->format('d M Y') }})
+                            </span>
+                            @endif
                             <a href="{{ route('bookings.show', $dateData['whole_hotel']['booking_id']) }}"
                                 style="font-size:11px;font-weight:700;color:#7c3aed;text-decoration:none;margin-left:4px;"
                                 target="_blank" title="View booking">
@@ -423,9 +430,9 @@
                         @elseif($cell['status'] === 'booked')
                             <a href="{{ route('bookings.show', $cell['booking_id']) }}"
                                 class="ss-pill ss-pill-booked" target="_blank"
-                                title="{{ $cell['guest_name'] ?? '' }}">
+                                title="{{ ($cell['room_number'] ?? '') . ' – ' . ($cell['guest_name'] ?? 'Guest') }}">
                                 <i class="fas fa-user" style="font-size:9px;"></i>
-                                {{ \Illuminate\Support\Str::limit($cell['guest_name'] ?? 'Guest', 12) }}
+                                @if(!empty($cell['room_number']))Rm {{ $cell['room_number'] }} &ndash; @endif{{ \Illuminate\Support\Str::limit($cell['guest_name'] ?? 'Guest', 10) }}
                             </a>
                         @else
                             <span class="ss-pill ss-pill-na">N/A</span>

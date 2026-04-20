@@ -229,9 +229,11 @@ class SlotSearchController extends Controller
 
                         $slotData['dates'][$ds] = [
                             'whole_hotel'  => [
-                                'booking_id'  => $whForDay->booking_id,
-                                'booking_num' => $whForDay->booking_number,
-                                'guest_name'  => $whForDay->guest_name,
+                                'booking_id'    => $whForDay->booking_id,
+                                'booking_num'   => $whForDay->booking_number,
+                                'guest_name'    => $whForDay->guest_name,
+                                'check_in_date' => $whForDay->check_in_date,
+                                'check_out_date'=> $whForDay->check_out_date,
                             ],
                             'rooms'        => [],
                             'row_status'   => 'booked',
