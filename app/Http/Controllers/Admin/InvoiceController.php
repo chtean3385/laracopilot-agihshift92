@@ -34,7 +34,7 @@ class InvoiceController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
-        $settings = Setting::first();
+        $settings = Setting::where('hotel_id', $invoice->booking?->hotel_id ?? session('crm_hotel_id'))->first();
         return view('admin.invoices.show', compact('invoice', 'settings'));
     }
 
@@ -42,7 +42,7 @@ class InvoiceController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
-        $settings = Setting::first();
+        $settings = Setting::where('hotel_id', $invoice->booking?->hotel_id ?? session('crm_hotel_id'))->first();
 
         // Branch on hotel's invoice style setting
         $style = $settings->invoice_style ?? 'modern';

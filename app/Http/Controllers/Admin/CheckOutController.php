@@ -164,7 +164,7 @@ class CheckOutController extends Controller
 
         $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
 
-        $settings   = Setting::first();
+        $settings   = Setting::where('hotel_id', $booking->hotel_id)->first();
         $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
 
         // Compute true base (same logic as show())
