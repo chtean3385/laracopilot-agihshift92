@@ -235,9 +235,18 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;" class="sse-hdr-actions no-print">
             @if($matrix !== null)
-            <button onclick="window.print()" class="btn btn-ghost" type="button">
-                <i class="fas fa-file-pdf"></i> Export PDF
-            </button>
+            @php
+                $pdfParams = http_build_query(array_filter([
+                    'date_from'  => $dateFrom ?? '',
+                    'date_to'    => $dateTo   ?? '',
+                    'status'     => ($statusFilter ?? 'all') !== 'all' ? $statusFilter : null,
+                    'autoprint'  => '1',
+                ]));
+                $pdfUrl = route('slot-search.pdf') . '?' . $pdfParams;
+            @endphp
+            <a href="{{ $pdfUrl }}" target="_blank" class="btn btn-ghost" style="text-decoration:none;">
+                <i class="fas fa-file-pdf" style="color:#dc2626;"></i> Export PDF
+            </a>
             @endif
             <a href="{{ route('dashboard') }}" class="btn btn-outline">
                 <i class="fas fa-arrow-left" style="font-size:11px;"></i> Dashboard

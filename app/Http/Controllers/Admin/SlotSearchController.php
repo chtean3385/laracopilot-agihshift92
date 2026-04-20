@@ -140,6 +140,85 @@ class SlotSearchController extends Controller
     }
 
     /**
+     * Standalone PDF export — same data as index(), rendered in a no-layout view
+     * that auto-triggers window.print() on load (landscape, colors preserved).
+     */
+    public function pdf(Request $request)
+    {
+        if (!session('crm_logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $currentHotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+        if (!$currentHotelId) {
+            return redirect()->route('dashboard');
+        }
+
+        $hotelOptions    = session('crm_hotel_options', []);
+        $availableHotels = collect();
+        if (!empty($hotelOptions)) {
+            $ids             = array_column($hotelOptions, 'hotel_id');
+            $availableHotels = Hotel::whereIn('id', $ids)->where('status', 'active')->get(['id', 'name']);
+        }
+        if ($availableHotels->isEmpty()) {
+            $availableHotels = Hotel::where('id', $currentHotelId)->get(['id', 'name']);
+        }
+
+        $allHotelIds = $availableHotels->pluck('id')->all();
+
+        $allRooms = DB::table('rooms')
+            ->whereIn('hotel_id', $allHotelIds)->where('status', '!=', 'maintenance')
+            ->orderBy('hotel_id')->orderBy('room_number')
+            ->get(['id', 'hotel_id', 'room_number', 'pricing_type', 'type'])
+            ->groupBy('hotel_id');
+
+        $allSlots = DB::table('hotel_time_slots')
+            ->whereIn('hotel_id', $allHotelIds)->where('is_active', true)
+            ->orderBy('hotel_id')->orderBy('sort_order')->orderBy('start_time')
+            ->get(['id', 'hotel_id', 'name', 'start_time', 'end_time', 'is_overnight'])
+            ->groupBy('hotel_id');
+
+        $dateFrom       = $request->input('date_from', Carbon::today()->toDateString());
+        $dateTo         = $request->input('date_to',   Carbon::today()->addDays(6)->toDateString());
+        $slotIds        = array_filter(array_map('intval', (array) $request->input('slot_ids', [])));
+        $filterHotelIds = array_filter(array_map('intval', (array) $request->input('hotel_ids', [])));
+        $statusFilter   = 'all';
+
+        try { $from = Carbon::parse($dateFrom); } catch (\Exception $e) { $from = Carbon::today(); }
+        try { $to   = Carbon::parse($dateTo);   } catch (\Exception $e) { $to = $from->copy()->addDays(6); }
+        if ($to->lt($from))              $to = $from->copy()->addDays(6);
+        if ($to->diffInDays($from) > 90) $to = $from->copy()->addDays(90);
+        $dateFrom = $from->toDateString();
+        $dateTo   = $to->toDateString();
+
+        $searchHotelIds = $allHotelIds;
+        if (!empty($filterHotelIds)) {
+            $searchHotelIds = array_values(array_intersect($searchHotelIds, $filterHotelIds));
+        }
+
+        $searchRooms = $allRooms->only($searchHotelIds);
+        $searchSlots = $allSlots->only($searchHotelIds);
+
+        $result = $this->buildMatrix(
+            $from, $to, $slotIds, $searchHotelIds, $statusFilter,
+            $searchRooms, $searchSlots, $availableHotels
+        );
+
+        $hotelName = session('crm_hotel_name', 'Hotel CRM');
+
+        return view('admin.slot-search-pdf', [
+            'matrix'          => $result['rows'],
+            'slotColumns'     => $result['columns'],
+            'kpi'             => $result['kpi'],
+            'dateFrom'        => $dateFrom,
+            'dateTo'          => $dateTo,
+            'availableHotels' => $availableHotels,
+            'hotelName'       => $hotelName,
+            'generatedAt'     => Carbon::now()->format('d M Y, h:i A'),
+        ]);
+    }
+
+    /**
      * Build hotel-rows × slot-columns matrix.
      * Each cell (hotel × slot) has: worst_free, total_rooms, color, per-date breakdown.
      * Returns: ['columns'=>[...slot types], 'rows'=>[...hotel rows], 'kpi'=>[...]]

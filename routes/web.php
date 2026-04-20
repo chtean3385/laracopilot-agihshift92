@@ -215,6 +215,7 @@ Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvai
 // ── Slot Search Engine ──────────────────────────────────────────────────────
 use App\Http\Controllers\Admin\SlotSearchController;
 Route::get('/slot-search', [SlotSearchController::class, 'index'])->name('slot-search.index');
+Route::get('/slot-search/pdf', [SlotSearchController::class, 'pdf'])->name('slot-search.pdf');
 
 // ── Dashboard preferences ───────────────────────────────────────────────────
 use App\Http\Controllers\Admin\DashboardPreferenceController;
