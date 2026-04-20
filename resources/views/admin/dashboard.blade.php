@@ -372,6 +372,9 @@
                         if (\App\Models\Module::isEnabled('reports.view')) {
                             $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
                         }
+                        if (\App\Models\Module::isEnabled('slot-search-engine')) {
+                            $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Find availability', 'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'];
+                        }
                     @endphp
 
                     <div data-widget="shortcuts" class="db-widget-wrap">

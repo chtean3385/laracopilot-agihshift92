@@ -22,4 +22,17 @@ class Module extends Model
             return false;
         }
     }
+
+    public static function isEnabledForHotel(string $slug, int $hotelId): bool
+    {
+        try {
+            $module = static::withoutGlobalScopes()
+                ->where('hotel_id', $hotelId)
+                ->where('slug', $slug)
+                ->first();
+            return $module ? (bool) $module->is_enabled : false;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 }

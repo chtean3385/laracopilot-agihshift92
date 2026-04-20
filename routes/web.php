@@ -212,6 +212,10 @@ Route::delete('/settings/add-ons/{id}',               [TimeSlotController::class
 Route::get('/calendar/day-summary',      [DashboardController::class, 'daySummary']       )->name('calendar.day_summary');
 Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvailability'])->name('dashboard.availability');
 
+// ── Slot Search Engine ──────────────────────────────────────────────────────
+use App\Http\Controllers\Admin\SlotSearchController;
+Route::get('/slot-search', [SlotSearchController::class, 'index'])->name('slot-search.index');
+
 // ── Dashboard preferences ───────────────────────────────────────────────────
 use App\Http\Controllers\Admin\DashboardPreferenceController;
 Route::post('/dashboard/preferences/save',         [DashboardPreferenceController::class, 'save']       )->name('dashboard.preferences.save');

@@ -9,7 +9,7 @@ class Hotel extends Model
     protected $fillable = [
         'name', 'slug', 'address', 'phone', 'email', 'status', 'plan',
         'trial_ends_at', 'plan_expires_at', 'max_rooms', 'max_users', 'admin_notes', 'backup_enabled',
-        'owner_wa_consent',
+        'owner_wa_consent', 'parent_hotel_id',
     ];
 
     protected $casts = [
@@ -50,6 +50,16 @@ class Hotel extends Model
     public function roles()
     {
         return $this->hasMany(Role::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Hotel::class, 'parent_hotel_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Hotel::class, 'parent_hotel_id');
     }
 
     public function isActive(): bool
