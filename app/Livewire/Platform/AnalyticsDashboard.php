@@ -158,64 +158,67 @@ class AnalyticsDashboard extends Component
         $this->quickActionResult = "✅ Push sent to {$result['success']} device(s) (failed: {$result['failure']})";
     }
 
-    // ── Linear regression prediction ──────────────────────────────────────
+    // ── MRR-based revenue forecast (plan pricing, not payment history) ──────
     private function revenuePrediction(): array
     {
-        $revenueRows = DB::table('payments')
-            ->select(
-                DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"),
-                DB::raw('SUM(amount) as total')
-            )
+        $configPlans = config('plans', []);
+        $dbPlans     = DB::table('platform_plans')->get()->keyBy('slug');
+
+        // Prefer standalone/parent hotels (not billed through a chain parent)
+        $subQuery = DB::table('hotels')
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('billing_included_in_parent')
+                  ->orWhere('billing_included_in_parent', false);
+            })
+            ->select('plan', 'billing_cycle', 'custom_monthly_price', 'custom_yearly_price');
+
+        $hotels = $subQuery->get();
+
+        // Fallback: if ALL hotels are marked billing_included_in_parent (data issue),
+        // use all active hotels so forecast is never ₹0
+        if ($hotels->isEmpty()) {
+            $hotels = DB::table('hotels')
+                ->where('status', 'active')
+                ->select('plan', 'billing_cycle', 'custom_monthly_price', 'custom_yearly_price')
+                ->get();
+        }
+
+        $mrr = 0;
+        foreach ($hotels as $h) {
+            $planMonthly = isset($dbPlans[$h->plan])
+                ? (int) $dbPlans[$h->plan]->monthly_price
+                : (int) ($configPlans[$h->plan]['monthly_price'] ?? 0);
+            $planYearly  = isset($dbPlans[$h->plan])
+                ? (int) $dbPlans[$h->plan]->yearly_price
+                : (int) ($configPlans[$h->plan]['yearly_price'] ?? 0);
+
+            $effectiveMonthly = ($h->custom_monthly_price > 0) ? (int) $h->custom_monthly_price : $planMonthly;
+            $effectiveYearly  = ($h->custom_yearly_price  > 0) ? (int) $h->custom_yearly_price  : $planYearly;
+
+            if ($h->billing_cycle === 'yearly') {
+                $mrr += round($effectiveYearly / 12);
+            } else {
+                $mrr += $effectiveMonthly;
+            }
+        }
+
+        $arr = $mrr * 12;
+
+        // Current month actual payments (for display only)
+        $currentMonth = (float) DB::table('payments')
             ->where('status', 'completed')
-            ->where('created_at', '>=', Carbon::now()->subMonths(6)->startOfMonth())
-            ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM')")
-            ->get()
-            ->keyBy('month');
-
-        $months = collect(range(5, 0))->map(fn($i) => Carbon::now()->subMonths($i)->format('Y-m'))->values()->toArray();
-        $values = array_map(fn($k) => (float)($revenueRows[$k]?->total ?? 0), $months);
-
-        $n    = count($values);
-        $xArr = range(0, $n - 1);
-        $sumX = array_sum($xArr);
-        $sumY = array_sum($values);
-        $sumXY = 0;
-        $sumX2 = 0;
-        foreach ($xArr as $i => $xi) {
-            $sumXY += $xi * $values[$i];
-            $sumX2 += $xi * $xi;
-        }
-
-        $denom = ($n * $sumX2 - $sumX * $sumX);
-        $slope = $denom != 0 ? ($n * $sumXY - $sumX * $sumY) / $denom : 0;
-        $intercept = ($sumY - $slope * $sumX) / $n;
-
-        $nextMonth = max(0, round($intercept + $slope * $n));
-        $nextYear  = 0;
-        for ($i = 0; $i < 12; $i++) {
-            $nextYear += max(0, $intercept + $slope * ($n + $i));
-        }
-        $nextYear = round($nextYear);
-
-        $avgRevenue = $n > 0 && $sumY > 0 ? ($sumY / $n) : 1;
-        $trendPct   = round(($slope / max(1, $avgRevenue)) * 100, 1);
-
-        // Confidence: how well does linear fit?
-        $predicted = array_map(fn($i) => $intercept + $slope * $i, $xArr);
-        $ssRes = 0; $ssTot = 0; $mean = $sumY / max(1, $n);
-        foreach ($values as $i => $v) {
-            $ssRes += ($v - $predicted[$i]) ** 2;
-            $ssTot += ($v - $mean) ** 2;
-        }
-        $r2 = $ssTot > 0 ? round(1 - ($ssRes / $ssTot), 2) : 0;
+            ->where('created_at', '>=', Carbon::now()->startOfMonth())
+            ->sum('amount');
 
         return [
-            'nextMonth'    => $nextMonth,
-            'nextYear'     => $nextYear,
-            'trend'        => $slope > 100 ? 'up' : ($slope < -100 ? 'down' : 'flat'),
-            'trendPct'     => $trendPct,
-            'confidence'   => max(0, min(100, (int) ($r2 * 100))),
-            'currentMonth' => (float)($revenueRows[Carbon::now()->format('Y-m')]?->total ?? 0),
+            'nextMonth'    => $mrr,
+            'nextYear'     => $arr,
+            'trend'        => 'flat',
+            'trendPct'     => 0,
+            'confidence'   => 100,
+            'currentMonth' => $currentMonth,
+            'isMrr'        => true,
         ];
     }
 

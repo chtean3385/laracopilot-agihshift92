@@ -55,26 +55,21 @@
             </div>
         </div>
 
-        {{-- Next Month Prediction --}}
+        {{-- MRR (Monthly Recurring Revenue) --}}
         <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:16px;padding:16px 20px;min-width:160px;text-align:center;">
-            <div style="font-size:10px;font-weight:700;color:#a5b4fc;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">Next Month</div>
+            <div style="font-size:10px;font-weight:700;color:#a5b4fc;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">MRR / Month</div>
             <div style="font-size:22px;font-weight:900;color:#fff;">₹{{ number_format($prediction['nextMonth']) }}</div>
-            <div style="font-size:11px;color:{{ $prediction['trend'] === 'up' ? '#6ee7b7' : ($prediction['trend'] === 'down' ? '#fca5a5' : '#a5b4fc') }};margin-top:4px;">
-                @if($prediction['trend'] === 'up') ↑ +{{ abs($prediction['trendPct']) }}% trend
-                @elseif($prediction['trend'] === 'down') ↓ {{ $prediction['trendPct'] }}% trend
-                @else → Stable
-                @endif
-            </div>
-            <div style="font-size:10px;color:#6b7280;margin-top:2px;">{{ $prediction['confidence'] }}% confidence</div>
+            <div style="font-size:11px;color:#6ee7b7;margin-top:4px;">→ Subscription based</div>
+            <div style="font-size:10px;color:#6b7280;margin-top:2px;">From active plan pricing</div>
         </div>
 
-        {{-- Next Year Prediction --}}
+        {{-- ARR (Annual Recurring Revenue) --}}
         <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:16px;padding:16px 20px;min-width:160px;text-align:center;">
-            <div style="font-size:10px;font-weight:700;color:#a5b4fc;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">12-Month Forecast</div>
+            <div style="font-size:10px;font-weight:700;color:#a5b4fc;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">ARR (Annual)</div>
             <div style="font-size:22px;font-weight:900;color:#fff;">₹{{ number_format($prediction['nextYear']) }}</div>
-            <div style="font-size:11px;color:#c4b5fd;margin-top:4px;">Based on 6-month trend</div>
+            <div style="font-size:11px;color:#c4b5fd;margin-top:4px;">Based on active subscriptions</div>
             <div style="margin-top:8px;background:rgba(255,255,255,.1);border-radius:6px;height:4px;overflow:hidden;">
-                <div style="height:100%;width:{{ $prediction['confidence'] }}%;background:linear-gradient(90deg,#a78bfa,#06b6d4);border-radius:6px;"></div>
+                <div style="height:100%;width:100%;background:linear-gradient(90deg,#a78bfa,#06b6d4);border-radius:6px;"></div>
             </div>
         </div>
 
