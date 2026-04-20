@@ -19,13 +19,21 @@ class SlotSearchController extends Controller
             return redirect()->route('login');
         }
 
-        $currentHotelId = (int) session('crm_hotel_id');
+        // Support both regular hotel-admin sessions (crm_hotel_id) and
+        // Super Admin sessions (crm_sa_hotel_filter) — same pattern used throughout the codebase.
+        $currentHotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+
+        if (!$currentHotelId) {
+            return redirect()->route('dashboard')->with('warning', 'No hotel context available.');
+        }
 
         if (!Module::isEnabledForHotel('slot-search-engine', $currentHotelId)) {
             return redirect()->route('dashboard')->with('warning', 'Slot Search Engine is not enabled for your hotel.');
         }
 
-        // Determine hotels available in this session
+        // Determine hotels available in this session.
+        // Super Admin uses crm_sa_hotel_filter (single hotel context).
+        // Multi-hotel hotel-admin uses crm_hotel_options.
         $hotelOptions    = session('crm_hotel_options', []);
         $availableHotels = collect();
         if (!empty($hotelOptions)) {

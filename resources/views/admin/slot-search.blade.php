@@ -192,7 +192,7 @@
         </a>
     </div>
 </div>
-@elseif($allSlots->isEmpty())
+@elseif($flatSlots->isEmpty())
 <div class="ss-card">
     <div class="ss-empty">
         <div class="ss-empty-icon"><i class="fas fa-clock"></i></div>
@@ -242,7 +242,7 @@
                 <label class="ss-label"><i class="fas fa-clock" style="margin-right:4px;"></i>Time Slots</label>
                 <div class="ss-select-wrap" id="slotWrap">
                     <div class="ss-multi-display" id="slotDisplay" onclick="toggleDD('slot')">
-                        <span id="slotText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ count($slotIds) === 0 || count($slotIds) === $allSlots->count() ? 'All Slots' : ($allSlots->whereIn('id', $slotIds)->count() . ' slot(s) selected') }}</span>
+                        <span id="slotText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ count($slotIds) === 0 || count($slotIds) === $flatSlots->count() ? 'All Slots' : ($flatSlots->whereIn('id', $slotIds)->count() . ' slot(s) selected') }}</span>
                         <i class="fas fa-chevron-down ss-chevron"></i>
                     </div>
                     <div class="ss-dropdown" id="slotDropdown">
@@ -250,7 +250,7 @@
                             <input type="checkbox" id="slotAll" {{ count($slotIds) === 0 ? 'checked' : '' }}>
                             <span>All Slots</span>
                         </div>
-                        @foreach($allSlots as $s)
+                        @foreach($flatSlots as $s)
                         <div class="ss-dropdown-item" onclick="toggleCB('slot',{{ $s->id }})">
                             <input type="checkbox" name="slot_ids[]" id="slot_{{ $s->id }}" value="{{ $s->id }}" {{ in_array($s->id, $slotIds) ? 'checked' : '' }}>
                             <span>{{ $s->name }}<span class="ss-meta">{{ $s->start_time }}–{{ $s->end_time }}</span></span>
