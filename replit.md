@@ -3,6 +3,27 @@
 ## Overview
 Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi-tenant SaaS platform. Features: guest management, rooms, bookings, check-in/out, payments, invoices, reports, RBAC, activity audit logging, WhatsApp messaging, Guest Register (signatures + ID docs), Pathik autofill, OTA Channel Manager, Payment Links, web-based installer, Per-Hotel Backup & Restore, SaaS Analytics Dashboard with Engagement Campaigns, Firebase Push Notifications (web + Android Flutter WebView), Platform Admin SaaS console, and **Customisable Dashboard** (per-user widget show/hide + drag-to-reorder + hotel-wide admin defaults).
 
+## ⚠️ DEPLOYMENT RULE — READ BEFORE EVERY PUBLISH
+
+**`publicDir` must NEVER be set in the `[deployment]` block of `.replit`.**
+
+Setting `publicDir = "public"` causes Replit autoscale to treat the app as a static site and skip the `run` command entirely — the web server never starts and the deployment silently fails.
+
+**Correct deployment config (autoscale, no publicDir):**
+```toml
+[deployment]
+deploymentTarget = "autoscale"
+run = ["bash", "scripts/start.sh"]
+build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan optimize && php artisan app:safe-migrate"]
+```
+
+**If deployment fails with "no run command" or app not starting:**
+→ Check that `publicDir` has NOT crept back into `[deployment]`. If it has, call `deployConfig()` with `deploymentTarget="autoscale"`, `run=["bash","scripts/start.sh"]`, and `build=[...]` — with NO `publicDir` argument. Then re-publish.
+
+The `.replit` file cannot be edited directly by agents — only `deployConfig()` can update it.
+
+---
+
 ## Architecture
 - **Framework**: Laravel 12 (PHP 8.2)
 - **Database (dev)**: Replit managed PostgreSQL (`heliumdb` on host `helium:5432`) — credentials set as Replit dev env vars (`DB_HOST=helium`, `DB_DATABASE=heliumdb`, `DB_USERNAME=postgres`, `DB_PASSWORD=password`, `DB_PORT=5432`). The `.env` has `DB_CONNECTION=pgsql`. Run migrations with `php artisan migrate --force`.
