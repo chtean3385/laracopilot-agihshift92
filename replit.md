@@ -22,6 +22,14 @@ build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php a
 
 The `.replit` file cannot be edited directly by agents — only `deployConfig()` can update it.
 
+## ⚠️ PERMISSION SAFETY RULE — NEVER REVERT THIS
+
+**`provisionHotel()` in `SafeMigrate.php` only assigns permissions to NEWLY CREATED roles.**
+
+It must NEVER assign or add permissions to roles that already exist. Hotel admins configure permissions manually via the Roles UI — if the deploy script re-adds "missing" permissions, it silently overrides those manual settings on every publish.
+
+The correct logic: permission assignment is **inside** the `if (!$existing)` block only. When a role already exists, the deploy script skips its permissions entirely.
+
 ---
 
 ## Architecture

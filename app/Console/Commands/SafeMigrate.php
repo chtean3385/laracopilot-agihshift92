@@ -191,18 +191,14 @@ class SafeMigrate extends Command
                     'created_at'  => now(),
                     'updated_at'  => now(),
                 ]);
-            } else {
-                $roleId = $existing->id;
-            }
 
-            $permIds        = DB::table('permissions')->whereIn('slug', $def['perms'])->pluck('id')->all();
-            $existing_pivot = DB::table('role_permissions')->where('role_id', $roleId)->pluck('permission_id')->all();
-            $toInsert       = array_diff($permIds, $existing_pivot);
-            foreach ($toInsert as $permId) {
-                DB::table('role_permissions')->insertOrIgnore([
-                    'role_id'       => $roleId,
-                    'permission_id' => $permId,
-                ]);
+                $permIds = DB::table('permissions')->whereIn('slug', $def['perms'])->pluck('id')->all();
+                foreach ($permIds as $permId) {
+                    DB::table('role_permissions')->insertOrIgnore([
+                        'role_id'       => $roleId,
+                        'permission_id' => $permId,
+                    ]);
+                }
             }
         }
 
