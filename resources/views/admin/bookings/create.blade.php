@@ -196,48 +196,21 @@
                 </div>
 
                 @if($slotModuleOn)
-                {{-- Whole Hotel: mode picker (shown only when whole hotel toggle is ON) --}}
-                <div id="whModeRow" class="md:col-span-2 hidden">
-                    <div class="flex flex-wrap items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                        <span class="text-xs font-semibold text-amber-800"><i class="fas fa-hotel mr-1"></i>Whole Hotel Mode:</span>
-                        <button type="button" id="whModeNight" onclick="setWhMode('per_night')"
-                            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow">
-                            <i class="fas fa-moon mr-1"></i>Overnight / Multi-Day
-                        </button>
-                        <button type="button" id="whModeSlot" onclick="setWhMode('per_slot')"
-                            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-amber-700 border border-amber-300 hover:bg-amber-100">
-                            <i class="fas fa-clock mr-1"></i>Time Slot (Same Day)
-                        </button>
-                        <span class="text-xs text-amber-600">Choose "Time Slot" if you want to book from a specific slot — e.g. 5pm onward while another guest has the morning slot.</span>
-                    </div>
-                </div>
-                {{-- Whole Hotel: slot fields (hidden until slot mode selected) --}}
-                <div id="whSlotFields" class="md:col-span-2 hidden">
-                    <div class="border-2 border-amber-300 bg-amber-50 rounded-2xl p-5">
-                        <div class="flex items-center gap-2 mb-4">
-                            <i class="fas fa-hotel text-amber-500"></i>
-                            <h4 class="font-bold text-gray-700">Whole Hotel — Time Slot Booking</h4>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="booking_date" id="whSlotBookingDate" value="{{ old('booking_date') }}" min="{{ date('Y-m-d') }}" class="form-input">
-                                @error('booking_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label class="form-label">Time Slot <span class="text-red-500">*</span></label>
-                                <select name="time_slot_id" id="whTimeSlotSelect" class="form-input" onchange="syncWhSlotTotal()">
-                                    <option value="">Select a time slot...</option>
-                                    @foreach($timeSlots as $slot)
-                                    <option value="{{ $slot->id }}" data-price="{{ $slot->base_price }}"
-                                        {{ old('time_slot_id') == $slot->id ? 'selected' : '' }}>
-                                        {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }}) — ₹{{ number_format($slot->base_price) }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('time_slot_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
+                {{-- Whole Hotel: Arrival Time Slot row (shown only when whole hotel toggle is ON) --}}
+                <div id="whArrivalSlotRow" class="md:col-span-2 hidden">
+                    <div class="border border-amber-200 bg-amber-50 rounded-xl p-4">
+                        <label class="form-label mb-2"><i class="fas fa-clock mr-1 text-amber-500"></i>Arrival Time Slot <span class="text-xs font-normal text-gray-400">(optional — leave blank for full-day check-in)</span></label>
+                        <select name="time_slot_id" id="whArrivalSlotSelect" class="form-input" onchange="syncWhSlotMode()">
+                            <option value="">No specific slot (full-day check-in)</option>
+                            @foreach($timeSlots as $slot)
+                            <option value="{{ $slot->id }}" data-price="{{ $slot->base_price }}"
+                                {{ old('time_slot_id') == $slot->id ? 'selected' : '' }}>
+                                {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }}) — ₹{{ number_format($slot->base_price) }}
+                            </option>
+                            @endforeach
+                        </select>
+                        @error('time_slot_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        <p class="text-xs text-amber-600 mt-2"><i class="fas fa-info-circle mr-1"></i>Select a slot if this booking starts from a specific time on check-in day (e.g. 5pm onward). Same-day bookings with non-overlapping slots can then coexist.</p>
                     </div>
                 </div>
                 @endif
@@ -870,15 +843,16 @@
 
     // ── Whole-Hotel toggle ─────────────────────────────────────────────────
     function toggleWholeHotel() {
-        const toggle      = document.getElementById('wholeHotelToggle');
-        const isOn        = toggle.checked;
-        const hiddenInput = document.getElementById('isWholeHotelInput');
-        const roomWrapper = document.getElementById('roomSelectWrapper');
-        const perSlot     = document.getElementById('perSlotFields');
-        const perHour     = document.getElementById('perHourFields');
-        const mealSection = document.getElementById('mealPlanSection');
-        const extraBedSec = document.getElementById('extraBedSection');
-        const whModeRow   = document.getElementById('whModeRow');
+        const toggle         = document.getElementById('wholeHotelToggle');
+        const isOn           = toggle.checked;
+        const hiddenInput    = document.getElementById('isWholeHotelInput');
+        const roomWrapper    = document.getElementById('roomSelectWrapper');
+        const perNight       = document.getElementById('perNightFields');
+        const perSlot        = document.getElementById('perSlotFields');
+        const perHour        = document.getElementById('perHourFields');
+        const mealSection    = document.getElementById('mealPlanSection');
+        const extraBedSec    = document.getElementById('extraBedSection');
+        const whArrivalRow   = document.getElementById('whArrivalSlotRow');
 
         hiddenInput.value = isOn ? '1' : '0';
 
@@ -887,25 +861,24 @@
             roomWrapper.classList.add('hidden');
             document.getElementById('roomSelect').required = false;
             document.getElementById('roomSelect').disabled = true;
-            // Always hide per-slot/per-hour individual room fields
+            // Always show check-in / check-out date fields for whole-hotel
+            if (perNight) { perNight.classList.remove('hidden'); perNight.classList.add('contents'); setFieldsEnabled(perNight, true); document.getElementById('checkIn').required = true; document.getElementById('checkOut').required = true; }
+            // Hide individual-room per-slot / per-hour fields
             if (perSlot)  { perSlot.classList.add('hidden');  setFieldsEnabled(perSlot,  false); }
             if (perHour)  { perHour.classList.add('hidden');  setFieldsEnabled(perHour,  false); }
-            // Hide meal and extra bed sections
-            if (mealSection)  mealSection.style.display  = 'none';
-            if (extraBedSec)  extraBedSec.style.display  = 'none';
-            // Show mode picker if slot module is on
-            if (whModeRow && window.whSlotModuleOn) whModeRow.classList.remove('hidden');
-            // Apply current whole-hotel mode (default per_night)
-            const currentMode = document.getElementById('whPricingTypeInput')?.value || 'per_night';
-            setWhMode(currentMode, false);
+            // Hide meal and extra bed
+            if (mealSection) mealSection.style.display = 'none';
+            if (extraBedSec) extraBedSec.style.display = 'none';
+            // Show arrival-slot row if slot module is active
+            if (whArrivalRow && window.whSlotModuleOn) whArrivalRow.classList.remove('hidden');
+            calcWhSuggestedTotal();
         } else {
-            // Hide whole-hotel mode row and slot fields
-            if (whModeRow) whModeRow.classList.add('hidden');
-            const whSlot = document.getElementById('whSlotFields');
-            if (whSlot) { whSlot.classList.add('hidden'); setFieldsEnabled(whSlot, false); }
-            // Reset pricing type to per_night
+            // Hide whole-hotel slot row and reset pricing type
+            if (whArrivalRow) whArrivalRow.classList.add('hidden');
             const whPt = document.getElementById('whPricingTypeInput');
             if (whPt) whPt.value = 'per_night';
+            const sel = document.getElementById('whArrivalSlotSelect');
+            if (sel) sel.value = '';
             // Restore room selector
             roomWrapper.classList.remove('hidden');
             document.getElementById('roomSelect').required = true;
@@ -915,36 +888,20 @@
         }
     }
 
-    function setWhMode(mode, updateHidden) {
-        const perNight = document.getElementById('perNightFields');
-        const whSlot   = document.getElementById('whSlotFields');
-        const btnNight = document.getElementById('whModeNight');
-        const btnSlot  = document.getElementById('whModeSlot');
-        const whPt     = document.getElementById('whPricingTypeInput');
-
-        if (updateHidden !== false && whPt) whPt.value = mode;
-
-        if (mode === 'per_slot') {
-            if (perNight) { perNight.classList.add('hidden'); setFieldsEnabled(perNight, false); document.getElementById('checkIn').required = false; document.getElementById('checkOut').required = false; }
-            if (whSlot)   { whSlot.classList.remove('hidden'); setFieldsEnabled(whSlot, true); }
-            if (btnSlot)  { btnSlot.className  = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow'; }
-            if (btnNight) { btnNight.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-amber-700 border border-amber-300 hover:bg-amber-100'; }
-        } else {
-            if (perNight) { perNight.classList.remove('hidden'); perNight.classList.add('contents'); setFieldsEnabled(perNight, true); document.getElementById('checkIn').required = true; document.getElementById('checkOut').required = true; }
-            if (whSlot)   { whSlot.classList.add('hidden'); setFieldsEnabled(whSlot, false); }
-            if (btnNight) { btnNight.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow'; }
-            if (btnSlot)  { btnSlot.className  = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-amber-700 border border-amber-300 hover:bg-amber-100'; }
-            calcWhSuggestedTotal();
-        }
-    }
-
-    function syncWhSlotTotal() {
-        const sel = document.getElementById('whTimeSlotSelect');
+    // Called when the arrival slot dropdown changes in whole-hotel mode
+    function syncWhSlotMode() {
+        const sel  = document.getElementById('whArrivalSlotSelect');
+        const whPt = document.getElementById('whPricingTypeInput');
         if (!sel) return;
-        const opt   = sel.options[sel.selectedIndex];
-        const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
-        const inp   = document.getElementById('customTotalInput');
-        if (inp && !inp._whUserEdited && price > 0) inp.value = price.toFixed(2);
+        const hasSlot = sel.value !== '';
+        if (whPt) whPt.value = hasSlot ? 'per_slot' : 'per_night';
+        // Suggest total from slot base price if not manually edited
+        if (hasSlot) {
+            const opt   = sel.options[sel.selectedIndex];
+            const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
+            const inp   = document.getElementById('customTotalInput');
+            if (inp && !inp._whUserEdited && price > 0) inp.value = price.toFixed(2);
+        }
     }
 
     function calcWhSuggestedTotal() {
@@ -973,6 +930,9 @@
     if (document.getElementById('isWholeHotelInput').value === '1') {
         document.getElementById('wholeHotelToggle').checked = true;
         toggleWholeHotel();
+        // If a slot was previously selected, re-sync the pricing type hidden input
+        const _restoreSel = document.getElementById('whArrivalSlotSelect');
+        if (_restoreSel && _restoreSel.value) syncWhSlotMode();
     }
 
     // ── Booking form submit: show loading state ─────────────────────────────

@@ -67,9 +67,32 @@
                     <div class="border border-violet-100 bg-violet-50 rounded-2xl p-5 space-y-4">
                         <div class="flex items-center gap-2 mb-1">
                             <i class="fas fa-clock text-violet-500"></i>
-                            <h4 class="font-bold text-slate-700">Slot Booking</h4>
+                            <h4 class="font-bold text-slate-700">{{ $booking->is_whole_hotel ? 'Whole Hotel / Villa — Slot Booking' : 'Slot Booking' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
+                            @if($booking->is_whole_hotel)
+                            {{-- Whole-hotel per_slot: check-in date + check-out date + arrival slot --}}
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Check-In Date *</label>
+                                <input type="date" name="check_in_date" value="{{ old('check_in_date', $booking->check_in_date->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Check-Out Date *</label>
+                                <input type="date" name="check_out_date" value="{{ old('check_out_date', $booking->check_out_date->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Arrival Time Slot <span class="text-xs font-normal text-slate-400">(slot on check-in day)</span></label>
+                                <select name="time_slot_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                    <option value="">No specific slot (full-day check-in)</option>
+                                    @foreach($timeSlots as $slot)
+                                    <option value="{{ $slot->id }}" {{ old('time_slot_id', $booking->time_slot_id) == $slot->id ? 'selected' : '' }}>
+                                        {{ $slot->name }} ({{ $slot->start_time }}–{{ $slot->end_time }}) — ₹{{ number_format($slot->base_price) }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @else
+                            {{-- Individual room per_slot: booking date + time slot --}}
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-1.5">Booking Date *</label>
                                 <input type="date" name="booking_date" value="{{ old('booking_date', $booking->booking_date?->format('Y-m-d')) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
@@ -85,6 +108,7 @@
                                     @endforeach
                                 </select>
                             </div>
+                            @endif
                         </div>
                     </div>
                 </div>
