@@ -71,11 +71,23 @@ class DataCleanupController extends Controller
                 DB::table('booking_add_ons')->whereIn('booking_id', $bookingIds)->delete();
                 DB::table('booking_extra_charges')->whereIn('booking_id', $bookingIds)->delete();
                 DB::table('booking_payment_references')->whereIn('booking_id', $bookingIds)->delete();
+                DB::table('whatsapp_logs')->where('hotel_id', $hotelId)->delete();
                 $n = DB::table('bookings')->where('hotel_id', $hotelId)->delete();
+
+                // Reset any rooms that are still marked occupied — booking deletion
+                // does not trigger the normal checkout flow that resets room status.
+                DB::table('rooms')
+                    ->where('hotel_id', $hotelId)
+                    ->where('status', 'occupied')
+                    ->update(['status' => 'available']);
+
                 $deleted[] = "Bookings incl. check-in/check-out records ({$n} records)";
             }
 
             if (in_array('guests', $tables)) {
+                $customerIds = DB::table('customers')->where('hotel_id', $hotelId)->pluck('id');
+                // Delete ID documents and uploaded files linked to these guests
+                DB::table('customer_documents')->whereIn('customer_id', $customerIds)->delete();
                 $n = DB::table('customers')->where('hotel_id', $hotelId)->delete();
                 $deleted[] = "Guests ({$n} records)";
             }
