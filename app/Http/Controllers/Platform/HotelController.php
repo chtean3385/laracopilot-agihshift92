@@ -1249,35 +1249,55 @@ class HotelController extends Controller
 
         $phone = PhoneHelper::forWhatsApp($hotel->phone);
 
+        // Language codes to try in order. Meta requires the code to match exactly
+        // what was used when the template was created. 'en' and 'en_US' are both common.
+        $langCodesToTry = array_unique(array_filter([$templateLang, 'en_US', 'en']));
+
         try {
-            $response = Http::timeout(15)->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
-                    'messaging_product' => 'whatsapp',
-                    'to'                => $phone,
-                    'type'              => 'template',
-                    'template'          => [
-                        'name'       => $templateName,
-                        'language'   => ['code' => $templateLang],
-                        'components' => $components,
-                    ],
-                ]);
+            $lastBody    = [];
+            $lastErrMsg  = 'Unknown error';
+            $lastErrCode = 0;
 
-            $body = $response->json();
+            foreach ($langCodesToTry as $lang) {
+                $response = Http::timeout(15)->withToken($platform->saas_token)
+                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                        'messaging_product' => 'whatsapp',
+                        'to'                => $phone,
+                        'type'              => 'template',
+                        'template'          => [
+                            'name'       => $templateName,
+                            'language'   => ['code' => $lang],
+                            'components' => $components,
+                        ],
+                    ]);
 
-            if ($response->successful() && isset($body['messages'])) {
-                Log::info("Platform Quick WA sent to hotel {$id} ({$hotel->name})", ['template' => $templateName]);
-                return response()->json(['success' => true, 'message' => '✅ WhatsApp sent to ' . $hotel->name]);
+                $body = $response->json();
+
+                if ($response->successful() && isset($body['messages'])) {
+                    Log::info("Platform Quick WA sent to hotel {$id} ({$hotel->name})", [
+                        'template' => $templateName,
+                        'language' => $lang,
+                    ]);
+                    return response()->json(['success' => true, 'message' => '✅ WhatsApp sent to ' . $hotel->name]);
+                }
+
+                $lastBody    = $body;
+                $lastErrMsg  = $body['error']['message'] ?? 'Unknown error';
+                $lastErrCode = $body['error']['code'] ?? 0;
+
+                // 132001 = template not approved / wrong language — try next language code
+                // Any other error is definitive; stop retrying
+                if ($lastErrCode !== 132001) {
+                    break;
+                }
             }
 
-            $errMsg  = $body['error']['message'] ?? 'Unknown error';
-            $errCode = $body['error']['code'] ?? 0;
-
-            if ($errCode === 132001) {
-                return response()->json(['success' => false, 'message' => "⚠️ Template \"{$templateName}\" not approved by Meta yet."]);
+            if ($lastErrCode === 132001) {
+                return response()->json(['success' => false, 'message' => "⚠️ Template \"{$templateName}\" is not approved in Meta Business Manager. Please check its status and resubmit if needed."]);
             }
 
-            Log::warning("Platform Quick WA failed for hotel {$id}", ['error' => $body]);
-            return response()->json(['success' => false, 'message' => "❌ Meta error: {$errMsg}"]);
+            Log::warning("Platform Quick WA failed for hotel {$id}", ['error' => $lastBody]);
+            return response()->json(['success' => false, 'message' => "❌ Meta error: {$lastErrMsg}"]);
 
         } catch (\Throwable $e) {
             Log::error("Platform Quick WA exception for hotel {$id}: " . $e->getMessage());
@@ -1307,6 +1327,20 @@ class HotelController extends Controller
             ->where('phone', '!=', '')
             ->get(['id', 'name', 'phone']);
 
+        // Build body parameters from DB template (respect actual param count)
+        $dashboardUrl    = 'https://resort.dreamstechnology.in/';
+        $dbTplAll        = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->where('template_name', $templateName)
+            ->first(['message_body']);
+        $paramCountAll   = 2;
+        if ($dbTplAll && preg_match_all('/\{\{(\d+)\}\}/', $dbTplAll->message_body ?? '', $mAll)) {
+            $paramCountAll = (int) max($mAll[1]);
+        }
+
+        // Language codes to try in order (matching what was used when template was created in Meta)
+        $langCodesToTryAll = array_unique(array_filter([$templateLang, 'en_US', 'en']));
+
         $sent              = 0;
         $skippedDuplicate  = 0;
         $skippedNoPhone    = 0;
@@ -1328,31 +1362,49 @@ class HotelController extends Controller
 
             $seenPhones[] = $phone;
 
-            try {
-                $response = Http::timeout(15)->withToken($platform->saas_token)
-                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
-                        'messaging_product' => 'whatsapp',
-                        'to'                => $phone,
-                        'type'              => 'template',
-                        'template'          => [
-                            'name'       => $templateName,
-                            'language'   => ['code' => $templateLang],
-                            'components' => [[
-                                'type'       => 'body',
-                                'parameters' => [
-                                    ['type' => 'text', 'text' => $hotel->name],
-                                    ['type' => 'text', 'text' => 'https://resort.dreamstechnology.in/'],
-                                ],
-                            ]],
-                        ],
-                    ]);
+            // Build positional params: {{1}}=hotel name, {{2}}=dashboard URL, rest=''
+            $paramValuesAll = [1 => $hotel->name, 2 => $dashboardUrl];
+            $bodyParamsAll  = [];
+            for ($i = 1; $i <= max($paramCountAll, 1); $i++) {
+                $bodyParamsAll[] = ['type' => 'text', 'text' => $paramValuesAll[$i] ?? ''];
+            }
+            $componentsAll = [['type' => 'body', 'parameters' => $bodyParamsAll]];
 
-                $body = $response->json();
-                if ($response->successful() && isset($body['messages'])) {
-                    $sent++;
-                } else {
-                    $errMsg  = $body['error']['message'] ?? 'Unknown error';
-                    $errors[] = "{$hotel->name}: {$errMsg}";
+            try {
+                $hotelSent   = false;
+                $lastErrMsg  = 'Unknown error';
+                $lastErrCode = 0;
+
+                foreach ($langCodesToTryAll as $lang) {
+                    $response = Http::timeout(15)->withToken($platform->saas_token)
+                        ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                            'messaging_product' => 'whatsapp',
+                            'to'                => $phone,
+                            'type'              => 'template',
+                            'template'          => [
+                                'name'       => $templateName,
+                                'language'   => ['code' => $lang],
+                                'components' => $componentsAll,
+                            ],
+                        ]);
+
+                    $body = $response->json();
+                    if ($response->successful() && isset($body['messages'])) {
+                        $sent++;
+                        $hotelSent = true;
+                        break;
+                    }
+
+                    $lastErrMsg  = $body['error']['message'] ?? 'Unknown error';
+                    $lastErrCode = $body['error']['code'] ?? 0;
+
+                    if ($lastErrCode !== 132001) {
+                        break;
+                    }
+                }
+
+                if (!$hotelSent) {
+                    $errors[] = "{$hotel->name}: {$lastErrMsg}";
                 }
             } catch (\Throwable $e) {
                 $errors[] = "{$hotel->name}: " . $e->getMessage();

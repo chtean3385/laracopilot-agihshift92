@@ -100,36 +100,59 @@ class AnalyticsDashboard extends Component
             $phone = '91' . $phone;
         }
 
+        // Build positional params based on template's actual param_count
+        $dashboardUrl  = 'https://resort.dreamstechnology.in/';
+        $paramCount    = $tpl['param_count'] ?? 2;
+        $paramValues   = [1 => $hotel->name, 2 => $dashboardUrl];
+        $bodyParameters = [];
+        for ($i = 1; $i <= max($paramCount, 1); $i++) {
+            $bodyParameters[] = ['type' => 'text', 'text' => $paramValues[$i] ?? ''];
+        }
+        $components = [['type' => 'body', 'parameters' => $bodyParameters]];
+
+        // Try all common language codes — Meta requires an exact match to the code used at creation
+        $langCodes = array_unique(array_filter([$tpl['language'], 'en_US', 'en']));
+
         try {
-            $response = Http::timeout(15)->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
-                    'messaging_product' => 'whatsapp',
-                    'to'                => $phone,
-                    'type'              => 'template',
-                    'template'          => [
-                        'name'       => $tpl['meta_name'],
-                        'language'   => ['code' => $tpl['language']],
-                        'components' => [[
-                            'type'       => 'body',
-                            'parameters' => [
-                                ['type' => 'text', 'text' => $hotel->name],
-                                ['type' => 'text', 'text' => 'https://resort.dreamstechnology.in/'],
-                            ],
-                        ]],
-                    ],
-                ]);
+            $sent        = false;
+            $lastErrCode = 0;
+            $lastErrMsg  = 'Unknown error';
 
-            $body    = $response->json();
-            $errCode = $body['error']['code'] ?? 0;
+            foreach ($langCodes as $lang) {
+                $response = Http::timeout(15)->withToken($platform->saas_token)
+                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                        'messaging_product' => 'whatsapp',
+                        'to'                => $phone,
+                        'type'              => 'template',
+                        'template'          => [
+                            'name'       => $tpl['meta_name'],
+                            'language'   => ['code' => $lang],
+                            'components' => $components,
+                        ],
+                    ]);
 
-            if ($response->successful() && isset($body['messages'])) {
+                $body        = $response->json();
+                $lastErrCode = $body['error']['code'] ?? 0;
+                $lastErrMsg  = $body['error']['message'] ?? 'Unknown error';
+
+                if ($response->successful() && isset($body['messages'])) {
+                    $sent = true;
+                    break;
+                }
+
+                // 132001 = wrong language / not approved — try next code
+                if ($lastErrCode !== 132001) {
+                    break;
+                }
+            }
+
+            if ($sent) {
                 $this->quickActionResult = '✅ WhatsApp sent to ' . $hotel->name;
-            } elseif ($errCode === 132001) {
-                $this->quickActionResult = "⚠️ Template \"{$tpl['meta_name']}\" not yet approved by Meta. Submit it in Meta Business Manager first.";
+            } elseif ($lastErrCode === 132001) {
+                $this->quickActionResult = "⚠️ Template \"{$tpl['meta_name']}\" is not approved in Meta Business Manager. Please check its status and resubmit if needed.";
             } else {
-                $errMsg = $body['error']['message'] ?? 'Unknown error';
-                $this->quickActionResult = "❌ Meta error: {$errMsg}";
-                Log::warning("Quick WA template failed for hotel {$this->quickModalHotelId}", ['body' => $body]);
+                $this->quickActionResult = "❌ Meta error: {$lastErrMsg}";
+                Log::warning("Quick WA template failed for hotel {$this->quickModalHotelId}", ['error' => $lastErrMsg]);
             }
         } catch (\Throwable $e) {
             $this->quickActionResult = '❌ Failed: ' . $e->getMessage();
