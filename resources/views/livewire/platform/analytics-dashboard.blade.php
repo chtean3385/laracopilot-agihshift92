@@ -515,8 +515,9 @@
                             <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:1px 7px;border-radius:10px;">Custom</span>
                             @endif
                         </div>
+                        @php $tplPreviewText = Str::limit(str_replace(['{name}', '{url}', '{{1}}', '{{2}}'], ['[Hotel Name]', '[URL]', '[Hotel Name]', '[URL]'], $tpl['preview']), 120); @endphp
                         <div style="font-size:11px;color:#64748b;line-height:1.5;">
-                            {{ Str::limit(str_replace(['{name}', '{url}', '{{1}}', '{{2}}'], ['[Hotel Name]', '[URL]', '[Hotel Name]', '[URL]'], $tpl['preview']), 120) }}
+                            {{ $tplPreviewText }}
                         </div>
                     </div>
                     @endforeach
