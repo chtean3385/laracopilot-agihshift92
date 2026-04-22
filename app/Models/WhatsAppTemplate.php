@@ -31,25 +31,49 @@ class WhatsAppTemplate extends Model
 
     public static function forEvent(string $event): ?static
     {
-        // Prefer PDF/document template when available and approved for the event,
-        // fall back to text-only template.
-        return static::where('trigger_event', $event)
+        // Priority rule for checkout.done (and any future events with PDF variants):
+        // 1. If the PDF variant (has_document_attachment=true) is ACTIVE → use it exclusively.
+        // 2. Only if the PDF variant is NOT active → fall back to the text-only template.
+        // This means a hotel can control which message guests receive simply by toggling
+        // the PDF variant on/off — no ambiguity, no double-sending.
+        $pdf = static::where('trigger_event', $event)
+            ->where('has_document_attachment', true)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
-            ->orderByDesc('has_document_attachment')
+            ->first();
+
+        if ($pdf) {
+            return $pdf;
+        }
+
+        return static::where('trigger_event', $event)
+            ->where('has_document_attachment', false)
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
             ->first();
     }
 
     public static function globalForEvent(string $event): ?static
     {
-        // Prefer PDF/document template when available and approved for the event,
-        // fall back to text-only template.
+        // Same priority rule as forEvent() — PDF variant wins when active.
+        $pdf = static::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->where('trigger_event', $event)
+            ->where('has_document_attachment', true)
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
+            ->first();
+
+        if ($pdf) {
+            return $pdf;
+        }
+
         return static::withoutGlobalScopes()
             ->whereNull('hotel_id')
             ->where('trigger_event', $event)
+            ->where('has_document_attachment', false)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
-            ->orderByDesc('has_document_attachment')
             ->first();
     }
 
