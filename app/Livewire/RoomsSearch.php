@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\Room;
+use App\Services\ActivityLogger;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -30,6 +32,23 @@ class RoomsSearch extends Component
         $this->status = '';
         $this->type   = '';
         $this->resetPage();
+    }
+
+    // Force-reset a stuck occupied room back to available without going through checkout.
+    // Used when the booking was deleted externally or the checkout was never recorded.
+    public function forceAvailable(int $roomId): void
+    {
+        $hotelId = (int) session('crm_hotel_id');
+        $room    = Room::where('id', $roomId)->where('hotel_id', $hotelId)->first();
+
+        if (!$room || $room->status !== 'occupied') {
+            return;
+        }
+
+        DB::table('rooms')->where('id', $roomId)->update(['status' => 'available']);
+        ActivityLogger::log('room_force_available', 'Room', "Room {$room->room_number} manually reset to Available by admin.");
+
+        session()->flash('success', "Room {$room->room_number} has been reset to Available.");
     }
 
     public function render()

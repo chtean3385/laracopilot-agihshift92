@@ -174,14 +174,15 @@
                 </a>
                 @endif
                 @if(\App\Services\PermissionService::check('rooms.edit'))
-                @if($isOccupied)
-                <span class="w-full text-center block bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold mb-2 cursor-not-allowed" title="Cannot edit an occupied room">
-                    <i class="fas fa-edit mr-1"></i>Edit Room
-                </span>
-                @else
                 <a href="{{ route('rooms.edit', $room->id) }}" class="w-full text-center block bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
                     <i class="fas fa-edit mr-1"></i>Edit Room
                 </a>
+                @if($isOccupied)
+                <button wire:click="forceAvailable({{ $room->id }})"
+                    wire:confirm="Reset Room {{ $room->room_number }} to Available? Only do this if the guest has actually left and checkout was not recorded."
+                    class="w-full text-center block bg-amber-50 hover:bg-amber-100 text-amber-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
+                    <i class="fas fa-unlock mr-1"></i>Mark Available
+                </button>
                 @endif
                 @endif
                 <div class="flex gap-2">
@@ -192,7 +193,7 @@
                         <i class="fas fa-toggle-on mr-1"></i>Activate
                     </button>
                     @elseif($isOccupied)
-                    <button disabled title="Cannot deactivate an occupied room"
+                    <button disabled title="Cannot deactivate while occupied — use Mark Available first"
                         class="flex-1 text-center bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold cursor-not-allowed">
                         <i class="fas fa-toggle-off mr-1"></i>Deactivate
                     </button>
@@ -205,7 +206,7 @@
                     @endif
                     @if(\App\Services\PermissionService::check('rooms.delete'))
                     @if($isOccupied)
-                    <button disabled title="Cannot delete an occupied room"
+                    <button disabled title="Cannot delete while occupied — use Mark Available first"
                         class="flex-1 text-center bg-gray-100 text-gray-400 py-2 rounded-xl text-xs font-semibold cursor-not-allowed">
                         <i class="fas fa-trash mr-1"></i>Delete
                     </button>
