@@ -1233,11 +1233,17 @@ class HotelController extends Controller
             $paramCount = (int) max($m[1]);
         }
 
-        // Build positional parameter values: {{1}}=hotel name, {{2}}=dashboard URL, rest=''
-        $paramValues = [
-            1 => $hotel->name,
-            2 => $dashboardUrl,
-        ];
+        // Base values: {{1}}=hotel name, {{2}}=dashboard URL (fallback for legacy 2-param templates).
+        // User-provided extra_params override/extend from {{2}} onwards for templates with more params.
+        $paramValues = [1 => $hotel->name, 2 => $dashboardUrl];
+        $extraParams = $request->input('extra_params', []);
+        foreach ($extraParams as $idx => $val) {
+            $idx = (int) $idx;
+            if ($idx >= 2 && $idx <= 20) {
+                $paramValues[$idx] = (string) $val;
+            }
+        }
+
         $bodyParameters = [];
         for ($i = 1; $i <= max($paramCount, 1); $i++) {
             $bodyParameters[] = ['type' => 'text', 'text' => $paramValues[$i] ?? ''];

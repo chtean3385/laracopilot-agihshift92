@@ -507,6 +507,8 @@
                 <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
                     @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
                     <div id="aqm-tpl-{{ $tplKey }}"
+                        data-param-count="{{ $tpl['param_count'] }}"
+                        data-preview="{{ e($tpl['preview']) }}"
                         onclick="analyticsSelectTpl('{{ $tplKey }}','{{ $tpl['meta_name'] }}','{{ $tpl['language'] }}')"
                         style="border:2px solid #e2e8f0;border-radius:11px;padding:11px 13px;cursor:pointer;background:#fff;transition:border-color .15s;">
                         <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
@@ -522,6 +524,8 @@
                     </div>
                     @endforeach
                 </div>
+                {{-- Dynamic parameter inputs for templates with >1 param --}}
+                <div id="aqmExtraParams" style="margin-bottom:14px;"></div>
                 <button id="aqmWaSendBtn" onclick="analyticsSendWA()"
                     style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;opacity:.5;"
                     disabled>
@@ -704,6 +708,48 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof waInitAllCooldowns === 'function') waInitAllCooldowns();
 });
 
+// ── WA template param helpers (shared logic with hotels modal) ───────────
+window.waParamLabel = function(preview, n) {
+    var lines = preview.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+        var idx = lines[i].indexOf('{{' + n + '}}');
+        if (idx >= 0) {
+            var before = lines[i].substring(0, idx).replace(/[^a-zA-Z0-9 \/\-]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (before.length > 0) return before.slice(-30).trim();
+        }
+    }
+    return 'Param ' + n;
+};
+window.renderWaExtraParams = function(containerId, paramCount, preview, idPrefix) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    if (paramCount <= 1) return;
+    var html = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:2px;">';
+    html += '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">Fill template variables</div>';
+    html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
+    html += '<span style="font-size:11px;font-weight:700;color:#25d366;min-width:32px;">{{1}}</span>';
+    html += '<span style="font-size:11px;color:#64748b;">[Hotel Name] — auto-filled</span></div>';
+    for (var i = 2; i <= paramCount; i++) {
+        var lbl = window.waParamLabel(preview, i);
+        html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
+        html += '<span style="font-size:11px;font-weight:700;color:#7c3aed;min-width:32px;">{{' + i + '}}</span>';
+        html += '<input type="text" id="' + idPrefix + i + '" placeholder="' + lbl + '" ';
+        html += 'style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;">';
+        html += '</div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+};
+window.collectWaExtraParams = function(paramCount, idPrefix) {
+    var params = {};
+    for (var i = 2; i <= paramCount; i++) {
+        var el = document.getElementById(idPrefix + i);
+        params[i] = el ? el.value.trim() : '';
+    }
+    return params;
+};
+
 // ── Analytics Quick Modal (pure JS, no Livewire re-render) ─────────────
 window._aqmHotelId = 0; window._aqmChannel = 'whatsapp'; window._aqmTplName = ''; window._aqmTplLang = '';
 
@@ -727,6 +773,8 @@ window.analyticsOpenModal = function(hotelId, hotelName, phone, channel, consent
 
     if (isWa) {
         document.getElementById('aqmConsentWarn').style.display = consented ? 'none' : 'block';
+        document.getElementById('aqmExtraParams').innerHTML = '';
+        window._aqmTplParamCount = 1;
         var sendBtn = document.getElementById('aqmWaSendBtn');
         sendBtn.disabled = true; sendBtn.style.opacity = '0.5';
         document.querySelectorAll('[id^="aqm-tpl-"]').forEach(function(el) {
@@ -745,6 +793,7 @@ window.analyticsCloseModal = function() {
     document.getElementById('analyticsQuickModal').style.display = 'none';
 };
 
+window._aqmTplParamCount = 1;
 window.analyticsSelectTpl = function(key, name, lang) {
     document.querySelectorAll('[id^="aqm-tpl-"]').forEach(function(el) {
         el.style.border = '2px solid #e2e8f0'; el.style.background = '#fff';
@@ -752,6 +801,11 @@ window.analyticsSelectTpl = function(key, name, lang) {
     var el = document.getElementById('aqm-tpl-' + key);
     if (el) { el.style.border = '2px solid #25d366'; el.style.background = '#f0fdf4'; }
     window._aqmTplName = name; window._aqmTplLang = lang;
+    window._aqmTplParamCount = parseInt((el && el.dataset.paramCount) || '1');
+    var preview = (el && el.dataset.preview) || '';
+    if (typeof renderWaExtraParams === 'function') {
+        renderWaExtraParams('aqmExtraParams', window._aqmTplParamCount, preview, 'aqm_p');
+    }
     var btn = document.getElementById('aqmWaSendBtn');
     btn.disabled = false; btn.style.opacity = '1';
 };
@@ -769,10 +823,13 @@ window.analyticsSendWA = function() {
     var btn = document.getElementById('aqmWaSendBtn');
     btn.disabled = true; btn.style.opacity = '0.6';
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    var extraParams = (typeof collectWaExtraParams === 'function')
+        ? collectWaExtraParams(window._aqmTplParamCount || 1, 'aqm_p')
+        : {};
     fetch('/platform/hotels/' + window._aqmHotelId + '/send-quick-wa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-        body: JSON.stringify({ template_name: window._aqmTplName, template_language: window._aqmTplLang }),
+        body: JSON.stringify({ template_name: window._aqmTplName, template_language: window._aqmTplLang, extra_params: extraParams }),
     }).then(function(r) { return r.json(); }).then(function(data) {
         _aqmShowResult(data.success, data.message || (data.success ? '✅ Sent!' : '❌ Error'));
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send WhatsApp Now';
