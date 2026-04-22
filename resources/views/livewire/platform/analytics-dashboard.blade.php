@@ -509,11 +509,14 @@
                     <div id="aqm-tpl-{{ $tplKey }}"
                         onclick="analyticsSelectTpl('{{ $tplKey }}','{{ $tpl['meta_name'] }}','{{ $tpl['language'] }}')"
                         style="border:2px solid #e2e8f0;border-radius:11px;padding:11px 13px;cursor:pointer;background:#fff;transition:border-color .15s;">
-                        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">
-                            {{ $tplKey === 'crm_update' ? '📣' : '🔔' }} {{ $tpl['label'] }}
+                        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+                            {{ $tpl['is_custom'] ? '✉️' : ($tplKey === 'crm_update' ? '📣' : '🔔') }} {{ $tpl['label'] }}
+                            @if($tpl['is_custom'])
+                            <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:1px 7px;border-radius:10px;">Custom</span>
+                            @endif
                         </div>
                         <div style="font-size:11px;color:#64748b;line-height:1.5;">
-                            {{ Str::limit(str_replace(['{name}', '{url}'], ['[Hotel Name]', '[CRM URL]'], $tpl['preview']), 120) }}
+                            {{ Str::limit(str_replace(['{name}', '{url}', '{{1}}', '{{2}}'], ['[Hotel Name]', '[URL]', '[Hotel Name]', '[URL]'], $tpl['preview']), 120) }}
                         </div>
                     </div>
                     @endforeach

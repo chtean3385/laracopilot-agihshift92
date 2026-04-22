@@ -1082,24 +1082,65 @@ class HotelController extends Controller
             ->orderByDesc('id')
             ->value('template_name') ?? 'login_reminder';
 
-        return [
+        $templates = [
             'crm_update' => [
-                'label'     => 'CRM Dashboard Update',
-                'meta_name' => $crmName,
-                'language'  => 'en_US',
-                'preview'   => "Hello {name},\n\nYour hotel CRM dashboard has recent updates that can help you manage bookings and customer communication more efficiently.\n\nStay on top of your operations and avoid missing any important updates.\n\n👉 Access your dashboard: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
-                'var1'      => 'hotel_name',
-                'var2'      => $dashboardUrl,
+                'label'       => 'CRM Dashboard Update',
+                'meta_name'   => $crmName,
+                'language'    => 'en_US',
+                'preview'     => "Hello {name},\n\nYour hotel CRM dashboard has recent updates that can help you manage bookings and customer communication more efficiently.\n\nStay on top of your operations and avoid missing any important updates.\n\n👉 Access your dashboard: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
+                'var1'        => 'hotel_name',
+                'var2'        => $dashboardUrl,
+                'param_count' => 2,
+                'is_custom'   => false,
             ],
             'login_reminder' => [
-                'label'     => 'Login Reminder',
-                'meta_name' => $loginName,
-                'language'  => 'en_US',
-                'preview'   => "Hello {name},\n\nWe noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attention!\n\n👉 Login here: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
-                'var1'      => 'hotel_name',
-                'var2'      => $dashboardUrl,
+                'label'       => 'Login Reminder',
+                'meta_name'   => $loginName,
+                'language'    => 'en_US',
+                'preview'     => "Hello {name},\n\nWe noticed you haven't logged into your Hotel CRM in a while. Your bookings and guests need attention!\n\n👉 Login here: {url}\n\nFor support, message us on WhatsApp at +919725225519.\n\n– Dreams Technology",
+                'var1'        => 'hotel_name',
+                'var2'        => $dashboardUrl,
+                'param_count' => 2,
+                'is_custom'   => false,
             ],
         ];
+
+        // ── Append approved Custom Event Templates from DB ────────────────────────
+        // These are platform-level templates (hotel_id = null) whose trigger_event
+        // is not one of the standard auto-triggered events. They are "manually
+        // triggered" marketing templates added by the platform admin.
+        $standardEvents = array_keys(\App\Models\WhatsAppTemplate::allEvents());
+
+        $customDbTemplates = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->whereNotIn('trigger_event', $standardEvents)
+            ->where('approval_status', 'approved')
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get(['id', 'trigger_event', 'template_name', 'message_body']);
+
+        foreach ($customDbTemplates as $ct) {
+            if (!$ct->template_name) continue;
+
+            // Count positional parameters {{1}}, {{2}}, … in the stored body
+            $paramCount = 0;
+            if (preg_match_all('/\{\{(\d+)\}\}/', $ct->message_body ?? '', $m)) {
+                $paramCount = (int) max($m[1]);
+            }
+
+            $templates['custom_' . $ct->id] = [
+                'label'       => ucwords(str_replace(['.', '_'], ' ', $ct->trigger_event)),
+                'meta_name'   => $ct->template_name,
+                'language'    => 'en',
+                'preview'     => $ct->message_body ?? '',
+                'var1'        => 'hotel_name',
+                'var2'        => $dashboardUrl,
+                'param_count' => $paramCount,
+                'is_custom'   => true,
+            ];
+        }
+
+        return $templates;
     }
 
     // ── Fetch live approved templates from Meta ────────────────────────────────
@@ -1180,6 +1221,32 @@ class HotelController extends Controller
             $templateLang = $templates[$templateKey]['language'];
         }
 
+        // Detect how many positional {{N}} parameters the template needs.
+        // Look it up from the DB first; fall back to 2 for legacy templates.
+        $dashboardUrl   = 'https://resort.dreamstechnology.in/';
+        $dbTemplate     = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->where('template_name', $templateName)
+            ->first(['message_body']);
+        $paramCount = 2; // default for CRM Update / Login Reminder
+        if ($dbTemplate && preg_match_all('/\{\{(\d+)\}\}/', $dbTemplate->message_body ?? '', $m)) {
+            $paramCount = (int) max($m[1]);
+        }
+
+        // Build positional parameter values: {{1}}=hotel name, {{2}}=dashboard URL, rest=''
+        $paramValues = [
+            1 => $hotel->name,
+            2 => $dashboardUrl,
+        ];
+        $bodyParameters = [];
+        for ($i = 1; $i <= max($paramCount, 1); $i++) {
+            $bodyParameters[] = ['type' => 'text', 'text' => $paramValues[$i] ?? ''];
+        }
+
+        $components = $paramCount > 0
+            ? [['type' => 'body', 'parameters' => $bodyParameters]]
+            : [];
+
         $phone = PhoneHelper::forWhatsApp($hotel->phone);
 
         try {
@@ -1191,13 +1258,7 @@ class HotelController extends Controller
                     'template'          => [
                         'name'       => $templateName,
                         'language'   => ['code' => $templateLang],
-                        'components' => [[
-                            'type'       => 'body',
-                            'parameters' => [
-                                ['type' => 'text', 'text' => $hotel->name],
-                                ['type' => 'text', 'text' => 'https://resort.dreamstechnology.in/'],
-                            ],
-                        ]],
+                        'components' => $components,
                     ],
                 ]);
 

@@ -443,38 +443,37 @@
         <div style="padding:20px 22px;">
             <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:12px;">Choose a template to send:</div>
 
-            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
-                <label id="tpl-crm_update" onclick="selectWaTpl('crm_update')" style="border:2px solid #e2e8f0;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s;">
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;max-height:320px;overflow-y:auto;padding-right:4px;">
+                @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
+                @php
+                    $icon = $tpl['is_custom'] ? '✉️' : ($tplKey === 'crm_update' ? '📣' : '🔔');
+                    $safeName = e($tpl['meta_name']);
+                    $safeLang = e($tpl['language']);
+                    $previewText = Str::limit(str_replace(['{name}', '{url}', '{{1}}', '{{2}}'], ['[Hotel Name]', '[URL]', '[Hotel Name]', '[URL]'], $tpl['preview']), 110);
+                @endphp
+                <div id="tpl-{{ $tplKey }}"
+                    onclick="selectWaTpl('{{ $tplKey }}','{{ $safeName }}','{{ $safeLang }}')"
+                    style="border:2px solid #e2e8f0;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-                        <input type="radio" name="qa_tpl" value="crm_update" style="accent-color:#25d366;">
-                        <span style="font-size:13px;font-weight:700;color:#1e293b;">📣 CRM Dashboard Update</span>
+                        <input type="radio" name="qa_tpl" value="{{ $tplKey }}" style="accent-color:#25d366;">
+                        <span style="font-size:13px;font-weight:700;color:#1e293b;">{{ $icon }} {{ $tpl['label'] }}</span>
+                        @if($tpl['is_custom'])
+                        <span style="font-size:10px;font-weight:700;color:#7c3aed;background:#f5f3ff;padding:1px 7px;border-radius:10px;">Custom</span>
+                        @endif
                     </div>
                     <div style="font-size:11px;color:#64748b;line-height:1.5;margin-left:22px;">
-                        "Hello [Name], your Hotel CRM dashboard has recent updates… 👉 Access: [URL]"
+                        "{{ $previewText }}"
                     </div>
-                </label>
-
-                <label id="tpl-login_reminder" onclick="selectWaTpl('login_reminder')" style="border:2px solid #e2e8f0;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-                        <input type="radio" name="qa_tpl" value="login_reminder" style="accent-color:#25d366;">
-                        <span style="font-size:13px;font-weight:700;color:#1e293b;">🔔 Login Reminder</span>
-                    </div>
-                    <div style="font-size:11px;color:#64748b;line-height:1.5;margin-left:22px;">
-                        "Hello [Name], we noticed you haven't logged in recently. Check your bookings: [URL]"
-                    </div>
-                </label>
+                </div>
+                @endforeach
             </div>
 
             <div id="qaResult" style="display:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
 
-            <form id="qaForm" method="POST" action="" onsubmit="return submitQuickWA(event)">
-                @csrf
-                <input type="hidden" name="template_key" id="qaTemplateKey" value="">
-                <button type="submit" id="qaSubmitBtn" disabled
-                    style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;opacity:.5;display:flex;align-items:center;justify-content:center;gap:8px;">
-                    <i class="fab fa-whatsapp"></i> Send WhatsApp Now
-                </button>
-            </form>
+            <button id="qaSubmitBtn" onclick="submitQuickWA()" disabled
+                style="width:100%;padding:12px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;opacity:.5;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fab fa-whatsapp"></i> Send WhatsApp Now
+            </button>
         </div>
     </div>
 </div>
@@ -495,13 +494,12 @@ document.getElementById('welcomeModal').addEventListener('click', function(e) {
     if (e.target === this) closeWelcomeModal();
 });
 
-var _qaHotelId = null;
+var _qaHotelId = null, _qaTplName = null, _qaTplLang = null;
 function openQuickWA(hotelId, hotelName, phone, consented) {
-    _qaHotelId = hotelId;
+    _qaHotelId = hotelId; _qaTplName = null; _qaTplLang = null;
     document.getElementById('qaModalSubtitle').textContent = 'To: ' + hotelName + ' (' + phone + ')';
     document.getElementById('qaConsentWarn').style.display = consented ? 'none' : 'block';
     document.getElementById('qaResult').style.display = 'none';
-    document.getElementById('qaTemplateKey').value = '';
     document.getElementById('qaSubmitBtn').disabled = true;
     document.getElementById('qaSubmitBtn').style.opacity = '.5';
     document.querySelectorAll('[name="qa_tpl"]').forEach(r => r.checked = false);
@@ -511,25 +509,23 @@ function openQuickWA(hotelId, hotelName, phone, consented) {
 function closeQuickWA() {
     document.getElementById('quickWaModal').style.display = 'none';
 }
-function selectWaTpl(key) {
+function selectWaTpl(key, metaName, lang) {
     document.querySelectorAll('[id^="tpl-"]').forEach(el => el.style.borderColor = '#e2e8f0');
     var lbl = document.getElementById('tpl-' + key);
     if (lbl) lbl.style.borderColor = '#25d366';
-    document.getElementById('qaTemplateKey').value = key;
+    _qaTplName = metaName; _qaTplLang = lang;
     document.getElementById('qaSubmitBtn').disabled = false;
     document.getElementById('qaSubmitBtn').style.opacity = '1';
 }
-function submitQuickWA(e) {
-    e.preventDefault();
+function submitQuickWA() {
     var btn = document.getElementById('qaSubmitBtn');
     var res = document.getElementById('qaResult');
-    var tpl = document.getElementById('qaTemplateKey').value;
-    if (!tpl || !_qaHotelId) return false;
+    if (!_qaTplName || !_qaHotelId) { alert('Please choose a template first.'); return; }
     btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = 'Sending…';
     fetch('/platform/hotels/' + _qaHotelId + '/send-quick-wa', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
-        body: JSON.stringify({template_key: tpl})
+        body: JSON.stringify({template_name: _qaTplName, template_language: _qaTplLang})
     }).then(r => r.json()).then(data => {
         res.style.display = 'block';
         res.style.background = data.success ? '#dcfce7' : '#fee2e2';
