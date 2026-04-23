@@ -9,11 +9,10 @@ use Illuminate\Support\Facades\DB;
 
 class DataCleanupController extends Controller
 {
-    private function hotelId(): int
-    {
-        return (int) session('crm_hotel_id');
-    }
-
+   private function hotelId(): int
+{
+    return (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+}
     public function index()
     {
         if (!session('crm_logged_in')) {
