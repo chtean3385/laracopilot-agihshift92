@@ -9,7 +9,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="{{ asset('hotel-crm-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('hotel-crm-logo.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     @stack('styles')
     <style>
