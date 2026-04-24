@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>404 - Page Not Found</title>
-    <script src="/js/tailwind.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center">
     <div class="text-center text-white">
