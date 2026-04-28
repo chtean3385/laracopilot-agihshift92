@@ -80,7 +80,7 @@ class RestaurantBillController extends Controller
             ]);
 
             // Free the table
-            RestaurantTable::where('id', $order->table_id)->update(['status' => 'free']);
+            RestaurantTable::where('id', $order->table_id)->update(['status' => 'dirty']);
 
             // If room charge — add as booking extra charge so it shows on hotel invoice
             if ($request->bill_type === 'room' && $order->booking_id) {

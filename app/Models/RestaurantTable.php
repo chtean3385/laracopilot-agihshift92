@@ -45,23 +45,25 @@ class RestaurantTable extends Model
         return $this->status === 'occupied';
     }
 
-    public function statusColor(): string
-    {
-        return match($this->status) {
-            'free'        => 'green',
-            'occupied'    => 'orange',
-            'unavailable' => 'black',
-            default       => 'gray',
-        };
-    }
+   public function statusColor(): string
+{
+    return match($this->status) {
+        'free'        => 'green',
+        'occupied'    => 'orange',
+        'dirty'       => 'red',
+        'unavailable' => 'black',
+        default       => 'gray',
+    };
+}
 
-    public function statusLabel(): string
-    {
-        return match($this->status) {
-            'free'        => 'Free',
-            'occupied'    => 'Occupied',
-            'unavailable' => 'Not Available',
-            default       => 'Unknown',
-        };
-    }
+public function statusLabel(): string
+{
+    return match($this->status) {
+        'free'        => 'Free',
+        'occupied'    => 'Occupied',
+        'dirty'       => 'Needs Cleaning',
+        'unavailable' => 'Not Available',
+        default       => 'Unknown',
+    };
+}
 }

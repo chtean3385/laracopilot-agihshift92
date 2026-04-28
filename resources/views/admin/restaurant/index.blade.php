@@ -36,7 +36,7 @@
 
 {{-- Flash Messages --}}
 @if(session('success'))
-    <div class="alert-success mb-4">{{ session('success') }}</div>
+    <div class="alert-success mb-4">{!! session('success') !!}</div>
 @endif
 @if(session('error'))
     <div class="alert-error mb-4">{{ session('error') }}</div>
@@ -46,9 +46,9 @@
 <div class="flex gap-4 mb-6 flex-wrap">
     <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-green-500 inline-block"></span><span class="text-sm text-gray-600">Free</span></div>
     <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-orange-500 inline-block"></span><span class="text-sm text-gray-600">Occupied</span></div>
+    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-red-500 inline-block"></span><span class="text-sm text-gray-600">Needs Cleaning</span></div>
     <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-gray-800 inline-block"></span><span class="text-sm text-gray-600">Not Available</span></div>
 </div>
-
 {{-- Table Grid --}}
 @if($tables->isEmpty())
     <div class="text-center py-20 text-gray-400">
@@ -60,18 +60,20 @@
 <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
     @foreach($tables as $table)
     @php
-        $colorClass = match($table->status) {
-            'free'        => 'border-green-400 bg-green-50 hover:bg-green-100',
-            'occupied'    => 'border-orange-400 bg-orange-50 hover:bg-orange-100',
-            'unavailable' => 'border-gray-700 bg-gray-100 opacity-75',
-            default       => 'border-gray-300 bg-white',
-        };
-        $dotColor = match($table->status) {
-            'free'        => 'bg-green-500',
-            'occupied'    => 'bg-orange-500',
-            'unavailable' => 'bg-gray-800',
-            default       => 'bg-gray-400',
-        };
+      $colorClass = match($table->status) {
+    'free'        => 'border-green-400 bg-green-50 hover:bg-green-100',
+    'occupied'    => 'border-orange-400 bg-orange-50 hover:bg-orange-100',
+    'dirty'       => 'border-red-400 bg-red-50 hover:bg-red-100',
+    'unavailable' => 'border-gray-700 bg-gray-100 opacity-75',
+    default       => 'border-gray-300 bg-white',
+};
+$dotColor = match($table->status) {
+    'free'        => 'bg-green-500',
+    'occupied'    => 'bg-orange-500',
+    'dirty'       => 'bg-red-500',
+    'unavailable' => 'bg-gray-800',
+    default       => 'bg-gray-400',
+};
     @endphp
     <div class="border-2 rounded-xl p-4 cursor-pointer transition-all {{ $colorClass }} relative group"
          onclick="handleTableClick({{ $table->id }}, '{{ $table->status }}', {{ $table->activeOrder?->id ?? 'null' }})">
@@ -157,8 +159,9 @@
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select name="status" id="editTableStatus" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="free">Free</option>
-                    <option value="unavailable">Not Available</option>
+                    <option value="free">✅ Free</option>
+                    <option value="dirty">🔴 Needs Cleaning</option>
+                    <option value="unavailable">⚫ Not Available</option>
                 </select>
             </div>
             <div class="flex gap-3 justify-end">
@@ -181,11 +184,13 @@
 <script>
 function handleTableClick(tableId, status, orderId) {
     if (status === 'unavailable') return;
+    if (status === 'dirty') return; // needs cleaning first
 
     if (status === 'occupied' && orderId) {
         window.location.href = '{{ url("restaurant/orders") }}/' + orderId;
         return;
     }
+    
 
     if (status === 'free') {
         // Create new order

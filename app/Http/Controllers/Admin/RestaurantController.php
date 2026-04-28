@@ -82,9 +82,9 @@ class RestaurantController extends Controller
     // Update table status (free/unavailable)
     public function tableStatus(Request $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:free,unavailable',
-        ]);
+     $request->validate([
+    'status' => 'required|in:free,dirty,unavailable',
+]);
 
         $table = RestaurantTable::findOrFail($id);
 
