@@ -28,6 +28,10 @@ use App\Http\Controllers\Admin\WhatsAppSetupController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\Admin\PaymentLinksController;
 use App\Http\Controllers\Admin\TimeSlotController;
+use App\Http\Controllers\Admin\RestaurantController;
+use App\Http\Controllers\Admin\RestaurantMenuController;
+use App\Http\Controllers\Admin\RestaurantOrderController;
+use App\Http\Controllers\Admin\RestaurantBillController;
 
 // ── Installer (must be first, no auth middleware) ───────────────────────────
 Route::middleware(['not.installed'])->group(function () {
@@ -320,6 +324,60 @@ Route::withoutMiddleware([
 Route::get( '/booking-widget/settings',        [\App\Http\Controllers\Admin\BookingWidgetSettingsController::class, 'index']         )->name('admin.booking-widget.settings');
 Route::put( '/booking-widget/settings',        [\App\Http\Controllers\Admin\BookingWidgetSettingsController::class, 'update']        )->name('admin.booking-widget.settings.update');
 Route::post('/booking-widget/confirm/{id}',    [\App\Http\Controllers\Admin\BookingWidgetSettingsController::class, 'confirmBooking'])->name('admin.booking-widget.confirm');
+
+// ── Restaurant Module ───────────────────────────────────────────────────────
+Route::middleware('permission:restaurant.view')->prefix('restaurant')->name('restaurant.')->group(function () {
+
+    // Table Map
+    Route::get('/',                    [RestaurantController::class, 'index']      )->name('index');
+
+    // Tables management
+    Route::middleware('permission:restaurant.tables')->group(function () {
+        Route::post('/tables',             [RestaurantController::class, 'tableStore']  )->name('tables.store');
+        Route::put('/tables/{id}',         [RestaurantController::class, 'tableUpdate'] )->name('tables.update');
+        Route::delete('/tables/{id}',      [RestaurantController::class, 'tableDestroy'])->name('tables.destroy');
+        Route::post('/tables/{id}/status', [RestaurantController::class, 'tableStatus'] )->name('tables.status');
+    });
+
+    // Menu management
+    Route::middleware('permission:restaurant.menu')->group(function () {
+        Route::get('/menu',                    [RestaurantMenuController::class, 'index']          )->name('menu.index');
+        Route::post('/menu/categories',        [RestaurantMenuController::class, 'categoryStore']  )->name('menu.categories.store');
+        Route::put('/menu/categories/{id}',    [RestaurantMenuController::class, 'categoryUpdate'] )->name('menu.categories.update');
+        Route::delete('/menu/categories/{id}', [RestaurantMenuController::class, 'categoryDestroy'])->name('menu.categories.destroy');
+        Route::post('/menu/items',             [RestaurantMenuController::class, 'itemStore']      )->name('menu.items.store');
+        Route::put('/menu/items/{id}',         [RestaurantMenuController::class, 'itemUpdate']     )->name('menu.items.update');
+        Route::delete('/menu/items/{id}',      [RestaurantMenuController::class, 'itemDestroy']    )->name('menu.items.destroy');
+        Route::post('/menu/items/{id}/toggle', [RestaurantMenuController::class, 'itemToggle']     )->name('menu.items.toggle');
+    });
+
+    // Orders
+    Route::middleware('permission:restaurant.orders')->group(function () {
+        Route::get('/orders',              [RestaurantOrderController::class, 'index']      )->name('orders.index');
+        Route::get('/orders/{id}',         [RestaurantOrderController::class, 'show']       )->name('orders.show');
+        Route::post('/orders',             [RestaurantOrderController::class, 'store']      )->name('orders.store');
+        Route::put('/orders/{id}',         [RestaurantOrderController::class, 'update']     )->name('orders.update');
+        Route::post('/orders/{id}/kot',    [RestaurantOrderController::class, 'printKot']   )->name('orders.kot');
+        Route::get('/orders/{id}/kot-print',[RestaurantOrderController::class, 'kotPrint']  )->name('orders.kot.print');
+        Route::post('/orders/{id}/cancel', [RestaurantOrderController::class, 'cancel']     )->name('orders.cancel');
+        Route::post('/orders/{id}/items',  [RestaurantOrderController::class, 'addItem']    )->name('orders.items.add');
+        Route::delete('/orders/{id}/items/{itemId}', [RestaurantOrderController::class, 'removeItem'])->name('orders.items.remove');
+    });
+
+    // Billing
+    Route::middleware('permission:restaurant.billing')->group(function () {
+        Route::get('/bills',               [RestaurantBillController::class, 'index']       )->name('bills.index');
+        Route::post('/bills',              [RestaurantBillController::class, 'store']       )->name('bills.store');
+        Route::get('/bills/{id}',          [RestaurantBillController::class, 'show']        )->name('bills.show');
+        Route::get('/bills/{id}/print',    [RestaurantBillController::class, 'print']       )->name('bills.print');
+    });
+
+    // Reports
+    Route::get('/reports', [RestaurantController::class, 'reports'])
+        ->middleware('permission:restaurant.reports')
+        ->name('reports');
+});
+
 
 // ── Pathik Autofill ─────────────────────────────────────────────────────────
 Route::get( '/pathik',                 [\App\Http\Controllers\Admin\PathikController::class, 'index']           )->name('pathik.index');

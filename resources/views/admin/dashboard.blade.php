@@ -357,6 +357,9 @@
                         if (\App\Models\Module::isEnabled('extra-billing')) {
                             $dashboardShortcuts[] = ['route' => route('food-billing.index'), 'icon' => 'fa-utensils', 'title' => 'Food Billing', 'sub' => 'Food charges', 'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'];
                         }
+                        if (\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.view')) {
+                            $dashboardShortcuts[] = ['route' => route('restaurant.index'), 'icon' => 'fa-concierge-bell', 'title' => 'Restaurant', 'sub' => 'Table orders', 'bg' => 'linear-gradient(135deg,#f43f5e,#e11d48)'];
+                        }
                         if (\App\Models\Module::isEnabled('checkin')) {
                             $dashboardShortcuts[] = ['route' => route('checkin.index'), 'icon' => 'fa-sign-in-alt', 'title' => 'Check In', 'sub' => 'Arrivals', 'bg' => 'linear-gradient(135deg,#06b6d4,#0284c7)'];
                         }

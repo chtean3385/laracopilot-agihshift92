@@ -70,10 +70,16 @@ class RolesAndPermissionsSeeder extends Seeder
             ['slug' => 'users.edit',        'label' => 'Edit Users',               'module' => 'Users',      'sort_order' => 28],
             ['slug' => 'users.delete',      'label' => 'Delete Users',             'module' => 'Users',      'sort_order' => 29],
 
-            ['slug' => 'whatsapp.send',     'label' => 'Send WhatsApp Messages',   'module' => 'WhatsApp',   'sort_order' => 30],
+          ['slug' => 'whatsapp.send',     'label' => 'Send WhatsApp Messages',   'module' => 'WhatsApp',   'sort_order' => 30],
 
-            ['slug' => 'data.truncate',     'label' => 'Clear / Truncate Table Data', 'module' => 'Danger Zone', 'sort_order' => 99],
-        ];
+            ['slug' => 'restaurant.view',    'label' => 'View Restaurant',            'module' => 'Restaurant', 'sort_order' => 31],
+            ['slug' => 'restaurant.tables',  'label' => 'Manage Tables',              'module' => 'Restaurant', 'sort_order' => 32],
+            ['slug' => 'restaurant.menu',    'label' => 'Manage Menu & Categories',   'module' => 'Restaurant', 'sort_order' => 33],
+            ['slug' => 'restaurant.orders',  'label' => 'Take & Manage Orders',       'module' => 'Restaurant', 'sort_order' => 34],
+            ['slug' => 'restaurant.billing', 'label' => 'Process Restaurant Billing', 'module' => 'Restaurant', 'sort_order' => 35],
+            ['slug' => 'restaurant.reports', 'label' => 'View Restaurant Reports',    'module' => 'Restaurant', 'sort_order' => 36],
+
+            ['slug' => 'data.truncate',      'label' => 'Clear / Truncate Table Data', 'module' => 'Danger Zone', 'sort_order' => 99],       ];
 
         foreach ($permissions as $p) {
             Permission::firstOrCreate(['slug' => $p['slug']], $p);
@@ -95,8 +101,10 @@ class RolesAndPermissionsSeeder extends Seeder
                     'activity_log.view',
                     'roles.view', 'roles.edit',
                     'users.view', 'users.create', 'users.edit', 'users.delete',
+                    'restaurant.view', 'restaurant.tables', 'restaurant.menu', 'restaurant.orders', 'restaurant.billing', 'restaurant.reports',
                 ],
             ],
+            
             'Manager' => [
                 'description' => 'Operational access with reports, no delete or settings',
                 'is_system'   => true,

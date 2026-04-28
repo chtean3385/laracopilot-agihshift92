@@ -34,6 +34,8 @@ class ModuleSeeder extends Seeder
             ['slug' => 'channel_manager',   'name' => 'OTA Channel Manager',       'description' => 'Sync room availability and rates with OTA platforms like eZee, STAAH, SiteMinder.'],
             ['slug' => 'time-slot-pricing', 'name' => 'Time Slot & Hourly Pricing','description' => 'Enable time-slot and hourly room pricing modes.'],
             ['slug' => 'extra-billing',     'name' => 'Extra Billing',             'description' => 'Add post-booking charges (food, laundry, services, etc.) to occupied or confirmed bookings and reflect them on the final bill.'],
+            ['slug' => 'extra-billing',     'name' => 'Extra Billing',             'description' => 'Add post-booking charges (food, laundry, services, etc.) to occupied or confirmed bookings and reflect them on the final bill.'],
+            ['slug' => 'restaurant',        'name' => 'Restaurant Management',     'description' => 'Manage restaurant tables, menu, orders, KOT printing and billing. Charge directly or add to guest room bill.'],
         ];
 
         foreach ($modules as $m) {
