@@ -6,7 +6,7 @@
     <title>Forgot Password — {{ $settings->resort_name ?? 'Hotel CRM' }}</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
-    <link href="/css/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; font-family: 'Segoe UI', sans-serif; }

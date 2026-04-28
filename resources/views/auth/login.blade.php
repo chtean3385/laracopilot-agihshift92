@@ -22,7 +22,7 @@
     <meta name="twitter:title" content="All in One Hotel / Resort CRM — Property Management System">
     <meta name="twitter:description" content="Complete hotel &amp; resort CRM SaaS — bookings, check-ins, rooms, guests, and reports.">
     <meta name="twitter:image" content="{{ asset('hotel-crm-logo.png') }}">
-    <link href="/css/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 flex items-center justify-center p-4">

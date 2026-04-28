@@ -7,7 +7,7 @@
     <meta name="description" content="Hotel admin login — manage rooms, bookings, guests, check-ins, time-slot pricing, housekeeping and revenue reports from a single powerful CRM.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
-    <link href="/css/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 flex items-center justify-center p-4">
