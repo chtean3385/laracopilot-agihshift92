@@ -1142,8 +1142,7 @@
         <div style="padding:16px 24px 0;">
             @if(session('success'))
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:12px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;">
-                <i class="fas fa-check-circle" style="color:#22c55e;font-size:16px;flex-shrink:0;"></i>
-                <span>{!! session('success') !!}</span>
+                <i class="fas fa-check-circle" style="color:#22c55e;font-size:16px;flex-shrink:0;"></i>                <span>{!! session('success') !!}</span>
                 <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#86efac;font-size:16px;">×</button>
             </div>
             @endif
