@@ -53,13 +53,24 @@ class RestaurantController extends Controller
         $request->validate([
             'name'     => 'required|string|max:50',
             'capacity' => 'required|integer|min:1|max:50',
+            'status'   => 'sometimes|in:free,dirty,unavailable',
         ]);
 
         $table = RestaurantTable::findOrFail($id);
-        $table->update([
+
+        $data = [
             'name'     => $request->name,
             'capacity' => $request->capacity,
-        ]);
+        ];
+
+        // Allow status change only when table is not occupied
+        if ($request->filled('status') && $table->status !== 'occupied') {
+            $data['status'] = $request->status;
+        }
+
+        $table->update($data);
+
+        ActivityLogger::log('restaurant_table_updated', 'Restaurant', "Table '{$table->name}' updated");
 
         return back()->with('success', 'Table updated successfully.');
     }
