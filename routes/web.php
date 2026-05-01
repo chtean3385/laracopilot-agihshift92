@@ -253,6 +253,7 @@ Route::put('/whatsapp/automations/{template}',          [WhatsAppController::cla
 Route::delete('/whatsapp/automations/{template}',       [WhatsAppController::class, 'templateDestroy'] )->name('whatsapp.template.destroy');
 Route::post('/whatsapp/automations/{template}/toggle',       [WhatsAppController::class, 'templateToggle']  )->name('whatsapp.template.toggle');
 Route::post('/whatsapp/automations/{template}/submit-meta',  [WhatsAppController::class, 'submitToMeta']    )->name('whatsapp.template.submit-meta');
+Route::post('/whatsapp/automations/sync-from-meta',          [WhatsAppController::class, 'syncFromMeta']     )->name('whatsapp.template.sync-meta');
 Route::post('/whatsapp/test-send',                      [WhatsAppController::class, 'testSend']        )->name('whatsapp.test.send');
 Route::post('/whatsapp/test-json',                      [WhatsAppController::class, 'testSendJson']    )->name('whatsapp.test.json');
 

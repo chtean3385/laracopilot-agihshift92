@@ -278,6 +278,63 @@ class WhatsAppController extends Controller
         return back()->with('error', $errorMsg);
     }
 
+    public function syncFromMeta(Request $request)
+    {
+        $platform = \App\Models\PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_waba_id || !$platform->saas_token) {
+            return response()->json(['success' => false, 'error' => 'Platform WABA credentials not configured.']);
+        }
+
+        $hotelId = app(\App\Services\HotelContext::class)->getHotel();
+        if (!$hotelId) {
+            return response()->json(['success' => false, 'error' => 'No hotel context found.']);
+        }
+
+        try {
+            $resp = Http::timeout(20)
+                ->withToken($platform->saas_token)
+                ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
+                    'fields' => 'name,status,id',
+                    'limit'  => 200,
+                ]);
+
+            if (!$resp->successful()) {
+                $err = $resp->json('error.message') ?? $resp->body();
+                return response()->json(['success' => false, 'error' => 'Meta API error: ' . $err]);
+            }
+
+            $metaTemplates = collect($resp->json('data') ?? [])->keyBy(fn($t) => strtolower($t['name']));
+
+            $dbTemplates = WhatsAppTemplate::where('hotel_id', $hotelId)->get();
+
+            $updated = 0;
+            foreach ($dbTemplates as $tmpl) {
+                if (!$tmpl->template_name) continue;
+                $key  = strtolower($tmpl->template_name);
+                $meta = $metaTemplates->get($key);
+                if (!$meta) continue;
+
+                $newStatus = match(strtolower($meta['status'])) {
+                    'approved' => 'approved',
+                    'rejected' => 'rejected',
+                    default    => 'pending',
+                };
+
+                $tmpl->update([
+                    'approval_status'  => $newStatus,
+                    'meta_status'      => $newStatus === 'approved' ? 'approved' : 'submitted',
+                    'meta_template_id' => $meta['id'] ?? $tmpl->meta_template_id,
+                ]);
+                $updated++;
+            }
+
+            return response()->json(['success' => true, 'updated' => $updated, 'message' => "Synced {$updated} template(s) from Meta."]);
+        } catch (\Throwable $e) {
+            Log::error('Hotel WhatsApp syncFromMeta error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function testSendJson(Request $request)
     {
         $request->validate(['phone' => 'required|string', 'message' => 'nullable|string']);

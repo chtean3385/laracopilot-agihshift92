@@ -82,6 +82,10 @@ foreach($allEvents as $event => $label) {
             </button>
             @endif
             @if($canEdit)
+            <button onclick="syncFromMeta(this)"
+                style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-sync-alt"></i> Sync from Meta
+            </button>
             <a href="{{ route('whatsapp.template.create') }}"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
                 <i class="fas fa-plus"></i> Add Template
@@ -389,6 +393,36 @@ function submitToMeta(templateId, btn) {
     .catch(() => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fab fa-meta"></i> Submit to Meta';
+    });
+}
+
+function syncFromMeta(btn) {
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+
+    fetch('{{ route('whatsapp.template.sync-meta') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Synced!';
+            btn.style.background = '#dcfce7';
+            btn.style.color = '#15803d';
+            btn.style.borderColor = '#bbf7d0';
+            setTimeout(function() { location.reload(); }, 1200);
+        } else {
+            btn.innerHTML = orig;
+            alert('Sync failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(function() {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+        alert('Network error during sync.');
     });
 }
 
