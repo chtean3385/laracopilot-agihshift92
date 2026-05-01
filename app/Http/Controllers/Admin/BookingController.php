@@ -53,7 +53,19 @@ class BookingController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $customers = Customer::orderBy('name')->get();
-        $rooms     = Room::where('status', 'available')->orderBy('room_number')->get();
+
+        // For per-night rooms, only show rooms that are currently available.
+        // For per-slot / per-hour rooms the status column is unreliable
+        // (it flips to "occupied" the moment any single slot is booked) so we
+        // show all non-maintenance rooms and let the AJAX slot-conflict check
+        // handle actual availability at booking time.
+        $rooms = Room::where('status', '!=', 'maintenance')
+            ->where(function ($q) {
+                $q->where('pricing_type', '!=', 'per_night')
+                  ->orWhere('status', 'available');
+            })
+            ->orderBy('room_number')
+            ->get();
 
         // Build per-hotel module flags so create form JS can gate sections
         // correctly even in superadmin "All Hotels" mode where rooms from
