@@ -1,6 +1,104 @@
 <div>
 
-    {{-- Inline flash messages (shown after Livewire actions like deleteBooking) --}}
+    {{-- ── Delete confirmation modal ────────────────────────────────────────── --}}
+    <div
+        x-data="bookingDeleteModal()"
+        x-on:open-delete-confirm.window="open($event.detail.id, $event.detail.number)"
+        x-show="show"
+        x-cloak
+        style="position:fixed;inset:0;z-index:9990;display:flex;align-items:center;justify-content:center;padding:16px;"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        {{-- Backdrop --}}
+        <div @click="close()" style="position:absolute;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);"></div>
+
+        {{-- Modal card --}}
+        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95">
+
+            {{-- Top accent bar --}}
+            <div style="height:4px;background:linear-gradient(90deg,#ef4444,#f97316);"></div>
+
+            <div style="padding:28px 28px 24px;">
+                {{-- Icon + heading --}}
+                <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;">
+                    <div style="flex-shrink:0;width:48px;height:48px;border-radius:14px;background:#fee2e2;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-trash-alt" style="font-size:20px;color:#dc2626;"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin:0 0 4px;font-size:17px;font-weight:700;color:#111827;">Delete Booking</h3>
+                        <p style="margin:0;font-size:13px;color:#6b7280;" x-text="'#' + bookingNumber"></p>
+                    </div>
+                    <button @click="close()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:20px;line-height:1;padding:2px 4px;border-radius:6px;" title="Close">×</button>
+                </div>
+
+                {{-- Body text --}}
+                <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
+                    This will <strong style="color:#dc2626;">cancel the booking</strong> and mark the room as available again.<br>
+                    <span style="font-size:13px;color:#9ca3af;">This action cannot be undone.</span>
+                </p>
+
+                {{-- Actions --}}
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button @click="close()"
+                        style="padding:9px 20px;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;"
+                        onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#f9fafb'">
+                        Keep Booking
+                    </button>
+                    <button @click="confirm()"
+                        wire:loading.attr="disabled"
+                        style="padding:9px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:opacity .15s;"
+                        onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+                        <span wire:loading.remove wire:target="deleteBooking"><i class="fas fa-trash-alt" style="font-size:12px;"></i> Delete Booking</span>
+                        <span wire:loading wire:target="deleteBooking" style="display:flex;align-items:center;gap:6px;">
+                            <svg style="width:14px;height:14px;animation:spin 1s linear infinite;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Deleting…
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Alpine data for the delete modal --}}
+    <script>
+        function bookingDeleteModal() {
+            return {
+                show: false,
+                bookingId: null,
+                bookingNumber: '',
+                open(id, number) {
+                    this.bookingId    = id;
+                    this.bookingNumber = number;
+                    this.show = true;
+                    document.body.style.overflow = 'hidden';
+                },
+                close() {
+                    this.show = false;
+                    document.body.style.overflow = '';
+                },
+                confirm() {
+                    this.$wire.deleteBooking(this.bookingId);
+                    this.close();
+                }
+            };
+        }
+    </script>
+
+    {{-- ── Inline flash messages ─────────────────────────────────────────────── --}}
     @if(session()->has('success'))
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;margin-bottom:12px;">
         <i class="fas fa-check-circle" style="color:#22c55e;font-size:15px;flex-shrink:0;"></i>
@@ -264,8 +362,7 @@
                                 @endif
                                 @if(\App\Services\PermissionService::check('bookings.delete'))
                                 <button type="button"
-                                    wire:click="deleteBooking({{ $booking->id }})"
-                                    wire:confirm="Delete booking #{{ $booking->booking_number }}? This will cancel it and cannot be undone."
+                                    @click="$dispatch('open-delete-confirm', { id: {{ $booking->id }}, number: '{{ $booking->booking_number }}' })"
                                     class="lv-action-btn" title="Delete"
                                     style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">
                                     <i class="fas fa-trash-alt"></i>
