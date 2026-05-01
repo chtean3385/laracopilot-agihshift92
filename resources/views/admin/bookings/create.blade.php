@@ -173,6 +173,7 @@
                         @endforeach
                     </select>
                     @error('room_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    <div id="roomAvailBadge" class="hidden mt-2 text-xs font-medium rounded-lg px-3 py-1.5 border"></div>
                 </div>
                 @php
                     $whPerNightSum = \App\Models\Room::where('hotel_id', session('crm_hotel_id'))
@@ -1004,6 +1005,145 @@
             btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Guest';
         }
     });
+
+    // ── Date-driven room availability filtering ────────────────────────────
+    // Capture all room options at page load so we can restore them after
+    // TomSelect is destroyed/re-created when dates change.
+    const _allRoomOptions = [];
+    (function() {
+        const sel = document.getElementById('roomSelect');
+        Array.from(sel.options).forEach(function(opt) {
+            if (!opt.value) return;
+            _allRoomOptions.push({
+                value:          opt.value,
+                text:           opt.textContent.trim(),
+                disabled:       false,
+                selected:       opt.selected,
+                dataset: {
+                    price:           opt.dataset.price          || '0',
+                    pricingType:     opt.dataset.pricingType    || 'per_night',
+                    hourlyRate:      opt.dataset.hourlyRate      || '0',
+                    slotModule:      opt.dataset.slotModule      || '0',
+                    hourlyModule:    opt.dataset.hourlyModule    || '0',
+                    hasBreakfast:    opt.dataset.hasBreakfast    || '0',
+                    breakfastPrice:  opt.dataset.breakfastPrice  || '0',
+                    hasLunch:        opt.dataset.hasLunch        || '0',
+                    lunchPrice:      opt.dataset.lunchPrice      || '0',
+                    hasDinner:       opt.dataset.hasDinner       || '0',
+                    dinnerPrice:     opt.dataset.dinnerPrice     || '0',
+                    hasExtraBed:     opt.dataset.hasExtraBed     || '0',
+                    extraBedPrice:   opt.dataset.extraBedPrice   || '0',
+                }
+            });
+        });
+    })();
+
+    function refreshAvailableRooms() {
+        const params = new URLSearchParams();
+
+        const checkIn  = document.getElementById('checkIn')?.value;
+        const checkOut = document.getElementById('checkOut')?.value;
+        const slotDate = document.getElementById('slotBookingDate')?.value;
+        const slotId   = document.getElementById('timeSlotSelect')?.value;
+        const hourDate = document.getElementById('hourBookingDate')?.value;
+
+        if (checkIn && checkOut) {
+            params.set('check_in',  checkIn);
+            params.set('check_out', checkOut);
+        } else if (slotDate) {
+            params.set('date', slotDate);
+            if (slotId) params.set('slot_id', slotId);
+        } else if (hourDate) {
+            params.set('date', hourDate);
+        } else {
+            updateRoomDropdown([]);
+            return;
+        }
+
+        fetch('/bookings/available-rooms?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { updateRoomDropdown(data.unavailable_room_ids || []); })
+        .catch(function() { /* silently ignore */ });
+    }
+
+    function updateRoomDropdown(unavailableIds) {
+        const sel        = document.getElementById('roomSelect');
+        const currentVal = roomTS.getValue();
+
+        // Rebuild the underlying <select> with correct disabled state + text
+        // (keep the placeholder option first)
+        const placeholder = sel.options[0];
+        sel.innerHTML = '';
+        if (placeholder) sel.appendChild(placeholder);
+
+        _allRoomOptions.forEach(function(room) {
+            const isUnavailable = unavailableIds.includes(parseInt(room.value));
+            const opt = document.createElement('option');
+            opt.value    = room.value;
+            opt.disabled = isUnavailable;
+            opt.textContent = room.text + (isUnavailable ? ' — Booked' : '');
+
+            // Restore all data-* attributes so updatePricingUI() keeps working
+            Object.entries(room.dataset).forEach(function(kv) {
+                opt.dataset[kv[0]] = kv[1];
+            });
+
+            sel.appendChild(opt);
+        });
+
+        // Destroy and recreate TomSelect so it picks up the new option state
+        roomTS.destroy();
+        window.roomTS = new TomSelect('#roomSelect', {
+            allowEmptyOption: false,
+            placeholder: 'Search room by number or type...',
+            maxOptions: 100,
+            onChange: function() {
+                updatePricingUI();
+                updateMealOptions();
+                calculateTotal();
+                refreshAvailableSlots();
+            }
+        });
+
+        // Restore selection if the room is still available
+        if (currentVal && !unavailableIds.includes(parseInt(currentVal))) {
+            roomTS.setValue(currentVal, true);
+        } else if (currentVal) {
+            // Previously selected room is now booked — clear it
+            updatePricingUI();
+        }
+
+        // Show/update the availability badge
+        const badge     = document.getElementById('roomAvailBadge');
+        const total     = _allRoomOptions.length;
+        const booked    = unavailableIds.filter(function(id) {
+            return _allRoomOptions.some(function(r) { return parseInt(r.value) === id; });
+        }).length;
+        const available = total - booked;
+
+        if (!badge) return;
+        if (unavailableIds.length === 0) {
+            badge.className = 'hidden mt-2 text-xs font-medium rounded-lg px-3 py-1.5 border';
+            badge.textContent = '';
+            return;
+        }
+        if (available > 0) {
+            badge.className = 'mt-2 text-xs font-medium rounded-lg px-3 py-1.5 border bg-green-50 border-green-200 text-green-700';
+            badge.textContent = available + ' of ' + total + ' rooms available for selected dates';
+        } else {
+            badge.className = 'mt-2 text-xs font-medium rounded-lg px-3 py-1.5 border bg-red-50 border-red-200 text-red-700';
+            badge.textContent = 'No rooms available for the selected dates';
+        }
+    }
+
+    // Wire up to all date inputs
+    document.getElementById('checkIn')?.addEventListener('change',  refreshAvailableRooms);
+    document.getElementById('checkOut')?.addEventListener('change', refreshAvailableRooms);
+    document.getElementById('slotBookingDate')?.addEventListener('change', refreshAvailableRooms);
+    document.getElementById('timeSlotSelect')?.addEventListener('change',  refreshAvailableRooms);
+    document.getElementById('hourBookingDate')?.addEventListener('change', refreshAvailableRooms);
 </script>
 @endpush
 @endsection

@@ -115,6 +115,7 @@ Route::get('/rooms/{id}',            [RoomController::class, 'show']      )->nam
 Route::get('/bookings',                      [BookingController::class, 'index']             )->name('bookings.index');
 Route::get('/bookings/create',               [BookingController::class, 'create']            )->middleware('permission:bookings.create')->name('bookings.create');
 Route::get('/bookings/available-time-slots', [BookingController::class, 'availableTimeSlots'])->name('bookings.available_time_slots');
+Route::get('/bookings/available-rooms',      [BookingController::class, 'availableRooms']     )->name('bookings.available_rooms');
 Route::post('/bookings',                     [BookingController::class, 'store']             )->middleware('permission:bookings.create')->name('bookings.store');
 Route::get('/bookings/{id}/edit',            [BookingController::class, 'edit']              )->middleware('permission:bookings.edit')->name('bookings.edit');
 Route::put('/bookings/{id}',                 [BookingController::class, 'update']            )->middleware('permission:bookings.edit')->name('bookings.update');

@@ -49,6 +49,62 @@ class BookingController extends Controller
         return response()->json(['available_slot_ids' => $available]);
     }
 
+    public function availableRooms(Request $request)
+    {
+        if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
+
+        $hotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+
+        $unavailableRoomIds = collect();
+
+        // ── Per-night: check_in + check_out ────────────────────────────────
+        if ($request->filled('check_in') && $request->filled('check_out')) {
+            $checkIn  = $request->input('check_in');
+            $checkOut = $request->input('check_out');
+
+            $nightIds = \App\Models\Booking::where('hotel_id', $hotelId)
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->whereNotNull('check_in_date')
+                ->where('check_in_date', '<', $checkOut)
+                ->where('check_out_date', '>', $checkIn)
+                ->pluck('room_id');
+
+            $unavailableRoomIds = $unavailableRoomIds->merge($nightIds);
+        }
+
+        // ── Per-slot / Per-hour: date (+ optional slot_id) ─────────────────
+        if ($request->filled('date')) {
+            $date   = $request->input('date');
+            $slotId = $request->input('slot_id');
+
+            $query = \App\Models\Booking::where('hotel_id', $hotelId)
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->where('booking_date', $date)
+                ->whereNotNull('time_slot_id');
+
+            if ($slotId) {
+                $query->where('time_slot_id', (int) $slotId);
+            }
+
+            $slotIds = $query->pluck('room_id');
+            $unavailableRoomIds = $unavailableRoomIds->merge($slotIds);
+
+            // Also flag rooms with overlapping per-night bookings on this date
+            $nightIds = \App\Models\Booking::where('hotel_id', $hotelId)
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->whereNotNull('check_in_date')
+                ->where('check_in_date', '<=', $date)
+                ->where('check_out_date', '>', $date)
+                ->pluck('room_id');
+
+            $unavailableRoomIds = $unavailableRoomIds->merge($nightIds);
+        }
+
+        return response()->json([
+            'unavailable_room_ids' => $unavailableRoomIds->unique()->values()->map(fn($id) => (int) $id),
+        ]);
+    }
+
     public function create()
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
