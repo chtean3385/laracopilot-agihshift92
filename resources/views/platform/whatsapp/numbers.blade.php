@@ -2,7 +2,7 @@
 @section('title', 'Manage Hotel WhatsApp Numbers')
 
 @section('content')
-<div style="max-width:900px;margin:0 auto;" x-data="managedNumbers()">
+<div style="max-width:900px;margin:0 auto;">
 
 {{-- Header --}}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
@@ -11,7 +11,7 @@
         <p style="color:#6b7280;font-size:14px;margin:0;">Register each hotel's own WhatsApp number under your business account. One WABA, all hotels.</p>
     </div>
     @if($platform && $platform->saas_token && $platform->saas_waba_id)
-    <button @click="openAdd()" style="background:#25D366;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
+    <button onclick="openAddModal()" style="background:#25D366;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
         <i class="fas fa-plus"></i> Add Hotel Number
     </button>
     @endif
@@ -56,7 +56,7 @@
 
     @forelse($hotels as $hotel)
     @php $cfg = $configs->get($hotel->id); @endphp
-    <div style="padding:18px 24px;border-bottom:1px solid #f9fafb;display:flex;align-items:center;gap:16px;" x-data="{}">
+    <div style="padding:18px 24px;border-bottom:1px solid #f9fafb;display:flex;align-items:center;gap:16px;">
         {{-- Hotel info --}}
         <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:700;color:#111827;">{{ $hotel->name }}</div>
@@ -77,17 +77,15 @@
                     <i class="fas fa-minus" style="font-size:9px;"></i> No Managed Number
                 </span>
             @elseif($cfg->managed_otp_status === 'pending')
-                <span style="background:#fef3c7;color:#92400e;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:5px;">
+                <span style="background:#fef3c7;color:#92400e;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;">
                     <i class="fas fa-clock" style="font-size:9px;"></i> OTP Pending
                 </span>
             @elseif($cfg->is_active && $cfg->setup_completed)
-                <span style="background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:5px;">
+                <span style="background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;">
                     <i class="fas fa-check-circle" style="font-size:10px;"></i> Active
                 </span>
             @else
-                <span style="background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;">
-                    Inactive
-                </span>
+                <span style="background:#f3f4f6;color:#6b7280;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;">Inactive</span>
             @endif
         </div>
 
@@ -95,29 +93,29 @@
         <div style="display:flex;gap:8px;flex-shrink:0;">
             @if(!$cfg || $cfg->mode !== 'managed')
                 @if($platform && $platform->saas_token && $platform->saas_waba_id)
-                <button @click="openAdd({{ $hotel->id }}, '{{ addslashes($hotel->name) }}')"
+                <button onclick="openAddModal({{ $hotel->id }}, '{{ addslashes($hotel->name) }}')"
                     style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-plus"></i> Add Number
                 </button>
                 @endif
             @elseif($cfg->managed_otp_status === 'pending')
-                <button @click="openVerify({{ $cfg->id }}, '+{{ $cfg->phone_number }}')"
+                <button onclick="openVerifyModal({{ $cfg->id }}, '+{{ $cfg->phone_number }}')"
                     style="background:#7c3aed;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-key"></i> Enter OTP
                 </button>
-                <button @click="resendOtp({{ $cfg->id }}, $el)"
+                <button onclick="resendOtp({{ $cfg->id }}, this)"
                     style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
                     <i class="fas fa-redo"></i> Resend
                 </button>
             @elseif($cfg->is_active)
-                <button @click="openVerify({{ $cfg->id }}, '+{{ $cfg->phone_number }}')"
+                <button onclick="openVerifyModal({{ $cfg->id }}, '+{{ $cfg->phone_number }}')"
                     style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
                     <i class="fas fa-key"></i> Re-verify
                 </button>
             @endif
 
             @if($cfg && $cfg->mode === 'managed')
-            <button @click="removeNumber({{ $cfg->id }}, '{{ addslashes($hotel->name) }}')"
+            <button onclick="removeNumber({{ $cfg->id }}, '{{ addslashes($hotel->name) }}')"
                 style="background:#fff0f0;color:#dc2626;border:1px solid #fca5a5;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
                 <i class="fas fa-trash"></i>
             </button>
@@ -132,108 +130,110 @@
 </div>
 
 {{-- ===== ADD NUMBER MODAL ===== --}}
-<div x-show="showAdd" x-cloak style="position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;">
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);" @click="closeAdd()"></div>
-    <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:500px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);z-index:1;">
-        <button @click="closeAdd()" style="position:absolute;top:16px;right:16px;background:#f3f4f6;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:#6b7280;">×</button>
+<div id="addModal" style="display:none;position:fixed;inset:0;z-index:9000;">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" onclick="closeAddModal()"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:500px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);pointer-events:auto;">
+            <button onclick="closeAddModal()" style="position:absolute;top:16px;right:16px;background:#f3f4f6;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:#6b7280;line-height:1;">×</button>
 
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
-            <div style="width:44px;height:44px;background:#25D366;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <i class="fab fa-whatsapp" style="color:#fff;font-size:22px;"></i>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+                <div style="width:44px;height:44px;background:#25D366;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fab fa-whatsapp" style="color:#fff;font-size:22px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:17px;font-weight:800;color:#111827;">Add Hotel Number</div>
+                    <div id="addModalHotelName" style="font-size:13px;color:#6b7280;"></div>
+                </div>
             </div>
-            <div>
-                <div style="font-size:17px;font-weight:800;color:#111827;">Add Hotel Number</div>
-                <div style="font-size:13px;color:#6b7280;" x-text="addHotelName ? 'For: ' + addHotelName : 'Select a hotel below'"></div>
+
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;">
+                <i class="fas fa-info-circle"></i> &nbsp;Meta will send an <strong>OTP via SMS</strong> to the hotel's WhatsApp number. The hotel owner needs to share that code with you to complete verification.
             </div>
-        </div>
 
-        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;">
-            <i class="fas fa-info-circle"></i> &nbsp;Meta will send an <strong>OTP via SMS</strong> to the hotel's WhatsApp number. The hotel owner needs to share that code with you to complete verification.
-        </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel</label>
+                <select id="addHotelId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
+                    <option value="">— Select Hotel —</option>
+                    @foreach($hotels as $hotel)
+                    <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-        <div style="margin-bottom:16px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel</label>
-            <select x-model="addForm.hotel_id" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
-                <option value="">— Select Hotel —</option>
-                @foreach($hotels as $hotel)
-                <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
-                @endforeach
-            </select>
-        </div>
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:16px;">
+                <div>
+                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Country Code</label>
+                    <input type="text" id="addCountryCode" value="91" placeholder="91"
+                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Without + sign</div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">WhatsApp Number</label>
+                    <input type="text" id="addPhoneNumber" placeholder="9876543210"
+                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Digits only, no country code</div>
+                </div>
+            </div>
 
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:16px;">
-            <div>
-                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Country Code</label>
-                <input type="text" x-model="addForm.country_code" placeholder="91"
+            <div style="margin-bottom:22px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Business Display Name</label>
+                <input type="text" id="addDisplayName" placeholder="e.g. Azure Paradise Resort"
                     style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Without + sign</div>
+                <div style="font-size:11px;color:#9ca3af;margin-top:3px;">This name appears on WhatsApp messages sent from this number</div>
             </div>
-            <div>
-                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">WhatsApp Number</label>
-                <input type="text" x-model="addForm.phone_number" placeholder="9876543210"
-                    style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Digits only, no country code</div>
+
+            <div id="addError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+            <div id="addSuccess" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+            <div style="display:flex;gap:12px;">
+                <button onclick="closeAddModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+                <button id="addSubmitBtn" onclick="submitAdd()"
+                    style="flex:2;background:#25D366;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+                    Register &amp; Send OTP
+                </button>
             </div>
-        </div>
-
-        <div style="margin-bottom:22px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Business Display Name</label>
-            <input type="text" x-model="addForm.display_name" placeholder="e.g. Azure Paradise Resort"
-                style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-            <div style="font-size:11px;color:#9ca3af;margin-top:3px;">This name appears on WhatsApp messages sent from this number</div>
-        </div>
-
-        <div x-show="addError" x-text="addError" style="background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;" x-cloak></div>
-        <div x-show="addSuccess" x-text="addSuccess" style="background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;" x-cloak></div>
-
-        <div style="display:flex;gap:12px;">
-            <button @click="closeAdd()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
-            <button @click="submitAdd()" :disabled="addLoading"
-                style="flex:2;background:#25D366;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <span x-show="addLoading" style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;"></span>
-                <span x-text="addLoading ? 'Sending OTP...' : 'Register & Send OTP'"></span>
-            </button>
         </div>
     </div>
 </div>
 
 {{-- ===== VERIFY OTP MODAL ===== --}}
-<div x-show="showVerify" x-cloak style="position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;">
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);" @click="closeVerify()"></div>
-    <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:420px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);z-index:1;">
-        <button @click="closeVerify()" style="position:absolute;top:16px;right:16px;background:#f3f4f6;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;color:#6b7280;">×</button>
+<div id="verifyModal" style="display:none;position:fixed;inset:0;z-index:9000;">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" onclick="closeVerifyModal()"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:420px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);pointer-events:auto;">
+            <button onclick="closeVerifyModal()" style="position:absolute;top:16px;right:16px;background:#f3f4f6;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:#6b7280;line-height:1;">×</button>
 
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
-            <div style="width:44px;height:44px;background:#7c3aed;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <i class="fas fa-key" style="color:#fff;font-size:18px;"></i>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+                <div style="width:44px;height:44px;background:#7c3aed;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-key" style="color:#fff;font-size:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:17px;font-weight:800;color:#111827;">Enter OTP</div>
+                    <div id="verifyPhoneDisplay" style="font-size:13px;color:#6b7280;"></div>
+                </div>
             </div>
-            <div>
-                <div style="font-size:17px;font-weight:800;color:#111827;">Enter OTP</div>
-                <div style="font-size:13px;color:#6b7280;">Verifying <span x-text="verifyPhone"></span></div>
+
+            <div style="background:#f5f3ff;border:1px solid #e9d5ff;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#6d28d9;line-height:1.6;">
+                <i class="fas fa-mobile-alt"></i> &nbsp;Ask the hotel owner for the <strong>6-digit OTP</strong> they received via SMS on <span id="verifyPhoneInline"></span>
             </div>
-        </div>
 
-        <div style="background:#f5f3ff;border:1px solid #e9d5ff;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:#6d28d9;line-height:1.6;">
-            <i class="fas fa-mobile-alt"></i> &nbsp;Ask the hotel owner for the <strong>6-digit OTP</strong> they received via SMS on <span x-text="verifyPhone"></span>
-        </div>
+            <div style="margin-bottom:22px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">OTP Code</label>
+                <input type="text" id="verifyCode" placeholder="Enter 6-digit code" maxlength="8"
+                    style="width:100%;padding:12px 16px;border:2px solid #e9d5ff;border-radius:10px;font-size:22px;font-weight:700;letter-spacing:6px;text-align:center;box-sizing:border-box;"
+                    onkeyup="if(event.key==='Enter') submitVerify()">
+            </div>
 
-        <div style="margin-bottom:22px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">OTP Code</label>
-            <input type="text" x-model="verifyCode" placeholder="Enter 6-digit code" maxlength="8"
-                style="width:100%;padding:12px 16px;border:2px solid #e9d5ff;border-radius:10px;font-size:22px;font-weight:700;letter-spacing:6px;text-align:center;box-sizing:border-box;"
-                @keyup.enter="submitVerify()">
-        </div>
+            <div id="verifyError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+            <div id="verifySuccess" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
 
-        <div x-show="verifyError" x-text="verifyError" style="background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;" x-cloak></div>
-        <div x-show="verifySuccess" x-text="verifySuccess" style="background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;" x-cloak></div>
-
-        <div style="display:flex;gap:12px;">
-            <button @click="closeVerify()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
-            <button @click="submitVerify()" :disabled="verifyLoading"
-                style="flex:2;background:#7c3aed;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <span x-show="verifyLoading" style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;"></span>
-                <span x-text="verifyLoading ? 'Verifying...' : 'Verify & Activate'"></span>
-            </button>
+            <div style="display:flex;gap:12px;">
+                <button onclick="closeVerifyModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+                <button id="verifySubmitBtn" onclick="submitVerify()"
+                    style="flex:2;background:#7c3aed;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+                    Verify &amp; Activate
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -242,133 +242,177 @@
 
 <style>
 @keyframes spin { to { transform: rotate(360deg); } }
-[x-cloak] { display: none !important; }
+.wa-spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px; }
 </style>
 
 <script>
-function managedNumbers() {
-    return {
-        showAdd: false,
-        addHotelName: '',
-        addForm: { hotel_id: '', country_code: '91', phone_number: '', display_name: '' },
-        addLoading: false,
-        addError: '',
-        addSuccess: '',
+var _addReloadOnClose = false;
+var _verifyConfigId = null;
+var _verifyReloadOnClose = false;
 
-        showVerify: false,
-        verifyConfigId: null,
-        verifyPhone: '',
-        verifyCode: '',
-        verifyLoading: false,
-        verifyError: '',
-        verifySuccess: '',
+function openAddModal(hotelId, hotelName) {
+    document.getElementById('addHotelId').value = hotelId || '';
+    document.getElementById('addCountryCode').value = '91';
+    document.getElementById('addPhoneNumber').value = '';
+    document.getElementById('addDisplayName').value = '';
+    document.getElementById('addModalHotelName').textContent = hotelName ? 'For: ' + hotelName : 'Select a hotel below';
+    document.getElementById('addError').style.display = 'none';
+    document.getElementById('addSuccess').style.display = 'none';
+    document.getElementById('addSubmitBtn').innerHTML = 'Register &amp; Send OTP';
+    document.getElementById('addSubmitBtn').disabled = false;
+    _addReloadOnClose = false;
+    document.getElementById('addModal').style.display = 'block';
+}
 
-        openAdd(hotelId = '', hotelName = '') {
-            this.addForm = { hotel_id: hotelId || '', country_code: '91', phone_number: '', display_name: '' };
-            this.addHotelName = hotelName;
-            this.addError = '';
-            this.addSuccess = '';
-            this.showAdd = true;
-        },
-        closeAdd() {
-            if (this.addSuccess) location.reload();
-            this.showAdd = false;
-        },
-        async submitAdd() {
-            this.addError = '';
-            this.addSuccess = '';
-            if (!this.addForm.hotel_id) { this.addError = 'Please select a hotel.'; return; }
-            if (!this.addForm.phone_number) { this.addError = 'Please enter the phone number.'; return; }
-            if (!this.addForm.display_name) { this.addError = 'Please enter a display name.'; return; }
-            this.addLoading = true;
-            try {
-                const resp = await fetch('{{ route('platform.whatsapp.numbers.register') }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify(this.addForm),
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    this.addSuccess = data.message;
-                    this.verifyConfigId = data.config_id;
-                } else {
-                    this.addError = data.error || 'Something went wrong.';
-                }
-            } catch(e) {
-                this.addError = 'Network error: ' + e.message;
-            }
-            this.addLoading = false;
-        },
+function closeAddModal() {
+    document.getElementById('addModal').style.display = 'none';
+    if (_addReloadOnClose) location.reload();
+}
 
-        openVerify(configId, phone) {
-            this.verifyConfigId = configId;
-            this.verifyPhone = phone;
-            this.verifyCode = '';
-            this.verifyError = '';
-            this.verifySuccess = '';
-            this.showVerify = true;
-        },
-        closeVerify() {
-            if (this.verifySuccess) location.reload();
-            this.showVerify = false;
-        },
-        async submitVerify() {
-            this.verifyError = '';
-            this.verifySuccess = '';
-            if (!this.verifyCode) { this.verifyError = 'Please enter the OTP code.'; return; }
-            this.verifyLoading = true;
-            try {
-                const resp = await fetch(`/platform/whatsapp/numbers/${this.verifyConfigId}/verify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ code: this.verifyCode }),
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    this.verifySuccess = data.message;
-                } else {
-                    this.verifyError = data.error || 'Verification failed.';
-                }
-            } catch(e) {
-                this.verifyError = 'Network error: ' + e.message;
-            }
-            this.verifyLoading = false;
-        },
+function submitAdd() {
+    var hotelId     = document.getElementById('addHotelId').value;
+    var cc          = document.getElementById('addCountryCode').value.trim();
+    var phone       = document.getElementById('addPhoneNumber').value.trim();
+    var displayName = document.getElementById('addDisplayName').value.trim();
+    var errEl       = document.getElementById('addError');
+    var successEl   = document.getElementById('addSuccess');
 
-        async resendOtp(configId, btn) {
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            try {
-                const resp = await fetch(`/platform/whatsapp/numbers/${configId}/request-otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                });
-                const data = await resp.json();
-                btn.innerHTML = data.success ? '<i class="fas fa-check"></i> Sent' : '<i class="fas fa-times"></i> Failed';
-                if (data.success) btn.style.color = '#16a34a';
-                else btn.style.color = '#dc2626';
-            } catch(e) {
-                btn.innerHTML = orig;
-            }
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (!hotelId)     { errEl.textContent = 'Please select a hotel.'; errEl.style.display = 'block'; return; }
+    if (!phone)       { errEl.textContent = 'Please enter the phone number.'; errEl.style.display = 'block'; return; }
+    if (!displayName) { errEl.textContent = 'Please enter a display name.'; errEl.style.display = 'block'; return; }
+
+    var btn = document.getElementById('addSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="wa-spinner"></span> Sending OTP...';
+
+    fetch('{{ route('platform.whatsapp.numbers.register') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ hotel_id: hotelId, country_code: cc, phone_number: phone, display_name: displayName }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            successEl.textContent = data.message;
+            successEl.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-check"></i> Done';
+            _addReloadOnClose = true;
+            _verifyConfigId = data.config_id;
+        } else {
+            errEl.textContent = data.error || 'Something went wrong.';
+            errEl.style.display = 'block';
+            btn.innerHTML = 'Register &amp; Send OTP';
             btn.disabled = false;
-        },
+        }
+    })
+    .catch(function(e) {
+        errEl.textContent = 'Network error: ' + e.message;
+        errEl.style.display = 'block';
+        btn.innerHTML = 'Register &amp; Send OTP';
+        btn.disabled = false;
+    });
+}
 
-        async removeNumber(configId, hotelName) {
-            if (!confirm(`Remove managed number for ${hotelName}? The hotel will switch back to shared mode.`)) return;
-            try {
-                const resp = await fetch(`/platform/whatsapp/numbers/${configId}`, {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                });
-                const data = await resp.json();
-                if (data.success) location.reload();
-                else alert(data.error || 'Could not remove number.');
-            } catch(e) {
-                alert('Network error: ' + e.message);
-            }
-        },
-    };
+function openVerifyModal(configId, phone) {
+    _verifyConfigId = configId;
+    _verifyReloadOnClose = false;
+    document.getElementById('verifyPhoneDisplay').textContent = 'Verifying ' + phone;
+    document.getElementById('verifyPhoneInline').textContent = phone;
+    document.getElementById('verifyCode').value = '';
+    document.getElementById('verifyError').style.display = 'none';
+    document.getElementById('verifySuccess').style.display = 'none';
+    document.getElementById('verifySubmitBtn').innerHTML = 'Verify &amp; Activate';
+    document.getElementById('verifySubmitBtn').disabled = false;
+    document.getElementById('verifyModal').style.display = 'block';
+    setTimeout(function(){ document.getElementById('verifyCode').focus(); }, 100);
+}
+
+function closeVerifyModal() {
+    document.getElementById('verifyModal').style.display = 'none';
+    if (_verifyReloadOnClose) location.reload();
+}
+
+function submitVerify() {
+    var code    = document.getElementById('verifyCode').value.trim();
+    var errEl   = document.getElementById('verifyError');
+    var successEl = document.getElementById('verifySuccess');
+
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (!code) { errEl.textContent = 'Please enter the OTP code.'; errEl.style.display = 'block'; return; }
+
+    var btn = document.getElementById('verifySubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="wa-spinner"></span> Verifying...';
+
+    fetch('/platform/whatsapp/numbers/' + _verifyConfigId + '/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ code: code }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            successEl.textContent = data.message;
+            successEl.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-check"></i> Activated!';
+            _verifyReloadOnClose = true;
+        } else {
+            errEl.textContent = data.error || 'Verification failed.';
+            errEl.style.display = 'block';
+            btn.innerHTML = 'Verify &amp; Activate';
+            btn.disabled = false;
+        }
+    })
+    .catch(function(e) {
+        errEl.textContent = 'Network error: ' + e.message;
+        errEl.style.display = 'block';
+        btn.innerHTML = 'Verify &amp; Activate';
+        btn.disabled = false;
+    });
+}
+
+function resendOtp(configId, btn) {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    fetch('/platform/whatsapp/numbers/' + configId + '/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Sent';
+            btn.style.color = '#16a34a';
+        } else {
+            btn.innerHTML = '<i class="fas fa-times"></i> Failed';
+            btn.style.color = '#dc2626';
+        }
+        btn.disabled = false;
+    })
+    .catch(function() {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+    });
+}
+
+function removeNumber(configId, hotelName) {
+    if (!confirm('Remove managed number for ' + hotelName + '? The hotel will switch back to shared mode.')) return;
+    fetch('/platform/whatsapp/numbers/' + configId, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) location.reload();
+        else alert(data.error || 'Could not remove number.');
+    })
+    .catch(function(e) { alert('Network error: ' + e.message); });
 }
 </script>
 @endsection
