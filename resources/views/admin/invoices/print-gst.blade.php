@@ -143,36 +143,59 @@
 <div class="page-wrap bg-white shadow border border-gray-300 rounded-lg overflow-hidden">
 
     {{-- ══ HEADER ══ --}}
-    <div style="border-bottom:2px solid #111; padding: 12px 16px;">
+    @php
+        $hotelName     = $s->resort_name ?? 'Resort';
+        $initials      = implode('', array_map(fn($w) => strtoupper($w[0]), array_filter(explode(' ', $hotelName))));
+        $initials      = substr($initials, 0, 3);
+        $hasLogo       = $s && $s->logo && file_exists(public_path('storage/' . $s->logo));
+        $logoUrl       = $hasLogo ? asset('storage/' . $s->logo) : null;
+    @endphp
+    <div style="border-bottom:2px solid #111;">
         <table class="no-border inv-header-table" style="width:100%;">
             <tr>
-                <td style="width:65%; vertical-align:top;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        @if($s && $s->logo && file_exists(public_path('storage/'.$s->logo)))
-                        <img src="{{ asset('storage/'.$s->logo) }}" alt="Logo"
-                             style="height:64px;width:64px;object-fit:contain;border-radius:8px;border:1px solid #ddd;padding:3px;">
+                <td style="width:65%;vertical-align:top;padding:14px 16px;">
+                    <div style="display:flex;align-items:center;gap:14px;">
+
+                        {{-- Logo or initials badge --}}
+                        @if($hasLogo)
+                        <div style="flex-shrink:0;width:72px;height:72px;border-radius:10px;border:1.5px solid #d1d5db;padding:4px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                            <img src="{{ $logoUrl }}" alt="{{ $hotelName }} Logo"
+                                 style="max-width:100%;max-height:100%;object-fit:contain;">
+                        </div>
+                        @else
+                        <div style="flex-shrink:0;width:72px;height:72px;border-radius:10px;border:2px solid #1e293b;background:#1e293b;display:flex;align-items:center;justify-content:center;">
+                            <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:1px;line-height:1;">{{ $initials }}</span>
+                        </div>
                         @endif
+
+                        {{-- Hotel name + address --}}
                         <div>
-                            <div style="font-size:18px;font-weight:800;color:#0f172a;line-height:1.2;">{{ $s->resort_name ?? 'Resort Name' }}</div>
-                            @if($s->tagline)<div style="font-size:11px;color:#64748b;margin-top:1px;">{{ $s->tagline }}</div>@endif
-                            <div style="font-size:11px;color:#374151;margin-top:4px;">{{ $s->address ?? '' }}</div>
-                            <div style="font-size:11px;color:#374151;">
-                                📞 {{ $s->phone ?? '' }}
-                                @if($s->contact_number) &nbsp;/&nbsp; {{ $s->contact_number }} @endif
-                                @if($s->email) &nbsp;|&nbsp; ✉ {{ $s->email }} @endif
+                            <div style="font-size:19px;font-weight:900;color:#0f172a;line-height:1.2;text-transform:uppercase;letter-spacing:0.3px;">{{ $hotelName }}</div>
+                            @if($s && $s->tagline)
+                            <div style="font-size:10.5px;color:#64748b;margin-top:1px;font-style:italic;">{{ $s->tagline }}</div>
+                            @endif
+                            <div style="font-size:10.5px;color:#374151;margin-top:5px;line-height:1.5;">
+                                {{ $s->address ?? '' }}
                             </div>
-                            @if($s->gst_number)
-                            <div style="font-size:11px;font-weight:700;color:#1e293b;margin-top:3px;">
-                                GST IN: {{ $s->gst_number }}
-                                @if($s->state_code) &nbsp;|&nbsp; State: {{ $s->state_code }} @endif
+                            <div style="font-size:10.5px;color:#374151;line-height:1.5;">
+                                @if($s->phone) Phone No.: {{ $s->phone }} @endif
+                                @if($s->contact_number), Contact No.: {{ $s->contact_number }} @endif
+                            </div>
+                            @if($s->email)
+                            <div style="font-size:10.5px;color:#374151;">✉ {{ $s->email }}</div>
+                            @endif
+                            @if($s && $s->gst_number)
+                            <div style="font-size:10.5px;font-weight:700;color:#1e293b;margin-top:4px;">
+                                GST IN.: {{ $s->gst_number }}
+                                @if($s->state_code) &nbsp;|&nbsp; State/Code: {{ $s->state_code }} @endif
                             </div>
                             @endif
                         </div>
                     </div>
                 </td>
-                <td style="width:35%;vertical-align:middle;text-align:right;">
-                    <div style="font-size:20px;font-weight:900;letter-spacing:1px;color:#0f172a;">TAX INVOICE</div>
-                    <div style="margin-top:8px;font-size:11px;color:#374151;">
+                <td style="width:35%;vertical-align:top;text-align:right;padding:14px 16px;">
+                    <div style="font-size:22px;font-weight:900;letter-spacing:2px;color:#0f172a;text-transform:uppercase;">TAX INVOICE</div>
+                    <div style="margin-top:10px;font-size:11px;color:#374151;line-height:2;">
                         <div><strong>Invoice No.:</strong> {{ $invoice->invoice_number }}</div>
                         <div><strong>Date:</strong> {{ $invoice->issued_at ? \Carbon\Carbon::parse($invoice->issued_at)->format('d/m/Y') : now()->format('d/m/Y') }}</div>
                         <div><strong>Booking#:</strong> {{ $b->booking_number }}</div>
