@@ -77,7 +77,7 @@ class BookingSearch extends Component
         }
 
         \App\Services\ActivityLogger::log('Deleted', 'Booking', 'Cancelled booking #' . $number);
-        session()->flash('success', 'Booking #' . $number . ' has been deleted.');
+        $this->dispatch('crm-toast', type: 'success', message: 'Booking #' . $number . ' has been deleted.');
     }
 
     public function render()

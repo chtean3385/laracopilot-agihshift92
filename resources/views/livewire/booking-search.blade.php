@@ -1,26 +1,28 @@
 <div>
 
     {{-- ── Delete confirmation modal ────────────────────────────────────────── --}}
-    <div
-        x-data="bookingDeleteModal()"
-        x-on:open-delete-confirm.window="open($event.detail.id, $event.detail.number)"
-        x-show="show"
-        x-cloak
-        style="position:fixed;inset:0;z-index:9990;display:flex;align-items:center;justify-content:center;padding:16px;"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0">
+    <div x-data="bookingDeleteModal()" x-on:open-delete-confirm.window="open($event.detail.id, $event.detail.number)">
 
-        {{-- Backdrop --}}
-        <div @click="close()" style="position:absolute;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);"></div>
+        {{-- Overlay (x-show here — no display:flex on this element) --}}
+        <div x-show="show" x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            style="position:fixed;inset:0;z-index:9990;background:rgba(15,23,42,0.45);backdrop-filter:blur(2px);"
+            @click.self="close()">
+        </div>
+
+        {{-- Centering wrapper (always rendered, flex centres the card) --}}
+        <div x-show="show" x-cloak
+            style="position:fixed;inset:0;z-index:9991;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;">
 
         {{-- Modal card --}}
-        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;pointer-events:auto;"
+            x-transition:enter="transition ease-out duration-250"
+            x-transition:enter-start="opacity-0 scale-95 translate-y-4"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100"
@@ -71,7 +73,8 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>{{-- /centering wrapper --}}
+    </div>{{-- /x-data wrapper --}}
 
     {{-- Alpine data for the delete modal --}}
     <script>
@@ -81,7 +84,7 @@
                 bookingId: null,
                 bookingNumber: '',
                 open(id, number) {
-                    this.bookingId    = id;
+                    this.bookingId     = id;
                     this.bookingNumber = number;
                     this.show = true;
                     document.body.style.overflow = 'hidden';
@@ -97,22 +100,6 @@
             };
         }
     </script>
-
-    {{-- ── Inline flash messages ─────────────────────────────────────────────── --}}
-    @if(session()->has('success'))
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;margin-bottom:12px;">
-        <i class="fas fa-check-circle" style="color:#22c55e;font-size:15px;flex-shrink:0;"></i>
-        <span>{{ session('success') }}</span>
-        <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#86efac;font-size:18px;line-height:1;">×</button>
-    </div>
-    @endif
-    @if(session()->has('error'))
-    <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;margin-bottom:12px;">
-        <i class="fas fa-exclamation-circle" style="color:#ef4444;font-size:15px;flex-shrink:0;"></i>
-        <span>{{ session('error') }}</span>
-        <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#fca5a5;font-size:18px;line-height:1;">×</button>
-    </div>
-    @endif
 
     {{-- Filter bar --}}
     <div class="lv-filter-bar">

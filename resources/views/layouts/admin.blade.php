@@ -1137,23 +1137,15 @@
         </div>
         @endif
 
-        <!-- Flash Messages -->
-        @if(session('success') || session('error'))
-        <div style="padding:16px 24px 0;">
-            @if(session('success'))
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:12px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;">
-                <i class="fas fa-check-circle" style="color:#22c55e;font-size:16px;flex-shrink:0;"></i>                <span>{{ session('success') }}</span>
-                <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#86efac;font-size:16px;">×</button>
-            </div>
-            @endif
-            @if(session('error'))
-            <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 18px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;">
-                <i class="fas fa-exclamation-circle" style="color:#ef4444;font-size:16px;flex-shrink:0;"></i>
-                <span>{{ session('error') }}</span>
-                <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#fca5a5;font-size:16px;">×</button>
-            </div>
-            @endif
-        </div>
+        {{-- Session flash → fires the global toast system --}}
+        @if(session('success'))
+        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'success',message:{{ json_encode(session('success')) }}}}));});</script>
+        @endif
+        @if(session('error'))
+        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'error',message:{{ json_encode(session('error')) }}}}));});</script>
+        @endif
+        @if(session('warning'))
+        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'warning',message:{{ json_encode(session('warning')) }}}}));});</script>
         @endif
 
         <!-- Page Content -->
@@ -1848,6 +1840,97 @@
     from { transform: translateY(20px); opacity: 0; }
     to   { transform: translateY(0);    opacity: 1; }
 }
+@keyframes crmToastIn {
+    from { transform: translateX(110%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes crmToastOut {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(110%); opacity: 0; }
+}
+@keyframes crmProgress {
+    from { width: 100%; }
+    to   { width: 0%; }
+}
+[x-cloak] { display: none !important; }
 </style>
+
+{{-- ═══ Global CRM Toast Notifications ══════════════════════════════════════ --}}
+<div
+    x-data="crmToastManager()"
+    x-on:crm-toast.window="add($event.detail)"
+    style="position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column-reverse;gap:10px;width:340px;pointer-events:none;">
+
+    <template x-for="t in toasts" :key="t.id">
+        <div
+            x-show="t.visible"
+            x-transition:enter="transition"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            style="pointer-events:auto;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(15,23,42,.18);overflow:hidden;animation:crmToastIn .35s cubic-bezier(.21,1.02,.73,1) both;">
+
+            {{-- Left colour accent --}}
+            <div style="display:flex;align-items:flex-start;padding:14px 14px 14px 0;">
+                <div :style="'width:4px;align-self:stretch;border-radius:4px 0 0 4px;background:' + t.accent" style="flex-shrink:0;margin-right:12px;margin-left:0;border-radius:0;"></div>
+
+                {{-- Icon --}}
+                <div :style="'width:36px;height:36px;border-radius:10px;background:' + t.iconBg + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:12px;'">
+                    <i :class="t.icon" :style="'font-size:15px;color:' + t.accent"></i>
+                </div>
+
+                {{-- Text --}}
+                <div style="flex:1;min-width:0;">
+                    <p x-text="t.title" style="margin:0 0 2px;font-size:13px;font-weight:700;color:#111827;line-height:1.3;"></p>
+                    <p x-text="t.message" style="margin:0;font-size:13px;color:#4b5563;line-height:1.45;word-break:break-word;"></p>
+                </div>
+
+                {{-- Close --}}
+                <button @click="dismiss(t.id)"
+                    style="flex-shrink:0;margin-left:8px;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;line-height:1;padding:0 2px;"
+                    title="Dismiss">×</button>
+            </div>
+
+            {{-- Progress bar --}}
+            <div style="height:3px;background:#f1f5f9;border-radius:0 0 14px 14px;overflow:hidden;">
+                <div :style="'height:100%;background:' + t.accent + ';animation:crmProgress ' + t.duration + 'ms linear both;'"
+                    style="border-radius:0 0 14px 14px;"></div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function crmToastManager() {
+    return {
+        toasts: [],
+        _id: 0,
+        add({ type = 'info', message = '', title = '' }) {
+            const map = {
+                success: { accent:'#22c55e', iconBg:'#f0fdf4', icon:'fas fa-check-circle',   title: title || 'Success'  },
+                error:   { accent:'#ef4444', iconBg:'#fef2f2', icon:'fas fa-times-circle',    title: title || 'Error'    },
+                warning: { accent:'#f59e0b', iconBg:'#fffbeb', icon:'fas fa-exclamation-triangle', title: title || 'Warning' },
+                info:    { accent:'#3b82f6', iconBg:'#eff6ff', icon:'fas fa-info-circle',     title: title || 'Info'     },
+            };
+            const cfg = map[type] || map.info;
+            const id  = ++this._id;
+            const duration = 4500;
+            this.toasts.push({ id, visible: true, message, duration, ...cfg });
+            setTimeout(() => this.dismiss(id), duration);
+        },
+        dismiss(id) {
+            const t = this.toasts.find(x => x.id === id);
+            if (t) t.visible = false;
+            setTimeout(() => { this.toasts = this.toasts.filter(x => x.id !== id); }, 350);
+        }
+    };
+}
+// Expose globally so any plain JS can call: window.crmToast('success','Done!')
+window.crmToast = function(type, message, title) {
+    window.dispatchEvent(new CustomEvent('crm-toast', { detail: { type, message, title } }));
+};
+</script>
 </body>
 </html>
