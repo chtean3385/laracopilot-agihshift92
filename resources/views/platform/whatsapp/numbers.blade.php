@@ -117,6 +117,11 @@
                     style="background:#7c3aed;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-key"></i> Enter OTP
                 </button>
+                <button onclick="syncStatus({{ $cfg->id }}, this)"
+                    title="Check if this number is already verified on Meta and sync status"
+                    style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-sync-alt"></i> Sync
+                </button>
                 <button onclick="resendOtp({{ $cfg->id }}, this)"
                     style="background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
                     <i class="fas fa-redo"></i> Resend
@@ -622,6 +627,42 @@ function submitVerify() {
         errEl.textContent = 'Network error: ' + e.message;
         errEl.style.display = 'block';
         btn.innerHTML = 'Verify &amp; Activate';
+        btn.disabled = false;
+    });
+}
+
+function syncStatus(configId, btn) {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+    btn.disabled = true;
+
+    fetch('/platform/whatsapp/numbers/' + configId + '/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data.success) {
+            btn.innerHTML = '<i class="fas fa-times"></i> Error';
+            btn.style.color = '#dc2626';
+            btn.disabled = false;
+            alert('Sync failed: ' + data.error);
+            return;
+        }
+        if (data.activated) {
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Activated!';
+            btn.style.background = '#dcfce7';
+            btn.style.color = '#15803d';
+            btn.style.borderColor = '#bbf7d0';
+            setTimeout(function() { location.reload(); }, 1500);
+        } else {
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync';
+            btn.disabled = false;
+            alert(data.message);
+        }
+    })
+    .catch(function() {
+        btn.innerHTML = orig;
         btn.disabled = false;
     });
 }

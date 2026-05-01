@@ -477,6 +477,7 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/whatsapp/numbers/link',                     [\App\Http\Controllers\Platform\WhatsAppController::class, 'linkNumber']              )->name('platform.whatsapp.numbers.link');
     Route::post('/whatsapp/numbers/{configId}/request-otp',   [\App\Http\Controllers\Platform\WhatsAppController::class, 'requestOtp']             )->name('platform.whatsapp.numbers.request-otp');
     Route::post('/whatsapp/numbers/{configId}/verify',         [\App\Http\Controllers\Platform\WhatsAppController::class, 'verifyOtp']              )->name('platform.whatsapp.numbers.verify');
+    Route::post('/whatsapp/numbers/{configId}/sync',           [\App\Http\Controllers\Platform\WhatsAppController::class, 'syncStatus']             )->name('platform.whatsapp.numbers.sync');
     Route::delete('/whatsapp/numbers/{configId}',              [\App\Http\Controllers\Platform\WhatsAppController::class, 'removeNumber']           )->name('platform.whatsapp.numbers.remove');
 
     // Analytics & Campaigns

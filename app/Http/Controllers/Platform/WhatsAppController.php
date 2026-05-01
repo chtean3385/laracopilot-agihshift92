@@ -637,6 +637,75 @@ class WhatsAppController extends Controller
         }
     }
 
+    public function syncStatus(Request $request, $configId)
+    {
+        $config = WhatsAppConfig::where('id', $configId)->where('mode', 'managed')->firstOrFail();
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_token) {
+            return response()->json(['success' => false, 'error' => 'Platform credentials not configured.']);
+        }
+
+        if (!$config->phone_number_id) {
+            return response()->json(['success' => false, 'error' => 'No phone number ID stored for this config.']);
+        }
+
+        try {
+            $resp = Http::timeout(15)
+                ->withToken($platform->saas_token)
+                ->get("https://graph.facebook.com/v19.0/{$config->phone_number_id}", [
+                    'fields' => 'verified_name,display_phone_number,name_status,status,code_verification_status',
+                ]);
+
+            $body = $resp->json();
+
+            if (!$resp->successful() || isset($body['error'])) {
+                $err = $body['error']['error_user_msg'] ?? $body['error']['message'] ?? 'Meta API error';
+                return response()->json(['success' => false, 'error' => $err]);
+            }
+
+            $codeStatus = $body['code_verification_status'] ?? null;
+            $nameStatus = $body['name_status'] ?? null;
+            $status     = $body['status'] ?? null;
+
+            // If Meta says the number is verified/connected, activate it in our DB
+            if ($codeStatus === 'VERIFIED' || $status === 'CONNECTED') {
+                $config->update([
+                    'managed_otp_status' => 'verified',
+                    'setup_completed'    => true,
+                    'setup_step'         => 5,
+                    'is_active'          => true,
+                    'managed_display_name' => $body['verified_name'] ?? $config->managed_display_name,
+                ]);
+
+                return response()->json([
+                    'success'  => true,
+                    'activated' => true,
+                    'message'  => 'Number is verified on Meta — activated in your system!',
+                    'meta'     => ['status' => $status, 'name_status' => $nameStatus],
+                ]);
+            }
+
+            // Not yet verified — return current Meta status so user knows what's happening
+            $statusLabel = match($status) {
+                'PENDING'     => 'OTP not yet verified on Meta',
+                'UNVERIFIED'  => 'Number not verified on Meta',
+                'DISCONNECTED'=> 'Number disconnected on Meta',
+                default       => $status ?? 'Unknown',
+            };
+
+            return response()->json([
+                'success'  => true,
+                'activated' => false,
+                'message'  => "Meta status: {$statusLabel}. Display name: " . ucfirst(strtolower($nameStatus ?? 'unknown')) . ". Enter the OTP to complete verification.",
+                'meta'     => ['status' => $status, 'name_status' => $nameStatus, 'code_verification_status' => $codeStatus],
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function linkNumber(Request $request)
     {
         $request->validate([
