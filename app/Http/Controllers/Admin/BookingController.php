@@ -141,7 +141,19 @@ class BookingController extends Controller
         $timeSlots = $slotModuleOn  ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
         $addOns    = ($slotModuleOn || $hourlyModuleOn) ? \App\Models\RoomAddOn::active()->whereNull('room_id')->orderBy('name')->get() : collect();
 
-        return view('admin.bookings.create', compact('customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'hotelModules', 'timeSlots', 'addOns'));
+        // Smart form layout flags
+        $hasSlotRooms   = $rooms->contains(fn($r) => ($r->pricing_type ?? 'per_night') === 'per_slot');
+        $hasNightRooms  = $rooms->contains(fn($r) => !in_array($r->pricing_type ?? 'per_night', ['per_slot', 'per_hour']));
+        $hasHourlyRooms = $rooms->contains(fn($r) => ($r->pricing_type ?? 'per_night') === 'per_hour');
+        // Pure slot: every room is slot-based and slot module is on
+        $pureSlotHotel  = $hasSlotRooms && !$hasNightRooms && !$hasHourlyRooms && $slotModuleOn;
+        // Mixed: more than one booking type is available
+        $mixedBookingTypes = ((int)$hasNightRooms + (int)($hasSlotRooms && $slotModuleOn) + (int)($hasHourlyRooms && $hourlyModuleOn)) > 1;
+
+        return view('admin.bookings.create', compact(
+            'customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'hotelModules', 'timeSlots', 'addOns',
+            'pureSlotHotel', 'mixedBookingTypes', 'hasSlotRooms', 'hasNightRooms', 'hasHourlyRooms'
+        ));
     }
 
     public function store(Request $request)
