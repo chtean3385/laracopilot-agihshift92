@@ -3,11 +3,17 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use App\Models\Hotel;
 use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppConfig extends Model
 {
     use BelongsToHotel;
+
+    public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
+    }
 
     protected $table = 'whatsapp_configs';
 

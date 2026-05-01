@@ -172,53 +172,90 @@
                 </button>
             </div>
 
-            {{-- TAB: Register New --}}
+            {{-- TAB: Register New — Phase 1: Number details --}}
             <div id="tabNew">
-                <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;">
-                    <i class="fas fa-info-circle"></i> &nbsp;Meta will send an <strong>OTP via SMS</strong> to the hotel's WhatsApp number. The hotel owner needs to share that code with you to complete verification.
-                </div>
-
-                <div style="margin-bottom:16px;">
-                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel</label>
-                    <select id="addHotelId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
-                        <option value="">— Select Hotel —</option>
-                        @foreach($hotels as $hotel)
-                        <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:16px;">
-                    <div>
-                        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Country Code</label>
-                        <input type="text" id="addCountryCode" value="91" placeholder="91"
-                            style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Without + sign</div>
+                {{-- STEP 1: Fill details --}}
+                <div id="addStep1">
+                    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;">
+                        <i class="fas fa-info-circle"></i> &nbsp;Meta will send an <strong>OTP via SMS</strong> to the hotel's WhatsApp number. The hotel owner needs to share that code with you to complete verification.
                     </div>
-                    <div>
-                        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">WhatsApp Number</label>
-                        <input type="text" id="addPhoneNumber" placeholder="9876543210"
+
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel</label>
+                        <select id="addHotelId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
+                            <option value="">— Select Hotel —</option>
+                            @foreach($hotels as $hotel)
+                            <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:16px;">
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Country Code</label>
+                            <input type="text" id="addCountryCode" value="91" placeholder="91"
+                                style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                            <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Without + sign</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">WhatsApp Number</label>
+                            <input type="text" id="addPhoneNumber" placeholder="9876543210"
+                                style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                            <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Digits only, no country code</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:22px;">
+                        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Business Display Name</label>
+                        <input type="text" id="addDisplayName" placeholder="e.g. Dreams Resort Group"
                             style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Digits only, no country code</div>
+                        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Brand name shown on WhatsApp — templates use each hotel's own name as variable</div>
+                    </div>
+
+                    <div id="addError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+                    <div style="display:flex;gap:12px;">
+                        <button onclick="closeAddModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+                        <button id="addSubmitBtn" onclick="submitAdd()"
+                            style="flex:2;background:#25D366;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-paper-plane"></i> Register &amp; Send OTP
+                        </button>
                     </div>
                 </div>
 
-                <div style="margin-bottom:22px;">
-                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Business Display Name</label>
-                    <input type="text" id="addDisplayName" placeholder="e.g. Dreams Resort Group"
-                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Brand name shown on WhatsApp — templates use each hotel's own name as variable</div>
-                </div>
+                {{-- STEP 2: Enter OTP (shown after SMS is sent) --}}
+                <div id="addStep2" style="display:none;">
+                    <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-bottom:22px;display:flex;align-items:flex-start;gap:10px;">
+                        <i class="fas fa-check-circle" style="color:#16a34a;margin-top:2px;font-size:16px;flex-shrink:0;"></i>
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:#15803d;">OTP sent!</div>
+                            <div id="addStep2Msg" style="font-size:12px;color:#166534;margin-top:2px;line-height:1.5;"></div>
+                        </div>
+                    </div>
 
-                <div id="addError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
-                <div id="addSuccess" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+                    <div style="margin-bottom:22px;">
+                        <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">
+                            <i class="fas fa-key" style="color:#7c3aed;margin-right:5px;"></i>Enter the OTP code
+                        </label>
+                        <input type="text" id="inlineOtpCode" placeholder="Enter 6-digit code" maxlength="8"
+                            style="width:100%;padding:14px 16px;border:2px solid #e9d5ff;border-radius:10px;font-size:26px;font-weight:700;letter-spacing:8px;text-align:center;box-sizing:border-box;"
+                            onkeyup="if(event.key==='Enter') submitInlineOtp()">
+                        <div style="font-size:12px;color:#9ca3af;margin-top:6px;text-align:center;">Ask the hotel owner for the code they received via SMS</div>
+                    </div>
 
-                <div style="display:flex;gap:12px;">
-                    <button onclick="closeAddModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
-                    <button id="addSubmitBtn" onclick="submitAdd()"
-                        style="flex:2;background:#25D366;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-                        Register &amp; Send OTP
-                    </button>
+                    <div id="addStep2Error" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+                    <div id="addStep2Success" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+                    <div style="display:flex;gap:12px;">
+                        <button onclick="resendInlineOtp()" id="resendInlineBtn"
+                            style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">
+                            <i class="fas fa-redo"></i> Resend OTP
+                        </button>
+                        <button id="inlineOtpBtn" onclick="submitInlineOtp()"
+                            style="flex:2;background:#7c3aed;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-check"></i> Verify &amp; Activate
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -346,6 +383,9 @@ function switchTab(tab) {
 
 function openAddModal(hotelId, hotelName) {
     switchTab('new');
+    // Reset to step 1
+    document.getElementById('addStep1').style.display = 'block';
+    document.getElementById('addStep2').style.display = 'none';
     document.getElementById('addHotelId').value = hotelId || '';
     if (document.getElementById('linkHotelId')) document.getElementById('linkHotelId').value = hotelId || '';
     document.getElementById('addCountryCode').value = '91';
@@ -353,9 +393,11 @@ function openAddModal(hotelId, hotelName) {
     document.getElementById('addDisplayName').value = '';
     document.getElementById('addModalHotelName').textContent = hotelName ? 'For: ' + hotelName : 'Select a hotel below';
     document.getElementById('addError').style.display = 'none';
-    document.getElementById('addSuccess').style.display = 'none';
-    document.getElementById('addSubmitBtn').innerHTML = 'Register &amp; Send OTP';
+    document.getElementById('addSubmitBtn').innerHTML = '<i class="fas fa-paper-plane"></i> Register &amp; Send OTP';
     document.getElementById('addSubmitBtn').disabled = false;
+    document.getElementById('inlineOtpCode').value = '';
+    document.getElementById('addStep2Error').style.display = 'none';
+    document.getElementById('addStep2Success').style.display = 'none';
     _addReloadOnClose = false;
     document.getElementById('addModal').style.display = 'block';
 }
@@ -392,22 +434,93 @@ function submitAdd() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            successEl.textContent = data.message;
-            successEl.style.display = 'block';
-            btn.innerHTML = '<i class="fas fa-check"></i> Done';
-            _addReloadOnClose = true;
             _verifyConfigId = data.config_id;
+            _addReloadOnClose = true;
+            // Switch to OTP entry step in same modal
+            document.getElementById('addStep1').style.display = 'none';
+            document.getElementById('addStep2Msg').textContent = data.message;
+            document.getElementById('addStep2').style.display = 'block';
+            document.getElementById('addStep2Error').style.display = 'none';
+            document.getElementById('addStep2Success').style.display = 'none';
+            document.getElementById('inlineOtpCode').value = '';
+            document.getElementById('inlineOtpBtn').innerHTML = '<i class="fas fa-check"></i> Verify &amp; Activate';
+            document.getElementById('inlineOtpBtn').disabled = false;
+            setTimeout(function(){ document.getElementById('inlineOtpCode').focus(); }, 100);
         } else {
             errEl.textContent = data.error || 'Something went wrong.';
             errEl.style.display = 'block';
-            btn.innerHTML = 'Register &amp; Send OTP';
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Register &amp; Send OTP';
             btn.disabled = false;
         }
     })
     .catch(function(e) {
         errEl.textContent = 'Network error: ' + e.message;
         errEl.style.display = 'block';
-        btn.innerHTML = 'Register &amp; Send OTP';
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Register &amp; Send OTP';
+        btn.disabled = false;
+    });
+}
+
+function submitInlineOtp() {
+    var code    = document.getElementById('inlineOtpCode').value.trim();
+    var errEl   = document.getElementById('addStep2Error');
+    var successEl = document.getElementById('addStep2Success');
+
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (!code) { errEl.textContent = 'Please enter the OTP code.'; errEl.style.display = 'block'; return; }
+    if (!_verifyConfigId) { errEl.textContent = 'Session error — please close and try again.'; errEl.style.display = 'block'; return; }
+
+    var btn = document.getElementById('inlineOtpBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="wa-spinner"></span> Verifying...';
+
+    fetch('/platform/whatsapp/numbers/' + _verifyConfigId + '/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ code: code }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            successEl.textContent = data.message;
+            successEl.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Activated!';
+            btn.style.background = '#16a34a';
+            setTimeout(function(){ closeAddModal(); }, 1800);
+        } else {
+            errEl.textContent = data.error || 'Verification failed. Check the code and try again.';
+            errEl.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-check"></i> Verify &amp; Activate';
+            btn.disabled = false;
+        }
+    })
+    .catch(function(e) {
+        errEl.textContent = 'Network error: ' + e.message;
+        errEl.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-check"></i> Verify &amp; Activate';
+        btn.disabled = false;
+    });
+}
+
+function resendInlineOtp() {
+    if (!_verifyConfigId) return;
+    var btn = document.getElementById('resendInlineBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="wa-spinner" style="border-top-color:#374151;border-color:rgba(0,0,0,0.15);"></span> Sending...';
+
+    fetch('/platform/whatsapp/numbers/' + _verifyConfigId + '/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.innerHTML = data.success ? '<i class="fas fa-check"></i> Sent!' : '<i class="fas fa-redo"></i> Resend OTP';
+        btn.disabled = false;
+    })
+    .catch(function() {
+        btn.innerHTML = '<i class="fas fa-redo"></i> Resend OTP';
         btn.disabled = false;
     });
 }
