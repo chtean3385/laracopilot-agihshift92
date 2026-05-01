@@ -122,8 +122,9 @@ foreach($allEvents as $event => $label) {
         @foreach($allEvents as $event => $label)
         @php
             $t = $templates[$event] ?? null;
-            $approved = $t && ($t->approval_status ?? 'pending') === 'approved';
-            $active   = $t && $t->is_active;
+            $isPlatTmpl = $t && in_array($t->template_name, $platformApprovedNames ?? []);
+            $approved   = $t && ($isPlatTmpl || ($t->approval_status ?? 'pending') === 'approved');
+            $active     = $t && $t->is_active;
             if ($t && $approved && $active && $providerConnected) {
                 $dot = '#22c55e'; $dotLabel = 'Ready';
             } elseif ($t && $active && $providerConnected && !$approved) {
@@ -157,7 +158,8 @@ foreach($allEvents as $event => $label) {
     @php
         $t = $templates[$event] ?? null;
         [$icon, $grad, $desc] = $eventMeta[$event];
-        $approvalStatus = $t ? ($t->approval_status ?? 'pending') : null;
+        $isPlatformTemplate = $t && in_array($t->template_name, $platformApprovedNames ?? []);
+        $approvalStatus = $isPlatformTemplate ? 'approved' : ($t ? ($t->approval_status ?? 'pending') : null);
         $approvalColor  = match($approvalStatus) {
             'approved' => ['#dcfce7','#15803d'],
             'rejected' => ['#fee2e2','#b91c1c'],
@@ -178,7 +180,11 @@ foreach($allEvents as $event => $label) {
                         <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:{{ $approvalColor[0] }};color:{{ $approvalColor[1] }};">
                             {{ ucfirst($approvalStatus) }}
                         </span>
-                        @if($metaStatus === 'submitted')
+                        @if($isPlatformTemplate)
+                        <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
+                            <i class="fas fa-shield-alt" style="font-size:9px;"></i> Platform Template
+                        </span>
+                        @elseif($metaStatus === 'submitted')
                         <span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#f0fdf4;color:#15803d;">
                             <i class="fas fa-paper-plane" style="font-size:9px;"></i> Submitted to Meta
                         </span>
@@ -229,8 +235,13 @@ foreach($allEvents as $event => $label) {
                     </form>
                     @endif
 
-                    @if($canEdit && $approvalStatus !== 'approved')
-                    {{-- Submit to Meta: SaaS Admin or Pro+ plan --}}
+                    @if($isPlatformTemplate)
+                    {{-- Platform template: already approved globally, no submission needed --}}
+                    <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
+                        <i class="fas fa-check-circle"></i> Ready to use
+                    </span>
+                    @elseif($canEdit && $approvalStatus !== 'approved')
+                    {{-- Custom hotel template: needs Meta submission --}}
                     <button onclick="submitToMeta({{ $t->id }}, this)"
                         id="submit-meta-{{ $t->id }}"
                         style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,#1877F2,#0d65d9);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">

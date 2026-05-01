@@ -71,9 +71,20 @@ class WhatsAppController extends Controller
         // Full collection grouped by event — used to also show PDF variant rows
         $templatesByEvent = $allTemplates->groupBy('trigger_event');
 
+        // Platform (global) approved template names — hotel templates matching these are
+        // already approved and don't need a separate Submit to Meta step.
+        $platformApprovedNames = WhatsAppTemplate::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->where('approval_status', 'approved')
+            ->pluck('template_name')
+            ->filter()
+            ->values()
+            ->all();
+
         return view('admin.whatsapp.templates', compact(
             'templates', 'templatesByEvent', 'allEvents', 'config',
-            'hotel', 'isSaasAdmin', 'isBasicPlan', 'canEdit', 'platform'
+            'hotel', 'isSaasAdmin', 'isBasicPlan', 'canEdit', 'platform',
+            'platformApprovedNames'
         ));
     }
 
@@ -81,7 +92,10 @@ class WhatsAppController extends Controller
     {
         $allEvents = WhatsAppTemplate::allEvents();
         $statuses  = WhatsAppTemplate::approvalStatuses();
-        return view('admin.whatsapp.template-create', compact('allEvents', 'statuses'));
+        $hotelId   = app(HotelContext::class)->getHotel();
+        $hotel     = Hotel::find($hotelId);
+        $hotelSlug = $hotel ? \Illuminate\Support\Str::slug($hotel->name, '_') : '';
+        return view('admin.whatsapp.template-create', compact('allEvents', 'statuses', 'hotel', 'hotelSlug'));
     }
 
     public function templateStore(Request $request)
@@ -96,6 +110,18 @@ class WhatsAppController extends Controller
 
         $data['is_active']       = $request->boolean('is_active');
         $data['approval_status'] = $data['approval_status'] ?? 'pending';
+
+        // Auto-append hotel slug to template_name for custom hotel templates
+        $hotelId = app(HotelContext::class)->getHotel();
+        if ($hotelId) {
+            $hotel     = Hotel::find($hotelId);
+            $hotelSlug = $hotel ? trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($hotel->slug ?: $hotel->name)), '_') : '';
+            $baseName  = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $data['template_name']), '_'));
+            if ($hotelSlug && !str_ends_with($baseName, '_' . $hotelSlug)) {
+                $baseName .= '_' . $hotelSlug;
+            }
+            $data['template_name'] = $baseName;
+        }
 
         WhatsAppTemplate::create($data);
 
@@ -305,13 +331,20 @@ class WhatsAppController extends Controller
 
             $metaTemplates = collect($resp->json('data') ?? [])->keyBy(fn($t) => strtolower($t['name']));
 
+            $hotel     = Hotel::find($hotelId);
+            $hotelSlug = $hotel ? trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($hotel->slug ?: $hotel->name)), '_') : '';
+
             $dbTemplates = WhatsAppTemplate::where('hotel_id', $hotelId)->get();
 
             $updated = 0;
             foreach ($dbTemplates as $tmpl) {
                 if (!$tmpl->template_name) continue;
-                $key  = strtolower($tmpl->template_name);
-                $meta = $metaTemplates->get($key);
+                $baseName = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $tmpl->template_name), '_'));
+                // Try with hotel slug appended first (submitted name), then fall back to base name
+                $key  = ($hotelSlug && !str_ends_with($baseName, '_' . $hotelSlug))
+                    ? $baseName . '_' . $hotelSlug
+                    : $baseName;
+                $meta = $metaTemplates->get($key) ?? $metaTemplates->get($baseName);
                 if (!$meta) continue;
 
                 $newStatus = match(strtolower($meta['status'])) {

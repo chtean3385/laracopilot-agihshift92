@@ -32,11 +32,19 @@
 
                     <div>
                         <label class="form-label">Template Name <span style="color:#e11d48;">*</span></label>
-                        <input type="text" name="template_name" value="{{ old('template_name') }}"
-                            class="form-input" placeholder="e.g. booking_confirmed_hotel" required>
-                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
-                            This is the name you registered with Meta / WATI. Use lowercase and underscores only.
+                        <input type="text" name="template_name" id="templateNameInput"
+                            value="{{ old('template_name') }}"
+                            class="form-input" placeholder="e.g. booking_confirmed{{ $hotelSlug ? '_'.$hotelSlug : '' }}" required>
+                        @if($hotelSlug)
+                        <div style="font-size:11px;color:#7c3aed;margin-top:4px;background:#f5f3ff;padding:5px 10px;border-radius:7px;">
+                            <i class="fas fa-info-circle"></i>
+                            Your hotel name (<strong>{{ $hotelSlug }}</strong>) will be included automatically. Use lowercase and underscores only.
                         </div>
+                        @else
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+                            This is the name you registered with Meta. Use lowercase and underscores only.
+                        </div>
+                        @endif
                         @error('template_name') <div style="color:#e11d48;font-size:12px;margin-top:4px;">{{ $message }}</div> @enderror
                     </div>
 
