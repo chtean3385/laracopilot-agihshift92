@@ -412,11 +412,9 @@ function submitAdd() {
     var cc          = document.getElementById('addCountryCode').value.trim();
     var phone       = document.getElementById('addPhoneNumber').value.trim();
     var displayName = document.getElementById('addDisplayName').value.trim();
-    var errEl       = document.getElementById('addError');
-    var successEl   = document.getElementById('addSuccess');
+    var errEl = document.getElementById('addError');
 
     errEl.style.display = 'none';
-    successEl.style.display = 'none';
 
     if (!hotelId)     { errEl.textContent = 'Please select a hotel.'; errEl.style.display = 'block'; return; }
     if (!phone)       { errEl.textContent = 'Please enter the phone number.'; errEl.style.display = 'block'; return; }
