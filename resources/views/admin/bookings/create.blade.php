@@ -513,11 +513,30 @@
         maxOptions: 300,
     });
 
-    const roomTS = new TomSelect('#roomSelect', {
+    // ── TomSelect internally replaces <select> innerHTML on every value change,
+    // wiping data-* attributes that updatePricingUI() reads. We restore them
+    // before any pricing/slot logic runs.
+    function restoreRoomDataAttrs() {
+        const sel = document.getElementById('roomSelect');
+        Array.from(sel.options).forEach(function(opt) {
+            if (!opt.value) return;
+            var room = _allRoomOptions.find(function(r) { return r.value == opt.value; });
+            if (!room) return;
+            Object.entries(room.dataset).forEach(function(kv) { opt.dataset[kv[0]] = kv[1]; });
+        });
+    }
+
+    let roomTS = new TomSelect('#roomSelect', {
         allowEmptyOption: false,
         placeholder: 'Search room by number or type...',
         maxOptions: 100,
-        onChange: function() { updatePricingUI(); updateMealOptions(); calculateTotal(); refreshAvailableSlots(); }
+        onChange: function() {
+            restoreRoomDataAttrs();  // must be first — rebuilds data-* before pricing reads them
+            updatePricingUI();
+            updateMealOptions();
+            calculateTotal();
+            refreshAvailableSlots();
+        }
     });
 
     // Disable/enable all form inputs inside a container so hidden ones
@@ -1072,27 +1091,48 @@
     function updateRoomDropdown(unavailableIds) {
         const currentVal = roomTS.getValue();
 
-        // Update each option in-place — no destroy/recreate needed
+        // 1. Rebuild the underlying <select> options with correct disabled state
+        //    AND restore all data-* attributes from our snapshot.
+        const sel = document.getElementById('roomSelect');
+        const placeholder = sel.options[0]; // keep the empty placeholder
+        sel.innerHTML = '';
+        if (placeholder) sel.appendChild(placeholder);
+
         _allRoomOptions.forEach(function(room) {
             const isUnavailable = unavailableIds.includes(parseInt(room.value));
-
-            // Update TomSelect's internal option (controls display + selectability)
-            roomTS.updateOption(room.value, {
-                value:    room.value,
-                text:     room.text + (isUnavailable ? ' — Booked' : ''),
-                disabled: isUnavailable
-            });
-
-            // Keep the underlying <select> option disabled state in sync
-            // so data-* attributes are preserved for updatePricingUI()
-            const opt = document.querySelector('#roomSelect option[value="' + room.value + '"]');
-            if (opt) opt.disabled = isUnavailable;
+            const opt = document.createElement('option');
+            opt.value       = room.value;
+            opt.disabled    = isUnavailable;
+            opt.textContent = room.text + (isUnavailable ? ' — Booked' : '');
+            Object.entries(room.dataset).forEach(function(kv) { opt.dataset[kv[0]] = kv[1]; });
+            sel.appendChild(opt);
         });
 
-        // Clear selection if current room became unavailable
-        if (currentVal && unavailableIds.includes(parseInt(currentVal))) {
-            roomTS.clear(true);
-            updatePricingUI();
+        // 2. Destroy old TomSelect and recreate from the updated <select>
+        //    Using the same `let roomTS` variable so no stale references exist.
+        roomTS.destroy();
+        roomTS = new TomSelect('#roomSelect', {
+            allowEmptyOption: false,
+            placeholder: 'Search room by number or type...',
+            maxOptions: 100,
+            onChange: function() {
+                restoreRoomDataAttrs();
+                updatePricingUI();
+                updateMealOptions();
+                calculateTotal();
+                refreshAvailableSlots();
+            }
+        });
+
+        // Ensure data-* attributes are intact after TomSelect rebuild
+        restoreRoomDataAttrs();
+
+        // 3. Restore previous selection if still available; otherwise clear pricing
+        if (currentVal && !unavailableIds.includes(parseInt(currentVal))) {
+            roomTS.setValue(currentVal, true);
+            restoreRoomDataAttrs(); // setValue may trigger updateOriginalInput again
+        } else if (currentVal) {
+            updatePricingUI(); // clears pricing display for now-booked room
         }
 
         // Show/update the availability badge
