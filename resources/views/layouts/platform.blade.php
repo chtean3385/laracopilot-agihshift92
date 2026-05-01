@@ -395,6 +395,10 @@
             <span class="icon"><i class="fas fa-list-alt" style="font-size:12px;"></i></span>
             Webhook Logs
         </a>
+        <a href="{{ route('platform.whatsapp.numbers') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.numbers') || request()->routeIs('platform.whatsapp.numbers.*') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-sim-card" style="font-size:12px;"></i></span>
+            Hotel Numbers
+        </a>
         @php $waInboxUnread = (int) \Illuminate\Support\Facades\DB::table('whatsapp_logs')->where('direction','incoming')->where('event_type','message_received')->where('created_at','>=',now()->subHours(24))->count(); @endphp
         <a href="{{ route('platform.wa-inbox') }}" class="nav-link {{ request()->routeIs('platform.wa-inbox') ? 'active' : '' }}" style="padding-left:36px;">
             <span class="icon"><i class="fab fa-whatsapp" style="font-size:12px;"></i></span>
