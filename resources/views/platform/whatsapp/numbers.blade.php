@@ -55,17 +55,31 @@
     </div>
 
     @forelse($hotels as $hotel)
-    @php $cfg = $configs->get($hotel->id); @endphp
+    @php
+        $cfg = $configs->get($hotel->id);
+        $sharedWith = ($cfg && $cfg->phone_number_id) ? ($sharedMap[$cfg->phone_number_id] ?? collect()) : collect();
+        $isShared = $sharedWith->count() > 1;
+    @endphp
     <div style="padding:18px 24px;border-bottom:1px solid #f9fafb;display:flex;align-items:center;gap:16px;">
         {{-- Hotel info --}}
         <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:700;color:#111827;">{{ $hotel->name }}</div>
+            <div style="font-size:14px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;">
+                {{ $hotel->name }}
+                @if($isShared)
+                <span style="background:#f5f3ff;color:#7c3aed;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #e9d5ff;">
+                    <i class="fas fa-link" style="font-size:9px;"></i> Shared
+                </span>
+                @endif
+            </div>
             <div style="font-size:12px;color:#9ca3af;margin-top:2px;">ID #{{ $hotel->id }}
                 @if($cfg && $cfg->phone_number)
                 &nbsp;·&nbsp; +{{ $cfg->phone_number }}
                 @endif
                 @if($cfg && $cfg->managed_display_name)
                 &nbsp;·&nbsp; {{ $cfg->managed_display_name }}
+                @endif
+                @if($isShared)
+                &nbsp;·&nbsp; <span style="color:#7c3aed;">shared with {{ $sharedWith->filter(fn($n) => $n !== $hotel->name)->implode(', ') }}</span>
                 @endif
             </div>
         </div>
@@ -133,65 +147,131 @@
 <div id="addModal" style="display:none;position:fixed;inset:0;z-index:9000;">
     <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" onclick="closeAddModal()"></div>
     <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:500px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);pointer-events:auto;">
+        <div style="position:relative;background:#fff;border-radius:20px;width:100%;max-width:520px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);pointer-events:auto;max-height:90vh;overflow-y:auto;">
             <button onclick="closeAddModal()" style="position:absolute;top:16px;right:16px;background:#f3f4f6;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:#6b7280;line-height:1;">×</button>
 
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
                 <div style="width:44px;height:44px;background:#25D366;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <i class="fab fa-whatsapp" style="color:#fff;font-size:22px;"></i>
                 </div>
                 <div>
                     <div style="font-size:17px;font-weight:800;color:#111827;">Add Hotel Number</div>
-                    <div id="addModalHotelName" style="font-size:13px;color:#6b7280;"></div>
+                    <div id="addModalHotelName" style="font-size:13px;color:#6b7280;">Select a hotel below</div>
                 </div>
             </div>
 
-            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;">
-                <i class="fas fa-info-circle"></i> &nbsp;Meta will send an <strong>OTP via SMS</strong> to the hotel's WhatsApp number. The hotel owner needs to share that code with you to complete verification.
-            </div>
-
-            <div style="margin-bottom:16px;">
-                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel</label>
-                <select id="addHotelId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
-                    <option value="">— Select Hotel —</option>
-                    @foreach($hotels as $hotel)
-                    <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:16px;">
-                <div>
-                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Country Code</label>
-                    <input type="text" id="addCountryCode" value="91" placeholder="91"
-                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Without + sign</div>
-                </div>
-                <div>
-                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">WhatsApp Number</label>
-                    <input type="text" id="addPhoneNumber" placeholder="9876543210"
-                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Digits only, no country code</div>
-                </div>
-            </div>
-
-            <div style="margin-bottom:22px;">
-                <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Business Display Name</label>
-                <input type="text" id="addDisplayName" placeholder="e.g. Azure Paradise Resort"
-                    style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
-                <div style="font-size:11px;color:#9ca3af;margin-top:3px;">This name appears on WhatsApp messages sent from this number</div>
-            </div>
-
-            <div id="addError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
-            <div id="addSuccess" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
-
-            <div style="display:flex;gap:12px;">
-                <button onclick="closeAddModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
-                <button id="addSubmitBtn" onclick="submitAdd()"
-                    style="flex:2;background:#25D366;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
-                    Register &amp; Send OTP
+            {{-- Tab switcher --}}
+            <div style="display:flex;background:#f3f4f6;border-radius:10px;padding:4px;margin-bottom:20px;gap:4px;">
+                <button id="tabNewBtn" onclick="switchTab('new')"
+                    style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:#111827;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                    <i class="fas fa-plus-circle" style="color:#25D366;margin-right:5px;"></i>Register New Number
+                </button>
+                <button id="tabLinkBtn" onclick="switchTab('link')"
+                    style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:#6b7280;">
+                    <i class="fas fa-link" style="color:#7c3aed;margin-right:5px;"></i>Use Existing Number
                 </button>
             </div>
+
+            {{-- TAB: Register New --}}
+            <div id="tabNew">
+                <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#92400e;line-height:1.6;">
+                    <i class="fas fa-info-circle"></i> &nbsp;Meta will send an <strong>OTP via SMS</strong> to the hotel's WhatsApp number. The hotel owner needs to share that code with you to complete verification.
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel</label>
+                    <select id="addHotelId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
+                        <option value="">— Select Hotel —</option>
+                        @foreach($hotels as $hotel)
+                        <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:16px;">
+                    <div>
+                        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Country Code</label>
+                        <input type="text" id="addCountryCode" value="91" placeholder="91"
+                            style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Without + sign</div>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">WhatsApp Number</label>
+                        <input type="text" id="addPhoneNumber" placeholder="9876543210"
+                            style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                        <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Digits only, no country code</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:22px;">
+                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Business Display Name</label>
+                    <input type="text" id="addDisplayName" placeholder="e.g. Dreams Resort Group"
+                        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">Brand name shown on WhatsApp — templates use each hotel's own name as variable</div>
+                </div>
+
+                <div id="addError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+                <div id="addSuccess" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+                <div style="display:flex;gap:12px;">
+                    <button onclick="closeAddModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+                    <button id="addSubmitBtn" onclick="submitAdd()"
+                        style="flex:2;background:#25D366;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+                        Register &amp; Send OTP
+                    </button>
+                </div>
+            </div>
+
+            {{-- TAB: Link Existing --}}
+            <div id="tabLink" style="display:none;">
+                <div style="background:#f5f3ff;border:1px solid #e9d5ff;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#6d28d9;line-height:1.6;">
+                    <i class="fas fa-link"></i> &nbsp;<strong>Chain / Multi-Property:</strong> Share one verified number across multiple hotels. Each hotel's messages will still use its own name in templates — only the sender number is shared.
+                </div>
+
+                @if($activeConfigs->isEmpty())
+                <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;color:#92400e;font-size:13px;">
+                    <i class="fas fa-exclamation-triangle" style="margin-bottom:6px;display:block;font-size:20px;"></i>
+                    No verified numbers yet. Register and verify at least one hotel number first, then you can share it with other hotels.
+                </div>
+                @else
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Hotel to configure</label>
+                    <select id="linkHotelId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
+                        <option value="">— Select Hotel —</option>
+                        @foreach($hotels as $hotel)
+                        <option value="{{ $hotel->id }}">{{ $hotel->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div style="margin-bottom:22px;">
+                    <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Use number from</label>
+                    <select id="linkSourceConfigId" style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
+                        <option value="">— Select existing number —</option>
+                        @foreach($activeConfigs as $ac)
+                        <option value="{{ $ac->id }}">
+                            +{{ $ac->phone_number }} &nbsp;·&nbsp; {{ $ac->managed_display_name }} &nbsp;({{ $ac->hotel->name ?? 'Hotel #'.$ac->hotel_id }})
+                        </option>
+                        @endforeach
+                    </select>
+                    <div style="font-size:11px;color:#9ca3af;margin-top:3px;">No OTP needed — number is already verified. Templates still use each hotel's own name.</div>
+                </div>
+                @endif
+
+                <div id="linkError" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+                <div id="linkSuccess" style="display:none;background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;"></div>
+
+                <div style="display:flex;gap:12px;">
+                    <button onclick="closeAddModal()" style="flex:1;background:#f3f4f6;color:#374151;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+                    @if(!$activeConfigs->isEmpty())
+                    <button id="linkSubmitBtn" onclick="submitLink()"
+                        style="flex:2;background:#7c3aed;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+                        <i class="fas fa-link"></i> Link Number
+                    </button>
+                    @endif
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -249,9 +329,25 @@
 var _addReloadOnClose = false;
 var _verifyConfigId = null;
 var _verifyReloadOnClose = false;
+var _activeTab = 'new';
+
+function switchTab(tab) {
+    _activeTab = tab;
+    var isNew = tab === 'new';
+    document.getElementById('tabNew').style.display  = isNew ? 'block' : 'none';
+    document.getElementById('tabLink').style.display = isNew ? 'none'  : 'block';
+    document.getElementById('tabNewBtn').style.background  = isNew ? '#fff' : 'transparent';
+    document.getElementById('tabNewBtn').style.color       = isNew ? '#111827' : '#6b7280';
+    document.getElementById('tabNewBtn').style.boxShadow   = isNew ? '0 1px 3px rgba(0,0,0,0.1)' : 'none';
+    document.getElementById('tabLinkBtn').style.background = isNew ? 'transparent' : '#fff';
+    document.getElementById('tabLinkBtn').style.color      = isNew ? '#6b7280' : '#111827';
+    document.getElementById('tabLinkBtn').style.boxShadow  = isNew ? 'none' : '0 1px 3px rgba(0,0,0,0.1)';
+}
 
 function openAddModal(hotelId, hotelName) {
+    switchTab('new');
     document.getElementById('addHotelId').value = hotelId || '';
+    if (document.getElementById('linkHotelId')) document.getElementById('linkHotelId').value = hotelId || '';
     document.getElementById('addCountryCode').value = '91';
     document.getElementById('addPhoneNumber').value = '';
     document.getElementById('addDisplayName').value = '';
@@ -312,6 +408,49 @@ function submitAdd() {
         errEl.textContent = 'Network error: ' + e.message;
         errEl.style.display = 'block';
         btn.innerHTML = 'Register &amp; Send OTP';
+        btn.disabled = false;
+    });
+}
+
+function submitLink() {
+    var hotelId  = document.getElementById('linkHotelId') ? document.getElementById('linkHotelId').value : '';
+    var sourceId = document.getElementById('linkSourceConfigId') ? document.getElementById('linkSourceConfigId').value : '';
+    var errEl    = document.getElementById('linkError');
+    var successEl = document.getElementById('linkSuccess');
+
+    errEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    if (!hotelId)  { errEl.textContent = 'Please select a hotel to configure.'; errEl.style.display = 'block'; return; }
+    if (!sourceId) { errEl.textContent = 'Please select a number to link from.'; errEl.style.display = 'block'; return; }
+
+    var btn = document.getElementById('linkSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="wa-spinner"></span> Linking...';
+
+    fetch('{{ route('platform.whatsapp.numbers.link') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ hotel_id: hotelId, source_config_id: sourceId }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            successEl.textContent = data.message;
+            successEl.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-check"></i> Linked!';
+            _addReloadOnClose = true;
+        } else {
+            errEl.textContent = data.error || 'Something went wrong.';
+            errEl.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-link"></i> Link Number';
+            btn.disabled = false;
+        }
+    })
+    .catch(function(e) {
+        errEl.textContent = 'Network error: ' + e.message;
+        errEl.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-link"></i> Link Number';
         btn.disabled = false;
     });
 }

@@ -454,7 +454,24 @@ class WhatsAppController extends Controller
         $hotels  = Hotel::orderBy('name')->get();
         $configs = WhatsAppConfig::where('mode', 'managed')->get()->keyBy('hotel_id');
         $platform = PlatformWhatsAppSetting::instance();
-        return view('platform.whatsapp.numbers', compact('hotels', 'configs', 'platform'));
+
+        // Active verified numbers available to share with other hotels
+        $activeConfigs = WhatsAppConfig::where('mode', 'managed')
+            ->where('managed_otp_status', 'verified')
+            ->where('is_active', true)
+            ->with('hotel')
+            ->get();
+
+        // Map phone_number_id → list of hotel names sharing that number (for "shared" badge)
+        $sharedMap = WhatsAppConfig::where('mode', 'managed')
+            ->whereNotNull('phone_number_id')
+            ->select('phone_number_id', 'hotel_id')
+            ->with('hotel:id,name')
+            ->get()
+            ->groupBy('phone_number_id')
+            ->map(fn($group) => $group->map(fn($c) => $c->hotel->name ?? 'Hotel #'.$c->hotel_id)->values());
+
+        return view('platform.whatsapp.numbers', compact('hotels', 'configs', 'platform', 'activeConfigs', 'sharedMap'));
     }
 
     public function registerNumber(Request $request)
@@ -617,6 +634,44 @@ class WhatsAppController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    public function linkNumber(Request $request)
+    {
+        $request->validate([
+            'hotel_id'         => 'required|integer|exists:hotels,id',
+            'source_config_id' => 'required|integer|exists:whatsapp_configs,id',
+        ]);
+
+        $source = WhatsAppConfig::where('id', $request->source_config_id)
+            ->where('mode', 'managed')
+            ->where('managed_otp_status', 'verified')
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        if ((int)$request->hotel_id === (int)$source->hotel_id) {
+            return response()->json(['success' => false, 'error' => 'Cannot link a hotel to itself.']);
+        }
+
+        $config = WhatsAppConfig::firstOrNew(['hotel_id' => $request->hotel_id]);
+        $config->fill([
+            'mode'                 => 'managed',
+            'provider'             => 'meta',
+            'phone_number_id'      => $source->phone_number_id,
+            'phone_number'         => $source->phone_number,
+            'managed_display_name' => $source->managed_display_name,
+            'managed_otp_status'   => 'verified',
+            'setup_step'           => 5,
+            'setup_completed'      => true,
+            'is_active'            => true,
+        ]);
+        $config->save();
+
+        $sourceHotel = $source->hotel->name ?? 'another hotel';
+        return response()->json([
+            'success' => true,
+            'message' => "Linked! This hotel will now send WhatsApp messages from +{$source->phone_number} (shared with {$sourceHotel}). Templates will still use this hotel's own name as the variable.",
+        ]);
     }
 
     public function removeNumber(int $configId)
