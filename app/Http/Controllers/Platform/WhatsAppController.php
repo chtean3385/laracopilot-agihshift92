@@ -506,10 +506,11 @@ class WhatsAppController extends Controller
             $addBody = $addResp->json();
 
             if (!$addResp->successful() || empty($addBody['id'])) {
-                $errMsg  = $addBody['error']['message'] ?? $addResp->body();
-                $errCode = $addBody['error']['code'] ?? null;
+                $err     = $addBody['error'] ?? [];
+                $errMsg  = $err['error_user_msg'] ?? $err['error_user_title'] ?? $err['message'] ?? $addResp->body();
+                $errCode = $err['code'] ?? null;
                 Log::warning('WA managed: add number failed', ['body' => $addBody]);
-                return response()->json(['success' => false, 'error' => $errMsg . ($errCode ? " (code {$errCode})" : '')]);
+                return response()->json(['success' => false, 'error' => $errMsg . ($errCode ? " (Meta code {$errCode})" : '')]);
             }
 
             $phoneNumberId = $addBody['id'];
