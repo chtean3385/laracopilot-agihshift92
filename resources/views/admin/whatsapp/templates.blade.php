@@ -102,7 +102,8 @@ foreach($allEvents as $event => $label) {
     <div id="testMsgPanel" style="display:none;align-items:flex-start;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px;margin-bottom:16px;flex-wrap:wrap;">
         <i class="fas fa-paper-plane" style="color:#15803d;margin-top:10px;font-size:14px;flex-shrink:0;"></i>
         <div style="flex:1;min-width:200px;">
-            <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">Send a test WhatsApp message to verify your number is working</div>
+            <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:4px;">Send a test WhatsApp message to verify your number is working</div>
+            <div style="font-size:11px;color:#166534;margin-bottom:8px;">Sends the Meta <strong>hello_world</strong> template — guaranteed delivery, no 24-hour window needed.</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <input type="text" id="testPhoneInput" placeholder="+91 98765 43210" maxlength="15"
                     style="flex:1;min-width:160px;padding:9px 13px;border:1px solid #86efac;border-radius:8px;font-size:13px;outline:none;">

@@ -339,13 +339,12 @@ class WhatsAppController extends Controller
     {
         $request->validate(['phone' => 'required|string', 'message' => 'nullable|string']);
 
-        $phone   = preg_replace('/[^0-9]/', '', $request->phone);
-        $message = $request->message ?: 'Hi! This is a test message from your hotel CRM. WhatsApp is connected and working. ✓';
+        $phone = preg_replace('/[^0-9]/', '', $request->phone);
 
-        $sent = WhatsAppService::sendRaw($phone, $message);
+        $sent = WhatsAppService::sendHelloWorldTest($phone);
 
         if ($sent) {
-            return response()->json(['success' => true, 'message' => "Test message sent to +{$phone}. Check your WhatsApp!"]);
+            return response()->json(['success' => true, 'message' => "Test sent to +{$phone} using hello_world template. Check your WhatsApp!"]);
         }
 
         $detail = WhatsAppService::getLastError();
