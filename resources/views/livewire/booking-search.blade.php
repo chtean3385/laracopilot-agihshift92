@@ -246,6 +246,15 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 @endif
+                                @if(\App\Services\PermissionService::check('bookings.delete'))
+                                <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}" style="display:inline;" onsubmit="return confirm('Delete booking #{{ $booking->booking_number }}? This cannot be undone.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="lv-action-btn" title="Delete" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                @endif
                                 @if($booking->status === 'website_pending')
                                 <a href="{{ route('bookings.show', $booking->id) }}" class="lv-action-btn" title="Review &amp; Confirm" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;">
                                     <i class="fas fa-check-circle"></i>
