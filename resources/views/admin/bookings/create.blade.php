@@ -1142,6 +1142,12 @@
         });
     })();
 
+    // Apply the active booking-type filter immediately so the room dropdown
+    // only shows rooms that match the selected type on page load.
+    setTimeout(function() {
+        setBookingType(window.selectedBookingType || 'per_night');
+    }, 0);
+
     function refreshAvailableRooms() {
         const params = new URLSearchParams();
 
@@ -1190,7 +1196,17 @@
         sel.innerHTML = '';
         if (placeholder) sel.appendChild(placeholder);
 
-        _allRoomOptions.forEach(function(room) {
+        // Filter rooms by the active booking type so the availability fetch
+        // never puts the wrong room types back into the dropdown.
+        const _activeType = window.selectedBookingType || 'per_night';
+        const _typeFiltered = _allRoomOptions.filter(function(room) {
+            const pt = room.dataset.pricingType || 'per_night';
+            if (_activeType === 'per_slot') return pt === 'per_slot';
+            if (_activeType === 'per_hour') return pt === 'per_hour';
+            return pt !== 'per_slot' && pt !== 'per_hour';
+        });
+
+        _typeFiltered.forEach(function(room) {
             const isUnavailable = unavailableIds.includes(parseInt(room.value));
             const opt = document.createElement('option');
             opt.value       = room.value;
