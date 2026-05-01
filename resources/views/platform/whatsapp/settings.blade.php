@@ -10,7 +10,11 @@
         <h1 style="font-size:22px;font-weight:800;color:#111827;margin:0 0 4px;">WhatsApp Platform Settings</h1>
         <p style="color:#6b7280;font-size:14px;margin:0;">Configure Meta credentials and the shared number for the CRM platform.</p>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <a href="{{ route('platform.whatsapp.numbers') }}"
+            style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#e0f2fe;color:#0369a1;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;border:1px solid #bae6fd;">
+            <i class="fas fa-sim-card"></i> Hotel Numbers
+        </a>
         @if($settings->is_saas_active && $settings->saas_token && $settings->saas_phone_number_id)
         <span style="background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:6px;">
             <i class="fas fa-circle" style="font-size:8px;"></i> Shared Number Active
@@ -24,14 +28,14 @@
 </div>
 
 {{-- Two-mode explainer --}}
-<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:18px 20px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:18px 20px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
     <div style="display:flex;gap:12px;align-items:flex-start;">
         <div style="width:36px;height:36px;background:#25D366;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <i class="fab fa-whatsapp" style="color:#fff;font-size:16px;"></i>
         </div>
         <div>
-            <div style="font-size:13px;font-weight:700;color:#1e40af;">Basic Plan Hotels</div>
-            <div style="font-size:12px;color:#3b82f6;margin-top:2px;line-height:1.5;">Use the <strong>CRM's shared WhatsApp number</strong>. Messages are sent from the platform's verified number. No setup needed by the hotel.</div>
+            <div style="font-size:13px;font-weight:700;color:#1e40af;">Shared (Basic Plan)</div>
+            <div style="font-size:12px;color:#3b82f6;margin-top:2px;line-height:1.5;">All hotels share the <strong>CRM's number</strong>. One-click activation. No credentials needed by hotel.</div>
         </div>
     </div>
     <div style="display:flex;gap:12px;align-items:flex-start;">
@@ -39,8 +43,17 @@
             <i class="fas fa-plug" style="color:#fff;font-size:14px;"></i>
         </div>
         <div>
-            <div style="font-size:13px;font-weight:700;color:#5b21b6;">Pro / Premium Plan Hotels</div>
-            <div style="font-size:12px;color:#7c3aed;margin-top:2px;line-height:1.5;">Connect their <strong>own WhatsApp number</strong> via an in-app signup. Guests see the hotel's own number. Requires Meta App credentials below.</div>
+            <div style="font-size:13px;font-weight:700;color:#5b21b6;">Own Number (Pro Plan)</div>
+            <div style="font-size:12px;color:#7c3aed;margin-top:2px;line-height:1.5;">Hotel connects their <strong>own WABA</strong> via embedded signup. Full independence.</div>
+        </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="width:36px;height:36px;background:#0284c7;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-sim-card" style="color:#fff;font-size:14px;"></i>
+        </div>
+        <div>
+            <div style="font-size:13px;font-weight:700;color:#0369a1;">Managed Number (New)</div>
+            <div style="font-size:12px;color:#0284c7;margin-top:2px;line-height:1.5;">You register the hotel's number under <strong>your WABA</strong>. They get their own number. One billing from you. <a href="{{ route('platform.whatsapp.numbers') }}" style="color:#0369a1;font-weight:700;">Manage →</a></div>
         </div>
     </div>
 </div>

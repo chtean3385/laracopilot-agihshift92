@@ -20,6 +20,7 @@
 $setupStep  = (int) ($config->setup_step ?? 0);
 $setupMode  = $config->mode ?? 'shared';
 $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own';
+$isManagedPending = ($setupMode === 'managed' && !$config->setup_completed && $config->phone_number_id);
 @endphp
 
 @if(!$moduleActive)
@@ -46,7 +47,15 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
                 <span style="background:#dcfce7;color:#15803d;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">ACTIVE</span>
             </div>
             <p style="color:#6b7280;margin:4px 0 0;font-size:14px;">
-                Mode: <strong>{{ ($config->mode ?? 'shared') === 'shared' ? 'CRM Shared Number' : 'Your Hotel\'s Own Number' }}</strong>
+                Mode: <strong>
+                    @if(($config->mode ?? 'shared') === 'shared') CRM Shared Number
+                    @elseif($config->mode === 'managed') Managed Number (via CRM)
+                    @else Your Hotel's Own Number
+                    @endif
+                </strong>
+                @if($config->mode === 'managed' && $config->phone_number)
+                &nbsp;·&nbsp; +{{ $config->phone_number }}
+                @endif
             </p>
         </div>
     </div>
@@ -58,6 +67,9 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
                 @if(($config->mode ?? 'shared') === 'shared')
                 <div style="font-weight:600;color:#15803d;font-size:14px;">Using CRM's Shared WhatsApp Number</div>
                 <div style="color:#166534;font-size:13px;margin-top:2px;">Messages are sent from the CRM's verified business number. No extra setup needed.</div>
+                @elseif($config->mode === 'managed')
+                <div style="font-weight:600;color:#15803d;font-size:14px;">Your Number Managed by CRM — Active</div>
+                <div style="color:#166534;font-size:13px;margin-top:2px;">Guests see your hotel's number (+{{ $config->phone_number }}). Billing and verification handled centrally.</div>
                 @else
                 <div style="font-weight:600;color:#15803d;font-size:14px;">Your Hotel's Own Number Connected</div>
                 <div style="color:#166534;font-size:13px;margin-top:2px;">Guests will see your hotel's number on their WhatsApp messages.</div>
@@ -290,6 +302,30 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
     </div>
 </div>
 
+@elseif($isManagedPending)
+{{-- Managed number registered but OTP pending --}}
+<div style="max-width:600px;margin:0 auto;padding:40px 0;">
+    <div style="background:#fff;border:2px solid #fde68a;border-radius:20px;padding:36px;text-align:center;">
+        <div style="width:64px;height:64px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+            <i class="fas fa-clock" style="font-size:30px;color:#fff;"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:800;color:#111827;margin:0 0 10px;">OTP Verification Pending</h2>
+        <p style="color:#6b7280;font-size:14px;line-height:1.7;margin:0 0 20px;">
+            Your CRM administrator has registered the number <strong>+{{ $config->phone_number }}</strong> under the platform's WhatsApp Business Account.<br>
+            An OTP was sent to that number — the administrator will enter it to activate your number.
+        </p>
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;text-align:left;">
+            <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:6px;"><i class="fas fa-info-circle"></i> What happens next?</div>
+            <ul style="margin:0;padding-left:18px;color:#78350f;font-size:13px;line-height:1.8;">
+                <li>Your CRM admin enters the OTP from Meta</li>
+                <li>Your number gets verified and activated automatically</li>
+                <li>You can start sending messages to guests from your own number</li>
+            </ul>
+        </div>
+        <div style="color:#9ca3af;font-size:13px;">Contact your CRM administrator if this takes more than a few minutes.</div>
+    </div>
+</div>
+
 @else
 {{-- Fresh start: mode selection --}}
 <style>
@@ -297,10 +333,10 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
     .mode-cards-grid { grid-template-columns: 1fr !important; }
 }
 </style>
-<div style="max-width:780px;margin:0 auto;">
+<div style="max-width:900px;margin:0 auto;">
     <p style="color:#6b7280;font-size:15px;margin-bottom:28px;">Choose how you want to use WhatsApp. You can change this later.</p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;" id="modeCards" class="mode-cards-grid">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:32px;" id="modeCards" class="mode-cards-grid">
 
         {{-- Option 1: Shared --}}
         <div style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px;position:relative;transition:border-color .2s;" id="card-shared">
@@ -360,6 +396,25 @@ $inProgress = !$config->setup_completed && $setupStep > 0 && $setupMode === 'own
                 <i class="fas fa-lock"></i> Upgrade to Pro to unlock
             </div>
             @endif
+        </div>
+
+        {{-- Option 3: Managed by CRM --}}
+        <div style="background:#fff;border:2px solid #e5e7eb;border-radius:16px;padding:28px;position:relative;">
+            <div style="position:absolute;top:16px;right:16px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;">MANAGED</div>
+            <div style="width:52px;height:52px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+                <i class="fas fa-shield-alt" style="font-size:22px;color:#fff;"></i>
+            </div>
+            <h3 style="font-size:17px;font-weight:700;color:#111827;margin:0 0 8px;">Your Number, Managed by CRM</h3>
+            <p style="color:#6b7280;font-size:13px;margin:0 0 16px;line-height:1.6;">The CRM administrator registers your hotel's number under the platform account. No Meta account needed on your side.</p>
+            <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;">
+                <li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;"><i class="fas fa-check-circle" style="color:#0284c7;"></i> Your own number in messages</li>
+                <li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;"><i class="fas fa-check-circle" style="color:#0284c7;"></i> No Meta account needed</li>
+                <li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;"><i class="fas fa-check-circle" style="color:#0284c7;"></i> One OTP to verify</li>
+                <li style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;"><i class="fas fa-check-circle" style="color:#0284c7;"></i> Billing via CRM platform</li>
+            </ul>
+            <div style="width:100%;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;border-radius:10px;font-weight:600;font-size:13px;text-align:center;">
+                <i class="fas fa-headset"></i> Contact your CRM administrator to set this up
+            </div>
         </div>
     </div>
 

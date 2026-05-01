@@ -16,6 +16,10 @@
             style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
             <i class="fas fa-robot"></i> Templates
         </a>
+        <a href="{{ route('platform.whatsapp.numbers') }}"
+            style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
+            <i class="fas fa-sim-card"></i> Hotel Numbers
+        </a>
         <a href="{{ route('platform.whatsapp.settings') }}"
             style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
             <i class="fas fa-cog"></i> Settings

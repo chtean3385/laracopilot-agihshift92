@@ -23,6 +23,10 @@ $eventMeta = [
         <p style="color:#6b7280;font-size:14px;margin:0;">These templates are used by all <strong>Basic plan</strong> hotels on the shared number. Pro+ hotels manage their own templates inside their CRM.</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <a href="{{ route('platform.whatsapp.numbers') }}"
+            style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
+            <i class="fas fa-sim-card"></i> Hotel Numbers
+        </a>
         <a href="{{ route('platform.whatsapp.settings') }}"
             style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f1f5f9;color:#64748b;border-radius:11px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid #e2e8f0;">
             <i class="fas fa-cog"></i> Platform Settings

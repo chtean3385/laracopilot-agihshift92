@@ -17,6 +17,9 @@ class WhatsAppConfig extends Model
         'api_key',
         'access_token',
         'phone_number_id',
+        'phone_number',
+        'managed_display_name',
+        'managed_otp_status',
         'webhook_verify_token',
         'business_account_id',
         'waba_id',
@@ -46,6 +49,11 @@ class WhatsAppConfig extends Model
     public function isOwnMode(): bool
     {
         return $this->mode === 'own';
+    }
+
+    public function isManagedMode(): bool
+    {
+        return $this->mode === 'managed';
     }
 
     public function isSetupComplete(): bool

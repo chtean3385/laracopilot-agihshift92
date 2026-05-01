@@ -42,6 +42,24 @@ class WhatsAppService
             return new MetaProvider($sharedConfig);
         }
 
+        if ($config->isManagedMode()) {
+            $platform = PlatformWhatsAppSetting::instance();
+            if (!$platform || !$platform->saas_token) {
+                static::setLastError('Platform WhatsApp credentials are not configured. Contact the CRM administrator.');
+                return null;
+            }
+            if (!$config->phone_number_id) {
+                static::setLastError('This hotel\'s managed number is not yet verified. Contact the CRM administrator.');
+                return null;
+            }
+            $managedConfig = new WhatsAppConfig([
+                'provider'        => 'meta',
+                'api_key'         => $platform->saas_token,
+                'phone_number_id' => $config->phone_number_id,
+            ]);
+            return new MetaProvider($managedConfig);
+        }
+
         if ($config->provider !== 'meta') {
             static::setLastError('Only Meta WhatsApp Business API is supported. Please reconfigure your WhatsApp setup.');
             Log::error('WhatsApp: non-Meta provider blocked', ['provider' => $config->provider]);

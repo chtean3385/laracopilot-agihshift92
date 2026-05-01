@@ -472,6 +472,11 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/whatsapp/templates/sync-from-meta',         [\App\Http\Controllers\Platform\WhatsAppController::class, 'syncFromMeta']      )->name('platform.whatsapp.template.sync');
     Route::get('/whatsapp/logs',                              [\App\Http\Controllers\Platform\WhatsAppController::class, 'webhookLogs']         )->name('platform.whatsapp.logs');
     Route::post('/whatsapp/logs/clear',                       [\App\Http\Controllers\Platform\WhatsAppController::class, 'clearLogs']           )->name('platform.whatsapp.logs.clear');
+    Route::get('/whatsapp/numbers',                           [\App\Http\Controllers\Platform\WhatsAppController::class, 'numbers']               )->name('platform.whatsapp.numbers');
+    Route::post('/whatsapp/numbers',                          [\App\Http\Controllers\Platform\WhatsAppController::class, 'registerNumber']         )->name('platform.whatsapp.numbers.register');
+    Route::post('/whatsapp/numbers/{configId}/request-otp',   [\App\Http\Controllers\Platform\WhatsAppController::class, 'requestOtp']             )->name('platform.whatsapp.numbers.request-otp');
+    Route::post('/whatsapp/numbers/{configId}/verify',         [\App\Http\Controllers\Platform\WhatsAppController::class, 'verifyOtp']              )->name('platform.whatsapp.numbers.verify');
+    Route::delete('/whatsapp/numbers/{configId}',              [\App\Http\Controllers\Platform\WhatsAppController::class, 'removeNumber']           )->name('platform.whatsapp.numbers.remove');
 
     // Analytics & Campaigns
     Route::get('/analytics',           [\App\Http\Controllers\Platform\AnalyticsController::class, 'index']        )->name('platform.analytics.index');

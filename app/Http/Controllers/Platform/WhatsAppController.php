@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Models\Hotel;
 use App\Models\PlatformWhatsAppSetting;
+use App\Models\WhatsAppConfig;
 use App\Models\WhatsAppLog;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Http\Request;
@@ -441,5 +443,201 @@ class WhatsAppController extends Controller
             Log::error('WA media upload exception: ' . $e->getMessage());
             return response()->json(['error' => 'Upload failed: ' . $e->getMessage()], 500);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Managed Numbers — add hotel's own number under the platform's WABA
+    // -----------------------------------------------------------------------
+
+    public function numbers()
+    {
+        $hotels  = Hotel::orderBy('name')->get();
+        $configs = WhatsAppConfig::where('mode', 'managed')->get()->keyBy('hotel_id');
+        $platform = PlatformWhatsAppSetting::instance();
+        return view('platform.whatsapp.numbers', compact('hotels', 'configs', 'platform'));
+    }
+
+    public function registerNumber(Request $request)
+    {
+        $request->validate([
+            'hotel_id'     => 'required|integer|exists:hotels,id',
+            'phone_number' => 'required|string|min:10|max:15',
+            'display_name' => 'required|string|max:100',
+            'country_code' => 'required|string|max:5',
+        ]);
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_token || !$platform->saas_waba_id) {
+            return response()->json(['success' => false, 'error' => 'Platform Meta credentials are not configured. Save the platform WhatsApp settings first.']);
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $request->phone_number);
+        $cc    = preg_replace('/[^0-9]/', '', $request->country_code);
+
+        // Step 1: Add phone number to WABA
+        try {
+            $addResp = Http::timeout(20)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/phone_numbers", [
+                    'verified_name' => $request->display_name,
+                    'code_method'   => 'SMS',
+                    'language'      => 'en',
+                    'cc'            => $cc,
+                    'phone_number'  => $phone,
+                ]);
+
+            $addBody = $addResp->json();
+
+            if (!$addResp->successful() || empty($addBody['id'])) {
+                $errMsg  = $addBody['error']['message'] ?? $addResp->body();
+                $errCode = $addBody['error']['code'] ?? null;
+                Log::warning('WA managed: add number failed', ['body' => $addBody]);
+                return response()->json(['success' => false, 'error' => $errMsg . ($errCode ? " (code {$errCode})" : '')]);
+            }
+
+            $phoneNumberId = $addBody['id'];
+
+        } catch (\Throwable $e) {
+            Log::error('WA managed: add number exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Meta API error: ' . $e->getMessage()]);
+        }
+
+        // Step 2: Request OTP to that number
+        try {
+            $otpResp = Http::timeout(15)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$phoneNumberId}/request_code", [
+                    'code_method' => 'SMS',
+                    'language'    => 'en',
+                ]);
+
+            if (!$otpResp->successful()) {
+                $otpBody = $otpResp->json();
+                $errMsg  = $otpBody['error']['message'] ?? $otpResp->body();
+                Log::warning('WA managed: request OTP failed', ['body' => $otpBody]);
+                return response()->json(['success' => false, 'error' => 'Number registered but OTP request failed: ' . $errMsg]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('WA managed: request OTP exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Number registered but OTP request failed: ' . $e->getMessage()]);
+        }
+
+        // Save config
+        $config = WhatsAppConfig::firstOrNew(['hotel_id' => $request->hotel_id]);
+        $config->fill([
+            'mode'                 => 'managed',
+            'provider'             => 'meta',
+            'phone_number_id'      => $phoneNumberId,
+            'phone_number'         => $cc . $phone,
+            'managed_display_name' => $request->display_name,
+            'managed_otp_status'   => 'pending',
+            'setup_step'           => 1,
+            'setup_completed'      => false,
+            'is_active'            => false,
+        ]);
+        $config->save();
+
+        return response()->json([
+            'success'         => true,
+            'phone_number_id' => $phoneNumberId,
+            'config_id'       => $config->id,
+            'message'         => "OTP sent via SMS to +{$cc}{$phone}. Ask the hotel owner for the code.",
+        ]);
+    }
+
+    public function requestOtp(Request $request, int $configId)
+    {
+        $config = WhatsAppConfig::findOrFail($configId);
+
+        if ($config->mode !== 'managed' || !$config->phone_number_id) {
+            return response()->json(['success' => false, 'error' => 'Invalid config or number not registered yet.']);
+        }
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_token) {
+            return response()->json(['success' => false, 'error' => 'Platform credentials not configured.']);
+        }
+
+        try {
+            $resp = Http::timeout(15)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$config->phone_number_id}/request_code", [
+                    'code_method' => 'SMS',
+                    'language'    => 'en',
+                ]);
+
+            if ($resp->successful()) {
+                $config->update(['managed_otp_status' => 'pending']);
+                return response()->json(['success' => true, 'message' => 'OTP re-sent via SMS.']);
+            }
+
+            $err = $resp->json('error.message') ?? $resp->body();
+            return response()->json(['success' => false, 'error' => $err]);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function verifyOtp(Request $request, int $configId)
+    {
+        $request->validate(['code' => 'required|string|min:4|max:8']);
+
+        $config = WhatsAppConfig::findOrFail($configId);
+
+        if ($config->mode !== 'managed' || !$config->phone_number_id) {
+            return response()->json(['success' => false, 'error' => 'Invalid config.']);
+        }
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform || !$platform->saas_token) {
+            return response()->json(['success' => false, 'error' => 'Platform credentials not configured.']);
+        }
+
+        try {
+            $resp = Http::timeout(15)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v19.0/{$config->phone_number_id}/verify_code", [
+                    'code' => $request->code,
+                ]);
+
+            $body = $resp->json();
+
+            if ($resp->successful() && ($body['success'] ?? false)) {
+                $config->update([
+                    'managed_otp_status' => 'verified',
+                    'setup_completed'    => true,
+                    'setup_step'         => 5,
+                    'is_active'          => true,
+                ]);
+                return response()->json(['success' => true, 'message' => 'Number verified and activated! The hotel can now send messages from their own number.']);
+            }
+
+            $err = $body['error']['message'] ?? 'Invalid OTP. Please check the code and try again.';
+            return response()->json(['success' => false, 'error' => $err]);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function removeNumber(int $configId)
+    {
+        $config = WhatsAppConfig::findOrFail($configId);
+
+        if ($config->mode !== 'managed') {
+            return response()->json(['success' => false, 'error' => 'This is not a managed number.']);
+        }
+
+        $config->update([
+            'mode'                 => 'shared',
+            'phone_number_id'      => null,
+            'phone_number'         => null,
+            'managed_display_name' => null,
+            'managed_otp_status'   => null,
+            'setup_completed'      => false,
+            'setup_step'           => 0,
+            'is_active'            => false,
+        ]);
+
+        return response()->json(['success' => true]);
     }
 }
