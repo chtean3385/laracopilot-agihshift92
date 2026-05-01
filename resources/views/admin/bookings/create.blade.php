@@ -1326,10 +1326,19 @@
             return pt !== 'per_slot' && pt !== 'per_hour';
         });
 
-        const sel  = document.getElementById('roomSelect');
-        const ph   = sel.options[0]; // placeholder option
+        // ── CRITICAL ORDER: destroy first, then rebuild the raw <select> ──────
+        // Destroying TomSelect AFTER clearing the select can cause TomSelect's
+        // cleanup to restore the full original option list, wiping the filter.
+        if (typeof roomTS !== 'undefined') { roomTS.destroy(); }
+
+        const sel = document.getElementById('roomSelect');
         sel.innerHTML = '';
-        if (ph && !ph.value) sel.appendChild(ph);
+
+        // Blank placeholder
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = 'Search room by number or type...';
+        sel.appendChild(ph);
 
         filtered.forEach(function(srcOpt) {
             const o = document.createElement('option');
@@ -1339,7 +1348,6 @@
             sel.appendChild(o);
         });
 
-        if (typeof roomTS !== 'undefined') { roomTS.destroy(); }
         roomTS = new TomSelect('#roomSelect', {
             allowEmptyOption: false,
             placeholder: 'Search room by number or type...',
