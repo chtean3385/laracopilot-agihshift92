@@ -9,8 +9,8 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="{{ asset('hotel-crm-logo.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('hotel-crm-logo.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/tailwind.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
     @stack('styles')
     <style>
         * { box-sizing: border-box; }
@@ -506,7 +506,7 @@
 </div>
 
 <!-- ApexCharts (required by analytics dashboard) -->
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+<script src="/js/apexcharts.min.js"></script>
 
 @stack('scripts')
 

@@ -6,7 +6,7 @@
     <title>Two-Factor Authentication — Hotel CRM Platform Admin</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {

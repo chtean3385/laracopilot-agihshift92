@@ -3,9 +3,7 @@
 
 @section('content')
 
-{{-- ApexCharts loaded early --}}
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.46.0/dist/apexcharts.min.js"></script>
-
+{{-- ApexCharts loaded from platform layout (/js/apexcharts.min.js) --}}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:14px;">
     <div>
         <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 4px;display:flex;align-items:center;gap:10px;">
