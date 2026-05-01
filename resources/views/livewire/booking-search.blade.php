@@ -264,7 +264,8 @@
                                 @endif
                                 @if(\App\Services\PermissionService::check('bookings.delete'))
                                 <button type="button"
-                                    onclick="if(confirm('Delete booking #{{ $booking->booking_number }}?\nThis will cancel the booking. It cannot be undone.')) $wire.deleteBooking({{ $booking->id }})"
+                                    wire:click="deleteBooking({{ $booking->id }})"
+                                    wire:confirm="Delete booking #{{ $booking->booking_number }}? This will cancel it and cannot be undone."
                                     class="lv-action-btn" title="Delete"
                                     style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">
                                     <i class="fas fa-trash-alt"></i>
