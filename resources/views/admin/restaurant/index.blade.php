@@ -36,7 +36,7 @@
 
 {{-- Flash Messages --}}
 @if(session('success'))
-    <div class="alert-success mb-4">{!! session('success') !!}</div>
+    <div class="alert-success mb-4">{{ session('success') }}</div>
 @endif
 @if(session('error'))
     <div class="alert-error mb-4">{{ session('error') }}</div>
