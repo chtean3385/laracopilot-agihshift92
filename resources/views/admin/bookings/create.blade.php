@@ -123,6 +123,27 @@
             <input type="hidden" name="is_whole_hotel" id="isWholeHotelInput" value="{{ old('is_whole_hotel', '0') }}">
             <input type="hidden" name="whole_hotel_pricing_type" id="whPricingTypeInput" value="{{ old('whole_hotel_pricing_type', 'per_night') }}">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @php
+                    $whPerNightSum = \App\Models\Room::where('hotel_id', session('crm_hotel_id'))
+                        ->where('status','!=','maintenance')
+                        ->whereIn('pricing_type', ['per_night', null])
+                        ->sum('price_per_night') ?: 0;
+                @endphp
+                <script>window.whPerNightSum = {{ (float) $whPerNightSum }}; window.whSlotModuleOn = {{ $slotModuleOn ? 'true' : 'false' }};</script>
+                {{-- ── Dates first row ────────────────────────────────────────── --}}
+                <div id="perNightFields" class="contents">
+                <div>
+                    <label class="form-label">Check-In Date <span class="text-red-500">*</span></label>
+                    <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateTotal()">
+                    @error('check_in_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="form-label">Check-Out Date <span class="text-red-500">*</span></label>
+                    <input type="date" name="check_out_date" id="checkOut" value="{{ old('check_out_date') }}" class="form-input" onchange="calculateTotal()">
+                    @error('check_out_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                </div>
+                {{-- ── Guest + Room row ────────────────────────────────────────── --}}
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="form-label mb-0">Guest <span class="text-red-500">*</span></label>
@@ -174,26 +195,6 @@
                     </select>
                     @error('room_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     <div id="roomAvailBadge" class="hidden mt-2 text-xs font-medium rounded-lg px-3 py-1.5 border"></div>
-                </div>
-                @php
-                    $whPerNightSum = \App\Models\Room::where('hotel_id', session('crm_hotel_id'))
-                        ->where('status','!=','maintenance')
-                        ->whereIn('pricing_type', ['per_night', null])
-                        ->sum('price_per_night') ?: 0;
-                @endphp
-                <script>window.whPerNightSum = {{ (float) $whPerNightSum }}; window.whSlotModuleOn = {{ $slotModuleOn ? 'true' : 'false' }};</script>
-                {{-- Per Night date fields --}}
-                <div id="perNightFields" class="contents">
-                <div>
-                    <label class="form-label">Check-In Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateTotal()">
-                    @error('check_in_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label class="form-label">Check-Out Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="check_out_date" id="checkOut" value="{{ old('check_out_date') }}" class="form-input" onchange="calculateTotal()">
-                    @error('check_out_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
                 </div>
 
                 @if($slotModuleOn)
@@ -1069,49 +1070,28 @@
     }
 
     function updateRoomDropdown(unavailableIds) {
-        const sel        = document.getElementById('roomSelect');
         const currentVal = roomTS.getValue();
 
-        // Rebuild the underlying <select> with correct disabled state + text
-        // (keep the placeholder option first)
-        const placeholder = sel.options[0];
-        sel.innerHTML = '';
-        if (placeholder) sel.appendChild(placeholder);
-
+        // Update each option in-place — no destroy/recreate needed
         _allRoomOptions.forEach(function(room) {
             const isUnavailable = unavailableIds.includes(parseInt(room.value));
-            const opt = document.createElement('option');
-            opt.value    = room.value;
-            opt.disabled = isUnavailable;
-            opt.textContent = room.text + (isUnavailable ? ' — Booked' : '');
 
-            // Restore all data-* attributes so updatePricingUI() keeps working
-            Object.entries(room.dataset).forEach(function(kv) {
-                opt.dataset[kv[0]] = kv[1];
+            // Update TomSelect's internal option (controls display + selectability)
+            roomTS.updateOption(room.value, {
+                value:    room.value,
+                text:     room.text + (isUnavailable ? ' — Booked' : ''),
+                disabled: isUnavailable
             });
 
-            sel.appendChild(opt);
+            // Keep the underlying <select> option disabled state in sync
+            // so data-* attributes are preserved for updatePricingUI()
+            const opt = document.querySelector('#roomSelect option[value="' + room.value + '"]');
+            if (opt) opt.disabled = isUnavailable;
         });
 
-        // Destroy and recreate TomSelect so it picks up the new option state
-        roomTS.destroy();
-        window.roomTS = new TomSelect('#roomSelect', {
-            allowEmptyOption: false,
-            placeholder: 'Search room by number or type...',
-            maxOptions: 100,
-            onChange: function() {
-                updatePricingUI();
-                updateMealOptions();
-                calculateTotal();
-                refreshAvailableSlots();
-            }
-        });
-
-        // Restore selection if the room is still available
-        if (currentVal && !unavailableIds.includes(parseInt(currentVal))) {
-            roomTS.setValue(currentVal, true);
-        } else if (currentVal) {
-            // Previously selected room is now booked — clear it
+        // Clear selection if current room became unavailable
+        if (currentVal && unavailableIds.includes(parseInt(currentVal))) {
+            roomTS.clear(true);
             updatePricingUI();
         }
 
