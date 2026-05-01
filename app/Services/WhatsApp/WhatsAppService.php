@@ -305,37 +305,4 @@ class WhatsAppService
         }
     }
 
-    /**
-     * Send the hello_world template as a connectivity test.
-     * This always works because hello_world is pre-approved by Meta.
-     */
-    public static function sendHelloWorldTest(string $phone): bool
-    {
-        static::$lastError = '';
-
-        try {
-            if (!Module::isEnabled('whatsapp')) {
-                static::setLastError('WhatsApp module is not enabled for this hotel.');
-                return false;
-            }
-
-            $config = WhatsAppConfig::active();
-            if (!$config) {
-                static::setLastError('No active WhatsApp configuration found. Complete the WhatsApp setup first.');
-                return false;
-            }
-
-            $provider = static::providerForConfig($config);
-            if (!$provider) {
-                static::setLastError(static::$lastError ?: 'WhatsApp provider could not be initialised.');
-                return false;
-            }
-
-            return $provider->sendTemplate($phone, 'hello_world', [], 'en_US');
-        } catch (\Throwable $e) {
-            Log::error('WhatsAppService::sendHelloWorldTest error: ' . $e->getMessage());
-            static::setLastError($e->getMessage());
-            return false;
-        }
-    }
 }

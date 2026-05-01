@@ -337,17 +337,64 @@ class WhatsAppController extends Controller
 
     public function testSendJson(Request $request)
     {
-        $request->validate(['phone' => 'required|string', 'message' => 'nullable|string']);
+        $request->validate(['phone' => 'required|string']);
 
         $phone = preg_replace('/[^0-9]/', '', $request->phone);
-
-        $sent = WhatsAppService::sendHelloWorldTest($phone);
-
-        if ($sent) {
-            return response()->json(['success' => true, 'message' => "Test sent to +{$phone} using hello_world template. Check your WhatsApp!"]);
+        if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
+            $phone = '91' . $phone;
         }
 
-        $detail = WhatsAppService::getLastError();
-        return response()->json(['success' => false, 'error' => 'Send failed' . ($detail ? ': ' . $detail : '. Check your WhatsApp credentials.')]);
+        // Resolve token + phone_number_id the same way the platform test does
+        $config   = WhatsAppConfig::active();
+        $platform = PlatformWhatsAppSetting::instance();
+
+        if ($config && $config->isSharedMode()) {
+            if (!$platform || !$platform->saas_token || !$platform->saas_phone_number_id) {
+                return response()->json(['success' => false, 'error' => 'Shared number credentials not configured.']);
+            }
+            $token         = $platform->saas_token;
+            $phoneNumberId = $platform->saas_phone_number_id;
+        } elseif ($config && $config->isManagedMode()) {
+            if (!$platform || !$platform->saas_token || !$config->phone_number_id) {
+                return response()->json(['success' => false, 'error' => 'Managed number credentials not configured.']);
+            }
+            $token         = $platform->saas_token;
+            $phoneNumberId = $config->phone_number_id;
+        } elseif ($config && $config->api_key && $config->phone_number_id) {
+            $token         = $config->api_key;
+            $phoneNumberId = $config->phone_number_id;
+        } else {
+            return response()->json(['success' => false, 'error' => 'No active WhatsApp configuration found.']);
+        }
+
+        try {
+            $response = Http::timeout(15)
+                ->withToken($token)
+                ->post("https://graph.facebook.com/v19.0/{$phoneNumberId}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $phone,
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'     => 'hello_world',
+                        'language' => ['code' => 'en_US'],
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $data  = $response->json();
+                $msgId = $data['messages'][0]['id'] ?? null;
+                $waId  = $data['contacts'][0]['wa_id'] ?? $phone;
+                $note  = $msgId ? " (ID: {$msgId})" : '';
+                return response()->json(['success' => true, 'message' => "hello_world template queued for +{$waId}.{$note} Check your WhatsApp!"]);
+            }
+
+            $err     = $response->json('error.message') ?? $response->body();
+            $errCode = $response->json('error.code');
+            Log::warning('Hotel WhatsApp test send failed', ['body' => $response->body()]);
+            return response()->json(['success' => false, 'error' => 'Send failed: ' . $err . ($errCode ? " (code {$errCode})" : '')]);
+        } catch (\Throwable $e) {
+            Log::error('Hotel WhatsApp test exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Could not reach Meta: ' . $e->getMessage()]);
+        }
     }
 }
