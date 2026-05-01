@@ -254,6 +254,7 @@ Route::delete('/whatsapp/automations/{template}',       [WhatsAppController::cla
 Route::post('/whatsapp/automations/{template}/toggle',       [WhatsAppController::class, 'templateToggle']  )->name('whatsapp.template.toggle');
 Route::post('/whatsapp/automations/{template}/submit-meta',  [WhatsAppController::class, 'submitToMeta']    )->name('whatsapp.template.submit-meta');
 Route::post('/whatsapp/test-send',                      [WhatsAppController::class, 'testSend']        )->name('whatsapp.test.send');
+Route::post('/whatsapp/test-json',                      [WhatsAppController::class, 'testSendJson']    )->name('whatsapp.test.json');
 
 // Legacy config redirect (keep old URLs working)
 Route::get('/whatsapp/config',   fn() => redirect()->route('whatsapp.setup'))->name('whatsapp.config');

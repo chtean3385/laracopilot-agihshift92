@@ -17,10 +17,18 @@
 @endif
 
 @php
-$providerConnected = $config && $config->setup_completed &&
-    (($config->mode === 'shared') || ($config->mode === 'own'));
+$providerConnected = $config && $config->setup_completed && (
+    ($config->mode === 'shared') ||
+    ($config->mode === 'own') ||
+    ($config->mode === 'managed' && $config->managed_otp_status === 'verified' && $config->is_active)
+);
 $providerName = $providerConnected
-    ? ($config->mode === 'shared' ? 'CRM Shared Number' : 'Own Hotel Number')
+    ? match($config->mode) {
+        'shared'  => 'CRM Shared Number',
+        'own'     => 'Own Hotel Number',
+        'managed' => 'Managed Number (+' . $config->phone_number . ')',
+        default   => 'Connected',
+    }
     : null;
 
 $eventMeta = [
@@ -67,6 +75,12 @@ foreach($allEvents as $event => $label) {
             </div>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            @if($providerConnected)
+            <button onclick="document.getElementById('testMsgPanel').style.display=document.getElementById('testMsgPanel').style.display==='none'?'flex':'none'"
+                style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-paper-plane"></i> Send Test
+            </button>
+            @endif
             @if($canEdit)
             <a href="{{ route('whatsapp.template.create') }}"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
@@ -78,6 +92,25 @@ foreach($allEvents as $event => $label) {
             </a>
         </div>
     </div>
+
+    {{-- Send Test Message panel (hidden by default) --}}
+    @if($providerConnected)
+    <div id="testMsgPanel" style="display:none;align-items:flex-start;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px;margin-bottom:16px;flex-wrap:wrap;">
+        <i class="fas fa-paper-plane" style="color:#15803d;margin-top:10px;font-size:14px;flex-shrink:0;"></i>
+        <div style="flex:1;min-width:200px;">
+            <div style="font-size:13px;font-weight:700;color:#14532d;margin-bottom:8px;">Send a test WhatsApp message to verify your number is working</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="testPhoneInput" placeholder="+91 98765 43210" maxlength="15"
+                    style="flex:1;min-width:160px;padding:9px 13px;border:1px solid #86efac;border-radius:8px;font-size:13px;outline:none;">
+                <button id="testSendBtn" onclick="sendTestMessage()"
+                    style="padding:9px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+            <div id="testMsgResult" style="font-size:12px;margin-top:8px;display:none;"></div>
+        </div>
+    </div>
+    @endif
 
     {{-- Quick readiness summary --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
@@ -356,6 +389,43 @@ function submitToMeta(templateId, btn) {
     .catch(() => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fab fa-meta"></i> Submit to Meta';
+    });
+}
+
+function sendTestMessage() {
+    var phone = document.getElementById('testPhoneInput').value.trim();
+    var btn   = document.getElementById('testSendBtn');
+    var res   = document.getElementById('testMsgResult');
+    if (!phone) { res.style.display='block'; res.style.background='#fee2e2'; res.style.color='#b91c1c'; res.style.border='1px solid #fca5a5'; res.style.padding='8px 12px'; res.style.borderRadius='8px'; res.innerHTML='<i class="fas fa-times-circle"></i> Enter a phone number first.'; return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    res.style.display = 'none';
+    fetch('{{ route('whatsapp.test.json') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ phone: phone }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        res.style.display = 'block';
+        res.style.padding = '8px 12px';
+        res.style.borderRadius = '8px';
+        if (data.success) {
+            res.style.background = '#dcfce7'; res.style.color = '#15803d'; res.style.border = '1px solid #bbf7d0';
+            res.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+        } else {
+            res.style.background = '#fee2e2'; res.style.color = '#b91c1c'; res.style.border = '1px solid #fca5a5';
+            res.innerHTML = '<i class="fas fa-times-circle"></i> ' + (data.error || 'Failed to send.');
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+    })
+    .catch(function() {
+        res.style.display = 'block'; res.style.padding = '8px 12px'; res.style.borderRadius = '8px';
+        res.style.background = '#fee2e2'; res.style.color = '#b91c1c'; res.style.border = '1px solid #fca5a5';
+        res.innerHTML = '<i class="fas fa-times-circle"></i> Network error.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
     });
 }
 </script>

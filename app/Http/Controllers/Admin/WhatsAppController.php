@@ -163,7 +163,10 @@ class WhatsAppController extends Controller
             return '{{' . $varMap[$m[1]] . '}}';
         }, $body);
 
-        $templateName = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $template->template_name), '_'));
+        $baseName     = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $template->template_name), '_'));
+        $hotel        = $template->hotel_id ? \App\Models\Hotel::find($template->hotel_id) : null;
+        $hotelSlug    = $hotel ? trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($hotel->slug ?: $hotel->name)), '_') : '';
+        $templateName = $hotelSlug ? $baseName . '_' . $hotelSlug : $baseName;
 
         $bodyComponent = ['type' => 'BODY', 'text' => $metaBody];
         if (!empty($varMap)) {
@@ -273,5 +276,22 @@ class WhatsAppController extends Controller
             : $generic;
 
         return back()->with('error', $errorMsg);
+    }
+
+    public function testSendJson(Request $request)
+    {
+        $request->validate(['phone' => 'required|string', 'message' => 'nullable|string']);
+
+        $phone   = preg_replace('/[^0-9]/', '', $request->phone);
+        $message = $request->message ?: 'Hi! This is a test message from your hotel CRM. WhatsApp is connected and working. ✓';
+
+        $sent = WhatsAppService::sendRaw($phone, $message);
+
+        if ($sent) {
+            return response()->json(['success' => true, 'message' => "Test message sent to +{$phone}. Check your WhatsApp!"]);
+        }
+
+        $detail = WhatsAppService::getLastError();
+        return response()->json(['success' => false, 'error' => 'Send failed' . ($detail ? ': ' . $detail : '. Check your WhatsApp credentials.')]);
     }
 }
