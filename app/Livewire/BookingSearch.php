@@ -62,12 +62,33 @@ class BookingSearch extends Component
         $this->resetPage();
     }
 
+    public function deleteBooking(int $id): void
+    {
+        if (!\App\Services\PermissionService::check('bookings.delete')) {
+            return;
+        }
+
+        $booking = Booking::findOrFail($id);
+        $number  = $booking->booking_number;
+        $booking->update(['status' => 'cancelled']);
+
+        if ($booking->room) {
+            $booking->room->update(['status' => 'available']);
+        }
+
+        \App\Services\ActivityLogger::log('Deleted', 'Booking', 'Cancelled booking #' . $number);
+        session()->flash('success', 'Booking #' . $number . ' has been deleted.');
+    }
+
     public function render()
     {
         $query = Booking::with(['customer', 'room', 'timeSlot']);
 
         if ($this->status) {
             $query->where('status', $this->status);
+        } else {
+            // Cancelled bookings are hidden by default; filter by status=cancelled to see them
+            $query->where('status', '!=', 'cancelled');
         }
 
         if ($this->search) {

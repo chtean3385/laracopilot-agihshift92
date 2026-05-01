@@ -1,5 +1,21 @@
 <div>
 
+    {{-- Inline flash messages (shown after Livewire actions like deleteBooking) --}}
+    @if(session()->has('success'))
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;margin-bottom:12px;">
+        <i class="fas fa-check-circle" style="color:#22c55e;font-size:15px;flex-shrink:0;"></i>
+        <span>{{ session('success') }}</span>
+        <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#86efac;font-size:18px;line-height:1;">×</button>
+    </div>
+    @endif
+    @if(session()->has('error'))
+    <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;margin-bottom:12px;">
+        <i class="fas fa-exclamation-circle" style="color:#ef4444;font-size:15px;flex-shrink:0;"></i>
+        <span>{{ session('error') }}</span>
+        <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#fca5a5;font-size:18px;line-height:1;">×</button>
+    </div>
+    @endif
+
     {{-- Filter bar --}}
     <div class="lv-filter-bar">
         <div class="lv-filter-row">
@@ -247,13 +263,12 @@
                                 </a>
                                 @endif
                                 @if(\App\Services\PermissionService::check('bookings.delete'))
-                                <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}" style="display:inline;" onsubmit="return confirm('Delete booking #{{ $booking->booking_number }}? This cannot be undone.')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="lv-action-btn" title="Delete" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                    onclick="if(confirm('Delete booking #{{ $booking->booking_number }}?\nThis will cancel the booking. It cannot be undone.')) $wire.deleteBooking({{ $booking->id }})"
+                                    class="lv-action-btn" title="Delete"
+                                    style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                                 @endif
                                 @if($booking->status === 'website_pending')
                                 <a href="{{ route('bookings.show', $booking->id) }}" class="lv-action-btn" title="Review &amp; Confirm" style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;">
