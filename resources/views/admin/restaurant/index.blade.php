@@ -60,36 +60,41 @@
 <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
     @foreach($tables as $table)
     @php
-      $colorClass = match($table->status) {
-    'free'        => 'border-green-400 bg-green-50 hover:bg-green-100',
-    'occupied'    => 'border-orange-400 bg-orange-50 hover:bg-orange-100',
-    'dirty'       => 'border-red-400 bg-red-50 hover:bg-red-100',
-    'unavailable' => 'border-gray-700 bg-gray-100 opacity-75',
-    default       => 'border-gray-300 bg-white',
-};
-$dotColor = match($table->status) {
-    'free'        => 'bg-green-500',
-    'occupied'    => 'bg-orange-500',
-    'dirty'       => 'bg-red-500',
-    'unavailable' => 'bg-gray-800',
-    default       => 'bg-gray-400',
-};
+        $cardStyle = match($table->status) {
+            'free'        => 'border-color:#4ade80;background:#f0fdf4;',
+            'occupied'    => 'border-color:#fb923c;background:#fff7ed;',
+            'dirty'       => 'border-color:#f87171;background:#fef2f2;',
+            'unavailable' => 'border-color:#374151;background:#f3f4f6;opacity:.75;',
+            default       => 'border-color:#d1d5db;background:#fff;',
+        };
+        $dotStyle = match($table->status) {
+            'free'        => 'background:#22c55e;',
+            'occupied'    => 'background:#f97316;',
+            'dirty'       => 'background:#ef4444;',
+            'unavailable' => 'background:#1f2937;',
+            default       => 'background:#9ca3af;',
+        };
+        $labelStyle = match($table->status) {
+            'free'        => 'color:#15803d;',
+            'occupied'    => 'color:#c2410c;',
+            'dirty'       => 'color:#b91c1c;',
+            'unavailable' => 'color:#6b7280;',
+            default       => 'color:#374151;',
+        };
     @endphp
-    <div class="border-2 rounded-xl p-4 cursor-pointer transition-all {{ $colorClass }} relative group"
+    <div class="border-2 rounded-xl p-4 cursor-pointer transition-all relative group"
+         style="{{ $cardStyle }}"
          onclick="handleTableClick({{ $table->id }}, '{{ $table->status }}', {{ $table->activeOrder?->id ?? 'null' }})">
 
         {{-- Status dot --}}
-        <div class="absolute top-3 right-3 w-3 h-3 rounded-full {{ $dotColor }}"></div>
+        <div class="absolute top-3 right-3 w-3 h-3 rounded-full" style="{{ $dotStyle }}"></div>
 
         {{-- Table name --}}
         <div class="text-lg font-bold text-gray-800 mb-1">{{ $table->name }}</div>
         <div class="text-xs text-gray-500 mb-3">👥 {{ $table->capacity }} seats</div>
 
         {{-- Status label --}}
-        <div class="text-xs font-medium
-            {{ $table->status === 'free' ? 'text-green-700' : '' }}
-            {{ $table->status === 'occupied' ? 'text-orange-700' : '' }}
-            {{ $table->status === 'unavailable' ? 'text-gray-600' : '' }}">
+        <div class="text-xs font-medium" style="{{ $labelStyle }}">
             {{ $table->statusLabel() }}
         </div>
 
