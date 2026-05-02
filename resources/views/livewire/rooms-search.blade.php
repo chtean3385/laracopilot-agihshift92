@@ -1,6 +1,6 @@
 <div class="space-y-5">
     <!-- Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
             <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
                 <i class="fas fa-check-circle text-emerald-500 text-xl"></i>
@@ -17,6 +17,16 @@
             <div>
                 <div class="text-2xl font-bold text-gray-800">{{ $stats['occupied'] }}</div>
                 <div class="text-sm text-gray-500">Occupied</div>
+            </div>
+        </div>
+        {{-- Dirty rooms — highlighted in orange, needs housekeeping attention --}}
+        <div class="{{ $stats['dirty'] > 0 ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-100' }} rounded-2xl p-5 shadow-sm border flex items-center gap-4">
+            <div class="w-12 h-12 {{ $stats['dirty'] > 0 ? 'bg-orange-200' : 'bg-orange-100' }} rounded-xl flex items-center justify-center">
+                <i class="fas fa-broom {{ $stats['dirty'] > 0 ? 'text-orange-600' : 'text-orange-400' }} text-xl"></i>
+            </div>
+            <div>
+                <div class="text-2xl font-bold {{ $stats['dirty'] > 0 ? 'text-orange-700' : 'text-gray-800' }}">{{ $stats['dirty'] }}</div>
+                <div class="text-sm {{ $stats['dirty'] > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500' }}">Needs Cleaning</div>
             </div>
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
@@ -61,6 +71,7 @@
                 <option value="">All Status</option>
                 <option value="available">Available</option>
                 <option value="occupied">Occupied</option>
+                <option value="dirty">🧹 Needs Cleaning</option>
                 <option value="maintenance">Maintenance</option>
                 <option value="inactive">Inactive</option>
             </select>
@@ -90,10 +101,12 @@
     <!-- Rooms Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" wire:loading.class="opacity-60">
         @forelse($rooms as $room)
-        <div class="bg-white rounded-2xl shadow-sm border {{ $room->status == 'inactive' ? 'border-gray-200 opacity-75' : 'border-gray-100' }} overflow-hidden card-hover">
+        @php $isDirty = $room->status === 'dirty'; @endphp
+        <div class="bg-white rounded-2xl shadow-sm border {{ $room->status == 'inactive' ? 'border-gray-200 opacity-75' : ($isDirty ? 'border-orange-300' : 'border-gray-100') }} overflow-hidden card-hover {{ $isDirty ? 'ring-2 ring-orange-200' : '' }}">
             <div class="h-3 bg-gradient-to-r
                 @if($room->status == 'available') from-emerald-400 to-teal-500
                 @elseif($room->status == 'occupied') from-red-400 to-rose-500
+                @elseif($isDirty) from-orange-400 to-amber-500
                 @elseif($room->status == 'inactive') from-gray-300 to-gray-400
                 @else from-amber-400 to-yellow-500 @endif"></div>
             <div class="p-5">
@@ -105,10 +118,12 @@
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
                         @if($room->status == 'available') bg-emerald-100 text-emerald-700
                         @elseif($room->status == 'occupied') bg-red-100 text-red-700
+                        @elseif($isDirty) bg-orange-100 text-orange-700
                         @elseif($room->status == 'inactive') bg-gray-100 text-gray-500
                         @else bg-amber-100 text-amber-700 @endif">
-                        @if($room->status == 'inactive')<i class="fas fa-ban mr-1 text-xs"></i>@endif
-                        {{ ucfirst($room->status) }}
+                        @if($isDirty)<i class="fas fa-broom mr-1 text-xs"></i>Needs Cleaning
+                        @elseif($room->status == 'inactive')<i class="fas fa-ban mr-1 text-xs"></i>{{ ucfirst($room->status) }}
+                        @else{{ ucfirst($room->status) }}@endif
                     </span>
                 </div>
                 <div class="space-y-2 mb-4">
@@ -173,6 +188,15 @@
                     <i class="fas fa-receipt mr-1"></i>Post Charge
                 </a>
                 @endif
+                {{-- Dirty room: prominent "Mark Available" button — most important action --}}
+                @if($isDirty)
+                <button wire:click="markAvailable({{ $room->id }})"
+                    wire:confirm="Mark Room {{ $room->room_number }} as Available? Confirm housekeeping is complete."
+                    class="w-full text-center block py-2.5 rounded-xl text-sm font-bold mb-2 transition-all"
+                    style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;">
+                    <i class="fas fa-check-circle mr-1"></i>Mark Available
+                </button>
+                @endif
                 @if(\App\Services\PermissionService::check('rooms.edit'))
                 <a href="{{ route('rooms.edit', $room->id) }}" class="w-full text-center block bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
                     <i class="fas fa-edit mr-1"></i>Edit Room
@@ -181,7 +205,7 @@
                 <button wire:click="forceAvailable({{ $room->id }})"
                     wire:confirm="Reset Room {{ $room->room_number }} to Available? Only do this if the guest has actually left and checkout was not recorded."
                     class="w-full text-center block bg-amber-50 hover:bg-amber-100 text-amber-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
-                    <i class="fas fa-unlock mr-1"></i>Mark Available
+                    <i class="fas fa-unlock mr-1"></i>Force Available
                 </button>
                 @endif
                 @endif

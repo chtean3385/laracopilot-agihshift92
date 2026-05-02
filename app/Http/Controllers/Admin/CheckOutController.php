@@ -198,7 +198,7 @@ class CheckOutController extends Controller
         ]);
 
         if ($booking->room) {
-            $booking->room->update(['status' => 'available']);
+            $booking->room->update(['status' => 'dirty']);
         }
 
         $invoice = Invoice::create([

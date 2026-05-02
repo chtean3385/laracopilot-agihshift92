@@ -51,6 +51,22 @@ class RoomsSearch extends Component
         session()->flash('success', "Room {$room->room_number} has been reset to Available.");
     }
 
+    // Mark a dirty room as available after housekeeping is done.
+    public function markAvailable(int $roomId): void
+    {
+        $hotelId = (int) session('crm_hotel_id');
+        $room    = Room::where('id', $roomId)->where('hotel_id', $hotelId)->first();
+
+        if (!$room || $room->status !== 'dirty') {
+            return;
+        }
+
+        DB::table('rooms')->where('id', $roomId)->update(['status' => 'available']);
+        ActivityLogger::log('room_marked_available', 'Room', "Room {$room->room_number} marked Available after housekeeping by admin.");
+
+        session()->flash('success', "Room {$room->room_number} is now available for new bookings.");
+    }
+
     public function render()
     {
         $query = Room::query();
@@ -76,6 +92,7 @@ class RoomsSearch extends Component
         $stats = [
             'available'   => Room::where('status', 'available')->count(),
             'occupied'    => Room::where('status', 'occupied')->count(),
+            'dirty'       => Room::where('status', 'dirty')->count(),
             'maintenance' => Room::where('status', 'maintenance')->count(),
             'inactive'    => Room::where('status', 'inactive')->count(),
         ];

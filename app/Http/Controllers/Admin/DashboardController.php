@@ -49,6 +49,7 @@ class DashboardController extends Controller
                 ->where('check_in_date', '<=', $today->toDateString())
                 ->where('check_out_date', '>', $today->toDateString())
                 ->exists();
+            $dirtyRooms = Room::where('status', 'dirty')->count();
             if ($wholeHotelActiveToday) {
                 $occupiedRooms  = $nonMaintenanceRooms;
                 $availableRooms = 0;
@@ -57,7 +58,7 @@ class DashboardController extends Controller
                 $occupiedRooms  = Room::where('status', 'occupied')->count();
             }
         } catch (\Exception $e) {
-            $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = 0;
+            $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = $dirtyRooms = 0;
         }
 
         try {
@@ -333,7 +334,7 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'todayCheckins', 'todayCheckouts', 'availableRooms', 'occupiedRooms',
-            'maintenanceRooms', 'totalRooms', 'monthRevenue', 'todayRevenue',
+            'dirtyRooms', 'maintenanceRooms', 'totalRooms', 'monthRevenue', 'todayRevenue',
             'pendingPayments', 'totalCustomers', 'newCustomersMonth',
             'recentBookings', 'occupancyRate', 'weeklyRevenue',
             'calWeeks', 'calStart', 'prevMonth', 'nextMonth',
@@ -432,6 +433,14 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Dirty rooms are always unavailable regardless of bookings — return separately
+        $dirtyRoomsList = Room::where('status', 'dirty')->orderBy('room_number')->get()
+            ->map(fn($r) => [
+                'id'          => $r->id,
+                'room_number' => $r->room_number,
+                'type'        => ucfirst($r->type),
+            ])->values()->toArray();
+
         $rooms = Room::with(['bookings' => function ($q) use ($d) {
             $q->with('customer')
               ->whereIn('status', ['confirmed', 'checked_in'])
@@ -449,7 +458,7 @@ class DashboardController extends Controller
                          ->whereNotNull('booking_date');
                   });
               });
-        }])->where('status', '!=', 'maintenance')->orderBy('room_number')->get();
+        }])->whereNotIn('status', ['maintenance', 'dirty', 'inactive'])->orderBy('room_number')->get();
 
         $available = [];
         $occupied  = [];
@@ -482,6 +491,7 @@ class DashboardController extends Controller
             'date'      => Carbon::parse($d)->format('D, d M Y'),
             'available' => $available,
             'occupied'  => $occupied,
+            'dirty'     => $dirtyRoomsList,
         ]);
     }
 }

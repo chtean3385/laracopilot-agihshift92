@@ -45,7 +45,7 @@ class SlotSearchController extends Controller
         // ── Q1: All rooms across available hotels ──
         $allRooms = DB::table('rooms')
             ->whereIn('hotel_id', $allHotelIds)
-            ->where('status', '!=', 'maintenance')
+            ->whereNotIn('status', ['maintenance', 'dirty', 'inactive'])
             ->orderBy('hotel_id')->orderBy('room_number')
             ->get(['id', 'hotel_id', 'room_number', 'pricing_type', 'type'])
             ->groupBy('hotel_id');
