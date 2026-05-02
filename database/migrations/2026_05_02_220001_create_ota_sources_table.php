@@ -27,7 +27,7 @@ return new class extends Migration
             ['name' => 'MakeMyTrip',   'sender_number' => null,          'waba_id' => null, 'message_pattern_key' => 'makemytrip',   'notes' => 'MakeMyTrip WhatsApp sender',               'is_active' => true,  'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Goibibo',      'sender_number' => null,          'waba_id' => null, 'message_pattern_key' => 'goibibo',      'notes' => 'Goibibo WhatsApp sender',                 'is_active' => true,  'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Expedia',      'sender_number' => null,          'waba_id' => null, 'message_pattern_key' => 'expedia',      'notes' => 'Expedia / Hotels.com sender',              'is_active' => true,  'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Test/Generic', 'sender_number' => '917043069225','waba_id' => null, 'message_pattern_key' => 'generic',      'notes' => 'SaaS admin test number for demo testing',  'is_active' => true,  'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Test/Generic', 'sender_number' => null,          'waba_id' => null, 'message_pattern_key' => 'generic',      'notes' => 'Generic catch-all: matches any message with OTA format (Property: / Booking Ref:). Used for demo and forwarded messages.', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
