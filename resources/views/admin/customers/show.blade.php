@@ -169,6 +169,35 @@
                 </div>
             </div>
 
+            {{-- Corporate Billing --}}
+            @if($customer->company_name || $customer->gstin)
+            <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+                <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-building" style="color:#7c3aed;"></i> Corporate Billing
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    @if($customer->company_name)
+                    <div class="info-row">
+                        <div class="info-icon" style="background:#f5f3ff;"><i class="fas fa-building" style="color:#7c3aed;font-size:12px;"></i></div>
+                        <div>
+                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">Company Name</div>
+                            <div style="font-size:13px;color:#1e293b;font-weight:600;">{{ $customer->company_name }}</div>
+                        </div>
+                    </div>
+                    @endif
+                    @if($customer->gstin)
+                    <div class="info-row">
+                        <div class="info-icon" style="background:#faf5ff;"><i class="fas fa-file-invoice" style="color:#9333ea;font-size:12px;"></i></div>
+                        <div>
+                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">GSTIN</div>
+                            <div style="font-size:13px;color:#1e293b;font-weight:600;font-family:monospace;">{{ $customer->gstin }}</div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             {{-- Notes --}}
             @if($customer->notes)
             <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:16px;padding:18px;border:1px solid #fde68a;">
