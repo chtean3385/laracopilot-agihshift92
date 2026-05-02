@@ -408,10 +408,9 @@
                         'shortcuts'          => ['label' => 'Shortcuts',                       'icon' => 'fa-th',            'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'],
                         'quick-actions'      => ['label' => 'Quick Actions',                   'icon' => 'fa-bolt',          'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)'],
                         'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
-                        'recent-bookings'    => ['label' => 'Recent Bookings',                 'icon' => 'fa-list-alt',      'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
                         'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
                         'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
-                        'room-availability'  => ['label' => 'Room Availability Checker',      'icon' => 'fa-door-open',     'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
+                        'recent-room-pair'   => ['label' => 'Recent Bookings + Room Availability', 'icon' => 'fa-th-large', 'bg' => 'linear-gradient(135deg,#10b981,#0284c7)'],
                         'live-activity'      => ['label' => 'Live Activity Feed',              'icon' => 'fa-stream',        'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                     ];
                     $orderedWidgets = collect($dashWidgetOrder)->filter(fn($k) => array_key_exists($k, $widgetMeta))->values()->all();
@@ -633,42 +632,6 @@
                     <div class="db-card">
                         <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
 
-                        {{-- Featured Slot Card (always on top) --}}
-                        @if($hasSlotModule)
-                        @canDo('reports.view')
-                        <a href="{{ route('reports.slot_availability') }}" id="qaSlotCard"
-                           style="display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#4c1d95,#6d28d9,#7c3aed);border-radius:16px;padding:18px 20px;margin-bottom:14px;text-decoration:none;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 28px rgba(109,40,217,.35);"
-                           onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 36px rgba(109,40,217,.45)'"
-                           onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(109,40,217,.35)'">
-                            {{-- Background orbs --}}
-                            <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,.07);border-radius:50%;pointer-events:none;"></div>
-                            <div style="position:absolute;right:40px;bottom:-30px;width:70px;height:70px;background:rgba(255,255,255,.05);border-radius:50%;pointer-events:none;"></div>
-                            {{-- Icon --}}
-                            <div style="width:52px;height:52px;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.25);">
-                                <i class="fas fa-calendar-check" style="color:#fff;font-size:22px;"></i>
-                            </div>
-                            {{-- Text --}}
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;">Slot Availability</div>
-                                <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;">Check real-time room slot status</div>
-                            </div>
-                            {{-- Live dot + arrow --}}
-                            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                                <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;">
-                                    <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:qaSlotPulse 1.6s ease-in-out infinite;"></span>Live
-                                </span>
-                                <i class="fas fa-arrow-right" style="color:rgba(255,255,255,.7);font-size:13px;"></i>
-                            </div>
-                        </a>
-                        <style>
-                        @keyframes qaSlotPulse {
-                            0%,100% { opacity:1; transform:scale(1); }
-                            50%      { opacity:.5; transform:scale(1.3); }
-                        }
-                        </style>
-                        @endCanDo
-                        @endif
-
                         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
                             @canDo('bookings.create')
                             <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
@@ -740,6 +703,28 @@
                     @canDo('reports.view')
                     <div data-widget="slot-availability" class="db-widget-wrap">
                     @if($hasSlotModule)
+                    {{-- Slot Banner — above the week grid --}}
+                    <a href="{{ route('reports.slot_availability') }}"
+                       style="display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#4c1d95,#6d28d9,#7c3aed);border-radius:16px;padding:18px 22px;margin-bottom:14px;text-decoration:none;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 28px rgba(109,40,217,.35);"
+                       onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 36px rgba(109,40,217,.45)'"
+                       onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(109,40,217,.35)'">
+                        <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,.07);border-radius:50%;pointer-events:none;"></div>
+                        <div style="position:absolute;right:40px;bottom:-30px;width:70px;height:70px;background:rgba(255,255,255,.05);border-radius:50%;pointer-events:none;"></div>
+                        <div style="width:50px;height:50px;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.25);">
+                            <i class="fas fa-calendar-check" style="color:#fff;font-size:20px;"></i>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;">Slot Availability</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;">Check real-time room slot status</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:qaSlotPulse 1.6s ease-in-out infinite;"></span>Live
+                            </span>
+                            <i class="fas fa-arrow-right" style="color:rgba(255,255,255,.7);font-size:13px;"></i>
+                        </div>
+                    </a>
+                    <style>@keyframes qaSlotPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}</style>
                     <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
                         <div style="padding:16px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#ede9fe);flex-wrap:wrap;gap:12px;">
                             <div style="display:flex;align-items:center;gap:14px;">
@@ -889,41 +874,68 @@
                     </div>{{-- /slot-availability widget --}}
                     @endCanDo
 
-                    {{-- Recent Bookings --}}
-                    @canDo('bookings.view')
-                    <div data-widget="recent-bookings" class="db-widget-wrap">
-                            <div class="db-card" style="display:flex;flex-direction:column;">
-                                <div class="db-card-header">
-                                    <span class="db-card-title">Recent Bookings</span>
-                                    <a href="{{ route('bookings.index') }}" class="db-card-link">View All <i class="fas fa-arrow-right"></i></a>
-                                </div>
-                                <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
-                                    @forelse($recentBookings as $booking)
-                                    <a href="{{ route('bookings.show', $booking->id) }}" class="booking-row">
-                                        <div class="booking-avatar">
-                                            {{ substr($booking->customer?->name ?? 'G', 0, 1) }}
-                                        </div>
-                                        <div class="booking-info">
-                                            <div class="booking-name">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
-                                            <div class="booking-sub">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
-                                        </div>
-                                        <div class="booking-meta">
-                                            @canDo('reports.view')
-                                            <div class="booking-amount">₹{{ number_format($booking->total_amount) }}</div>
-                                            @endCanDo
-                                            <span class="badge-{{ $booking->status_color }}" style="font-size:10px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
-                                        </div>
-                                    </a>
-                                    @empty
-                                    <div style="text-align:center;padding:32px;color:#94a3b8;">
-                                        <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
-                                        <p style="font-size:14px;">No recent bookings</p>
+                    {{-- Recent Bookings + Room Availability — side-by-side ──────────────── --}}
+                    <div data-widget="recent-room-pair" class="db-widget-wrap">
+                    <div class="recent-room-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+                        {{-- Left: Recent Bookings --}}
+                        @canDo('bookings.view')
+                        <div class="db-card" style="display:flex;flex-direction:column;min-height:240px;">
+                            <div class="db-card-header">
+                                <span class="db-card-title">Recent Bookings</span>
+                                <a href="{{ route('bookings.index') }}" class="db-card-link">View All <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+                                @forelse($recentBookings as $booking)
+                                <a href="{{ route('bookings.show', $booking->id) }}" class="booking-row">
+                                    <div class="booking-avatar">{{ substr($booking->customer?->name ?? 'G', 0, 1) }}</div>
+                                    <div class="booking-info">
+                                        <div class="booking-name">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
+                                        <div class="booking-sub">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }} &bull; {{ $booking->check_in_date->format('d M') }} &ndash; {{ $booking->check_out_date->format('d M') }}</div>
                                     </div>
-                                    @endforelse
+                                    <div class="booking-meta">
+                                        @canDo('reports.view')
+                                        <div class="booking-amount">₹{{ number_format($booking->total_amount) }}</div>
+                                        @endCanDo
+                                        <span class="badge-{{ $booking->status_color }}" style="font-size:10px;">{{ ucfirst(str_replace('_', ' ', $booking->status)) }}</span>
+                                    </div>
+                                </a>
+                                @empty
+                                <div style="text-align:center;padding:32px;color:#94a3b8;">
+                                    <i class="fas fa-calendar-times" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+                                    <p style="font-size:14px;">No recent bookings</p>
+                                </div>
+                                @endforelse
+                            </div>
+                        </div>
+                        @endCanDo
+
+                        {{-- Right: Room Availability Checker --}}
+                        <div class="db-card" style="overflow:hidden;padding:0;">
+                            <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i>
+                                    </div>
+                                    <div style="font-weight:800;color:#1e293b;font-size:14px;">Room Availability</div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <input type="date" id="availDatePicker" value="{{ now()->toDateString() }}"
+                                        style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
+                                        onchange="loadAvailability(this.value)">
+                                    <button onclick="loadAvailability(document.getElementById('availDatePicker').value)"
+                                        style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                        <i class="fas fa-search" style="margin-right:5px;"></i>Check
+                                    </button>
                                 </div>
                             </div>
-                    </div>{{-- /recent-bookings widget --}}
-                    @endCanDo
+                            <div id="availBody" style="padding:14px 16px;max-height:340px;overflow-y:auto;">
+                                <div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:13px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
+                            </div>
+                        </div>
+
+                    </div>
+                    </div>{{-- /recent-room-pair widget --}}
 
                     {{-- Booking Calendar --}}
                     @canDo('reports.view')
@@ -1114,31 +1126,6 @@
                     </div>
                     </div>{{-- /live-activity widget --}}
 
-                    {{-- Room Availability Checker --}}
-                    <div data-widget="room-availability" class="db-widget-wrap">
-                    <div class="db-card" style="overflow:hidden;padding:0;">
-                        <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                            <div style="display:flex;align-items:center;gap:10px;">
-                                <div style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i>
-                                </div>
-                                <div style="font-weight:800;color:#1e293b;font-size:14px;">Room Availability</div>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <input type="date" id="availDatePicker" value="{{ now()->toDateString() }}"
-                                    style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
-                                    onchange="loadAvailability(this.value)">
-                                <button onclick="loadAvailability(document.getElementById('availDatePicker').value)"
-                                    style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
-                                    <i class="fas fa-search" style="margin-right:5px;"></i>Check
-                                </button>
-                            </div>
-                        </div>
-                        <div id="availBody" style="padding:14px 16px;max-height:270px;overflow-y:auto;">
-                            <div style="text-align:center;color:#94a3b8;padding:12px 0;font-size:13px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…</div>
-                        </div>
-                    </div>
-                    </div>{{-- /room-availability widget --}}
 
                 </div>{{-- /dashboard-main --}}
 
@@ -1149,6 +1136,7 @@
                     .occ-rev-grid { grid-template-columns: 1fr !important; }
                     .qa-recent-grid { grid-template-columns: 1fr !important; }
                     .avail-grid { grid-template-columns: 1fr !important; }
+                    .recent-room-grid { grid-template-columns: 1fr !important; }
                 }
                 @media (max-width: 600px) {
                     .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }

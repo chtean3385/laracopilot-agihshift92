@@ -321,8 +321,8 @@ class DashboardController extends Controller
 
         $allWidgetKeys = [
             'kpi-row-1', 'shortcuts', 'quick-actions',
-            'slot-availability', 'recent-bookings', 'booking-calendar',
-            'arrivals-departures', 'room-availability', 'live-activity',
+            'slot-availability', 'booking-calendar',
+            'arrivals-departures', 'recent-room-pair', 'live-activity',
         ];
 
         $dashWidgetOrder   = $dashPref?->preferences['widget_order']   ?? $allWidgetKeys;
