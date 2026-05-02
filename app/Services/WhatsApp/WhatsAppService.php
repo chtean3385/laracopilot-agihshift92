@@ -372,4 +372,88 @@ class WhatsAppService
         }
     }
 
+    /**
+     * Send a plain-text reply to an OTA sender using the WhatsApp config for a specific hotel.
+     * Used to acknowledge receipt of OTA booking confirmations.
+     */
+    public static function sendRawForHotel(int $hotelId, string $toPhone, string $message): bool
+    {
+        static::$lastError = '';
+
+        try {
+            $config = WhatsAppConfig::withoutGlobalScopes()
+                ->where('hotel_id', $hotelId)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$config) {
+                static::setLastError('No active WhatsApp config for hotel #' . $hotelId);
+                Log::info('WhatsAppService::sendRawForHotel: no active config for hotel #' . $hotelId);
+                return false;
+            }
+
+            $provider = static::providerForConfig($config);
+            if (!$provider) {
+                Log::info('WhatsAppService::sendRawForHotel: provider unavailable — ' . static::$lastError);
+                return false;
+            }
+
+            return $provider->sendMessage($toPhone, $message);
+        } catch (\Throwable $e) {
+            Log::error('WhatsAppService::sendRawForHotel error: ' . $e->getMessage());
+            static::setLastError($e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send a plain-text reply identified by the Meta phone_number_id of the RECEIVING number.
+     * Used for fallback OTA replies when no hotel has been resolved yet.
+     */
+    public static function sendRawViaPhoneNumberId(?string $phoneNumberId, string $toPhone, string $message): bool
+    {
+        static::$lastError = '';
+
+        if (!$phoneNumberId) {
+            static::setLastError('No recipient phone_number_id provided.');
+            return false;
+        }
+
+        try {
+            $config = WhatsAppConfig::withoutGlobalScopes()
+                ->where('phone_number_id', $phoneNumberId)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$config) {
+                $platform = PlatformWhatsAppSetting::instance();
+                if ($platform && $platform->saas_phone_number_id === $phoneNumberId && $platform->is_saas_active) {
+                    $config = new WhatsAppConfig([
+                        'provider'        => 'meta',
+                        'api_key'         => $platform->saas_token,
+                        'phone_number_id' => $platform->saas_phone_number_id,
+                    ]);
+                }
+            }
+
+            if (!$config) {
+                static::setLastError('No WhatsApp config found for phone_number_id: ' . $phoneNumberId);
+                Log::info('WhatsAppService::sendRawViaPhoneNumberId: no config for phone_number_id ' . $phoneNumberId);
+                return false;
+            }
+
+            $provider = static::providerForConfig($config);
+            if (!$provider) {
+                Log::info('WhatsAppService::sendRawViaPhoneNumberId: provider unavailable — ' . static::$lastError);
+                return false;
+            }
+
+            return $provider->sendMessage($toPhone, $message);
+        } catch (\Throwable $e) {
+            Log::error('WhatsAppService::sendRawViaPhoneNumberId error: ' . $e->getMessage());
+            static::setLastError($e->getMessage());
+            return false;
+        }
+    }
+
 }

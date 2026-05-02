@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Hotel;
 use App\Models\OtaImportedBooking;
 use App\Models\OtaSource;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -31,6 +33,12 @@ class OtaBookingParserService
                     'ota'     => $otaSource->name,
                     'message' => mb_substr($messageBody, 0, 300),
                 ]);
+                $this->sendOtaReply(
+                    $senderPhone,
+                    'We received your message but could not parse the booking details. Please check the format and resend.',
+                    null,
+                    $recipientPhoneNumberId
+                );
                 return;
             }
 
@@ -45,6 +53,12 @@ class OtaBookingParserService
                     'recipient_pnid'  => $recipientPhoneNumberId,
                     'property_name'   => $parsed['property_name'] ?? null,
                 ]);
+                $this->sendOtaReply(
+                    $senderPhone,
+                    'Booking message received but could not be matched to a property. Please check the property name and resend.',
+                    null,
+                    $recipientPhoneNumberId
+                );
                 return;
             }
 
@@ -69,7 +83,7 @@ class OtaBookingParserService
                 return;
             }
 
-            OtaImportedBooking::create([
+            $import = OtaImportedBooking::create([
                 'hotel_id'        => $hotelId,
                 'ota_source_id'   => $otaSource->id,
                 'raw_message'     => $messageBody,
@@ -90,9 +104,19 @@ class OtaBookingParserService
 
             Log::info('OtaBookingParser: new pending import created for hotel #' . $hotelId . ' from ' . $otaSource->name, [
                 'booking_ref' => $bookingRef,
+                'import_id'   => $import->id,
                 'guest'       => $parsed['guest_name'] ?? 'Unknown',
                 'matched_by'  => $matchedBy,
             ]);
+
+            $hotelName = Hotel::find($hotelId)?->name ?? 'your property';
+            $refLabel  = $bookingRef ?? 'N/A';
+            $this->sendOtaReply(
+                $senderPhone,
+                "Booking {$refLabel} received and queued for confirmation (import #{$import->id}). Hotel: {$hotelName}",
+                $hotelId,
+                $recipientPhoneNumberId
+            );
 
         } catch (\Throwable $e) {
             Log::error('OtaBookingParserService error: ' . $e->getMessage(), [
@@ -313,6 +337,35 @@ class OtaBookingParserService
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Send a WhatsApp reply back to the OTA sender.
+     * Uses the hotel config when $hotelId is available; falls back to the receiving
+     * phone_number_id to resolve the outbound number for fallback/error replies.
+     * Failures are silently logged so they never break the main parsing flow.
+     */
+    private function sendOtaReply(
+        string $senderPhone,
+        string $message,
+        ?int $hotelId,
+        ?string $recipientPhoneNumberId
+    ): void {
+        try {
+            if ($hotelId) {
+                WhatsAppService::sendRawForHotel($hotelId, $senderPhone, $message);
+            } elseif ($recipientPhoneNumberId) {
+                WhatsAppService::sendRawViaPhoneNumberId($recipientPhoneNumberId, $senderPhone, $message);
+            } else {
+                Log::info('OtaBookingParser: skipping OTA reply — no hotel_id or phone_number_id available', [
+                    'sender' => $senderPhone,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('OtaBookingParser: failed to send OTA reply — ' . $e->getMessage(), [
+                'sender' => $senderPhone,
+            ]);
+        }
+    }
 
     private function moduleEnabled(int $hotelId): bool
     {
