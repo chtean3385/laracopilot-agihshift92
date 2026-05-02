@@ -608,19 +608,18 @@
                         {{-- Left: Shortcuts --}}
                         @if(count($dashboardShortcuts) > 0)
                         <div class="db-card">
-                            <div class="db-card-header">
-                                <div class="db-card-title">Shortcuts</div>
-                            </div>
-                            <div class="shortcut-grid">
+                            <div class="db-card-title" style="margin-bottom:14px;">Shortcuts</div>
+                            <div style="display:flex;flex-direction:column;gap:10px;">
                                 @foreach($dashboardShortcuts as $shortcut)
-                                <a href="{{ $shortcut['route'] }}" class="shortcut-card">
-                                    <div class="shortcut-icon" style="background: {{ $shortcut['bg'] }};">
-                                        <i class="fas {{ $shortcut['icon'] }}"></i>
+                                <a href="{{ $shortcut['route'] }}" class="qa-btn" style="background:#f8fafc;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
+                                    <div style="width:42px;height:42px;background:{{ $shortcut['bg'] }};border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.15);flex-shrink:0;">
+                                        <i class="fas {{ $shortcut['icon'] }}" style="color:#fff;font-size:14px;"></i>
                                     </div>
                                     <div>
-                                        <div class="shortcut-title">{{ $shortcut['title'] }}</div>
-                                        <div class="shortcut-sub">{{ $shortcut['sub'] }}</div>
+                                        <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $shortcut['title'] }}</div>
+                                        <div style="font-size:12px;color:#94a3b8;">{{ $shortcut['sub'] }}</div>
                                     </div>
+                                    <i class="fas fa-chevron-right" style="color:#cbd5e1;font-size:11px;margin-left:auto;"></i>
                                 </a>
                                 @endforeach
                             </div>
