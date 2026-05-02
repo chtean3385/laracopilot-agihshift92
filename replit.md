@@ -183,114 +183,146 @@ URL: `/platform/dashboard`
 | `platform_2fa_pending_user_id` | set during 2FA verification step |
 
 ### Platform Routes
-- `GET /platform/login` — Platform admin login
-- `GET /platform/2fa` — TOTP verification step
-- `GET /platform/dashboard` — SaaS KPI dashboard (MRR, ARR, subscriptions)
-- `GET /platform/hotels` — Tenant directory
-- `GET /platform/hotels/create` — Create new hotel
-- `POST /platform/hotels` — Store hotel (provisions all tables + sends welcome email)
-- `GET /platform/hotels/{id}/edit` — Edit hotel
-- `PUT /platform/hotels/{id}` — Update hotel
-- `POST /platform/hotels/{id}/suspend` — Suspend tenant
-- `POST /platform/hotels/{id}/activate` — Reactivate tenant
+
+**Auth**
+- `GET  /platform/login` — Login page
+- `POST /platform/login` — Authenticate
+- `GET  /platform/login/verify-2fa` — TOTP verification step
+- `POST /platform/login/verify-2fa` — Verify TOTP code
+- `GET  /platform/settings/2fa` — 2FA setup (QR + enable/disable)
+- `POST /platform/settings/2fa/enable` — Enable TOTP 2FA
+- `POST /platform/settings/2fa/disable` — Disable TOTP 2FA
+
+**Dashboard**
+- `GET  /platform/dashboard` — SaaS KPI dashboard (MRR, ARR, hotel counts)
+- `POST /platform/dismiss-reminder` — Dismiss dashboard reminder banner
+
+**Hotels (Tenant Management)**
+- `GET    /platform/hotels` — Tenant directory index
+- `GET    /platform/hotels/create` — New hotel form
+- `POST   /platform/hotels` — Create + provision hotel (sends welcome email)
+- `GET    /platform/hotels/{id}/edit` — Edit hotel
+- `PUT    /platform/hotels/{id}` — Update hotel
+- `POST   /platform/hotels/{id}/suspend` — Suspend tenant
+- `POST   /platform/hotels/{id}/activate` — Reactivate tenant
 - `DELETE /platform/hotels/{id}` — Hard delete (must be suspended first)
-- `POST /platform/hotels/{id}/users` — Add user to hotel
-- `POST /platform/hotels/{id}/send-welcome` — Send onboarding email manually
-- `GET /platform/hotels/{id}/view-in-crm` — Enter hotel's CRM as SA
-- `POST /platform/hotels/{id}/activate-trial` — Set hotel to trial plan (N days)
-- `POST /platform/hotels/{id}/cancel-trial` — Clear trial, revert to selected plan
-- `POST /platform/hotels/{id}/extend-plan` — Add N days to plan_expires_at
-- `POST /platform/hotels/{id}/cancel-plan-expiry` — Clear plan_expires_at (no expiry)
-- `GET /platform/users` — All users across tenants
-- `GET /platform/plans` — Manage subscription plans
-- `GET /platform/activity-log` — Platform-wide activity log
-- `GET /platform/settings/2fa` — Platform admin 2FA setup (TOTP)
-- `POST /platform/hotels/{id}/start-trial` — Start a trial period for a hotel
-- `POST /platform/hotels/{id}/extend-expiry` — Extend plan expiry date for a hotel
-- `POST /platform/hotels/{id}/cancel-trial` — Cancel an active trial (reverts to no trial)
-- `POST /platform/hotels/{id}/cancel-expiry` — Remove plan expiry date from a hotel
+- `POST   /platform/hotels/{id}/users` — Add/link user to hotel
+- `POST   /platform/hotels/{id}/send-welcome` — Resend welcome email
+- `GET    /platform/hotels/{id}/view-in-crm` — Enter hotel CRM as SA
+- `POST   /platform/hotels/{id}/activate-trial` — Start trial (N days)
+- `POST   /platform/hotels/{id}/cancel-trial` — Cancel trial, revert plan
+- `POST   /platform/hotels/{id}/extend-plan` — Extend plan_expires_at by N days
+- `POST   /platform/hotels/{id}/cancel-plan-expiry` — Remove plan expiry
+- `POST   /platform/hotels/{id}/add-related` — Link related hotel group
+- `POST   /platform/hotels/{id}/send-quick-wa` — Send WhatsApp message to hotel owner
+- `POST   /platform/hotels/{id}/send-quick-push` — Send push notification to hotel
+- `POST   /platform/hotels/send-wa-all` — Broadcast WhatsApp to all hotel owners
+- `POST   /platform/hotels/{id}/module-toggle` — Enable/disable a module for hotel
+- `GET    /platform/wa-templates` — Fetch approved WA templates (JSON)
+
+**Plans**
+- `GET /platform/plans` — Subscription plan list
+- `GET /platform/plans/{id}/edit` — Edit plan
+- `PUT /platform/plans/{id}` — Update plan pricing/limits
+
+**Users (Cross-Tenant)**
+- `GET  /platform/users` — All users across all hotels
+- `GET  /platform/users/{id}` — User detail
+- `GET  /platform/users/{id}/reset-password` — Reset password form
+- `POST /platform/users/{id}/reset-password` — Set new password
+- `POST /platform/users/{id}/hotel/{hotelId}/suspend` — Suspend user in hotel
+- `POST /platform/users/{id}/hotel/{hotelId}/activate` — Reactivate user
+- `POST /platform/users/{id}/toggle-wa-consent` — Toggle WA messaging consent
+
+**Guests (Soft-Deleted)**
+- `GET  /platform/guests/deleted` — View soft-deleted guests across tenants
+- `POST /platform/guests/{id}/restore` — Restore soft-deleted guest
+
+**Backups**
+- `GET  /platform/backups` — Per-hotel backup list
+- `POST /platform/backups/{id}/restore` — Restore a hotel backup
+
+**Analytics & Campaigns**
+- `GET  /platform/analytics` — SaaS engagement analytics dashboard
+- `GET  /platform/analytics/campaigns` — Campaign history
+- `POST /platform/analytics/campaigns` — Send engagement campaign (WA/Push)
+
+**WhatsApp (Platform-Level)**
+- `GET  /platform/whatsapp` — WhatsApp shared number settings
+- `POST /platform/whatsapp` — Save WhatsApp settings
+- `POST /platform/whatsapp/test` — Send test message via shared number
+- `GET  /platform/whatsapp/templates` — Message template list
+- `POST /platform/whatsapp/templates` — Create template
+- `PUT  /platform/whatsapp/templates/{id}` — Edit template
+- `DELETE /platform/whatsapp/templates/{id}` — Delete template
+- `POST /platform/whatsapp/templates/{id}/toggle` — Enable/disable template
+- `POST /platform/whatsapp/templates/{id}/submit-meta` — Submit template to Meta for approval
+- `POST /platform/whatsapp/templates/sync-from-meta` — Sync approval status from Meta
+- `GET  /platform/whatsapp/logs` — Webhook event log
+- `POST /platform/whatsapp/logs/clear` — Clear webhook logs
+- `GET  /platform/whatsapp/numbers` — Registered WhatsApp numbers
+- `POST /platform/whatsapp/numbers` — Register new number
+- `POST /platform/whatsapp/numbers/link` — Link existing number via Business Login
+- `POST /platform/whatsapp/numbers/{id}/request-otp` — Request OTP for number
+- `POST /platform/whatsapp/numbers/{id}/verify` — Verify OTP
+- `POST /platform/whatsapp/numbers/{id}/sync` — Sync number status from Meta
+- `DELETE /platform/whatsapp/numbers/{id}` — Remove number
+- `POST /platform/wa/upload-media` — Upload WhatsApp media
+- `GET  /platform/wa-inbox` — WhatsApp inbox view
+
+**WhatsApp Billing**
+- `GET  /platform/whatsapp/billing` — Per-hotel WA usage billing
+- `POST /platform/whatsapp/billing/{hotelId}/mark-paid` — Mark hotel WA bill as paid
+- `POST /platform/whatsapp/billing/{hotelId}/mark-unpaid` — Mark as unpaid
+- `POST /platform/whatsapp/billing/{hotelId}/limit` — Set monthly message limit
+
+**Push Notifications (Firebase)**
+- `GET  /platform/notifications/settings` — Firebase/FCM settings
+- `POST /platform/notifications/settings` — Save Firebase credentials
+- `GET  /platform/notifications/send` — Send push notification form
+- `POST /platform/notifications/send` — Broadcast push notification
+- `GET  /platform/notifications/history` — Push notification send history
+
+**OTA WhatsApp Sources**
+- `GET    /platform/ota-sources` — OTA source patterns list
+- `POST   /platform/ota-sources` — Create OTA source pattern
+- `PUT    /platform/ota-sources/{id}` — Update pattern
+- `DELETE /platform/ota-sources/{id}` — Delete pattern
+- `POST   /platform/ota-sources/{id}/toggle` — Enable/disable
 
 ### Platform Features Implemented
-- **SaaS Dashboard** — MRR/ARR cards (per-hotel effective pricing), Active/Suspended counts, Tenant Directory table with Plan + Subscription + Status + Expiry + Rooms + Bookings + Users columns
-- **Hotel Management** — Create/edit/suspend/activate/delete hotels; custom billing cycle (monthly/yearly); custom per-hotel pricing with CUSTOM badge; falls back to plan defaults when custom price is 0/null
-- **Multi-hotel user linking** — Creating a hotel with an existing user's email links them (no duplicate account); password is optional in that case
-- **Subscription Pricing** — `billing_cycle`, `custom_monthly_price`, `custom_yearly_price` on hotels table; dashboard and hotels index both show effective price
-- **Trial Management** — Activate trial (N days), cancel trial (revert plan), extend plan expiry, cancel plan expiry — all as standalone forms outside the main edit form
-- **MRR Calculation** — Per-hotel: `custom_monthly_price > 0 ? custom : plan_default`; yearly hotels contribute `yearly/12` to MRR; banner breakdown shows actual per-plan MRR contribution
-- **Platform 2FA (TOTP)** — Microsoft Authenticator / Google Authenticator; QR setup at `/platform/settings/2fa`; TOTP secret encrypted with `Crypt::encryptString`; recovery codes (hashed); login gated to 2FA verify step; `Crypt::decryptString` wrapped in try/catch for resilience
-- **Hotel Delete** — Requires `suspended` status; hard deletes all related data in dependency order
-- **Add User to Hotel** — Via `POST /platform/hotels/{id}/users`; sets as hotel admin if checked
-- **Onboarding Email** — Auto-sent on hotel creation + manual "Send Email" button on hotels list; beautiful HTML template with login credentials, login URL (`https://resort.dreamstechnology.in/login`), quick-start guide, Dreams Technology branding
+- **SaaS Dashboard** — MRR/ARR cards (per-hotel effective pricing), Active/Suspended counts, Tenant Directory table (Plan + Subscription + Status + Expiry + Rooms + Bookings + Users)
+- **Hotel Management** — Create/edit/suspend/activate/delete; custom billing cycle (monthly/yearly); custom per-hotel pricing with CUSTOM badge; plan defaults fallback
+- **Multi-hotel user linking** — Existing user email auto-linked (no duplicate account); password optional
+- **Subscription Pricing** — `billing_cycle`, `custom_monthly_price`, `custom_yearly_price` on hotels table
+- **Trial Management** — Activate trial (N days), cancel, extend plan expiry, cancel expiry — all standalone forms outside main edit form
+- **MRR Calculation** — `custom > 0 ? custom : plan_default`; yearly hotels contribute `yearly/12`; banner breakdown per plan
+- **Platform 2FA (TOTP)** — Microsoft/Google Authenticator; QR at `/platform/settings/2fa`; `Crypt::encryptString`; recovery codes (hashed); try/catch on decrypt
+- **Hotel Delete** — Requires `suspended` status; hard-deletes all data in dependency order
+- **Add User to Hotel** — Create new or link existing; set as hotel admin flag
+- **Onboarding Email** — Auto on hotel creation + manual resend; HTML template with credentials, login URL, quick-start guide
+- **Per-Hotel Module Toggle** — SA can enable/disable any module for any hotel from platform
+- **Quick WhatsApp to Hotel Owner** — Send a templated WA message to any hotel owner directly from hotels list
+- **Broadcast WhatsApp** — Send WA campaign to all hotel owners in one action
+- **Push Notification to Hotel** — Send Firebase push to a specific hotel's devices
+- **WhatsApp Settings** — Manage shared Meta number (token, phone number ID, WABA ID); test send
+- **WhatsApp Templates** — Create/edit/delete templates; submit to Meta for approval; sync status from Meta; auto-version on edit (name suffix `_v2`, `_v3`…); enable/disable toggle
+- **WhatsApp Numbers** — Register/link multiple WhatsApp numbers; OTP verify; sync status; remove
+- **WhatsApp Webhook Logs** — View + clear incoming webhook event log
+- **WhatsApp Billing** — Per-hotel message usage tracker; mark paid/unpaid; set monthly message limits
+- **WA Inbox** — Platform-level WhatsApp message inbox view
+- **Analytics & Campaigns** — Engagement analytics dashboard; campaign send (WA + Push) to segmented hotel lists; campaign history
+- **Per-Hotel Backups** — Backup list per hotel; one-click restore
+- **Push Notification Centre** — Firebase/FCM settings; broadcast push to all or specific hotels; send history
+- **OTA WhatsApp Sources** — Manage OTA source patterns (Booking.com, Airbnb, Agoda, etc.) for OTA WA Booking Sync; enable/disable patterns
+- **Guest Restore** — View soft-deleted guests across all tenants; restore from platform
+- **Cross-Tenant User Management** — View all users; reset passwords; suspend/activate per hotel; WA consent toggle
+- **Related Hotel Groups** — Link hotels together for group management
+- **View-in-CRM** — SA enters any hotel's CRM via `crm_sa_hotel_filter` session; full SA privilege inside that hotel
 
 ### Hotel Index — columns
 HOTEL | PLAN | SUBSCRIPTION | STATUS | EXPIRY | ROOMS | BOOKINGS | USERS | CREATED | ACTIONS
-(Revenue column intentionally removed; Expiry column shows trial end date or plan expiry date when set)
-
----
-
-## How to Use the System
-
-### Adding a New Hotel (from Platform Admin)
-1. Log in at `/platform/login` with Super Admin credentials.
-2. Complete TOTP verification at `/platform/2fa` if 2FA is enabled.
-3. Go to **Hotels** in the sidebar → click **"Add Hotel"** (top-right).
-4. Fill in: Hotel Name, Slug (auto-generated), Plan, Billing Cycle, custom pricing (optional), Max Rooms, Max Users, contact details, and admin notes.
-5. Click **"Create Hotel"**. The system provisions all required database rows and automatically sends a welcome email to the hotel's email address with login credentials and the login URL.
-6. The new hotel now appears in the Hotels index with its plan, subscription price, and status (active).
-
-### Logging In as Hotel Staff (Hotel CRM Login)
-1. Visit `/login`.
-2. Enter your email and password.
-3. If your account belongs to **one hotel**, you are taken directly to the hotel dashboard.
-4. If your account belongs to **multiple hotels**, you are redirected to `/select-hotel` — the multi-hotel picker.
-
-### Multi-Hotel User Picker (`/select-hotel`)
-- Shown automatically when a user is linked to more than one hotel.
-- Lists all hotels the user has access to with their role in each.
-- Click a hotel card to select it — sets `crm_hotel_id` and `crm_hotel_name` in session.
-- To switch hotels later, click **"Switch Hotel"** (available in the sidebar/nav) which clears the hotel session and redirects back to the picker.
-
-### Switching Hotels (Hotel Staff)
-- Click **"Switch Hotel"** in the navigation bar.
-- This clears the active hotel session (`crm_hotel_id`) and returns you to `/select-hotel`.
-- Select the desired hotel to resume working in it.
-
-### Trial Management (Platform Admin)
-1. From **Hotels** index, click **"Edit"** on the target hotel.
-2. Scroll to the **"Trial Management"** card (outside the main form).
-3. To **start a trial**: Enter the number of trial days → click **"Start Trial"**. This sets `trial_ends_at` on the hotel and shows a trial badge in the index.
-4. To **cancel an active trial**: Click **"Cancel Trial"** — clears `trial_ends_at`.
-
-### Extending / Cancelling Plan Expiry (Platform Admin)
-1. From **Hotels** index, click **"Edit"** on the target hotel.
-2. Scroll to the **"Plan Expiry"** card (outside the main form).
-3. To **set/extend expiry**: Pick a date in the date picker → click **"Set Expiry"**. This sets `plan_expires_at` on the hotel, shown in the EXPIRY column of the index.
-4. To **remove expiry**: Click **"Cancel Expiry"** — clears `plan_expires_at` so the plan never expires.
-
-### Entering a Hotel CRM as Platform Admin (View-in-CRM)
-1. Go to **Hotels** index (`/platform/hotels`).
-2. Find the hotel and click **"Enter CRM"** (or use the action menu → "View in CRM").
-3. This calls `GET /platform/hotels/{id}/view-in-crm` which sets `crm_sa_hotel_filter` in session (not `crm_hotel_id`) and redirects to `/dashboard`.
-4. You now operate inside that hotel's CRM with Super Admin privileges — all data is scoped to that hotel via `SetHotelContext` middleware reading `crm_sa_hotel_filter`.
-5. To exit, click **"Exit Hotel View"** in the CRM nav — clears `crm_sa_hotel_filter` and returns to the platform dashboard.
-
-### Platform Dashboard (`/platform/dashboard`)
-- Shows **MRR** (Monthly Recurring Revenue) and **ARR** (Annual Recurring Revenue) computed from all active hotels.
-- Shows **Active** and **Suspended** hotel counts.
-- Lists all tenants with Plan, Subscription price, Status, Rooms, Bookings, and Users counts.
-- MRR calculation: monthly hotels contribute their effective monthly price; yearly hotels contribute `yearly_price / 12`.
-
-### Adding a User to a Hotel (Platform Admin)
-1. Go to **Hotels** index → click **"Edit"** on the hotel.
-2. Scroll to the **"Add User to Hotel"** section.
-3. Enter the user's email, name, and password (or select an existing user by email).
-4. Optionally check **"Set as Hotel Admin"**.
-5. Click **"Add User"** — creates the user (if new) and links them to the hotel via `hotel_users`.
-
-### Suspend / Activate / Delete a Hotel
-- **Suspend**: Hotels index → Actions → **"Suspend"**. Hotel status becomes `suspended`; staff cannot log in.
-- **Activate**: Hotels index → Actions → **"Activate"**. Restores access for hotel staff.
-- **Delete**: Hotel must be **suspended first**. Then Hotels index → Actions → **"Delete"**. This hard-deletes the hotel and all related data in dependency order (bookings, guests, payments, invoices, rooms, users, settings, etc.). This is **irreversible**.
+(Expiry column shows trial end date or plan expiry date when set. Revenue column removed.)
 
 ## Hotel CRM Login
 - URL: `/login` — Generic "Hotel CRM / Staff Portal" heading (not hotel-specific)
@@ -489,33 +521,58 @@ WhatsApp Automation, Payment Links, Pathik Autofill, OTA Channel Manager, Time S
 ---
 
 ## SaaS Task Status
-| Task | Status | Description |
-|------|--------|-------------|
-| #1 Multi-Hotel Core | ✅ COMPLETE | BelongsToHotel on 16 models, hotel_users pivot, hotel picker, HotelContext middleware |
-| #2 Platform Admin Console | ✅ COMPLETE | Purple sidebar layout, login, dashboard, hotel CRUD, user management, plans |
-| #3 SaaS Dashboard KPIs | ✅ COMPLETE | MRR/ARR cards, tenant directory, plan breakdown, effective custom pricing |
-| #4 Custom Pricing + Billing | ✅ COMPLETE | billing_cycle (monthly/yearly), custom_monthly/yearly_price per hotel, CUSTOM badge |
-| #5 Hotel Delete | ✅ COMPLETE | Hard delete (suspended only), dependency order, transaction |
-| #6 Add User to Hotel | ✅ COMPLETE | SA can create user from hotel edit page; links hotel_users correctly |
-| #7 Platform 2FA (TOTP) | ✅ COMPLETE | TOTP setup/verify/disable, encrypted secret, recovery codes, rate limiting |
-| #8 Room Uniqueness Fix | ✅ COMPLETE | Composite unique (room_number, hotel_id) instead of global unique |
-| #9 User Link Bug Fix | ✅ COMPLETE | SA hotel filter session used for hotel_users linking; orphaned users repaired |
-| #10 Login Page Generic | ✅ COMPLETE | Removed hotel-specific name; shows "Hotel CRM / Staff Portal" for all hotels |
-| #11 Onboarding Email | ✅ COMPLETE | Welcome email on hotel creation + manual Send Email button from hotels list |
-| #12 SMTP Configuration | ✅ COMPLETE | mail.dreamstechnology.in:465 (smtps), support@dreamstechnology.in |
-| #13 Subscription Column | ✅ COMPLETE | Hotels index shows effective subscription price with billing cycle + CUSTOM badge |
-| #14 Revenue Column Removed | ✅ COMPLETE | Revenue column removed from platform hotels index (not relevant at SaaS level) |
-| #17 Activity Logging | ✅ COMPLETE | ActivityLogger 3-arg signature, all CRM actions logged with hotel_id |
-| #18 Guest Soft Delete | ✅ COMPLETE | Guest soft-delete + platform restore; null-safe guards on all booking/invoice/payment views |
-| #19 Trial Enforcement | ✅ COMPLETE | 7-day trial, plan lock overlay, upgrade request page; CheckTrialStatus middleware |
-| #20 Hindi Onboarding Tour | ✅ COMPLETE | 11-step JS/CSS tour, per-user localStorage, resolveVisible() for permission-gated steps |
-| #21 replit.md How-To Guide | ✅ COMPLETE | Comprehensive usage guide added to this file |
-| #15 AI Smart CRM | PENDING | OpenAI-powered insights, plan-gated (depends on stable platform) |
-| #16 View-in-CRM (SA) | ✅ COMPLETE | SA can enter any hotel CRM via `/platform/hotels/{id}/view-in-crm`; sets `crm_sa_hotel_filter` |
-| #17 Trial Management | ✅ COMPLETE | Start trial, cancel trial routes; trial_ends_at column on hotels; trial badge on hotel list |
-| #18 Plan Expiry Management | ✅ COMPLETE | Extend expiry, cancel expiry routes; plan_expires_at column; expiry badge on hotel list |
-| #19 Expiry Column in Hotel Index | ✅ COMPLETE | New EXPIRY column in hotels index showing trial or plan expiry dates with badges |
-| #20 Trial/Expiry Forms (nested fix) | ✅ COMPLETE | Fixed nested `<form>` issue in hotel edit page; trial and expiry forms outside main form |
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| 1 | Multi-Hotel Core | ✅ | BelongsToHotel on 16 models, hotel_users pivot, hotel picker, HotelContext middleware |
+| 2 | Platform Admin Console | ✅ | Purple sidebar, login, dashboard, hotel CRUD, user management, plans |
+| 3 | SaaS Dashboard KPIs | ✅ | MRR/ARR cards, tenant directory, plan breakdown, effective custom pricing |
+| 4 | Custom Pricing + Billing | ✅ | billing_cycle (monthly/yearly), custom_monthly/yearly_price, CUSTOM badge |
+| 5 | Hotel Delete | ✅ | Hard delete (suspended only), dependency order, transaction |
+| 6 | Add User to Hotel | ✅ | SA creates/links user from hotel edit page; hotel_users correctly |
+| 7 | Platform 2FA (TOTP) | ✅ | QR setup, encrypted secret, recovery codes, rate limiting, try/catch on decrypt |
+| 8 | Room Uniqueness | ✅ | Composite unique (room_number, hotel_id) — same room number across hotels |
+| 9 | User Link Bug Fix | ✅ | SA hotel filter session used for hotel_users linking; orphaned users repaired |
+| 10 | Login Page Generic | ✅ | "Hotel CRM / Staff Portal" heading — no hotel-specific name |
+| 11 | Onboarding Email | ✅ | Auto on hotel creation + manual resend; HTML template with credentials + login URL |
+| 12 | SMTP Configuration | ✅ | mail.dreamstechnology.in:465 (smtps), support@dreamstechnology.in |
+| 13 | Subscription Column | ✅ | Hotels index shows effective price with billing cycle + CUSTOM badge |
+| 14 | Revenue Column Removed | ✅ | Not relevant at SaaS platform level |
+| 15 | Activity Logging | ✅ | ActivityLogger 3-arg signature, all CRM actions logged with hotel_id |
+| 16 | Guest Soft Delete | ✅ | Soft-delete + platform restore; null-safe guards on all booking/invoice/payment views |
+| 17 | Trial Enforcement | ✅ | 7-day trial, plan lock overlay, upgrade request page; CheckTrialStatus middleware |
+| 18 | Trial Management (Platform) | ✅ | Activate trial, cancel trial, extend plan expiry, cancel expiry — standalone forms |
+| 19 | View-in-CRM (SA) | ✅ | SA enters any hotel via `crm_sa_hotel_filter`; exit returns to platform |
+| 20 | Expiry Column in Hotels Index | ✅ | EXPIRY column shows trial end or plan expiry dates with colour badges |
+| 21 | Hindi Onboarding Tour | ✅ | 11-step JS/CSS tour, per-user localStorage, resolveVisible() for permission-gated steps |
+| 22 | RBAC & Permissions | ✅ | Dynamic DB-driven roles/permissions per hotel; `permission:slug` middleware; `@canDo` |
+| 23 | WhatsApp Automation (CRM) | ✅ | 6 trigger templates; wa.me deep links; config per hotel |
+| 24 | WhatsApp Platform Integration | ✅ | Shared Meta number; templates with Meta approval flow; auto-versioning; webhook logs |
+| 25 | WhatsApp Numbers Management | ✅ | Register/link/verify/sync/remove multiple WA numbers from platform |
+| 26 | WhatsApp Billing | ✅ | Per-hotel usage tracking, paid/unpaid status, monthly message limits |
+| 27 | Broadcast & Quick WA | ✅ | Quick WA to single hotel owner; broadcast to all hotel owners |
+| 28 | WA Inbox | ✅ | Platform-level WhatsApp inbox view |
+| 29 | Firebase Push Notifications | ✅ | FCM settings (web + Android Flutter WebView); broadcast push; per-hotel push; history |
+| 30 | Analytics & Campaigns | ✅ | SaaS engagement analytics dashboard; WA + Push campaigns with segmentation; history |
+| 31 | Per-Hotel Backups | ✅ | Backup list per hotel; one-click restore from platform |
+| 32 | Customisable Dashboard | ✅ | Per-user widget show/hide + drag-to-reorder; hotel-wide admin defaults |
+| 33 | Live Dashboard | ✅ | Today's Agenda modal on login; Live Activity Feed (30s auto-poll); KPI auto-refresh (60s); dual-tab notification bell |
+| 34 | OTA Channel Manager | ✅ | eZee Centrix + STAAH live APIs; SiteMinder + RateGain manual; OTA booking import |
+| 35 | OTA WhatsApp Booking Sync | ✅ | Auto-detect Booking.com/Airbnb/Agoda/MMT booking confirmations via WA → import queue → one-click confirm |
+| 36 | OTA Source Patterns (Platform) | ✅ | Manage detection patterns per OTA source; enable/disable per source |
+| 37 | Payment Links | ✅ | UPI QR + Razorpay link generation per booking |
+| 38 | Pathik Autofill | ✅ | Gujarat Pathik portal integration; Chrome Extension (MV3); API token auth |
+| 39 | Restaurant Management | ✅ | Tables, categories, menu items, KOT, orders, bills, room billing, reports |
+| 40 | Time Slot & Hourly Pricing | ✅ | Slot-based room pricing; available slot search |
+| 41 | Guest Register | ✅ | Signature canvas; ID document upload; booking guest signatures |
+| 42 | Extra Billing | ✅ | Post-stay extra charges on bookings |
+| 43 | Food Billing | ✅ | Restaurant billing linked to hotel room bookings |
+| 44 | Booking Widget | ✅ | Widget settings for hotel website booking form |
+| 45 | Slot Search Engine | ✅ | Multi-filter availability search |
+| 46 | Cross-Tenant User Management | ✅ | View all users; reset passwords; suspend/activate per hotel; WA consent toggle |
+| 47 | Guest Restore (Platform) | ✅ | Soft-deleted guest list + restore across all tenants |
+| 48 | Related Hotel Groups | ✅ | Link hotels together for group management |
+| 49 | Public Pricing Landing Page | ✅ | Ad-grade /pricing page with hero, plans, modules, SEO, enquiry form, JSON-LD schema |
+| 50 | AI Smart CRM | 🔲 PENDING | OpenAI-powered insights, plan-gated |
 
 ## Known Bugs Fixed
 - `hasPages()`/`links()` called on Collection (not paginator) in users index — removed
