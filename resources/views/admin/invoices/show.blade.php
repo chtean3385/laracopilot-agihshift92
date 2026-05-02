@@ -41,12 +41,10 @@
                 <i class="fas fa-edit"></i>Edit Invoice
             </a>
             @canDo('invoices.delete')
-            <form method="POST" action="{{ route('invoices.destroy', $invoice->id) }}" onsubmit="return confirm('Delete this invoice permanently? This cannot be undone.')">
-                @csrf @method('DELETE')
-                <button type="submit" class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all">
-                    <i class="fas fa-trash"></i>Delete Invoice
-                </button>
-            </form>
+            <button type="button" onclick="document.getElementById('deleteInvoiceModal').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all">
+                <i class="fas fa-trash"></i>Delete Invoice
+            </button>
             @endCanDo
         </div>
     </div>
@@ -245,6 +243,81 @@
         </div>
     </div>
 </div>
+
+{{-- Delete Invoice Modal --}}
+@canDo('invoices.delete')
+<div id="deleteInvoiceModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.6);">
+    <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:460px;overflow:hidden;">
+        {{-- Red header --}}
+        <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-trash" style="color:#fff;font-size:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:800;color:#fff;font-size:15px;">Delete Invoice</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.75);">This action is permanent and cannot be undone</div>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('deleteInvoiceModal').classList.add('hidden')"
+                style="width:30px;height:30px;background:rgba(255,255,255,.15);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;">×</button>
+        </div>
+        {{-- Invoice details --}}
+        <div style="padding:24px;">
+            <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:16px 18px;margin-bottom:20px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:2px;">Invoice #</div>
+                        <div style="font-size:13px;font-weight:800;color:#1e293b;font-family:monospace;">{{ $invoice->invoice_number }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:2px;">Amount</div>
+                        <div style="font-size:13px;font-weight:800;color:#dc2626;">₹{{ number_format($invoice->total_amount) }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:2px;">Guest</div>
+                        <div style="font-size:13px;font-weight:700;color:#1e293b;">{{ $invoice->customer?->name ?? '(Deleted Guest)' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:2px;">Date</div>
+                        <div style="font-size:13px;font-weight:600;color:#475569;">{{ $invoice->issued_at ? $invoice->issued_at->format('d M Y') : '—' }}</div>
+                    </div>
+                    <div class="col-span-2" style="grid-column:span 2;">
+                        <div style="font-size:11px;color:#94a3b8;font-weight:600;margin-bottom:2px;">Booking</div>
+                        <div style="font-size:13px;font-weight:700;color:#1e293b;font-family:monospace;">{{ $invoice->booking->booking_number ?? '—' }}</div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
+                <i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:6px;"></i>
+                Deleting this invoice will permanently remove it and reset the booking payment status to <strong>pending</strong>. This action cannot be reversed.
+            </p>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" onclick="document.getElementById('deleteInvoiceModal').classList.add('hidden')"
+                    style="padding:10px 20px;background:#f1f5f9;border:none;border-radius:11px;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;">
+                    Cancel
+                </button>
+                <form method="POST" action="{{ route('invoices.destroy', $invoice->id) }}" style="display:inline;">
+                    @csrf @method('DELETE')
+                    <button type="submit"
+                        style="padding:10px 22px;background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;border-radius:11px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(220,38,38,.3);">
+                        <i class="fas fa-trash" style="margin-right:6px;"></i>Yes, Delete Invoice
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// Auto-open modal if arriving from the list via #delete anchor
+if (window.location.hash === '#delete') {
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('deleteInvoiceModal');
+        if (modal) modal.classList.remove('hidden');
+    });
+}
+</script>
+@endCanDo
 
 @if(false)
 {{-- removed: payment modals moved to checkout and payments/create --}}

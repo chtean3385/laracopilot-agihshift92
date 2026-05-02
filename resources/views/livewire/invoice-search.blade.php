@@ -152,6 +152,12 @@
                                    class="lv-action-btn" style="background:#fef3c7;color:#d97706;" title="Edit Invoice">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                @canDo('invoices.delete')
+                                <a href="{{ route('invoices.show', $invoice->id) }}#delete"
+                                   class="lv-action-btn" style="background:#fee2e2;color:#dc2626;" title="Delete Invoice">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                @endCanDo
                             </div>
                         </td>
                     </tr>
