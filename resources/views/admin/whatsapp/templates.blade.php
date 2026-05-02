@@ -60,6 +60,37 @@ foreach($allEvents as $event => $label) {
 </div>
 @endif
 
+{{-- Platform Templates Banner (managed hotels only) --}}
+@if($config && $config->isManagedMode())
+<div style="background:{{ $usePlatformTemplates ? '#eff6ff' : '#f8fafc' }};border:1px solid {{ $usePlatformTemplates ? '#bfdbfe' : '#e2e8f0' }};border-radius:16px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+        <div style="font-size:14px;font-weight:800;color:{{ $usePlatformTemplates ? '#1d4ed8' : '#64748b' }};margin-bottom:2px;">
+            <i class="fas fa-shield-alt" style="margin-right:6px;"></i>
+            Use Platform Templates
+        </div>
+        <div style="font-size:12px;color:#64748b;max-width:500px;">
+            @if($usePlatformTemplates)
+                Your hotel uses the SaaS platform's pre-approved templates — no separate Meta submission needed.
+                To customise a template for this hotel, click <strong>Edit for Hotel</strong> on any template below.
+            @else
+                Platform templates are OFF — this hotel manages its own templates independently.
+                Turn ON to instantly use all pre-approved platform templates.
+            @endif
+        </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;" title="Toggle platform template inheritance">
+        <span style="font-size:12px;font-weight:700;color:{{ $usePlatformTemplates ? '#1d4ed8' : '#94a3b8' }};">
+            {{ $usePlatformTemplates ? 'ON' : 'OFF' }}
+        </span>
+        <div id="platToggleTrack" onclick="togglePlatformTemplates(this)"
+            style="position:relative;width:48px;height:26px;border-radius:26px;background:{{ $usePlatformTemplates ? '#2563eb' : '#e2e8f0' }};cursor:pointer;transition:background .2s;flex-shrink:0;">
+            <div id="platToggleThumb"
+                style="position:absolute;top:3px;left:{{ $usePlatformTemplates ? '24px' : '3px' }};width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;"></div>
+        </div>
+    </label>
+</div>
+@endif
+
 {{-- Automation Status Dashboard --}}
 <div style="background:#fff;border-radius:20px;padding:22px 26px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;margin-bottom:22px;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px;">
@@ -82,10 +113,12 @@ foreach($allEvents as $event => $label) {
             </button>
             @endif
             @if($canEdit)
+            @if(!($usePlatformTemplates ?? false))
             <button onclick="syncFromMeta(this)"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;">
                 <i class="fas fa-sync-alt"></i> Sync from Meta
             </button>
+            @endif
             <a href="{{ route('whatsapp.template.create') }}"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
                 <i class="fas fa-plus"></i> Add Template
@@ -156,11 +189,12 @@ foreach($allEvents as $event => $label) {
 <div style="display:grid;gap:14px;">
     @foreach($allEvents as $event => $label)
     @php
-        $t = $templates[$event] ?? null;
+        $t               = $templates[$event] ?? null;
         [$icon, $grad, $desc] = $eventMeta[$event];
-        $isPlatformTemplate = $t && in_array($t->template_name, $platformApprovedNames ?? []);
-        $approvalStatus = $isPlatformTemplate ? 'approved' : ($t ? ($t->approval_status ?? 'pending') : null);
-        $approvalColor  = match($approvalStatus) {
+        $isGlobalFallback   = $t && !empty($t->is_global_fallback);   // platform template shown as fallback
+        $isPlatformTemplate = $isGlobalFallback || ($t && in_array($t->template_name, $platformApprovedNames ?? []));
+        $approvalStatus  = $isPlatformTemplate ? 'approved' : ($t ? ($t->approval_status ?? 'pending') : null);
+        $approvalColor   = match($approvalStatus) {
             'approved' => ['#dcfce7','#15803d'],
             'rejected' => ['#fee2e2','#b91c1c'],
             default    => ['#fef3c7','#92400e'],
@@ -218,13 +252,21 @@ foreach($allEvents as $event => $label) {
                     </label>
 
                     @if($canEdit)
-                    {{-- Edit: SaaS Admin or Pro+ plan only --}}
+                    @if($isGlobalFallback)
+                    {{-- Global platform fallback: offer to create hotel-specific copy --}}
+                    <form action="{{ route('whatsapp.template.customize', $t) }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit"
+                            style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-edit"></i> Edit for Hotel
+                        </button>
+                    </form>
+                    @else
+                    {{-- Hotel-specific template: normal edit/delete --}}
                     <a href="{{ route('whatsapp.template.edit', $t) }}"
                         style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;">
                         <i class="fas fa-edit"></i> Edit
                     </a>
-
-                    {{-- Delete: SaaS Admin or Pro+ plan only --}}
                     <form action="{{ route('whatsapp.template.destroy', $t) }}" method="POST" style="display:inline;"
                         onsubmit="return confirm('Delete this template? This cannot be undone.')">
                         @csrf @method('DELETE')
@@ -234,9 +276,10 @@ foreach($allEvents as $event => $label) {
                         </button>
                     </form>
                     @endif
+                    @endif
 
                     @if($isPlatformTemplate)
-                    {{-- Platform template: already approved globally, no submission needed --}}
+                    {{-- Platform/global template: already approved, ready to send --}}
                     <span style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#dcfce7;color:#15803d;border-radius:10px;font-size:12px;font-weight:700;">
                         <i class="fas fa-check-circle"></i> Ready to use
                     </span>
@@ -405,6 +448,34 @@ function submitToMeta(templateId, btn) {
     .catch(() => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fab fa-meta"></i> Submit to Meta';
+    });
+}
+
+function togglePlatformTemplates(track) {
+    var thumb   = document.getElementById('platToggleThumb');
+    var isOn    = track.style.background.indexOf('2563eb') !== -1 || track.style.background === 'rgb(37, 99, 235)';
+    var newVal  = !isOn;
+
+    track.style.background  = newVal ? '#2563eb' : '#e2e8f0';
+    thumb.style.left        = newVal ? '24px' : '3px';
+    track.previousElementSibling && (track.previousElementSibling.textContent = newVal ? 'ON' : 'OFF');
+    track.previousElementSibling && (track.previousElementSibling.style.color = newVal ? '#1d4ed8' : '#94a3b8');
+
+    fetch('{{ route('whatsapp.toggle-platform-templates') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ enabled: newVal }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            setTimeout(function() { location.reload(); }, 400);
+        } else {
+            // revert on failure
+            track.style.background = isOn ? '#2563eb' : '#e2e8f0';
+            thumb.style.left = isOn ? '24px' : '3px';
+            alert('Could not save setting: ' + (data.error || 'Unknown error'));
+        }
     });
 }
 

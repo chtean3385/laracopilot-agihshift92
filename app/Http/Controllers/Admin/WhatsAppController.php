@@ -51,12 +51,57 @@ class WhatsAppController extends Controller
         $platform    = PlatformWhatsAppSetting::instance();
         $canEdit     = $isSaasAdmin || !$isBasicPlan;
 
+        // Managed hotels default to using platform templates (true if column is null too)
+        $usePlatformTemplates = $config && $config->isManagedMode()
+            && ($config->use_platform_templates || $config->use_platform_templates === null);
+
+        // Load global (platform) templates — keyed by trigger_event for easy lookup
+        $globalTemplates = WhatsAppTemplate::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->get()
+            ->groupBy('trigger_event');
+
+        $platformApprovedNames = $globalTemplates->flatten()
+            ->where('approval_status', 'approved')
+            ->pluck('template_name')
+            ->filter()->values()->all();
+
         if ($isBasicPlan || !$hotelId) {
+            // Basic plan: only global templates
             $allTemplates = WhatsAppTemplate::withoutGlobalScopes()
                 ->whereNull('hotel_id')
                 ->orderBy('has_document_attachment')
                 ->orderBy('id')
                 ->get();
+        } elseif ($usePlatformTemplates) {
+            // Managed hotel using platform templates:
+            // Hotel-specific templates OVERRIDE global ones per event; global fills the gaps.
+            $hotelTemplates = WhatsAppTemplate::withoutGlobalScopes()
+                ->where('hotel_id', $hotelId)
+                ->get()
+                ->groupBy(fn($t) => $t->trigger_event . '_' . (int)$t->has_document_attachment);
+
+            $merged = collect();
+            foreach ($globalTemplates as $event => $eventGlobal) {
+                foreach ($eventGlobal as $globalT) {
+                    $key        = $event . '_' . (int)$globalT->has_document_attachment;
+                    $hotelMatch = ($hotelTemplates[$key] ?? collect())->first();
+                    // Mark global template with a flag so the view knows it's from platform
+                    if ($hotelMatch) {
+                        $merged->push($hotelMatch);         // hotel override wins
+                    } else {
+                        $globalT->is_global_fallback = true; // flag for view
+                        $merged->push($globalT);
+                    }
+                }
+            }
+            // Also include any hotel-only events not in global
+            $hotelOnly = WhatsAppTemplate::withoutGlobalScopes()
+                ->where('hotel_id', $hotelId)
+                ->whereNotIn('trigger_event', $globalTemplates->keys()->all())
+                ->get();
+            $allTemplates = $merged->merge($hotelOnly)
+                ->sortBy('has_document_attachment')->sortBy('id');
         } else {
             $allTemplates = WhatsAppTemplate::withoutGlobalScopes()
                 ->where('hotel_id', $hotelId)
@@ -65,27 +110,64 @@ class WhatsAppController extends Controller
                 ->get();
         }
 
-        // Primary (text-only) template per event — used for existing view event-slot logic
-        $templates = $allTemplates->where('has_document_attachment', false)->keyBy('trigger_event');
-
-        // Full collection grouped by event — used to also show PDF variant rows
+        // Primary (text-only) template per event
+        $templates        = $allTemplates->where('has_document_attachment', false)->keyBy('trigger_event');
         $templatesByEvent = $allTemplates->groupBy('trigger_event');
-
-        // Platform (global) approved template names — hotel templates matching these are
-        // already approved and don't need a separate Submit to Meta step.
-        $platformApprovedNames = WhatsAppTemplate::withoutGlobalScopes()
-            ->whereNull('hotel_id')
-            ->where('approval_status', 'approved')
-            ->pluck('template_name')
-            ->filter()
-            ->values()
-            ->all();
 
         return view('admin.whatsapp.templates', compact(
             'templates', 'templatesByEvent', 'allEvents', 'config',
             'hotel', 'isSaasAdmin', 'isBasicPlan', 'canEdit', 'platform',
-            'platformApprovedNames'
+            'platformApprovedNames', 'usePlatformTemplates', 'globalTemplates'
         ));
+    }
+
+    public function togglePlatformTemplates(Request $request)
+    {
+        $config = WhatsAppConfig::active();
+        if (!$config || !$config->isManagedMode()) {
+            return response()->json(['success' => false, 'error' => 'Only managed-number hotels can use this setting.']);
+        }
+        $enabled = $request->boolean('enabled');
+        $config->update(['use_platform_templates' => $enabled]);
+        return response()->json(['success' => true, 'enabled' => $enabled]);
+    }
+
+    public function templateCustomize(WhatsAppTemplate $template)
+    {
+        // Copy a global (platform) template into a hotel-specific customizable copy
+        $hotelId = app(HotelContext::class)->getHotel();
+        $hotel   = Hotel::find($hotelId);
+        if (!$hotelId || !$hotel || $template->hotel_id !== null) {
+            return redirect()->route('whatsapp.template.edit', $template);
+        }
+
+        $hotelSlug = trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($hotel->slug ?: $hotel->name)), '_');
+        $baseName  = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $template->template_name), '_'));
+        $newName   = $baseName . '_' . $hotelSlug;
+
+        // Check if hotel copy already exists for this event
+        $existing = WhatsAppTemplate::withoutGlobalScopes()
+            ->where('hotel_id', $hotelId)
+            ->where('trigger_event', $template->trigger_event)
+            ->where('has_document_attachment', $template->has_document_attachment)
+            ->first();
+
+        if (!$existing) {
+            $existing = WhatsAppTemplate::create([
+                'hotel_id'                => $hotelId,
+                'trigger_event'           => $template->trigger_event,
+                'template_name'           => $newName,
+                'message_body'            => $template->message_body,
+                'variables_hint'          => $template->variables_hint,
+                'is_active'               => $template->is_active,
+                'has_document_attachment' => $template->has_document_attachment,
+                'approval_status'         => 'pending',
+                'meta_status'             => 'not_submitted',
+            ]);
+        }
+
+        return redirect()->route('whatsapp.template.edit', $existing)
+            ->with('info', 'Platform template copied for your hotel. Edit it and submit to Meta for approval.');
     }
 
     public function templateCreate()

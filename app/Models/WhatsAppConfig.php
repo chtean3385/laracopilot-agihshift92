@@ -34,12 +34,14 @@ class WhatsAppConfig extends Model
         'mode',
         'setup_step',
         'setup_completed',
+        'use_platform_templates',
     ];
 
     protected $casts = [
-        'is_active'       => 'boolean',
-        'setup_completed' => 'boolean',
-        'setup_step'      => 'integer',
+        'is_active'               => 'boolean',
+        'setup_completed'         => 'boolean',
+        'setup_step'              => 'integer',
+        'use_platform_templates'  => 'boolean',
     ];
 
     public static function active(): ?static

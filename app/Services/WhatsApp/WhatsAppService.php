@@ -122,13 +122,33 @@ class WhatsAppService
                 }
                 $sent = static::sendWithTemplate($provider, $phone, $template, $params, $booking, $context);
             } else {
-                // Own-number hotel: use hotel-specific template
+                // Own/managed hotel — try hotel-specific template first
                 $template = WhatsAppTemplate::forEvent($event);
+
+                // If no approved hotel-specific template and hotel uses platform templates,
+                // fall back to the global platform template (already approved in WABA)
+                if ((!$template || $template->approval_status !== 'approved')
+                    && $config->isManagedMode()
+                    && ($config->use_platform_templates || $config->use_platform_templates === null)
+                ) {
+                    $globalTemplate = WhatsAppTemplate::globalForEvent($event);
+                    if ($globalTemplate) {
+                        Log::info('WhatsApp sendForEvent: using global platform template fallback', $context);
+                        $vars     = MessageBuilder::buildVars($booking);
+                        $varNames = $globalTemplate->extractVariableNames();
+                        $params   = [];
+                        foreach ($varNames as $name) {
+                            $params[] = $vars[$name] ?? '';
+                        }
+                        return static::sendWithTemplate($provider, $phone, $globalTemplate, $params, $booking, $context);
+                    }
+                }
+
                 if (!$template) {
                     Log::info('WhatsApp sendForEvent skipped: no active approved hotel template for event', $context);
                     return false;
                 }
-                if ($template->meta_status === 'approved' && !empty($template->template_name)) {
+                if ($template->approval_status === 'approved' && !empty($template->template_name)) {
                     // Send as Meta template if approved
                     $vars     = MessageBuilder::buildVars($booking);
                     $varNames = $template->extractVariableNames();
