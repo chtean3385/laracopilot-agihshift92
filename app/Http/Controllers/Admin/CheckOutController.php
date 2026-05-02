@@ -96,10 +96,29 @@ class CheckOutController extends Controller
 
         $settings = Setting::where('hotel_id', $booking->hotel_id)->first();
 
+        // ── Overstay detection (per_night only, standard pricing) ──────────────
+        $hotelCheckInTime  = $settings?->check_in_time  ?? '14:00';
+        $hotelCheckOutTime = $settings?->check_out_time ?? '11:00';
+        $isOverstay        = false;
+        $overstayNights    = 0;
+        $bookingNights     = $actualNights;   // nights from check-in → booked checkout
+        $todayNights       = $actualNights;   // nights from check-in → today
+
+        if ($pricingType === 'per_night' && !$booking->price_overridden && !$booking->is_whole_hotel) {
+            $checkinDay   = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+            $todayNights  = max(1, $checkinDay->diffInDays(now()->startOfDay()));
+            $overstayNights = max(0, $todayNights - $bookingNights);
+            // Flag overstay if extra days accrued OR today IS checkout date but past hotel checkout time
+            $hotelCheckoutDT = Carbon::parse($booking->check_out_date->format('Y-m-d') . ' ' . $hotelCheckOutTime);
+            $isOverstay = $overstayNights > 0 || now()->gt($hotelCheckoutDT);
+        }
+
         return view('admin.checkout.show', compact(
             'booking', 'pricingType', 'actualNights', 'hoursBooked',
             'actualTotal', 'roomCost', 'mealCost', 'extraBedCost',
-            'extraChargesTotal', 'totalPaid', 'balanceDue', 'settings'
+            'extraChargesTotal', 'totalPaid', 'balanceDue', 'settings',
+            'hotelCheckInTime', 'hotelCheckOutTime',
+            'isOverstay', 'overstayNights', 'bookingNights', 'todayNights'
         ));
     }
 
@@ -108,10 +127,11 @@ class CheckOutController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
 
         $request->validate([
-            'final_payment'  => 'nullable|numeric|min:0',
-            'payment_method' => 'nullable|string',
-            'notes'          => 'nullable|string',
-            'override_hours' => 'nullable|integer|min:1|max:72',
+            'final_payment'   => 'nullable|numeric|min:0',
+            'payment_method'  => 'nullable|string',
+            'notes'           => 'nullable|string',
+            'override_hours'  => 'nullable|integer|min:1|max:72',
+            'override_nights' => 'nullable|integer|min:1|max:365',
         ]);
 
         $booking = Booking::with(['room', 'payments', 'customer', 'extraCharges', 'bookingAddOns'])->findOrFail($bookingId);
@@ -174,10 +194,16 @@ class CheckOutController extends Controller
             $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
             $checkoutDateProc = Carbon::parse($booking->check_out_date)->startOfDay();
             $nightsProc       = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
-            $trueBase         = $nightsProc * ($booking->room?->price_per_night ?? 0)
-                                + (float)($booking->meal_cost ?? 0)
-                                + (float)($booking->extra_bed_cost ?? 0)
-                                + $extraChargesTotal;
+            // If manager chose to charge actual overstay nights, use that count
+            if ($request->filled('override_nights') && (int)$request->override_nights > $nightsProc) {
+                $nightsProc = (int)$request->override_nights;
+            }
+            $trueBase = $nightsProc * ($booking->room?->price_per_night ?? 0)
+                        + (float)($booking->meal_cost ?? 0)
+                        + (float)($booking->extra_bed_cost ?? 0)
+                        + $extraChargesTotal;
+            // Persist updated total on the booking so the invoice reflects actual stay
+            $booking->update(['total_amount' => $trueBase - $extraChargesTotal + $extraChargesTotal]);
         } else {
             // per_hour: total_amount updated above; per_slot: total_amount set at booking time (extra charges already incremented)
             $trueBase = (float) $booking->total_amount;

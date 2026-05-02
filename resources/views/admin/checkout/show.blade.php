@@ -52,9 +52,17 @@
                     <span style="font-weight:700;">{{ $booking->check_out_date->format('d M Y') }}</span>
                 </div>
                 @if($pricingType === 'per_night')
+                <div style="display:flex;justify-content:space-between;font-size:12px;background:#f8fafc;border-radius:8px;padding:7px 10px;margin-top:2px;">
+                    <span style="color:#64748b;display:flex;align-items:center;gap:5px;"><i class="fas fa-hotel" style="color:#94a3b8;font-size:10px;"></i>Hotel times</span>
+                    <span style="font-weight:600;color:#475569;">
+                        <i class="fas fa-sign-in-alt" style="color:#16a34a;font-size:10px;margin-right:3px;"></i>{{ $hotelCheckInTime }}
+                        &nbsp;·&nbsp;
+                        <i class="fas fa-sign-out-alt" style="color:#ef4444;font-size:10px;margin-right:3px;"></i>{{ $hotelCheckOutTime }}
+                    </span>
+                </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;">
                     <span style="color:#64748b;">Nights Charged</span>
-                    <span style="font-weight:800;font-size:20px;color:#0891b2;">{{ $actualNights }}</span>
+                    <span style="font-weight:800;font-size:20px;color:#0891b2;" id="nightsDisplay">{{ $actualNights }}</span>
                 </div>
                 @elseif($pricingType === 'per_hour')
                 @if($booking->price_overridden)
@@ -203,11 +211,47 @@
         </div>
     </div>
 
+    {{-- Overstay Banner --}}
+    @if($isOverstay && $pricingType === 'per_night')
+    <div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:16px;padding:18px 20px;display:flex;align-items:flex-start;gap:14px;">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#ea580c);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+            <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:16px;"></i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-weight:800;color:#92400e;font-size:15px;margin-bottom:4px;">Guest Overstay Detected</div>
+            <div style="font-size:13px;color:#b45309;line-height:1.6;">
+                Booking: <strong>{{ \Carbon\Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->format('d M') }} → {{ $booking->check_out_date->format('d M Y') }}</strong>
+                ({{ $bookingNights }} night{{ $bookingNights != 1 ? 's' : '' }})
+                &nbsp;·&nbsp;
+                Today: <strong>{{ now()->format('d M Y') }}</strong>
+                @if($overstayNights > 0)
+                — <span style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;">+{{ $overstayNights }} extra night{{ $overstayNights != 1 ? 's' : '' }}</span>
+                @else
+                — <span style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;">Past checkout time ({{ $hotelCheckOutTime }})</span>
+                @endif
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                @if($overstayNights > 0)
+                <button type="button" onclick="chooseActualNights()"
+                    style="padding:8px 16px;background:#f59e0b;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-calculator"></i> Charge Actual Stay ({{ $todayNights }} nights — ₹{{ number_format($todayNights * ($booking->room?->price_per_night ?? 0)) }})
+                </button>
+                @endif
+                <button type="button" onclick="chooseBookingNights()"
+                    style="padding:8px 16px;background:#fff;color:#92400e;border:1.5px solid #f59e0b;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-calendar-check"></i> Use Booking Dates ({{ $bookingNights }} nights)
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Process Form --}}
     <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:24px;">
         <h3 style="font-weight:800;color:#1e293b;margin-bottom:20px;font-size:15px;"><i class="fas fa-sign-out-alt" style="color:#f59e0b;margin-right:8px;"></i>Complete Check-Out</h3>
         <form id="checkoutForm" action="{{ route('checkout.process', $booking->id) }}" method="POST">
             @csrf
+            <input type="hidden" name="override_nights" id="overrideNightsInput" value="">
             @if($pricingType === 'per_hour')
             @if($booking->price_overridden)
             <div style="background:#fffbeb;border:1.5px solid #fbbf24;border-radius:12px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
@@ -282,6 +326,50 @@
     </div>
 </div>
 
+{{-- Overstay Confirmation Modal --}}
+@if($isOverstay && $pricingType === 'per_night' && $overstayNights > 0)
+<div id="overstayModal" style="display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:440px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#f59e0b,#ea580c);padding:18px 22px;display:flex;align-items:center;gap:12px;">
+            <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:20px;"></i>
+            <div>
+                <div style="font-weight:800;color:#fff;font-size:15px;">Guest Has Overstayed</div>
+                <div style="color:#fef3c7;font-size:12px;">{{ $booking->customer?->name }} — Booking #{{ $booking->booking_number }}</div>
+            </div>
+        </div>
+        <div style="padding:24px;">
+            <p style="font-size:13px;color:#475569;margin-bottom:18px;line-height:1.6;">
+                This guest was booked for <strong>{{ $bookingNights }} night{{ $bookingNights != 1 ? 's' : '' }}</strong>
+                ({{ \Carbon\Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->format('d M') }} → {{ $booking->check_out_date->format('d M Y') }})
+                but has stayed <strong>{{ $todayNights }} night{{ $todayNights != 1 ? 's' : '' }}</strong> as of today.
+                That is <strong>{{ $overstayNights }} extra night{{ $overstayNights != 1 ? 's' : '' }}</strong>.
+                <br><br>How should this checkout be billed?
+            </p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button type="button" onclick="confirmActualNights()"
+                    style="width:100%;padding:13px 16px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border:none;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-calculator" style="font-size:15px;"></i>
+                    <div>
+                        <div>Charge Actual Stay — {{ $todayNights }} nights</div>
+                        <div style="font-size:11px;font-weight:600;opacity:.85;">₹{{ number_format($todayNights * ($booking->room?->price_per_night ?? 0)) }} room charge (before extras & GST)</div>
+                    </div>
+                </button>
+                <button type="button" onclick="confirmBookingNights()"
+                    style="width:100%;padding:13px 16px;background:#f1f5f9;color:#1e293b;border:1.5px solid #e2e8f0;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-calendar-check" style="font-size:15px;color:#64748b;"></i>
+                    <div>
+                        <div>Use Booking Dates — {{ $bookingNights }} nights</div>
+                        <div style="font-size:11px;font-weight:600;color:#64748b;">₹{{ number_format($bookingNights * ($booking->room?->price_per_night ?? 0)) }} room charge (before extras & GST)</div>
+                    </div>
+                </button>
+                <button type="button" onclick="document.getElementById('overstayModal').style.display='none'"
+                    style="width:100%;padding:9px;background:transparent;border:none;color:#94a3b8;font-size:12px;cursor:pointer;margin-top:2px;">Cancel — go back</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- Void/Cancel Modal --}}
 <div id="voidModal" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
     <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:420px;overflow:hidden;">
@@ -322,6 +410,84 @@ function showVoidModal() {
 document.getElementById('voidModal').addEventListener('click', function(e) {
     if (e.target === this) this.style.display = 'none';
 });
+
+// ── Overstay JS ────────────────────────────────────────────────────────────
+var _isOverstay     = {{ $isOverstay ? 'true' : 'false' }};
+var _overstayNights = {{ $overstayNights ?? 0 }};
+var _bookingNights  = {{ $bookingNights ?? 0 }};
+var _todayNights    = {{ $todayNights ?? 0 }};
+var _nightlyRate    = {{ (float)($booking->room?->price_per_night ?? 0) }};
+var _mealCost       = {{ (float)($booking->meal_cost ?? 0) }};
+var _extraBedCost   = {{ (float)($booking->extra_bed_cost ?? 0) }};
+var _extraTotal     = {{ $extraChargesTotal ?? 0 }};
+var _taxRate        = {{ isset($taxRate) ? $taxRate : 0 }};
+var _overstayDecisionMade = false;
+
+function recalcAndSetPayment(nights) {
+    var roomCost  = nights * _nightlyRate;
+    var base      = roomCost + _mealCost + _extraBedCost + _extraTotal;
+    var gst       = _taxRate > 0 ? Math.round(base * (_taxRate / 100) * 100) / 100 : 0;
+    var grand     = base + gst;
+    var totalPaid = {{ $totalPaid }};
+    var balance   = Math.max(0, grand - totalPaid);
+    var payEl     = document.getElementById('finalPaymentInput');
+    if (payEl) payEl.value = balance.toFixed(2);
+    var nightEl = document.getElementById('nightsDisplay');
+    if (nightEl) nightEl.textContent = nights;
+}
+
+function chooseActualNights() {
+    document.getElementById('overrideNightsInput').value = _todayNights;
+    _overstayDecisionMade = true;
+    recalcAndSetPayment(_todayNights);
+    hideBannerButtons();
+}
+
+function chooseBookingNights() {
+    document.getElementById('overrideNightsInput').value = '';
+    _overstayDecisionMade = true;
+    recalcAndSetPayment(_bookingNights);
+    hideBannerButtons();
+}
+
+function confirmActualNights() {
+    document.getElementById('overrideNightsInput').value = _todayNights;
+    _overstayDecisionMade = true;
+    recalcAndSetPayment(_todayNights);
+    var m = document.getElementById('overstayModal');
+    if (m) m.style.display = 'none';
+    document.getElementById('checkoutForm').submit();
+}
+
+function confirmBookingNights() {
+    document.getElementById('overrideNightsInput').value = '';
+    _overstayDecisionMade = true;
+    recalcAndSetPayment(_bookingNights);
+    var m = document.getElementById('overstayModal');
+    if (m) m.style.display = 'none';
+    document.getElementById('checkoutForm').submit();
+}
+
+function hideBannerButtons() {
+    var btns = document.querySelectorAll('[onclick="chooseActualNights()"], [onclick="chooseBookingNights()"]');
+    btns.forEach(function(b) { b.style.display = 'none'; });
+}
+
+// Intercept form submit when there is an unresolved overstay with extra nights
+document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    if (_isOverstay && _overstayNights > 0 && !_overstayDecisionMade) {
+        e.preventDefault();
+        var m = document.getElementById('overstayModal');
+        if (m) m.style.display = 'flex';
+    }
+});
+
+var overstayModalEl = document.getElementById('overstayModal');
+if (overstayModalEl) {
+    overstayModalEl.addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+    });
+}
 </script>
 
 @if(\App\Models\Module::isEnabled('payment_links'))
