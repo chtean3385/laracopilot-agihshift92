@@ -251,7 +251,7 @@ class OtaBookingParserService
 
             // ── Step 2: platform/SaaS shared number ──────────────────────────
             $platform = DB::table('platform_whatsapp_settings')->first();
-            if ($platform && $platform->saas_phone_number_id === $recipientPhoneNumberId) {
+            if ($platform && (string) $platform->saas_phone_number_id === (string) $recipientPhoneNumberId) {
                 // Shared number — property name REQUIRED to identify the hotel
                 if (!empty($propertyName)) {
                     $match = $this->matchByPropertyName($propertyName, null);

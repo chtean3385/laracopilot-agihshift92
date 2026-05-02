@@ -7,7 +7,9 @@ use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\Module;
 use App\Models\OtaImportedBooking;
+use App\Models\OtaSource;
 use App\Services\ActivityLogger;
+use App\Services\OtaBookingParserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -38,6 +40,69 @@ class OtaBookingController extends Controller
         }
 
         return (int) session('crm_hotel_id') ?: null;
+    }
+
+    /**
+     * Simulate an incoming OTA WhatsApp message directly (bypasses webhook).
+     * Used for testing in dev environments where Meta's webhook points to production.
+     * Runs the full parser pipeline: source detection → hotel resolution → import creation.
+     */
+    public function simulate(Request $request)
+    {
+        $hotelId = $this->resolveHotelId($request);
+        if (!$hotelId) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $body = trim($request->input('message', ''));
+        if (!$body) {
+            return response()->json(['success' => false, 'message' => 'Message body is required.']);
+        }
+
+        // Use the platform SaaS phone_number_id as the simulated recipient
+        $platform              = DB::table('platform_whatsapp_settings')->first();
+        $recipientPhoneNumberId = $platform ? (string) $platform->saas_phone_number_id : null;
+
+        // Simulate a fake sender number (won't match any real OTA source → falls to content-pattern)
+        $fakeSenderPhone = '0000000000';
+
+        $otaSource = OtaSource::findBySender($fakeSenderPhone)
+                  ?? OtaSource::findByContentPattern($body);
+
+        if (!$otaSource) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Message format not recognised. Make sure it contains "Property:" and "Booking Ref:" lines.',
+            ]);
+        }
+
+        try {
+            (new OtaBookingParserService())->handle(
+                $fakeSenderPhone,
+                $body,
+                $otaSource,
+                $recipientPhoneNumberId
+            );
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Parser error: ' . $e->getMessage()]);
+        }
+
+        // Check if a new pending import was just created
+        $latest = OtaImportedBooking::where('hotel_id', $hotelId)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($latest && $latest->created_at->diffInSeconds(now()) < 10) {
+            $statusMsg = $latest->status === 'duplicate'
+                ? 'Message parsed — marked as duplicate (same booking ref already exists).'
+                : 'Message parsed and added to the import queue as pending.';
+            return response()->json(['success' => true, 'message' => $statusMsg]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Parsed but hotel could not be resolved. Check that "Property: <hotel name>" exactly matches a hotel name in the system and the OTA module is enabled.',
+        ]);
     }
 
     public function index(Request $request)

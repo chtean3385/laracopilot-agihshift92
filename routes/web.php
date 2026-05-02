@@ -289,6 +289,7 @@ Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksContr
 
 // ── OTA WhatsApp Sync — Import Queue ───────────────────────────────────────
 Route::get('/ota-bookings',              [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.index');
+Route::post('/ota-bookings/simulate',         [\App\Http\Controllers\Admin\OtaBookingController::class, 'simulate'])->name('ota-bookings.simulate');
 Route::post('/ota-bookings/{import}/confirm', [\App\Http\Controllers\Admin\OtaBookingController::class, 'confirm'])->name('ota-bookings.confirm');
 Route::post('/ota-bookings/{import}/reject',  [\App\Http\Controllers\Admin\OtaBookingController::class, 'reject'] )->name('ota-bookings.reject');
 Route::put('/ota-bookings/{import}',          [\App\Http\Controllers\Admin\OtaBookingController::class, 'update'] )->name('ota-bookings.update');

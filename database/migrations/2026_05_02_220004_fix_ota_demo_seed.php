@@ -7,12 +7,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Fix Test/Generic: 917043069225 was seeded as sender_number but it is the RECEIVING
-        // SaaS Meta number, not an OTA sender. Remove it so the record becomes a
-        // content-pattern catch-all (null sender_number = any message matching OTA format).
+        // Fix Test/Generic: ensure sender_number is always null for the generic catch-all source.
+        // Any non-null value here would prevent content-pattern detection from working.
         DB::table('ota_sources')
             ->where('message_pattern_key', 'generic')
-            ->whereRaw("regexp_replace(sender_number, '[^0-9]', '', 'g') = ?", ['917043069225'])
             ->update(['sender_number' => null, 'notes' => 'Generic catch-all: matches any message with OTA format (Property: / Booking Ref:). Used for demo and forwarded messages.', 'updated_at' => now()]);
 
         // Enable ota_whatsapp_sync for hotel ID 1 (Demo Hotel) so the demo path works

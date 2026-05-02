@@ -16,6 +16,10 @@
             </h1>
             <p style="font-size:12px;color:#64748b;margin:0;">Booking confirmations received via WhatsApp from OTAs. Review and confirm to create bookings.</p>
         </div>
+        <button onclick="document.getElementById('simulateModal').style.display='flex'"
+            style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-flask"></i> Simulate Import
+        </button>
     </div>
 
     {{-- Status counts --}}
@@ -156,6 +160,43 @@
     {{ $imports->links() }}
 </div>
 
+{{-- Simulate Import Modal --}}
+<div id="simulateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;margin:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin:0;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-flask" style="color:#6366f1;"></i> Simulate OTA Message
+            </h3>
+            <button onclick="document.getElementById('simulateModal').style.display='none'" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;">&times;</button>
+        </div>
+        <p style="font-size:12px;color:#64748b;margin:0 0 14px;background:#f8fafc;border-radius:8px;padding:10px 12px;border-left:3px solid #6366f1;">
+            Paste any OTA-format WhatsApp message below. This bypasses the live webhook and directly runs the parser — useful for testing when your webhook is pointed at production.
+        </p>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11.5px;font-family:monospace;color:#78350f;white-space:pre-wrap;line-height:1.6;">New Booking Confirmation
+Property: Demo Hotel
+OTA: Booking.com
+Booking Ref: BDC-TEST-001
+Guest Name: John Smith
+Check-in: 10 Jun 2025
+Check-out: 12 Jun 2025
+Room: Deluxe Double Room
+Guests: 2 Adults
+Amount: ₹8,500
+Guest Phone: +91 9876543210
+Special Request: Early check-in if possible</div>
+        <textarea id="sim-message" rows="12"
+            style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;box-sizing:border-box;resize:vertical;line-height:1.6;"
+            placeholder="Paste OTA booking confirmation message here..."></textarea>
+        <div id="sim-result" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;"></div>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+            <button onclick="runSimulate()" style="flex:1;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-play" style="margin-right:6px;"></i>Run Parser
+            </button>
+            <button onclick="document.getElementById('simulateModal').style.display='none'" style="background:#f1f5f9;border:none;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 {{-- Edit Modal --}}
 <div id="editImpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:20px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;margin:16px;">
@@ -170,6 +211,31 @@
 
 <script>
 var editingImpId = null;
+
+function runSimulate() {
+    var msg = document.getElementById('sim-message').value.trim();
+    if (!msg) { alert('Please paste a message first.'); return; }
+    var res = document.getElementById('sim-result');
+    res.style.display = 'none';
+    fetch('{{ route("ota-bookings.simulate") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+    })
+    .then(r => r.json())
+    .then(d => {
+        res.style.display = 'block';
+        res.style.background = d.success ? '#dcfce7' : '#fee2e2';
+        res.style.color = d.success ? '#065f46' : '#991b1b';
+        res.style.border = '1px solid ' + (d.success ? '#bbf7d0' : '#fecaca');
+        res.innerHTML = (d.success ? '<i class="fas fa-check-circle" style="margin-right:6px;"></i>' : '<i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>') + d.message;
+        if (d.success) setTimeout(() => { document.getElementById('simulateModal').style.display='none'; location.reload(); }, 1800);
+    })
+    .catch(() => {
+        res.style.display='block'; res.style.background='#fee2e2'; res.style.color='#991b1b';
+        res.innerHTML = 'Network error. Please try again.';
+    });
+}
 
 function toggleRaw(id) {
     var el = document.getElementById('raw-' + id);
