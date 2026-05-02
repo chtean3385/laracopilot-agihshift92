@@ -59,6 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhook/*',
             'book/*',
             'widget/*',
+            'pricing/enquire',
         ]);
         $middleware->alias([
             'permission'     => \App\Http\Middleware\PermissionMiddleware::class,

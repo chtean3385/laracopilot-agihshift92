@@ -64,10 +64,10 @@
                                 <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;color:#0f172a;font-size:14px;font-weight:700;">{{ $rooms }}</td>
                             </tr>
                             @endif
-                            @if($message)
+                            @if($enquiryMessage)
                             <tr>
                                 <td style="padding:10px 0;color:#64748b;font-size:13px;font-weight:600;vertical-align:top;">Message</td>
-                                <td style="padding:10px 0;color:#0f172a;font-size:14px;">{{ $message }}</td>
+                                <td style="padding:10px 0;color:#0f172a;font-size:14px;">{{ $enquiryMessage }}</td>
                             </tr>
                             @endif
                         </table>

@@ -18,7 +18,7 @@ class PricingEnquiryMail extends Mailable
     public string $planLabel;
     public int|float $planPrice;
     public string $rooms;
-    public string $message;
+    public string $enquiryMessage;
     public string $submittedAt;
 
     public function __construct(array $data)
@@ -29,7 +29,7 @@ class PricingEnquiryMail extends Mailable
         $this->planLabel   = $data['plan_label'];
         $this->planPrice   = $data['plan_price'];
         $this->rooms       = $data['rooms'] ?? '';
-        $this->message     = $data['message'] ?? '';
+        $this->enquiryMessage = $data['message'] ?? '';
         $this->submittedAt = now()->format('d M Y, h:i A');
     }
 
