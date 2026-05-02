@@ -494,6 +494,40 @@
 
                 <div class="dashboard-main" id="dbMain" style="display:flex;flex-direction:column;gap:24px;">
 
+                    {{-- ── Hotel Full Alert Banner ─────────────────────────────────────────── --}}
+                    @if($hotelFull)
+                    <div style="position:relative;overflow:hidden;border-radius:20px;padding:22px 28px;background:linear-gradient(135deg,#dc2626,#991b1b);box-shadow:0 8px 32px rgba(220,38,38,.4);animation:pulse-dirty 2s infinite;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+                        {{-- Orb decorations --}}
+                        <div style="position:absolute;right:-30px;top:-30px;width:140px;height:140px;background:rgba(255,255,255,.07);border-radius:50%;pointer-events:none;"></div>
+                        <div style="position:absolute;right:80px;bottom:-40px;width:100px;height:100px;background:rgba(255,255,255,.05);border-radius:50%;pointer-events:none;"></div>
+                        {{-- Icon --}}
+                        <div style="width:56px;height:56px;background:rgba(255,255,255,.18);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.3);">
+                            <i class="fas fa-hotel" style="color:#fff;font-size:24px;"></i>
+                        </div>
+                        {{-- Text --}}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                🚨 Hotel Fully Booked — {{ now()->format('d M Y') }}
+                                <span style="background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;letter-spacing:.04em;">100% OCCUPIED</span>
+                            </div>
+                            <div style="font-size:14px;color:rgba(255,255,255,.85);margin-top:5px;">
+                                All <strong>{{ $totalRooms }}</strong> rooms are occupied today. An alert email has been sent to the hotel admin.
+                            </div>
+                        </div>
+                        {{-- Actions --}}
+                        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                            <a href="{{ route('rooms.index') }}" style="background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:12px;text-decoration:none;white-space:nowrap;transition:all .15s;"
+                               onmouseenter="this.style.background='rgba(255,255,255,.3)'" onmouseleave="this.style.background='rgba(255,255,255,.2)'">
+                                <i class="fas fa-door-open" style="margin-right:6px;"></i>View Rooms
+                            </a>
+                            <a href="{{ route('checkout.index') }}" style="background:#fff;color:#dc2626;font-size:13px;font-weight:700;padding:10px 20px;border-radius:12px;text-decoration:none;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.2);transition:all .15s;"
+                               onmouseenter="this.style.transform='translateY(-1px)'" onmouseleave="this.style.transform=''">
+                                <i class="fas fa-sign-out-alt" style="margin-right:6px;"></i>Check-Outs
+                            </a>
+                        </div>
+                    </div>
+                    @endif
+
                     @php
                         $dashboardShortcuts = [];
                         if (\App\Models\Module::isEnabled('extra-billing')) {

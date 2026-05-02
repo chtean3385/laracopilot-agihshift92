@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\HotelFullAlertMail;
 use App\Models\ActivityLog;
 use App\Models\Booking;
+use App\Models\Hotel;
 use App\Models\Room;
 use App\Models\Customer;
 use App\Models\Payment;
@@ -14,6 +16,8 @@ use App\Models\DashboardPreference;
 use App\Services\SlotConflictService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 
 class DashboardController extends Controller
 {
@@ -107,6 +111,29 @@ class DashboardController extends Controller
         }
 
         $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
+
+        // ── Hotel Full Alert ──────────────────────────────────────────────────
+        $hotelFull = $totalRooms > 0 && $availableRooms === 0;
+        if ($hotelFull) {
+            $hotelId  = (int) session('crm_hotel_id');
+            $cacheKey = "hotel_full_alert_{$hotelId}_" . now()->toDateString();
+            if (!Cache::has($cacheKey)) {
+                Cache::put($cacheKey, true, now()->endOfDay()->diffInSeconds(now()));
+                try {
+                    $hotel = Hotel::find($hotelId);
+                    if ($hotel && $hotel->email) {
+                        Mail::to($hotel->email)->send(new HotelFullAlertMail(
+                            hotelName:     $hotel->name,
+                            totalRooms:    $totalRooms,
+                            occupiedRooms: $occupiedRooms,
+                            date:          now()->format('d M Y'),
+                        ));
+                    }
+                } catch (\Exception $e) {
+                    // silently skip — never crash the dashboard
+                }
+            }
+        }
 
         $weeklyRevenue = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -355,7 +382,7 @@ class DashboardController extends Controller
             'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
             'websitePendingCount',
             'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys',
-            'dirtyRoomsList', 'showAgenda'
+            'dirtyRoomsList', 'showAgenda', 'hotelFull'
         ));
     }
 
