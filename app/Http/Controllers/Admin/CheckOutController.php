@@ -107,12 +107,18 @@ class CheckOutController extends Controller
         $chargeableNights = $actualNights; // nights to bill if manager picks "charge overdue"
         if ($pricingType === 'per_night' && !$booking->price_overridden && !$booking->is_whole_hotel) {
             $checkinDay     = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+            $checkoutDay    = Carbon::parse($booking->check_out_date)->startOfDay();
+            $isSameDayStay  = $checkinDay->eq($checkoutDay); // check-in & check-out on same calendar date
             $todayNights    = max(1, $checkinDay->diffInDays(now()->startOfDay()));
             $overstayNights = max(0, $todayNights - $bookingNights);
-            // Flag overstay if extra days accrued OR today IS checkout date but past hotel checkout time
-            $hotelCheckoutDT = Carbon::parse($booking->check_out_date->format('Y-m-d') . ' ' . $hotelCheckOutTime);
-            $isOverstay = $overstayNights > 0 || now()->gt($hotelCheckoutDT);
-            // chargeableNights: actual days if extra days exist, else add 1 for time-only overstay
+
+            // Time-overstay (past hotel checkout time) is only meaningful when the guest stayed
+            // at least one overnight — same-day bookings never trigger it.
+            $hotelCheckoutDT      = Carbon::parse($booking->check_out_date->format('Y-m-d') . ' ' . $hotelCheckOutTime);
+            $isPastCheckoutTime   = !$isSameDayStay && now()->gt($hotelCheckoutDT);
+            $isOverstay           = $overstayNights > 0 || $isPastCheckoutTime;
+
+            // chargeableNights: actual days if extra full days exist, +1 for time-only overstay
             $chargeableNights = $overstayNights > 0 ? $todayNights : $bookingNights + 1;
         }
 
