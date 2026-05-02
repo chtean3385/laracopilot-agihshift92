@@ -75,6 +75,21 @@
                     <label class="form-label">Notes</label>
                     <textarea name="notes" rows="3" class="form-input">{{ old('notes', $customer->notes) }}</textarea>
                 </div>
+
+                <div class="md:col-span-2 border-t border-gray-100 pt-4">
+                    <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-building text-violet-500 mr-2"></i>Company / Corporate Billing <span class="text-xs text-gray-400 font-normal">(optional — fill for B2B GST invoices)</span></h4>
+                    <p class="text-xs text-gray-400 mb-4">If the guest is billing to a company, fill these to auto-populate the GST Tax Invoice.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">Company Name</label>
+                            <input type="text" name="company_name" value="{{ old('company_name', $customer->company_name) }}" class="form-input" placeholder="Acme Pvt. Ltd.">
+                        </div>
+                        <div>
+                            <label class="form-label">GSTIN <span class="text-gray-400 font-normal text-xs">(15 characters)</span></label>
+                            <input type="text" name="gstin" value="{{ old('gstin', $customer->gstin) }}" class="form-input" placeholder="22AAAAA0000A1Z5" maxlength="15" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                 <a href="{{ route('customers.show', $customer->id) }}" class="btn-secondary">Cancel</a>

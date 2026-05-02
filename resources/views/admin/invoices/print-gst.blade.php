@@ -217,7 +217,12 @@
             <tbody>
                 <tr style="font-size:11px;">
                     <td style="background:#f8fafc;font-weight:600;white-space:nowrap;width:90px;">Name</td>
-                    <td colspan="3">{{ $customer->name ?? '—' }}</td>
+                    <td colspan="3">
+                        {{ $customer->name ?? '—' }}
+                        @if($customer->company_name)
+                        <div style="font-size:10px;color:#7c3aed;font-weight:700;margin-top:1px;">{{ $customer->company_name }}</div>
+                        @endif
+                    </td>
                     <td style="background:#f8fafc;font-weight:600;white-space:nowrap;width:90px;">Arrival No.</td>
                     <td colspan="3">{{ $b->booking_number }}</td>
                 </tr>
@@ -239,6 +244,14 @@
                     <td style="background:#f8fafc;font-weight:600;">Check-In</td>
                     <td colspan="3">{{ \Carbon\Carbon::parse($b->check_in_date)->format('d/m/Y') }} ({{ $s->check_in_time ?? '14:00' }})</td>
                 </tr>
+                @if($customer->gstin)
+                <tr style="font-size:11px;background:#faf5ff;">
+                    <td style="background:#ede9fe;font-weight:700;color:#6d28d9;">Buyer GSTIN</td>
+                    <td colspan="3" style="font-weight:700;color:#5b21b6;letter-spacing:0.5px;">{{ $customer->gstin }}</td>
+                    <td style="background:#ede9fe;font-weight:700;color:#6d28d9;">Company</td>
+                    <td colspan="3" style="font-weight:700;color:#5b21b6;">{{ $customer->company_name ?? '—' }}</td>
+                </tr>
+                @endif
                 <tr style="font-size:11px;">
                     <td style="background:#f8fafc;font-weight:600;">Room No.</td>
                     <td colspan="3">{{ $room->room_number ?? '—' }}</td>

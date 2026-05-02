@@ -32,6 +32,14 @@
             </a>
             @endif
             <a href="{{ route('invoices.print', $invoice->id) }}" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
+            <a href="{{ route('invoices.print-gst', $invoice->id) }}" target="_blank"
+               class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 transition-all">
+                <i class="fas fa-file-invoice"></i>GST Bill
+            </a>
+            <a href="{{ route('invoices.edit', $invoice->id) }}"
+               class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all">
+                <i class="fas fa-edit"></i>Edit Invoice
+            </a>
             @canDo('invoices.delete')
             <form method="POST" action="{{ route('invoices.destroy', $invoice->id) }}" onsubmit="return confirm('Delete this invoice permanently? This cannot be undone.')">
                 @csrf @method('DELETE')

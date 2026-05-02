@@ -141,8 +141,16 @@
                                 <a href="{{ route('invoices.show', $invoice->id) }}" class="lv-action-btn lv-action-btn-purple" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="lv-action-btn lv-action-btn-gray" title="Print">
+                                <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank" class="lv-action-btn lv-action-btn-gray" title="Print Invoice">
                                     <i class="fas fa-print"></i>
+                                </a>
+                                <a href="{{ route('invoices.print-gst', $invoice->id) }}" target="_blank"
+                                   class="lv-action-btn" style="background:#ede9fe;color:#7c3aed;" title="GST Bill">
+                                    <i class="fas fa-file-invoice"></i>
+                                </a>
+                                <a href="{{ route('invoices.edit', $invoice->id) }}"
+                                   class="lv-action-btn" style="background:#fef3c7;color:#d97706;" title="Edit Invoice">
+                                    <i class="fas fa-edit"></i>
                                 </a>
                             </div>
                         </td>

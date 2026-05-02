@@ -12,7 +12,7 @@ class Invoice extends Model
     protected $fillable = [
         'hotel_id',
         'invoice_number', 'booking_id', 'customer_id',
-        'total_amount', 'paid_amount', 'balance', 'status', 'issued_at',
+        'total_amount', 'paid_amount', 'balance', 'status', 'issued_at', 'notes',
     ];
 
     protected $casts = [

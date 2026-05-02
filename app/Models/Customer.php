@@ -15,6 +15,7 @@ class Customer extends Model
         'name', 'email', 'phone', 'address', 'city', 'state',
         'country', 'id_type', 'id_number', 'date_of_birth', 'age',
         'nationality', 'notes', 'signature',
+        'company_name', 'gstin',
     ];
 
     protected $casts = [

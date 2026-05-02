@@ -53,6 +53,8 @@ class CustomerController extends Controller
             'age'           => 'nullable|integer|min:1|max:120',
             'nationality'   => 'nullable|string|max:100',
             'notes'         => 'nullable|string',
+            'company_name'  => 'nullable|string|max:255',
+            'gstin'         => 'nullable|string|max:15',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
 
@@ -117,6 +119,8 @@ class CustomerController extends Controller
             'age'           => 'nullable|integer|min:1|max:120',
             'nationality'   => 'nullable|string|max:100',
             'notes'         => 'nullable|string',
+            'company_name'  => 'nullable|string|max:255',
+            'gstin'         => 'nullable|string|max:15',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
         $validated['id_number'] = $customer->id_number ?: '';
