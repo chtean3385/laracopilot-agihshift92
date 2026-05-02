@@ -166,6 +166,9 @@ class WhatsAppWebhookController extends Controller
 
     protected function handleIncomingMessages(array $value, ?object $platform = null): void
     {
+        // Meta webhook metadata identifies the RECEIVING WA Business number
+        $recipientPhoneNumberId = $value['metadata']['phone_number_id'] ?? null;
+
         $messages = $value['messages'] ?? [];
         foreach ($messages as $message) {
             $phone = $message['from'] ?? null;
@@ -219,7 +222,12 @@ class WhatsAppWebhookController extends Controller
                 if ($text !== null) {
                     $otaSource = \App\Models\OtaSource::findBySender($phone);
                     if ($otaSource) {
-                        (new \App\Services\OtaBookingParserService())->handle($phone, $text, $otaSource);
+                        (new \App\Services\OtaBookingParserService())->handle(
+                            $phone,
+                            $text,
+                            $otaSource,
+                            $recipientPhoneNumberId
+                        );
                         return; // Do NOT run bot flow for OTA messages
                     }
                 }
