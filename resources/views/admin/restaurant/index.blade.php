@@ -61,11 +61,11 @@
     @foreach($tables as $table)
     @php
         $cardStyle = match($table->status) {
-            'free'        => 'border-color:#4ade80;background:#f0fdf4;',
-            'occupied'    => 'border-color:#fb923c;background:#fff7ed;',
-            'dirty'       => 'border-color:#f87171;background:#fef2f2;',
-            'unavailable' => 'border-color:#374151;background:#f3f4f6;opacity:.75;',
-            default       => 'border-color:#d1d5db;background:#fff;',
+            'free'        => 'border:2px solid #16a34a !important;background:#dcfce7;',
+            'occupied'    => 'border:2px solid #ea580c !important;background:#ffedd5;',
+            'dirty'       => 'border:2px solid #dc2626 !important;background:#fee2e2;',
+            'unavailable' => 'border:2px solid #374151 !important;background:#e5e7eb;opacity:.7;',
+            default       => 'border:2px solid #d1d5db !important;background:#fff;',
         };
         $dotStyle = match($table->status) {
             'free'        => 'background:#22c55e;',
