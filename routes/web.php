@@ -287,6 +287,12 @@ Route::get('/payment-links/upi-config',                       [PaymentLinksContr
 Route::post('/payment-links/booking/{id}/razorpay',           [PaymentLinksController::class, 'razorpayForBooking'])->name('payment_links.booking.razorpay');
 Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksController::class, 'razorpayWebhook'] )->name('payment_links.razorpay.webhook')->withoutMiddleware(['web']);
 
+// ── OTA WhatsApp Sync — Import Queue ───────────────────────────────────────
+Route::get('/ota-bookings',              [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.index');
+Route::post('/ota-bookings/{import}/confirm', [\App\Http\Controllers\Admin\OtaBookingController::class, 'confirm'])->name('ota-bookings.confirm');
+Route::post('/ota-bookings/{import}/reject',  [\App\Http\Controllers\Admin\OtaBookingController::class, 'reject'] )->name('ota-bookings.reject');
+Route::put('/ota-bookings/{import}',          [\App\Http\Controllers\Admin\OtaBookingController::class, 'update'] )->name('ota-bookings.update');
+
 // ── OTA Channel Manager ────────────────────────────────────────────────────
 Route::get('/channel-manager',                            [\App\Http\Controllers\Admin\ChannelManagerController::class, 'index']            )->name('channel_manager.index');
 Route::get('/channel-manager/config',                     [\App\Http\Controllers\Admin\ChannelManagerController::class, 'config']           )->name('channel_manager.config');
@@ -506,6 +512,13 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::post('/whatsapp/billing/{hotelId}/mark-unpaid',  [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'markUnpaid'])->name('platform.whatsapp.billing.unpaid');
     Route::post('/whatsapp/billing/{hotelId}/limit',        [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'saveLimit'] )->name('platform.whatsapp.billing.limit');
     Route::post('/wa/upload-media', [\App\Http\Controllers\Platform\WhatsAppController::class, 'uploadMedia'])->name('platform.wa.upload-media');
+
+    // OTA WhatsApp Sources
+    Route::get('/ota-sources',                                [\App\Http\Controllers\Platform\OtaSourceController::class, 'index']  )->name('platform.ota-sources.index');
+    Route::post('/ota-sources',                               [\App\Http\Controllers\Platform\OtaSourceController::class, 'store']  )->name('platform.ota-sources.store');
+    Route::put('/ota-sources/{otaSource}',                    [\App\Http\Controllers\Platform\OtaSourceController::class, 'update'] )->name('platform.ota-sources.update');
+    Route::delete('/ota-sources/{otaSource}',                 [\App\Http\Controllers\Platform\OtaSourceController::class, 'destroy'])->name('platform.ota-sources.destroy');
+    Route::post('/ota-sources/{otaSource}/toggle',            [\App\Http\Controllers\Platform\OtaSourceController::class, 'toggle'] )->name('platform.ota-sources.toggle');
 
     // Push Notifications (Platform Admin)
     Route::get('/notifications/settings',  [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settings']    )->name('platform.notifications.settings');

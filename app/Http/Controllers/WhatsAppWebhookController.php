@@ -215,6 +215,15 @@ class WhatsAppWebhookController extends Controller
                     }
                 }
 
+                // OTA booking sync — check if sender is a known OTA number
+                if ($text !== null) {
+                    $otaSource = \App\Models\OtaSource::findBySender($phone);
+                    if ($otaSource) {
+                        (new \App\Services\OtaBookingParserService())->handle($phone, $text, $otaSource);
+                        return; // Do NOT run bot flow for OTA messages
+                    }
+                }
+
                 // Skip bot messages for unsubscribed contacts
                 $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
                 if ($platform && ($contact?->subscribed ?? true)) {

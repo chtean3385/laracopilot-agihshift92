@@ -914,6 +914,17 @@
             </a>
             @endif
 
+            @if(\App\Models\Module::isEnabled('ota_whatsapp_sync'))
+            @php $otaNavCount = \App\Models\OtaImportedBooking::pendingCountForHotel((int) session('crm_hotel_id')); @endphp
+            <a href="{{ route('ota-bookings.index') }}" class="nav-link {{ request()->routeIs('ota-bookings.*') ? 'active' : '' }}">
+                <span class="icon"><i class="fas fa-hotel"></i></span>
+                OTA Import Queue
+                @if($otaNavCount > 0)
+                <span style="margin-left:auto;background:#f59e0b;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center;line-height:1.4;">{{ $otaNavCount }}</span>
+                @endif
+            </a>
+            @endif
+
             @if(\App\Models\Module::isEnabled('booking-widget'))
             <a href="{{ route('admin.booking-widget.settings') }}" class="nav-link {{ request()->routeIs('admin.booking-widget.*') ? 'active' : '' }}">
                 <span class="icon"><i class="fas fa-globe"></i></span>

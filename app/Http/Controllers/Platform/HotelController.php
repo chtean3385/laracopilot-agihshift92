@@ -177,6 +177,7 @@ class HotelController extends Controller
                 ['slug' => 'booking-widget',      'name' => 'Booking Widget',         'description' => 'Embeddable website booking form. Guests book directly from your hotel website and bookings appear in CRM instantly.', 'is_enabled' => false],
                 ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking',    'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.', 'is_enabled' => false],
                 ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',     'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.', 'is_enabled' => false],
+                ['slug' => 'ota_whatsapp_sync',   'name' => 'OTA WhatsApp Sync',      'description' => 'Automatically detect and import bookings from OTA WhatsApp confirmation messages (Booking.com, Airbnb, Agoda, MakeMyTrip, Goibibo etc.).', 'is_enabled' => false],
             ];
             foreach ($modules as $m) {
                 DB::table('modules')->insert(array_merge($m, [
@@ -435,6 +436,7 @@ class HotelController extends Controller
 
         $data = $request->validate([
             'name'                 => 'required|string|max:255',
+            'ota_alias'            => 'nullable|string|max:255',
             'email'                => 'nullable|email|max:255',
             'phone'                => 'nullable|string|max:50',
             'address'              => 'nullable|string|max:500',
@@ -453,6 +455,7 @@ class HotelController extends Controller
 
         DB::table('hotels')->where('id', $id)->update([
             'name'                        => $data['name'],
+            'ota_alias'                   => $data['ota_alias'] ?? null,
             'email'                       => $data['email'] ?? null,
             'phone'                       => $data['phone'] ?? null,
             'address'                     => $data['address'] ?? null,

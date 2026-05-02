@@ -93,6 +93,16 @@ class DashboardController extends Controller
         }
 
         try {
+            $otaPendingCount = Module::isEnabled('ota_whatsapp_sync')
+                ? \App\Models\OtaImportedBooking::where('hotel_id', (int) session('crm_hotel_id'))
+                    ->where('status', 'pending')
+                    ->count()
+                : 0;
+        } catch (\Exception $e) {
+            $otaPendingCount = 0;
+        }
+
+        try {
             $totalCustomers    = Customer::count();
             $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
                 ->whereYear('created_at', $today->year)
@@ -382,7 +392,7 @@ class DashboardController extends Controller
             'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
             'websitePendingCount',
             'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys',
-            'dirtyRoomsList', 'showAgenda', 'hotelFull'
+            'dirtyRoomsList', 'showAgenda', 'hotelFull', 'otaPendingCount'
         ));
     }
 

@@ -38,7 +38,7 @@ class Booking extends Model
         'checkin_notes', 'checkout_notes',
         'meal_breakfast', 'meal_lunch', 'meal_dinner', 'meal_cost',
         'extra_beds', 'extra_bed_cost',
-        'source', 'ota_conflict',
+        'source', 'ota_ref', 'ota_name', 'ota_conflict',
         'is_whole_hotel', 'whole_hotel_pricing_type',
     ];
 

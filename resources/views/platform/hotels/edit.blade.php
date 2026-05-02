@@ -48,11 +48,18 @@
             </h2>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div style="grid-column:1/-1;">
+                <div>
                     <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Hotel Name <span style="color:#ef4444;">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $hotel->name) }}" required
                         style="width:100%;padding:10px 14px;border:1.5px solid {{ ($errors && $errors->has('name')) ? '#ef4444' : '#e2e8f0' }};border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
                     @if(isset($errors) && $errors->has('name')) <p style="color:#ef4444;font-size:11px;margin:4px 0 0;">{{ $errors->first('name') }}</p> @endif
+                </div>
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">OTA Alias <span style="font-size:10px;font-weight:400;color:#94a3b8;">(for OTA WhatsApp Sync matching)</span></label>
+                    <input type="text" name="ota_alias" value="{{ old('ota_alias', $hotel->ota_alias) }}"
+                        placeholder="Name as it appears in OTA messages"
+                        style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;box-sizing:border-box;outline:none;">
+                    <p style="font-size:10px;color:#94a3b8;margin:4px 0 0;">Leave blank to use the Hotel Name for matching. Used when OTA confirmation messages spell the property name differently.</p>
                 </div>
 
                 <div>

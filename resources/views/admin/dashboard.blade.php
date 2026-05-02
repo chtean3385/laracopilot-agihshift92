@@ -636,6 +636,15 @@
                             <div class="kpi-sub">Pending confirm</div>
                         </a>
                         @endif
+                        @if(\App\Models\Module::isEnabled('ota_whatsapp_sync') && ($otaPendingCount ?? 0) > 0)
+                        <a href="{{ route('ota-bookings.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <i class="fas fa-hotel kpi-icon"></i>
+                            <div class="kpi-label">OTA Imports</div>
+                            <div class="kpi-num" data-count="{{ $otaPendingCount ?? 0 }}">{{ $otaPendingCount ?? 0 }}</div>
+                            <div class="kpi-sub">Pending confirm</div>
+                        </a>
+                        @endif
                     </div>
                     </div>{{-- /kpi-row-1 widget --}}
 
