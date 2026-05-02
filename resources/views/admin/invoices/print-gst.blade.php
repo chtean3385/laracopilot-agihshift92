@@ -46,10 +46,10 @@
                 style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
                 🖨️ Print
             </button>
-            <button onclick="downloadPDF()"
-                style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+            <a href="{{ route('invoices.download-pdf', $invoice->id) }}"
+                style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
                 ⬇️ Download PDF
-            </button>
+            </a>
         </div>
     </div>
 </div>

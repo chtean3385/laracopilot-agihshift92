@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
@@ -58,6 +59,52 @@ class InvoiceController extends Controller
         $settings = Setting::where('hotel_id', $invoice->booking?->hotel_id ?? session('crm_hotel_id'))->first();
 
         return view('admin.invoices.print-gst', compact('invoice', 'settings'));
+    }
+
+    public function downloadPdf($id)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
+        $settings = Setting::where('hotel_id', $invoice->booking?->hotel_id ?? session('crm_hotel_id'))->first();
+
+        // Compute line items
+        $isWH       = (bool) $invoice->booking->is_whole_hotel;
+        $extraTotal = $invoice->booking->extraCharges->sum('total_price');
+        if ($isWH || $invoice->booking->price_overridden) {
+            $roomCost = max(0, (float) $invoice->booking->total_amount - $extraTotal);
+        } else {
+            $roomCost = ($invoice->booking->nights ?? 0) * ($invoice->booking->room?->price_per_night ?? 0);
+        }
+        $mealCost     = (float) ($invoice->booking->meal_cost ?? 0);
+        $extraBedCost = $invoice->booking->extra_beds > 0 ? (float) ($invoice->booking->extra_bed_cost ?? 0) : 0;
+        $subtotal     = $roomCost + $mealCost + $extraBedCost + $extraTotal;
+        $foodBase     = $extraTotal;
+        $roomBase     = $roomCost + $mealCost + $extraBedCost;
+        $taxRate      = (float) ($settings->tax_rate ?? 0);
+        $foodTaxRate  = (float) ($settings->food_tax_rate ?? 5);
+        $roomGst      = ($settings && $settings->gst_number) ? round($roomBase * $taxRate / 100, 2) : 0;
+        $foodGst      = ($settings && $settings->gst_number && $foodBase > 0) ? round($foodBase * $foodTaxRate / 100, 2) : 0;
+        $grandTotal   = $subtotal + $roomGst + $foodGst;
+        $balance      = max(0, $grandTotal - $invoice->paid_amount);
+        $overpayment  = max(0, $invoice->paid_amount - $grandTotal);
+
+        // Logo as base64 so DomPDF can embed it
+        $logoBase64 = null;
+        if ($settings && $settings->logo) {
+            $logoPath = public_path('storage/' . $settings->logo);
+            if (file_exists($logoPath)) {
+                $mime = mime_content_type($logoPath);
+                $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoPath));
+            }
+        }
+
+        $pdf = Pdf::loadView('admin.invoices.pdf-download', compact(
+            'invoice', 'settings', 'isWH', 'roomCost', 'mealCost', 'extraBedCost',
+            'extraTotal', 'subtotal', 'roomGst', 'foodGst', 'grandTotal', 'balance',
+            'overpayment', 'taxRate', 'foodTaxRate', 'logoBase64'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download('Invoice-' . $invoice->invoice_number . '.pdf');
     }
 
     public function edit($id)
