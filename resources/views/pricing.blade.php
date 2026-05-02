@@ -12,6 +12,8 @@
     <meta name="author" content="Dreams Technology">
     <meta name="language" content="en-IN">
     <link rel="canonical" href="https://resort.dreamstechnology.in/pricing">
+    <link rel="icon" type="image/png" href="/hotel-crm-logo.png">
+    <link rel="apple-touch-icon" href="/hotel-crm-logo.png">
 
     {{-- ── GEO / LOCAL SEO ── --}}
     <meta name="geo.region" content="IN">
