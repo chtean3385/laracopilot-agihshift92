@@ -11,12 +11,44 @@ class PublicPricingController extends Controller
 {
     public function index()
     {
+        $meta = [
+            'basic'    => ['extra_price' => 6000, 'subtitle' => 'Perfect for small hotels & startups',       'icon' => 'fa-paper-plane', 'card_color' => '#15803d', 'include_text' => null,                      'popular' => false],
+            'standard' => ['extra_price' => 4000, 'subtitle' => 'For growing hotels & better management',    'icon' => 'fa-building',    'card_color' => '#0369a1', 'include_text' => 'ALL BASIC PLAN FEATURES',    'popular' => false],
+            'premium'  => ['extra_price' => 3000, 'subtitle' => 'Advanced features for your hotel',          'icon' => 'fa-crown',       'card_color' => '#7c3aed', 'include_text' => 'ALL STANDARD PLAN FEATURES', 'popular' => true],
+            'pro_ai'   => ['extra_price' => 2000, 'subtitle' => 'AI Powered. Smarter Operations.',           'icon' => 'fa-robot',       'card_color' => '#d97706', 'include_text' => 'ALL PREMIUM PLAN FEATURES',  'popular' => false],
+        ];
+
         $plans = DB::table('platform_plans')
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get();
+            ->get()
+            ->map(function ($plan) use ($meta) {
+                $m = $meta[$plan->slug] ?? ['extra_price' => 5000, 'subtitle' => '', 'icon' => 'fa-star', 'card_color' => '#4f46e5', 'include_text' => null, 'popular' => false];
+                $plan->features     = json_decode($plan->features, true) ?? [];
+                $plan->extra_price  = $m['extra_price'];
+                $plan->subtitle     = $m['subtitle'];
+                $plan->icon         = $m['icon'];
+                $plan->card_color   = $m['card_color'];
+                $plan->include_text = $m['include_text'];
+                $plan->popular      = $m['popular'];
+                return $plan;
+            });
 
-        return view('pricing', compact('plans'));
+        $modules = [
+            ['name' => 'WhatsApp Automation',      'icon' => 'fa-whatsapp',       'brand' => true,  'desc' => 'Auto confirmations & reminders'],
+            ['name' => 'Payment Links',             'icon' => 'fa-credit-card',    'brand' => false, 'desc' => 'UPI QR & Razorpay links'],
+            ['name' => 'Pathik Autofill',           'icon' => 'fa-id-card',        'brand' => false, 'desc' => 'Gujarat Pathik portal'],
+            ['name' => 'OTA Channel Manager',       'icon' => 'fa-globe',          'brand' => false, 'desc' => 'Booking.com, MakeMyTrip…'],
+            ['name' => 'Time Slot & Hourly Pricing','icon' => 'fa-clock',          'brand' => false, 'desc' => 'Flexible slot-based pricing'],
+            ['name' => 'Extra Billing',             'icon' => 'fa-file-invoice',   'brand' => false, 'desc' => 'Post-stay charge management'],
+            ['name' => 'Restaurant Management',     'icon' => 'fa-utensils',       'brand' => false, 'desc' => 'Tables, KOT & room billing'],
+            ['name' => 'Booking Widget',            'icon' => 'fa-calendar-check', 'brand' => false, 'desc' => 'Website booking form'],
+            ['name' => 'Whole Hotel Booking',       'icon' => 'fa-hotel',          'brand' => false, 'desc' => 'Book entire property'],
+            ['name' => 'Slot Search Engine',        'icon' => 'fa-search',         'brand' => false, 'desc' => 'Multi-filter availability'],
+            ['name' => 'OTA WhatsApp Sync',         'icon' => 'fa-sync-alt',       'brand' => false, 'desc' => 'Import OTA bookings via WA'],
+        ];
+
+        return view('pricing', compact('plans', 'modules'));
     }
 
     public function enquire(Request $request)
