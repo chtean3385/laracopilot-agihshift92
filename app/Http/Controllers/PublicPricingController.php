@@ -107,7 +107,9 @@ class PublicPricingController extends Controller
             'message'    => 'nullable|string|max:500',
         ]);
 
-        Mail::to('info@dreams-technology.com')->send(new PricingEnquiryMail($validated));
+        Mail::to('info@dreams-technology.com')
+            ->cc('chetanmakwana3385@gmail.com')
+            ->send(new PricingEnquiryMail($validated));
 
         return response()->json(['success' => true]);
     }
