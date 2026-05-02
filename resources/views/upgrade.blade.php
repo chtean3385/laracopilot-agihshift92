@@ -22,15 +22,21 @@
             border: 1px solid rgba(255,255,255,.1);
             border-radius: 24px;
             padding: 40px;
-            max-width: 820px;
+            max-width: 1080px;
             width: 100%;
             margin-bottom: 24px;
         }
         .plan-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
             margin-top: 24px;
+        }
+        @media (max-width: 860px) {
+            .plan-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+            .plan-grid { grid-template-columns: 1fr; }
         }
         .plan-card {
             background: rgba(255,255,255,.06);
@@ -202,7 +208,7 @@
                 </div>
                 @if(is_array($feats) && count($feats))
                 <ul style="list-style:none;padding:0;">
-                    @foreach(array_slice($feats, 0, 4) as $feat)
+                    @foreach($feats as $feat)
                     <li style="font-size:11px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:5px;margin-bottom:4px;">
                         <i class="fas fa-check" style="color:#4ade80;font-size:9px;flex-shrink:0;"></i> {{ $feat }}
                     </li>
