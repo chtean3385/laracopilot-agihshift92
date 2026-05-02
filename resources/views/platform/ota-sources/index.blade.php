@@ -1,4 +1,4 @@
-@extends('platform.layouts.app')
+@extends('layouts.platform')
 
 @section('title', 'OTA WhatsApp Sources')
 
