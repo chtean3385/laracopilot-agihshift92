@@ -191,13 +191,15 @@ class OtaBookingController extends Controller
 
                 if (!$customer) {
                     $customer = Customer::create([
-                        'hotel_id'  => $hotelId,
-                        'name'      => $guestName,
-                        'phone'     => $import->guest_phone ?? '',
-                        'email'     => null,
-                        'id_type'   => null,
-                        'id_number' => null,
-                        'address'   => null,
+                        'hotel_id'   => $hotelId,
+                        'name'       => $guestName,
+                        'phone'      => $import->guest_phone ?? '',
+                        'email'      => null,
+                        'id_type'    => 'aadhaar',
+                        'id_number'  => '',
+                        'address'    => null,
+                        'nationality'=> 'Indian',
+                        'country'    => 'India',
                     ]);
                 }
 

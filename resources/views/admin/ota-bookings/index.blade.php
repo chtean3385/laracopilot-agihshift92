@@ -212,9 +212,53 @@ Special Request: Early check-in if possible</div>
 <script>
 var editingImpId = null;
 
+// ── Toast notification (replaces all alert/confirm) ───────────────────────
+function showToast(msg, type) {
+    var t = document.getElementById('ota-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'ota-toast';
+        t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;max-width:420px;padding:14px 18px;border-radius:12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);transition:opacity .3s;';
+        document.body.appendChild(t);
+    }
+    var isOk = type === 'success';
+    t.style.background = isOk ? '#dcfce7' : (type === 'info' ? '#eff6ff' : '#fee2e2');
+    t.style.color      = isOk ? '#065f46' : (type === 'info' ? '#1e40af' : '#991b1b');
+    t.style.border     = '1.5px solid ' + (isOk ? '#bbf7d0' : (type === 'info' ? '#bfdbfe' : '#fecaca'));
+    t.style.opacity    = '1';
+    t.innerHTML = '<i class="fas fa-' + (isOk ? 'check-circle' : (type === 'info' ? 'info-circle' : 'exclamation-circle')) + '"></i><span>' + msg + '</span>';
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => { t.style.opacity = '0'; }, 3500);
+}
+
+// ── Confirm dialog (replaces browser confirm()) ───────────────────────────
+function showConfirm(msg, onConfirm) {
+    var d = document.getElementById('ota-confirm-dialog');
+    if (!d) {
+        d = document.createElement('div');
+        d.id = 'ota-confirm-dialog';
+        d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;';
+        d.innerHTML =
+            '<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:360px;width:100%;margin:16px;box-shadow:0 20px 60px rgba(0,0,0,.2);">' +
+            '<div id="ota-confirm-msg" style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:20px;line-height:1.5;"></div>' +
+            '<div style="display:flex;gap:10px;">' +
+            '<button id="ota-confirm-yes" style="flex:1;padding:10px;border:none;border-radius:9px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Yes, proceed</button>' +
+            '<button id="ota-confirm-no"  style="flex:1;padding:10px;border:none;border-radius:9px;background:#f1f5f9;color:#475569;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>' +
+            '</div></div>';
+        document.body.appendChild(d);
+        document.getElementById('ota-confirm-no').addEventListener('click', () => { d.style.display = 'none'; });
+    }
+    document.getElementById('ota-confirm-msg').textContent = msg;
+    d.style.display = 'flex';
+    var yesBtn = document.getElementById('ota-confirm-yes');
+    var newYes = yesBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYes, yesBtn);
+    newYes.addEventListener('click', () => { d.style.display = 'none'; onConfirm(); });
+}
+
 function runSimulate() {
     var msg = document.getElementById('sim-message').value.trim();
-    if (!msg) { alert('Please paste a message first.'); return; }
+    if (!msg) { showToast('Please paste a message first.', 'error'); return; }
     var res = document.getElementById('sim-result');
     res.style.display = 'none';
     fetch('{{ route("ota-bookings.simulate") }}', {
@@ -243,38 +287,47 @@ function toggleRaw(id) {
 }
 
 function confirmImport(id) {
-    if (!confirm('Confirm this OTA import and create a booking?')) return;
-    fetch('/ota-bookings/' + id + '/confirm', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) {
-            var row = document.getElementById('imp-' + id);
-            row.style.borderColor = '#bbf7d0';
-            row.innerHTML = '<div style="padding:12px 0;color:#059669;font-weight:700;font-size:13px;"><i class="fas fa-check-circle" style="margin-right:8px;"></i>' + d.message + ' Refresh to see booking link.</div>';
-        } else {
-            alert(d.message || 'Error confirming import.');
-        }
-    })
-    .catch(() => alert('Network error. Please try again.'));
+    showConfirm('Confirm this OTA import and create a booking in the system?', function() {
+        fetch('/ota-bookings/' + id + '/confirm', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showToast(d.message, 'success');
+                var row = document.getElementById('imp-' + id);
+                row.style.borderColor = '#bbf7d0';
+                row.style.background  = '#f0fdf4';
+                row.querySelectorAll('button').forEach(b => b.remove());
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(d.message || 'Could not confirm import.', 'error');
+            }
+        })
+        .catch(() => showToast('Network error. Please try again.', 'error'));
+    });
 }
 
 function rejectImport(id) {
-    if (!confirm('Reject this import?')) return;
-    fetch('/ota-bookings/' + id + '/reject', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (d.success) {
-            var row = document.getElementById('imp-' + id);
-            row.style.borderColor = '#fecaca';
-            row.querySelector('[style*="pending"]') && (row.querySelector('[style*="pending"]').textContent = 'Rejected');
-            row.querySelectorAll('button').forEach(b => b.remove());
-        }
+    showConfirm('Reject this import? It will be marked as rejected.', function() {
+        fetch('/ota-bookings/' + id + '/reject', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showToast('Import rejected.', 'info');
+                var row = document.getElementById('imp-' + id);
+                row.style.borderColor = '#fecaca';
+                row.style.background  = '#fff5f5';
+                row.querySelectorAll('button').forEach(b => b.remove());
+            } else {
+                showToast(d.message || 'Could not reject import.', 'error');
+            }
+        })
+        .catch(() => showToast('Network error. Please try again.', 'error'));
     });
 }
 
@@ -301,14 +354,14 @@ function openEditModal(id, data) {
 function saveEditImport() {
     if (!editingImpId) return;
     var body = {
-        guest_name:     document.getElementById('ei-guest_name').value,
-        guest_phone:    document.getElementById('ei-guest_phone').value,
-        checkin:        document.getElementById('ei-checkin').value,
-        checkout:       document.getElementById('ei-checkout').value,
-        room_type:      document.getElementById('ei-room_type').value,
-        guests_count:   document.getElementById('ei-guests_count').value,
-        amount:         document.getElementById('ei-amount').value,
-        special_request:document.getElementById('ei-special_request').value,
+        guest_name:      document.getElementById('ei-guest_name').value,
+        guest_phone:     document.getElementById('ei-guest_phone').value,
+        checkin:         document.getElementById('ei-checkin').value,
+        checkout:        document.getElementById('ei-checkout').value,
+        room_type:       document.getElementById('ei-room_type').value,
+        guests_count:    document.getElementById('ei-guests_count').value,
+        amount:          document.getElementById('ei-amount').value,
+        special_request: document.getElementById('ei-special_request').value,
     };
     fetch('/ota-bookings/' + editingImpId, {
         method: 'PUT',
@@ -319,11 +372,13 @@ function saveEditImport() {
     .then(d => {
         if (d.success) {
             document.getElementById('editImpModal').style.display = 'none';
-            location.reload();
+            showToast('Import details updated.', 'success');
+            setTimeout(() => location.reload(), 900);
         } else {
-            alert(d.message || 'Error saving.');
+            showToast(d.message || 'Error saving changes.', 'error');
         }
-    });
+    })
+    .catch(() => showToast('Network error. Please try again.', 'error'));
 }
 </script>
 @endsection
