@@ -3,8 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dream Hotel CRM — Pricing Plans</title>
-    <meta name="description" content="Simple cloud-based hotel management software. Bookings, check-in/out, WhatsApp automation, invoices & more. Plans starting ₹5,999/year.">
+
+    {{-- ── PRIMARY SEO ── --}}
+    <title>Hotel Management Software India | Dream Hotel CRM — Plans from ₹5,999/Year</title>
+    <meta name="description" content="Cloud-based hotel management CRM for Indian hotels & resorts. Manage bookings, check-in/out, WhatsApp automation, invoices, OTA sync & more. Plans starting ₹5,999/year. Free demo available.">
+    <meta name="keywords" content="hotel management software India, hotel CRM, resort management system, hotel booking software, cloud hotel PMS, WhatsApp hotel automation, hotel software Gujarat, OTA channel manager, hotel PMS India, resort CRM, hotel check-in software, hotel billing software, Dreams Technology CRM">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="author" content="Dreams Technology">
+    <meta name="language" content="en-IN">
+    <link rel="canonical" href="https://resort.dreamstechnology.in/pricing">
+
+    {{-- ── GEO / LOCAL SEO ── --}}
+    <meta name="geo.region" content="IN">
+    <meta name="geo.country" content="India">
+    <meta name="DC.language" content="en">
+
+    {{-- ── OPEN GRAPH (Facebook / WhatsApp / LinkedIn preview) ── --}}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://resort.dreamstechnology.in/pricing">
+    <meta property="og:title" content="Dream Hotel Management CRM — Plans & Pricing | From ₹5,999/Year">
+    <meta property="og:description" content="All-in-one cloud hotel management software for Indian hotels & resorts. Bookings, WhatsApp automation, OTA sync, restaurant billing & more. 20% discount — limited time.">
+    <meta property="og:image" content="https://resort.dreamstechnology.in/hotel-crm-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Dream Hotel Management CRM — India's leading hotel software">
+    <meta property="og:site_name" content="Dream Hotel Management CRM">
+    <meta property="og:locale" content="en_IN">
+
+    {{-- ── TWITTER CARD ── --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dream Hotel CRM — Plans from ₹5,999/Year">
+    <meta name="twitter:description" content="Cloud-based hotel management software. Bookings, WhatsApp automation, OTA sync & more. 20% off — limited time.">
+    <meta name="twitter:image" content="https://resort.dreamstechnology.in/hotel-crm-logo.png">
+
+    <!-- SCHEMA.ORG — SoftwareApplication -->
+    @php $validUntil = date('Y') . '-12-31'; @endphp
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "SoftwareApplication",
+      "name": "Dream Hotel Management CRM",
+      "url": "https://resort.dreamstechnology.in",
+      "description": "Cloud-based hotel and resort management CRM for India. Bookings, check-in/out, WhatsApp automation, OTA channel manager, invoicing and more.",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "inLanguage": "en-IN",
+      "offers": [
+        {
+          "@@type": "Offer",
+          "name": "Basic Plan",
+          "price": "5999",
+          "priceCurrency": "INR",
+          "priceValidUntil": "{{ $validUntil }}",
+          "description": "Perfect for small hotels and startups. Up to 10 rooms, 3 users.",
+          "url": "https://resort.dreamstechnology.in/pricing"
+        },
+        {
+          "@@type": "Offer",
+          "name": "Standard Plan",
+          "price": "7999",
+          "priceCurrency": "INR",
+          "priceValidUntil": "{{ $validUntil }}",
+          "description": "For growing hotels. Includes WhatsApp Automation, Payment Links.",
+          "url": "https://resort.dreamstechnology.in/pricing"
+        },
+        {
+          "@@type": "Offer",
+          "name": "Premium Plan",
+          "price": "11999",
+          "priceCurrency": "INR",
+          "priceValidUntil": "{{ $validUntil }}",
+          "description": "Advanced features including OTA Channel Manager and Pathik autofill.",
+          "url": "https://resort.dreamstechnology.in/pricing"
+        },
+        {
+          "@@type": "Offer",
+          "name": "Pro AI Plan",
+          "price": "19999",
+          "priceCurrency": "INR",
+          "priceValidUntil": "{{ $validUntil }}",
+          "description": "AI-powered analytics, unlimited rooms and users, all modules included.",
+          "url": "https://resort.dreamstechnology.in/pricing"
+        }
+      ],
+      "provider": {
+        "@@type": "Organization",
+        "name": "Dreams Technology",
+        "url": "https://resort.dreamstechnology.in",
+        "telephone": "+919725225519",
+        "address": {
+          "@@type": "PostalAddress",
+          "addressCountry": "IN"
+        }
+      }
+    }
+    </script>
+
+    <!-- SCHEMA.ORG — FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@@type": "Question",
+          "name": "What is included in the Basic hotel management plan?",
+          "acceptedAnswer": {
+            "@@type": "Answer",
+            "text": "The Basic Plan at Rs 5,999/year includes guest management, room management, booking and check-in/out, invoicing, WhatsApp messaging, and basic reports for up to 10 rooms and 3 users."
+          }
+        },
+        {
+          "@@type": "Question",
+          "name": "Can I add extra modules to my hotel software plan?",
+          "acceptedAnswer": {
+            "@@type": "Answer",
+            "text": "Yes. You can add any module such as WhatsApp Automation, Payment Links, OTA Channel Manager, Restaurant Management etc. Extra module pricing: Basic Rs 3,000, Standard Rs 2,000, Premium Rs 1,000 per module. Pro AI Plan includes all modules at no extra charge."
+          }
+        },
+        {
+          "@@type": "Question",
+          "name": "Is there a free demo available for Dream Hotel CRM?",
+          "acceptedAnswer": {
+            "@@type": "Answer",
+            "text": "Yes! Fill the enquiry form on this page or contact us on WhatsApp at +91 97252 25519. We activate your demo account in minutes."
+          }
+        },
+        {
+          "@@type": "Question",
+          "name": "Does Dream Hotel CRM support OTA platforms like Booking.com and MakeMyTrip?",
+          "acceptedAnswer": {
+            "@@type": "Answer",
+            "text": "Yes. The OTA Channel Manager module syncs your hotel availability and bookings with Booking.com, MakeMyTrip, and other OTA platforms automatically."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- META PIXEL — PASTE YOUR CODE HERE WHEN READY
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'YOUR_PIXEL_ID');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+    END META PIXEL -->
+
+    <!-- GOOGLE TAG (GA4 / Google Ads) — PASTE YOUR CODE HERE WHEN READY
+    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GTAG_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'YOUR_GTAG_ID');
+    </script>
+    END GOOGLE TAG -->
+
     <link rel="stylesheet" href="/css/font-awesome.min.css">
     <style>
         *{box-sizing:border-box;margin:0;padding:0;}
