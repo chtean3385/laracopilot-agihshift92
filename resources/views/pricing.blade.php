@@ -147,9 +147,7 @@
 
     {{-- Hero --}}
     <div class="hero">
-        <div style="width:60px;height:60px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 24px rgba(139,92,246,.4);">
-            <i class="fas fa-umbrella-beach" style="color:#fff;font-size:24px;"></i>
-        </div>
+        <img src="/hotel-crm-logo.png" alt="Resort CRM" style="width:90px;height:90px;object-fit:contain;margin:0 auto 20px;display:block;drop-shadow:0 8px 24px rgba(0,0,0,.4);filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));">
         <div class="hero-badge"><i class="fas fa-star"></i> Resort CRM — Hotel Management Platform</div>
         <h1>Simple, Transparent <span>Pricing</span></h1>
         <p>Everything your hotel needs — bookings, check-in/out, WhatsApp automation, invoices, reports and more.</p>
