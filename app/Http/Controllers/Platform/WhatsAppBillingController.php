@@ -62,8 +62,8 @@ class WhatsAppBillingController extends Controller
 
         // Existing billing cycles for this month
         $cycles = WhatsAppBillingCycle::where('period_start', $periodStart->toDateString())
-            ->pluck(null, 'hotel_id')
-            ->map(fn($c) => $c);
+            ->get()
+            ->keyBy('hotel_id');
 
         // Available months (distinct months from logs, last 12)
         $availableMonths = WhatsAppLog::where('direction', 'outgoing')

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WhatsAppBillingCycle extends Model
 {
+    protected $table = 'whatsapp_billing_cycles';
+
     protected $fillable = [
         'hotel_id', 'period_label', 'period_start', 'period_end',
         'message_count', 'rate_per_message', 'amount',
