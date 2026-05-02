@@ -1,50 +1,50 @@
 <div class="space-y-5">
     <!-- Stats -->
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
-            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <i class="fas fa-check-circle text-emerald-500 text-xl"></i>
+    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">{{ $stats['available'] }}</div>
-                <div class="text-sm text-gray-500">Available</div>
+                <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['available'] }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Available</div>
             </div>
         </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
-            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <i class="fas fa-bed text-red-500 text-xl"></i>
+        <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-bed text-red-500 text-sm"></i>
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">{{ $stats['occupied'] }}</div>
-                <div class="text-sm text-gray-500">Occupied</div>
+                <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['occupied'] }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Occupied</div>
             </div>
         </div>
-        {{-- Dirty rooms — highlighted in orange, needs housekeeping attention --}}
-        <div class="{{ $stats['dirty'] > 0 ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-100' }} rounded-2xl p-5 shadow-sm border flex items-center gap-4">
-            <div class="w-12 h-12 {{ $stats['dirty'] > 0 ? 'bg-orange-200' : 'bg-orange-100' }} rounded-xl flex items-center justify-center">
-                <i class="fas fa-broom {{ $stats['dirty'] > 0 ? 'text-orange-600' : 'text-orange-400' }} text-xl"></i>
+        {{-- Dirty rooms — highlighted in orange when > 0 --}}
+        <div class="{{ $stats['dirty'] > 0 ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-100' }} rounded-xl px-3 py-2.5 shadow-sm border flex items-center gap-2.5">
+            <div class="w-8 h-8 {{ $stats['dirty'] > 0 ? 'bg-orange-200' : 'bg-orange-100' }} rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-broom {{ $stats['dirty'] > 0 ? 'text-orange-600' : 'text-orange-400' }} text-sm"></i>
             </div>
             <div>
-                <div class="text-2xl font-bold {{ $stats['dirty'] > 0 ? 'text-orange-700' : 'text-gray-800' }}">{{ $stats['dirty'] }}</div>
-                <div class="text-sm {{ $stats['dirty'] > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500' }}">Needs Cleaning</div>
+                <div class="text-lg font-bold {{ $stats['dirty'] > 0 ? 'text-orange-700' : 'text-gray-800' }} leading-none">{{ $stats['dirty'] }}</div>
+                <div class="text-xs {{ $stats['dirty'] > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500' }} mt-0.5">Cleaning</div>
             </div>
         </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
-            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-                <i class="fas fa-tools text-amber-500 text-xl"></i>
+        <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-tools text-amber-500 text-sm"></i>
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">{{ $stats['maintenance'] }}</div>
-                <div class="text-sm text-gray-500">Maintenance</div>
+                <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['maintenance'] }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Maintenance</div>
             </div>
         </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
-            <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                <i class="fas fa-ban text-gray-400 text-xl"></i>
+        <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-ban text-gray-400 text-sm"></i>
             </div>
             <div>
-                <div class="text-2xl font-bold text-gray-800">{{ $stats['inactive'] }}</div>
-                <div class="text-sm text-gray-500">Inactive</div>
+                <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['inactive'] }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Inactive</div>
             </div>
         </div>
     </div>
