@@ -266,6 +266,79 @@
                 }
                 </style>
 
+                {{-- ══ SUSPENSION BANNER ═══════════════════════════════════════════ --}}
+                @if(session('crm_hotel_suspended'))
+                <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-left:5px solid #f43f5e;border-radius:16px;padding:22px 28px;margin-bottom:20px;display:flex;align-items:flex-start;gap:18px;box-shadow:0 8px 32px rgba(244,63,94,.18);">
+                    <div style="width:52px;height:52px;background:rgba(244,63,94,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(244,63,94,.3);">
+                        <i class="fas fa-ban" style="color:#f43f5e;font-size:22px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:6px;">Your hotel account has been suspended</div>
+                        <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:16px;">Access to this account has been restricted by the platform administrator. Your data is safe. Please contact us to restore your access.</div>
+                        <a href="https://wa.me/919725225519?text={{ urlencode('Hello, my hotel account (' . session('crm_hotel_name', '') . ') has been suspended. Please help restore my access.') }}"
+                           target="_blank"
+                           style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border-radius:12px;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,.3);">
+                            <i class="fab fa-whatsapp" style="font-size:16px;"></i>Contact +91 97252 25519
+                        </a>
+                    </div>
+                </div>
+                @endif
+
+                {{-- ══ TRIAL EXPIRED BANNERS ═══════════════════════════════════════ --}}
+                @if(session('crm_trial_expired'))
+                    @if(!session('crm_trial_extended_once'))
+                    {{-- ── First expiry: offer one-time 3-day extension ── --}}
+                    <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #f59e0b;border-radius:16px;padding:22px 28px;margin-bottom:20px;display:flex;align-items:flex-start;gap:18px;box-shadow:0 8px 32px rgba(245,158,11,.15);">
+                        <div style="width:52px;height:52px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(245,158,11,.35);">
+                            <i class="fas fa-hourglass-end" style="color:#fff;font-size:20px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:16px;font-weight:900;color:#92400e;margin-bottom:6px;">Your free trial has ended</div>
+                            <div style="font-size:13px;color:#78350f;line-height:1.6;margin-bottom:16px;">You can extend your trial by <strong>3 more days</strong> — one time only. After that you'll need to upgrade to keep using the system.</div>
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <form method="POST" action="{{ route('upgrade.extend-trial') }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit"
+                                            style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,.4);"
+                                            onclick="this.disabled=true;this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i> Extending…';this.form.submit();">
+                                        <i class="fas fa-clock"></i> Extend 3 Days (Free — One Time)
+                                    </button>
+                                </form>
+                                <a href="{{ route('upgrade') }}"
+                                   style="display:inline-flex;align-items:center;gap:7px;padding:11px 20px;background:#fff;border:1.5px solid #d97706;color:#92400e;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;">
+                                    <i class="fas fa-arrow-up"></i> Upgrade Plan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @else
+                    {{-- ── Extended trial also expired: strict no-more-extension warning ── --}}
+                    <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-left:5px solid #ef4444;border-radius:16px;padding:22px 28px;margin-bottom:20px;display:flex;align-items:flex-start;gap:18px;box-shadow:0 8px 32px rgba(239,68,68,.2);">
+                        <div style="width:52px;height:52px;background:rgba(239,68,68,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(239,68,68,.35);">
+                            <i class="fas fa-exclamation-triangle" style="color:#ef4444;font-size:20px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:6px;">Trial period fully ended — no further extensions</div>
+                            <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:16px;">
+                                You've already used your one-time 3-day extension. The system is now in read-only mode.
+                                To continue using all features, please upgrade your plan or contact us directly.
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <a href="{{ route('upgrade') }}"
+                                   style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border-radius:12px;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(124,58,237,.4);">
+                                    <i class="fas fa-arrow-up"></i> Upgrade Plan
+                                </a>
+                                <a href="https://wa.me/919725225519?text={{ urlencode('Hello, I need to upgrade my hotel CRM plan. Hotel: ' . session('crm_hotel_name', '')) }}"
+                                   target="_blank"
+                                   style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;border-radius:12px;font-size:13px;font-weight:800;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,.3);">
+                                    <i class="fab fa-whatsapp" style="font-size:16px;"></i> Contact +91 97252 25519
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                @endif
+
                 {{-- ══════════════════════════════════════════════════════════════════
                      TODAY'S AGENDA MODAL — shown once per login-day
                 ══════════════════════════════════════════════════════════════════ --}}
