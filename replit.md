@@ -412,6 +412,82 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 8. `php artisan storage:link`
 9. `php artisan serve --host=0.0.0.0 --port=5000`
 
+## Public Pricing Page (`/pricing`)
+
+### Overview
+A full ad-grade public landing page at `/pricing` — designed for Google / Meta ads traffic. Bypasses all auth middleware (`SetHotelContext`, `CheckTrialStatus`). Enquiry form sends email via SMTP.
+
+### Files
+| File | Purpose |
+|------|---------|
+| `app/Http/Controllers/PublicPricingController.php` | `index()` (renders page) + `enquire()` (sends email) |
+| `resources/views/pricing.blade.php` | Full landing page — inline styles only |
+| `app/Mail/PricingEnquiryMail.php` | Mailable — uses `$enquiryMessage` (NOT `$message`, which is Laravel reserved) |
+| `resources/views/emails/pricing-enquiry.blade.php` | Email template |
+| `public/hotel-crm-logo.png` | Logo used in nav + hero |
+
+### Routes (in `routes/web.php`, outside auth middleware group)
+```
+GET  /pricing         → PublicPricingController@index
+POST /pricing/enquire → PublicPricingController@enquire   (named: pricing.enquire)
+```
+CSRF exception added in `bootstrap/app.php` → `validateCsrfTokens(except: ['pricing/enquire'])`.
+
+### Page Sections (top → bottom)
+1. **Sticky nav** — logo + WhatsApp CTA button (+91 97252 25519)
+2. **Hero** (dark navy) — "DREAM HOTEL MANAGEMENT" headline, "Are you a Hotel Owner?" tagline in amber, Cloud Based / Secure / Access Anywhere pills, CSS dashboard mockup (live stats: check-in 12, check-out 08, bookings 25, ₹2.45L revenue, room occupancy bars, recent bookings with status badges)
+3. **Feature strip** (white) — Increase Bookings / Save Staff Time / Reduce Errors / Grow Your Business
+4. **Plans grid** (4 columns) — data from `platform_plans` DB table; each card has coloured header, MRP strikethrough, actual price + "20% OFF" badge, include-label banner, feature list, room/user limits, extra module pricing footer
+5. **Modules grid** — 11 real add-on modules from CRM, + "& More" dashed card
+6. **Benefits** — 4 cards (Increase Bookings, Save Staff Time, Reduce Errors, Grow)
+7. **Enquiry form** — plan selection highlight, AJAX POST to `/pricing/enquire`, sends email to `chetanmakwana3385@gmail.com`
+8. **Footer CTA** — "LET'S GROW TOGETHER! 97252 25519" + WhatsApp button
+
+### Pricing Display Logic
+- **MRP** = `ceil(yearly_price × 1.2 / 100) × 100` — shown with strikethrough
+- **Actual price** = real DB value — shown large with green "20% OFF" badge
+- Example: Basic ₹5,999 → MRP ~~₹7,200~~, **₹5,999** + 20% OFF badge
+
+### Extra Module Pricing (per plan)
+| Plan | Extra Module Price | Notes |
+|------|--------------------|-------|
+| Basic | ₹3,000 / module | |
+| Standard | ₹2,000 / module | |
+| Premium | ₹1,000 / module | |
+| Pro AI | All included | `all_modules_included = true` → shows "ALL INCLUDED" in green |
+
+### Add-On Modules Shown (11 real modules)
+WhatsApp Automation, Payment Links, Pathik Autofill, OTA Channel Manager, Time Slot & Hourly Pricing, Extra Billing, Restaurant Management, Booking Widget, Whole Hotel Booking, Slot Search Engine, OTA WhatsApp Sync
+
+### Theme
+- **Light** — white nav, white/light-gray body sections (#f1f5f9 / #fff / #f8fafc)
+- **Hero stays dark navy** — creates strong visual contrast; dashboard mockup looks authentic
+- Inline styles only (no Tailwind dynamic classes)
+- Font Awesome from `/css/font-awesome.min.css`
+
+### SEO (added to `<head>`)
+- `<title>` — "Hotel Management Software India | Dream Hotel CRM — Plans from ₹5,999/Year"
+- `<meta description>` — keyword-rich, mentions free demo
+- `<meta keywords>` — 13 targeted terms (hotel management software India, hotel CRM, OTA channel manager, hotel software Gujarat, etc.)
+- `<meta robots>` — `index, follow, max-snippet:-1, max-image-preview:large`
+- `<link rel="canonical">` → `https://resort.dreamstechnology.in/pricing`
+- Geo tags: `geo.region=IN`, `geo.country=India`
+- **Open Graph** — og:title, og:description, og:image, og:type, og:locale `en_IN` (WhatsApp / Facebook / LinkedIn link previews)
+- **Twitter Card** — `summary_large_image`
+- **Schema.org JSON-LD (2 blocks):**
+  - `SoftwareApplication` with 4 `Offer` nodes (price INR, priceValidUntil = current year end)
+  - `FAQPage` with 4 Q&As (plan features, modules, demo, OTA support) — Google may show as expandable FAQ in search results
+- **Note:** All `@` signs in JSON-LD escaped as `@@` (Blade treats `@type`, `@context` as directives otherwise)
+- **Tracking placeholders** — HTML comments ready to uncomment: Meta Pixel block + Google Tag (GA4/Ads) block — replace `YOUR_PIXEL_ID` / `YOUR_GTAG_ID` when ready
+
+### Enquiry Email
+- **To**: `chetanmakwana3385@gmail.com`
+- **SMTP**: `mail.dreamstechnology.in:465` (smtps), from `support@dreamstechnology.in`
+- **Fields captured**: name, hotel name, phone, plan slug + label + price, rooms, optional message
+- **Variable name**: `$enquiryMessage` in `PricingEnquiryMail` — NOT `$message` (Laravel reserves that variable in Mailable)
+
+---
+
 ## SaaS Task Status
 | Task | Status | Description |
 |------|--------|-------------|
