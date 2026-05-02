@@ -405,8 +405,7 @@
                     $canSetDefault = in_array($dashRole, ['Super Admin', 'Admin']);
                     $widgetMeta = [
                         'kpi-row-1'          => ['label' => 'KPI Stats — All 8 cards',           'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
-                        'shortcuts'          => ['label' => 'Shortcuts',                       'icon' => 'fa-th',            'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'],
-                        'quick-actions'      => ['label' => 'Quick Actions',                   'icon' => 'fa-bolt',          'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)'],
+                        'shortcuts-actions-pair' => ['label' => 'Shortcuts + Quick Actions', 'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#f59e0b,#f97316)'],
                         'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                         'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
                         'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
@@ -520,29 +519,6 @@
                         }
                     @endphp
 
-                    <div data-widget="shortcuts" class="db-widget-wrap">
-                    @if(count($dashboardShortcuts) > 0)
-                    <div class="db-card">
-                        <div class="db-card-header">
-                            <div class="db-card-title">Shortcuts</div>
-                        </div>
-                        <div class="shortcut-grid">
-                            @foreach($dashboardShortcuts as $shortcut)
-                            <a href="{{ $shortcut['route'] }}" class="shortcut-card">
-                                <div class="shortcut-icon" style="background: {{ $shortcut['bg'] }};">
-                                    <i class="fas {{ $shortcut['icon'] }}"></i>
-                                </div>
-                                <div>
-                                    <div class="shortcut-title">{{ $shortcut['title'] }}</div>
-                                    <div class="shortcut-sub">{{ $shortcut['sub'] }}</div>
-                                </div>
-                            </a>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-                    </div>{{-- /shortcuts widget --}}
-
                     {{-- KPI Stats — single compact row of 8 cards --}}
                     <div data-widget="kpi-row-1" class="db-widget-wrap">
                     <div class="kpi-grid kpi-grid-8" style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
@@ -625,79 +601,103 @@
                     </div>
                     </div>{{-- /kpi-row-1 widget --}}
 
-                    {{-- Quick Actions widget --}}
-                    <div data-widget="quick-actions" class="db-widget-wrap">
-                    {{-- (Occupancy Circle removed — was hidden) --}}
-                    {{-- Quick Actions --}}
-                    <div class="db-card">
-                        <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
+                    {{-- Shortcuts + Quick Actions — side-by-side ──────────────────────── --}}
+                    <div data-widget="shortcuts-actions-pair" class="db-widget-wrap">
+                    <div class="shortcuts-actions-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
 
-                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
-                            @canDo('bookings.create')
-                            <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3);flex-shrink:0;">
-                                    <i class="fas fa-plus" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:700;color:#1e40af;font-size:14px;">New Booking</div>
-                                    <div style="font-size:12px;color:#93c5fd;">Create reservation</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color:#93c5fd;font-size:11px;margin-left:auto;"></i>
-                            </a>
-                            @endCanDo
-                            @canDo('checkin.process')
-                            <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);" onmouseenter="this.style.background='linear-gradient(135deg,#dcfce7,#bbf7d0)'" onmouseleave="this.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(16,185,129,.3);flex-shrink:0;">
-                                    <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:700;color:#065f46;font-size:14px;">Process Check-In</div>
-                                    <div style="font-size:12px;color:#6ee7b7;">{{ $todayCheckins->count() }} pending</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color:#6ee7b7;font-size:11px;margin-left:auto;"></i>
-                            </a>
-                            @endCanDo
-                            @canDo('checkout.process')
-                            <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);" onmouseenter="this.style.background='linear-gradient(135deg,#fef3c7,#fde68a)'" onmouseleave="this.style.background='linear-gradient(135deg,#fffbeb,#fef3c7)'">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(245,158,11,.3);flex-shrink:0;">
-                                    <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:700;color:#92400e;font-size:14px;">Process Check-Out</div>
-                                    <div style="font-size:12px;color:#fcd34d;">{{ $todayCheckouts->count() }} pending</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color:#fcd34d;font-size:11px;margin-left:auto;"></i>
-                            </a>
-                            @endCanDo
-                            @canDo('guests.create')
-                            <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#faf5ff,#ede9fe)'">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(139,92,246,.3);flex-shrink:0;">
-                                    <i class="fas fa-user-plus" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:700;color:#4c1d95;font-size:14px;">Add Guest</div>
-                                    <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
-                            </a>
-                            @endCanDo
-                            @if(\App\Models\Module::isEnabled('extra-billing'))
-                            @canDo('bookings.view')
-                            <a href="{{ route('bookings.index', ['status' => 'checked_in']) }}" class="qa-btn" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);" onmouseenter="this.style.background='linear-gradient(135deg,#ffe4e6,#fecdd3)'" onmouseleave="this.style.background='linear-gradient(135deg,#fff1f2,#ffe4e6)'">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(244,63,94,.3);flex-shrink:0;">
-                                    <i class="fas fa-receipt" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:700;color:#9f1239;font-size:14px;">Post Room Charge</div>
-                                    <div style="font-size:12px;color:#fda4af;">In-house guests</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color:#fda4af;font-size:11px;margin-left:auto;"></i>
-                            </a>
-                            @endCanDo
-                            @endif
+                        {{-- Left: Shortcuts --}}
+                        @if(count($dashboardShortcuts) > 0)
+                        <div class="db-card">
+                            <div class="db-card-header">
+                                <div class="db-card-title">Shortcuts</div>
+                            </div>
+                            <div class="shortcut-grid">
+                                @foreach($dashboardShortcuts as $shortcut)
+                                <a href="{{ $shortcut['route'] }}" class="shortcut-card">
+                                    <div class="shortcut-icon" style="background: {{ $shortcut['bg'] }};">
+                                        <i class="fas {{ $shortcut['icon'] }}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="shortcut-title">{{ $shortcut['title'] }}</div>
+                                        <div class="shortcut-sub">{{ $shortcut['sub'] }}</div>
+                                    </div>
+                                </a>
+                                @endforeach
+                            </div>
                         </div>
+                        @endif
+
+                        {{-- Right: Quick Actions --}}
+                        <div class="db-card">
+                            <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                @canDo('bookings.create')
+                                <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3);flex-shrink:0;">
+                                        <i class="fas fa-plus" style="color:#fff;font-size:14px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700;color:#1e40af;font-size:14px;">New Booking</div>
+                                        <div style="font-size:12px;color:#93c5fd;">Create reservation</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right" style="color:#93c5fd;font-size:11px;margin-left:auto;"></i>
+                                </a>
+                                @endCanDo
+                                @canDo('checkin.process')
+                                <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);" onmouseenter="this.style.background='linear-gradient(135deg,#dcfce7,#bbf7d0)'" onmouseleave="this.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(16,185,129,.3);flex-shrink:0;">
+                                        <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700;color:#065f46;font-size:14px;">Process Check-In</div>
+                                        <div style="font-size:12px;color:#6ee7b7;">{{ $todayCheckins->count() }} pending</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right" style="color:#6ee7b7;font-size:11px;margin-left:auto;"></i>
+                                </a>
+                                @endCanDo
+                                @canDo('checkout.process')
+                                <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);" onmouseenter="this.style.background='linear-gradient(135deg,#fef3c7,#fde68a)'" onmouseleave="this.style.background='linear-gradient(135deg,#fffbeb,#fef3c7)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(245,158,11,.3);flex-shrink:0;">
+                                        <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700;color:#92400e;font-size:14px;">Process Check-Out</div>
+                                        <div style="font-size:12px;color:#fcd34d;">{{ $todayCheckouts->count() }} pending</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right" style="color:#fcd34d;font-size:11px;margin-left:auto;"></i>
+                                </a>
+                                @endCanDo
+                                @canDo('guests.create')
+                                <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#faf5ff,#ede9fe)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(139,92,246,.3);flex-shrink:0;">
+                                        <i class="fas fa-user-plus" style="color:#fff;font-size:14px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700;color:#4c1d95;font-size:14px;">Add Guest</div>
+                                        <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
+                                </a>
+                                @endCanDo
+                                @if(\App\Models\Module::isEnabled('extra-billing'))
+                                @canDo('bookings.view')
+                                <a href="{{ route('bookings.index', ['status' => 'checked_in']) }}" class="qa-btn" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);" onmouseenter="this.style.background='linear-gradient(135deg,#ffe4e6,#fecdd3)'" onmouseleave="this.style.background='linear-gradient(135deg,#fff1f2,#ffe4e6)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(244,63,94,.3);flex-shrink:0;">
+                                        <i class="fas fa-receipt" style="color:#fff;font-size:14px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700;color:#9f1239;font-size:14px;">Post Room Charge</div>
+                                        <div style="font-size:12px;color:#fda4af;">In-house guests</div>
+                                    </div>
+                                    <i class="fas fa-chevron-right" style="color:#fda4af;font-size:11px;margin-left:auto;"></i>
+                                </a>
+                                @endCanDo
+                                @endif
+                            </div>
+                        </div>
+
                     </div>
-                    </div>{{-- /quick-actions widget --}}
+                    </div>{{-- /shortcuts-actions-pair widget --}}
 
                     {{-- Slot Availability Widget --}}
                     @canDo('reports.view')
@@ -1137,6 +1137,7 @@
                     .qa-recent-grid { grid-template-columns: 1fr !important; }
                     .avail-grid { grid-template-columns: 1fr !important; }
                     .recent-room-grid { grid-template-columns: 1fr !important; }
+                    .shortcuts-actions-grid { grid-template-columns: 1fr !important; }
                 }
                 @media (max-width: 600px) {
                     .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
