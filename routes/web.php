@@ -292,6 +292,10 @@ Route::get('/ota-bookings',              [\App\Http\Controllers\Admin\OtaBooking
 Route::post('/ota-bookings/{import}/confirm', [\App\Http\Controllers\Admin\OtaBookingController::class, 'confirm'])->name('ota-bookings.confirm');
 Route::post('/ota-bookings/{import}/reject',  [\App\Http\Controllers\Admin\OtaBookingController::class, 'reject'] )->name('ota-bookings.reject');
 Route::put('/ota-bookings/{import}',          [\App\Http\Controllers\Admin\OtaBookingController::class, 'update'] )->name('ota-bookings.update');
+// Hotel-scoped aliases (explicit hotel ID in URL for direct access without session context)
+Route::get('/hotel/{hotelId}/ota-bookings',              [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.hotel.index');
+Route::post('/hotel/{hotelId}/ota-bookings/{import}/confirm', [\App\Http\Controllers\Admin\OtaBookingController::class, 'confirm'])->name('ota-bookings.hotel.confirm');
+Route::post('/hotel/{hotelId}/ota-bookings/{import}/reject',  [\App\Http\Controllers\Admin\OtaBookingController::class, 'reject'] )->name('ota-bookings.hotel.reject');
 
 // ── OTA Channel Manager ────────────────────────────────────────────────────
 Route::get('/channel-manager',                            [\App\Http\Controllers\Admin\ChannelManagerController::class, 'index']            )->name('channel_manager.index');

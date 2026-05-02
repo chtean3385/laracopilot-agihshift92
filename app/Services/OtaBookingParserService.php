@@ -322,10 +322,20 @@ class OtaBookingParserService
 
     private function isDuplicate(string $bookingRef, int $hotelId): bool
     {
-        return OtaImportedBooking::withoutGlobalScopes()
+        // Check the OTA import queue (pending/confirmed imports)
+        if (OtaImportedBooking::withoutGlobalScopes()
             ->where('hotel_id', $hotelId)
             ->where('booking_ref', $bookingRef)
             ->whereIn('status', ['pending', 'confirmed'])
+            ->exists()) {
+            return true;
+        }
+
+        // Also check the bookings table (ota_ref) — covers manually confirmed or pre-existing OTA bookings
+        return DB::table('bookings')
+            ->where('hotel_id', $hotelId)
+            ->where('ota_ref', $bookingRef)
+            ->whereNotNull('ota_ref')
             ->exists();
     }
 
