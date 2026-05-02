@@ -212,13 +212,17 @@ class WhatsAppController extends Controller
 
         $components[] = $bodyComponent;
 
+        $payload = [
+            'name'       => $templateName,
+            'language'   => 'en_US',
+            'category'   => 'UTILITY',
+            'components' => $components,
+        ];
+
+        Log::info('Meta template submission payload', ['template' => $template->id, 'payload' => $payload]);
+
         $response = Http::withToken($token)
-            ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", [
-                'name'       => $templateName,
-                'language'   => 'en_US',
-                'category'   => 'UTILITY',
-                'components' => $components,
-            ]);
+            ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", $payload);
 
         $result = $response->json();
 
@@ -232,9 +236,29 @@ class WhatsAppController extends Controller
             return response()->json(['success' => true, 'message' => 'Template submitted to Meta for review. Status will update once Meta approves it.', 'meta_id' => $result['id']]);
         }
 
-        $errMsg = $result['error']['message'] ?? 'Meta API returned an error.';
-        Log::warning('Meta template submission failed', ['template' => $template->id, 'response' => $result]);
-        return response()->json(['success' => false, 'error' => $errMsg]);
+        $err         = $result['error'] ?? [];
+        $errMsg      = $err['message'] ?? 'Meta API returned an error.';
+        $errUserMsg  = $err['error_user_msg'] ?? '';
+        $errSubcode  = $err['error_subcode'] ?? '';
+        $errCode     = $err['code'] ?? '';
+        $fbtrace     = $err['fbtrace_id'] ?? '';
+
+        Log::warning('Meta template submission failed', [
+            'template' => $template->id,
+            'name'     => $templateName,
+            'response' => $result,
+        ]);
+
+        // Build a helpful message for the user
+        $display = $errMsg;
+        if ($errUserMsg) {
+            $display .= ' — ' . $errUserMsg;
+        }
+        if ($errSubcode) {
+            $display .= ' (subcode: ' . $errSubcode . ')';
+        }
+
+        return response()->json(['success' => false, 'error' => $display, 'meta_error' => $err]);
     }
 
     public function syncWati()
