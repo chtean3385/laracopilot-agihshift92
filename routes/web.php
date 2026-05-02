@@ -288,13 +288,15 @@ Route::post('/payment-links/booking/{id}/razorpay',           [PaymentLinksContr
 Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksController::class, 'razorpayWebhook'] )->name('payment_links.razorpay.webhook')->withoutMiddleware(['web']);
 
 // ── OTA WhatsApp Sync — Import Queue ───────────────────────────────────────
-Route::get('/ota-bookings',              [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.index');
+Route::get('/ota-bookings',                   [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.index');
+Route::get('/ota-bookings/history',           [\App\Http\Controllers\Admin\OtaBookingController::class, 'history'])->name('ota-bookings.history');
 Route::post('/ota-bookings/simulate',         [\App\Http\Controllers\Admin\OtaBookingController::class, 'simulate'])->name('ota-bookings.simulate');
 Route::post('/ota-bookings/{import}/confirm', [\App\Http\Controllers\Admin\OtaBookingController::class, 'confirm'])->name('ota-bookings.confirm');
 Route::post('/ota-bookings/{import}/reject',  [\App\Http\Controllers\Admin\OtaBookingController::class, 'reject'] )->name('ota-bookings.reject');
 Route::put('/ota-bookings/{import}',          [\App\Http\Controllers\Admin\OtaBookingController::class, 'update'] )->name('ota-bookings.update');
 // Hotel-scoped aliases (explicit hotel ID in URL for direct access without session context)
 Route::get('/hotel/{hotelId}/ota-bookings',              [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.hotel.index');
+Route::get('/hotel/{hotelId}/ota-bookings/history',      [\App\Http\Controllers\Admin\OtaBookingController::class, 'history'])->name('ota-bookings.hotel.history');
 Route::post('/hotel/{hotelId}/ota-bookings/{import}/confirm', [\App\Http\Controllers\Admin\OtaBookingController::class, 'confirm'])->name('ota-bookings.hotel.confirm');
 Route::post('/hotel/{hotelId}/ota-bookings/{import}/reject',  [\App\Http\Controllers\Admin\OtaBookingController::class, 'reject'] )->name('ota-bookings.hotel.reject');
 

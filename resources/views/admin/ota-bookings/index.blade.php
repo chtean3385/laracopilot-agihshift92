@@ -22,6 +22,22 @@
         </button>
     </div>
 
+    {{-- Tab nav --}}
+    @php
+        $queueUrl   = $urlHotelId ? route('ota-bookings.hotel.index',   ['hotelId' => $urlHotelId]) : route('ota-bookings.index');
+        $historyUrl = $urlHotelId ? route('ota-bookings.hotel.history', ['hotelId' => $urlHotelId]) : route('ota-bookings.history');
+    @endphp
+    <div style="display:flex;gap:4px;margin-bottom:24px;background:#f1f5f9;border-radius:12px;padding:4px;width:fit-content;">
+        <a href="{{ $queueUrl }}"
+           style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 2px 8px #6366f133;">
+            <i class="fas fa-inbox" style="margin-right:6px;"></i>Import Queue
+        </a>
+        <a href="{{ $historyUrl }}"
+           style="padding:8px 18px;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;color:#64748b;background:transparent;">
+            <i class="fas fa-history" style="margin-right:6px;"></i>History &amp; Analytics
+        </a>
+    </div>
+
     {{-- Status counts --}}
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
         @foreach(['pending'=>['#f59e0b','#fffbeb','Pending Review'],'confirmed'=>['#10b981','#dcfce7','Confirmed'],'rejected'=>['#ef4444','#fee2e2','Rejected'],'duplicate'=>['#94a3b8','#f8fafc','Duplicates']] as $s=>[$col,$bg,$lbl])

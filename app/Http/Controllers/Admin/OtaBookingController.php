@@ -105,6 +105,93 @@ class OtaBookingController extends Controller
         ]);
     }
 
+    /**
+     * Build a base Eloquent query for the history (confirmed + rejected) scoped to one hotel,
+     * with optional date-range and OTA-name filters applied uniformly.
+     * Using this shared builder keeps the list, summary, and breakdown queries consistent.
+     */
+    private function historyBaseQuery(int $hotelId, ?string $dateFrom, ?string $dateTo, ?string $otaFilter)
+    {
+        return OtaImportedBooking::where('hotel_id', $hotelId)
+            ->whereIn('status', ['confirmed', 'rejected'])
+            ->when($dateFrom,  fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo,    fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->when($otaFilter, fn($q) => $q->where('ota_name', $otaFilter));
+    }
+
+    public function history(Request $request)
+    {
+        $hotelId = $this->resolveHotelId($request);
+
+        if (!$hotelId) {
+            abort(403, 'Unauthorized.');
+        }
+
+        if (!Module::isEnabledForHotel('ota_whatsapp_sync', $hotelId)) {
+            abort(403, 'OTA WhatsApp Sync module is not enabled for this hotel.');
+        }
+
+        // Validate filter inputs so malformed values never reach the database layer
+        $filters = $request->validate([
+            'date_from'  => 'nullable|date',
+            'date_to'    => 'nullable|date|after_or_equal:date_from',
+            'ota_source' => 'nullable|string|max:100',
+        ]);
+
+        $dateFrom  = $filters['date_from']  ?? null;
+        $dateTo    = $filters['date_to']    ?? null;
+        $otaFilter = $filters['ota_source'] ?? null;
+
+        // Paginated list (eager-loads OTA source relationship)
+        $imports = $this->historyBaseQuery($hotelId, $dateFrom, $dateTo, $otaFilter)
+            ->with('otaSource')
+            ->orderByDesc('created_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        // Summary analytics — reuse the same shared base query
+        $base = $this->historyBaseQuery($hotelId, $dateFrom, $dateTo, $otaFilter);
+
+        $total     = (clone $base)->count();
+        $confirmed = (clone $base)->where('status', 'confirmed')->count();
+        $rejected  = (clone $base)->where('status', 'rejected')->count();
+
+        // Name-based match values: matched via property name regardless of WA config path
+        $matchedByName  = (clone $base)
+            ->whereIn('matched_by', ['name_match', 'platform_number_name', 'name_only'])
+            ->count();
+        // Phone/config-based match values: matched via WA phone_number_id without property name
+        $matchedByPhone = (clone $base)
+            ->whereIn('matched_by', ['wa_config', 'number_only'])
+            ->count();
+
+        // OTA source breakdown — same filters as the list for full consistency
+        $otaBreakdown = $this->historyBaseQuery($hotelId, $dateFrom, $dateTo, $otaFilter)
+            ->selectRaw('ota_name, count(*) as total, sum(case when status=\'confirmed\' then 1 else 0 end) as confirmed_count')
+            ->groupBy('ota_name')
+            ->orderByDesc('total')
+            ->get();
+
+        // Dropdown options are always unfiltered so all known OTAs are selectable
+        $otaSources = OtaImportedBooking::where('hotel_id', $hotelId)
+            ->whereIn('status', ['confirmed', 'rejected'])
+            ->whereNotNull('ota_name')
+            ->distinct()
+            ->pluck('ota_name')
+            ->sort()
+            ->values();
+
+        $summary = compact('total', 'confirmed', 'rejected', 'matchedByName', 'matchedByPhone');
+
+        // Pass the explicit hotelId from the URL (if present) so views can use hotel-scoped routes
+        $urlHotelId = $request->route('hotelId');
+
+        return view('admin.ota-bookings.history', compact(
+            'imports', 'summary', 'otaBreakdown', 'otaSources',
+            'dateFrom', 'dateTo', 'otaFilter', 'urlHotelId'
+        ));
+    }
+
     public function index(Request $request)
     {
         $hotelId = $this->resolveHotelId($request);
@@ -130,7 +217,9 @@ class OtaBookingController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return view('admin.ota-bookings.index', compact('imports', 'counts'));
+        $urlHotelId = $request->route('hotelId');
+
+        return view('admin.ota-bookings.index', compact('imports', 'counts', 'urlHotelId'));
     }
 
     public function confirm(Request $request, OtaImportedBooking $import)
