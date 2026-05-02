@@ -69,6 +69,13 @@
                 <div class="lv-card-title">All Invoices <span>({{ $invoices->total() }})</span></div>
                 <div class="lv-card-subtitle">{{ ($search||$status||$dateFrom||$dateTo) ? 'Filtered results' : 'All generated invoices' }}</div>
             </div>
+            <div style="margin-left:auto;">
+                <a href="{{ route('invoices.trash') }}"
+                   style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;text-decoration:none;"
+                   onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+                    <i class="fas fa-trash-alt" style="font-size:11px;"></i>Deleted
+                </a>
+            </div>
         </div>
 
         <div class="lv-table-wrap">

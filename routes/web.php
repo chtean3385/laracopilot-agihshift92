@@ -146,14 +146,16 @@ Route::delete('/payments/{id}',[PaymentController::class, 'destroy'])->middlewar
 Route::get('/payments/{id}',   [PaymentController::class, 'show'] )->name('payments.show');
 
 // ── Invoices ───────────────────────────────────────────────────────────────
-Route::get('/invoices',                  [InvoiceController::class, 'index']   )->name('invoices.index');
-Route::get('/invoices/{id}/print',        [InvoiceController::class, 'print']      )->name('invoices.print');
-Route::get('/invoices/{id}/print-gst',    [InvoiceController::class, 'printGst']   )->name('invoices.print-gst');
-Route::get('/invoices/{id}/download-pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.download-pdf');
-Route::get('/invoices/{id}/edit',        [InvoiceController::class, 'edit']    )->name('invoices.edit');
-Route::put('/invoices/{id}',             [InvoiceController::class, 'update']  )->name('invoices.update');
-Route::delete('/invoices/{id}',          [InvoiceController::class, 'destroy'] )->middleware('permission:invoices.delete')->name('invoices.destroy');
-Route::get('/invoices/{id}',             [InvoiceController::class, 'show']    )->name('invoices.show');
+Route::get('/invoices',                       [InvoiceController::class, 'index']   )->name('invoices.index');
+Route::get('/invoices/trash',                 [InvoiceController::class, 'trash']   )->middleware('permission:invoices.delete')->name('invoices.trash');
+Route::post('/invoices/{id}/restore',         [InvoiceController::class, 'restore'] )->middleware('permission:invoices.delete')->name('invoices.restore');
+Route::get('/invoices/{id}/print',            [InvoiceController::class, 'print']      )->name('invoices.print');
+Route::get('/invoices/{id}/print-gst',        [InvoiceController::class, 'printGst']   )->name('invoices.print-gst');
+Route::get('/invoices/{id}/download-pdf',     [InvoiceController::class, 'downloadPdf'])->name('invoices.download-pdf');
+Route::get('/invoices/{id}/edit',             [InvoiceController::class, 'edit']    )->name('invoices.edit');
+Route::put('/invoices/{id}',                  [InvoiceController::class, 'update']  )->name('invoices.update');
+Route::delete('/invoices/{id}',               [InvoiceController::class, 'destroy'] )->middleware('permission:invoices.delete')->name('invoices.destroy');
+Route::get('/invoices/{id}',                  [InvoiceController::class, 'show']    )->name('invoices.show');
 
 // ── Reports ────────────────────────────────────────────────────────────────
 Route::middleware('permission:reports.view')->group(function () {

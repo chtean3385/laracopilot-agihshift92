@@ -184,6 +184,54 @@ class InvoiceController extends Controller
             ]);
         }
 
-        return redirect()->route('invoices.index')->with('success', 'Invoice deleted. Booking balance restored to pending.');
+        return redirect()->route('invoices.index')->with('success', 'Invoice moved to trash. It can be restored within 30 days.');
+    }
+
+    public function trash(Request $request)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+
+        $query = Invoice::onlyTrashed()->with(['booking.room', 'customer']);
+
+        if ($request->search) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('invoice_number', 'like', "%$s%")
+                  ->orWhereHas('customer', fn($c) => $c->withTrashed()->where('name', 'like', "%$s%"));
+            });
+        }
+
+        $invoices = $query->orderBy('deleted_at', 'desc')->paginate(15)->withQueryString();
+        return view('admin.invoices.trash', compact('invoices'));
+    }
+
+    public function restore($id)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+
+        $invoice = Invoice::onlyTrashed()->findOrFail($id);
+
+        if ($invoice->deleted_at->lt(now()->subDays(30))) {
+            return redirect()->route('invoices.trash')->with('error', 'This invoice has passed the 30-day restore window and cannot be recovered.');
+        }
+
+        $invoice->restore();
+
+        $booking = $invoice->booking;
+        if ($booking) {
+            $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
+            $balance   = max(0, $invoice->total_amount - $totalPaid);
+            $booking->update([
+                'payment_status' => $totalPaid >= $invoice->total_amount ? 'paid' : ($totalPaid > 0 ? 'partial' : 'pending'),
+                'balance_due'    => $balance,
+            ]);
+        }
+
+        $userName  = session('crm_user_name', 'Unknown');
+        $userEmail = session('crm_user_email', '');
+        $restoredBy = $userName . ($userEmail ? ' (' . $userEmail . ')' : '');
+        ActivityLogger::log('Restored', 'Invoice', 'Invoice ' . $invoice->invoice_number . ' restored by ' . $restoredBy . ' — ₹' . number_format($invoice->total_amount, 2));
+
+        return redirect()->route('invoices.show', $invoice->id)->with('success', 'Invoice restored successfully.');
     }
 }

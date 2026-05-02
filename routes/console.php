@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 Schedule::command('whatsapp:checkin-reminders')->dailyAt('09:00');
 Schedule::command('whatsapp:feedback-reminders')->dailyAt('10:00');
 Schedule::command('hotels:backup')->hourly();
+Schedule::command('invoices:purge-deleted')->dailyAt('02:00');

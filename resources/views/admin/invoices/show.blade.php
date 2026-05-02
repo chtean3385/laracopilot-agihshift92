@@ -325,7 +325,7 @@
                 </div>
                 <div>
                     <div style="font-weight:800;color:#fff;font-size:15px;">Delete Invoice</div>
-                    <div style="font-size:12px;color:rgba(255,255,255,.75);">This action is permanent and cannot be undone</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.75);">Invoice moves to trash — restorable within 30 days</div>
                 </div>
             </div>
             <button type="button" onclick="hideDeleteModal()"
