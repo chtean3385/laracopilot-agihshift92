@@ -244,6 +244,75 @@
     </div>
 </div>
 
+@canDo('reports.view')
+<div class="max-w-3xl mt-5">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <button type="button"
+            onclick="var panel=this.closest('.bg-white').querySelector('#activityHistoryPanel');panel.classList.toggle('hidden');var icon=this.querySelector('.fa-chevron-down,.fa-chevron-up');icon.classList.toggle('fa-chevron-down');icon.classList.toggle('fa-chevron-up');"
+            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                    <i class="fas fa-history text-slate-500 text-sm"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-gray-800 text-sm">Activity History</span>
+                    <span class="ml-2 text-xs bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded-full">{{ $activityLogs->count() }}</span>
+                </div>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+        </button>
+        <div id="activityHistoryPanel" class="hidden border-t border-gray-100">
+            @if($activityLogs->isEmpty())
+            <div class="px-6 py-8 text-center text-gray-400 text-sm">
+                <i class="fas fa-inbox text-2xl mb-2 block"></i>
+                No activity recorded for this invoice yet.
+            </div>
+            @else
+            <div class="divide-y divide-gray-50">
+                @foreach($activityLogs as $log)
+                <div class="flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex-shrink-0 mt-0.5">
+                        @php
+                            $actionColor = match(strtolower($log->action)) {
+                                'created'  => 'bg-emerald-100 text-emerald-600',
+                                'updated'  => 'bg-blue-100 text-blue-600',
+                                'deleted'  => 'bg-red-100 text-red-600',
+                                default    => 'bg-gray-100 text-gray-500',
+                            };
+                            $actionIcon = match(strtolower($log->action)) {
+                                'created'  => 'fa-plus',
+                                'updated'  => 'fa-edit',
+                                'deleted'  => 'fa-trash',
+                                default    => 'fa-circle',
+                            };
+                        @endphp
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs {{ $actionColor }}">
+                            <i class="fas {{ $actionIcon }}"></i>
+                        </span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="text-sm font-bold text-gray-800">{{ $log->user_name ?? 'System' }}</span>
+                            @if($log->user_role)
+                            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">{{ $log->user_role }}</span>
+                            @endif
+                            <span class="text-xs font-semibold uppercase tracking-wide {{ $actionColor }} px-2 py-0.5 rounded-full">{{ $log->action }}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed">{{ $log->description }}</p>
+                    </div>
+                    <div class="flex-shrink-0 text-right">
+                        <p class="text-xs text-gray-400 whitespace-nowrap">{{ $log->created_at->format('d M Y') }}</p>
+                        <p class="text-xs text-gray-400 whitespace-nowrap">{{ $log->created_at->format('h:i A') }}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
+@endCanDo
+
 {{-- Delete Invoice Modal --}}
 @canDo('invoices.delete')
 <div id="deleteInvoiceModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.6);">

@@ -258,6 +258,7 @@ class CheckOutController extends Controller
         ]);
 
         $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '?');
+        ActivityLogger::log('Created', 'Invoice', 'Invoice ' . $invoice->invoice_number . ' created for ' . $booking->customer->name . ' — Room ' . $roomLabel . ' — ₹' . number_format($grandTotal, 2));
         ActivityLogger::log('Checked Out', 'Check-Out', 'Checked out: ' . $booking->customer->name . ' — Room ' . $roomLabel . ' (Invoice #' . $invoice->invoice_number . ')');
         WhatsAppService::sendForEvent('checkout.done', $booking);
 

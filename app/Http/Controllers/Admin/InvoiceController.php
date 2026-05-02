@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\ActivityLogger;
+use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -37,7 +39,13 @@ class InvoiceController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $invoice  = Invoice::with(['booking.room', 'booking.payments', 'booking.extraCharges', 'customer'])->findOrFail($id);
         $settings = Setting::where('hotel_id', $invoice->booking?->hotel_id ?? session('crm_hotel_id'))->first();
-        return view('admin.invoices.show', compact('invoice', 'settings'));
+        $activityLogs = PermissionService::check('reports.view')
+            ? ActivityLog::where('module', 'Invoice')
+                ->where('description', 'like', '%' . $invoice->invoice_number . '%')
+                ->orderBy('created_at', 'desc')
+                ->get()
+            : collect();
+        return view('admin.invoices.show', compact('invoice', 'settings', 'activityLogs'));
     }
 
     public function print($id)
