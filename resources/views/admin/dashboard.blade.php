@@ -109,7 +109,10 @@
                 .kpi-card-sm .kpi-icon { font-size: 1.3rem !important; top: 10px !important; right: 12px !important; }
                 .kpi-card-sm .kpi-shine  { width: 80px !important; height: 80px !important; top: -25px !important; right: -25px !important; }
                 .kpi-card-sm .kpi-shine2 { width: 60px !important; height: 60px !important; bottom: -18px !important; left: -12px !important; }
-                @keyframes pulse-dirty { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.4);} 50%{box-shadow:0 0 0 8px rgba(249,115,22,0);} }
+                @keyframes pulse-dirty        { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.55),0 4px 18px rgba(249,115,22,.3);} 50%{box-shadow:0 0 0 10px rgba(249,115,22,0),0 4px 24px rgba(249,115,22,.5);} }
+                @keyframes dirty-bg-flash     { 0%,100%{background:linear-gradient(135deg,#f97316,#ea580c);} 45%,55%{background:linear-gradient(135deg,#dc2626,#b91c1c);} }
+                @keyframes dirty-icon-shake   { 0%,100%{transform:rotate(0deg);} 15%{transform:rotate(-14deg);} 35%{transform:rotate(12deg);} 55%{transform:rotate(-8deg);} 75%{transform:rotate(6deg);} }
+                @keyframes dirty-badge-pop    { 0%,100%{transform:scale(1);} 50%{transform:scale(1.25);} }
                 @keyframes pulse-live  { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4);} 50%{box-shadow:0 0 0 6px rgba(16,185,129,0);} }
                 @keyframes agendaSlideIn { from{opacity:0;transform:scale(.93) translateY(16px);} to{opacity:1;transform:scale(1) translateY(0);} }
                 @media(max-width:900px){ .kpi-grid-8 { grid-template-columns: repeat(4,1fr) !important; } }
@@ -551,12 +554,15 @@
                             <div class="kpi-sub">{{ $occupancyRate }}% occ.</div>
                         </a>
                         @if(($dirtyRooms ?? 0) > 0)
-                        <a href="{{ route('rooms.index') }}?status=dirty" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f97316,#ea580c);animation:pulse-dirty 2s infinite;">
+                        <a href="{{ route('rooms.index') }}?status=dirty" class="kpi-card kpi-card-sm"
+                           style="background:linear-gradient(135deg,#f97316,#ea580c);animation:pulse-dirty 1.8s infinite,dirty-bg-flash 2.6s ease-in-out infinite;position:relative;overflow:visible;">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
-                            <i class="fas fa-broom kpi-icon"></i>
+                            {{-- Flashing "!" attention badge --}}
+                            <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#dc2626;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;animation:dirty-badge-pop 1s ease-in-out infinite;z-index:2;line-height:1;">!</span>
+                            <i class="fas fa-broom kpi-icon" style="animation:dirty-icon-shake 2.2s ease-in-out infinite;display:inline-block;"></i>
                             <div class="kpi-label">Needs Cleaning</div>
                             <div class="kpi-num" data-count="{{ $dirtyRooms }}">{{ $dirtyRooms }}</div>
-                            <div class="kpi-sub">Awaiting housekeeping</div>
+                            <div class="kpi-sub" style="animation:dirty-badge-pop 1.8s ease-in-out infinite;">⚠ Act now</div>
                         </a>
                         @endif
                         @canDo('reports.view')
