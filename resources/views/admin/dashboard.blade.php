@@ -551,10 +551,8 @@
                         if (\App\Models\Module::isEnabled('reports.view')) {
                             $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
                         }
-                        if (\App\Services\PermissionService::check('settings.manage')) {
-                            $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time & Slot', 'sub' => 'Manage time slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#0284c7)'];
-                            $dashboardShortcuts[] = ['route' => route('time-slots.index') . '#addons', 'icon' => 'fa-puzzle-piece', 'title' => 'Add-ons', 'sub' => 'Manage add-ons', 'bg' => 'linear-gradient(135deg,#10b981,#059669)'];
-                        }
+                        $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time & Slot', 'sub' => 'Manage time slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#0284c7)'];
+                        $dashboardShortcuts[] = ['route' => route('time-slots.index') . '#addons', 'icon' => 'fa-puzzle-piece', 'title' => 'Add-ons', 'sub' => 'Manage add-ons', 'bg' => 'linear-gradient(135deg,#10b981,#059669)'];
                     @endphp
 
                     {{-- KPI Stats — single compact row of 8 cards --}}
