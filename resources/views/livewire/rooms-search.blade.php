@@ -26,7 +26,7 @@
             </div>
             <div>
                 <div class="text-lg font-bold {{ $stats['dirty'] > 0 ? 'text-orange-700' : 'text-gray-800' }} leading-none">{{ $stats['dirty'] }}</div>
-                <div class="text-xs {{ $stats['dirty'] > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500' }} mt-0.5">Cleaning</div>
+                <div class="text-xs {{ $stats['dirty'] > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500' }} mt-0.5">Needs Cleaning</div>
             </div>
         </div>
         <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
