@@ -494,6 +494,12 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
 
     // WA Inbox (Task #54)
     Route::get('/wa-inbox', fn() => view('platform.wa-inbox.index'))->name('platform.wa-inbox');
+
+    // WhatsApp Billing
+    Route::get('/whatsapp/billing',                         [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'index']     )->name('platform.whatsapp.billing');
+    Route::post('/whatsapp/billing/{hotelId}/mark-paid',    [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'markPaid']  )->name('platform.whatsapp.billing.paid');
+    Route::post('/whatsapp/billing/{hotelId}/mark-unpaid',  [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'markUnpaid'])->name('platform.whatsapp.billing.unpaid');
+    Route::post('/whatsapp/billing/{hotelId}/limit',        [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'saveLimit'] )->name('platform.whatsapp.billing.limit');
     Route::post('/wa/upload-media', [\App\Http\Controllers\Platform\WhatsAppController::class, 'uploadMedia'])->name('platform.wa.upload-media');
 
     // Push Notifications (Platform Admin)

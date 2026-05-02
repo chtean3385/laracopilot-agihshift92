@@ -407,6 +407,10 @@
             <span style="margin-left:auto;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center;line-height:1.4;">{{ $waInboxUnread }}</span>
             @endif
         </a>
+        <a href="{{ route('platform.whatsapp.billing') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.billing') || request()->routeIs('platform.whatsapp.billing.*') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-rupee-sign" style="font-size:12px;"></i></span>
+            WA Billing
+        </a>
 
         <div class="nav-section">Analytics</div>
 

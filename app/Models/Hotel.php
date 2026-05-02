@@ -10,6 +10,7 @@ class Hotel extends Model
         'name', 'slug', 'address', 'phone', 'email', 'status', 'plan',
         'trial_ends_at', 'plan_expires_at', 'max_rooms', 'max_users', 'admin_notes', 'backup_enabled',
         'owner_wa_consent', 'parent_hotel_id',
+        'wa_daily_limit', 'wa_monthly_limit',
     ];
 
     protected $casts = [

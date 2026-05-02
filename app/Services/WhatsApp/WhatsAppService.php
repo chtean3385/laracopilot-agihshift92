@@ -4,12 +4,15 @@ namespace App\Services\WhatsApp;
 
 use App\Helpers\PhoneHelper;
 use App\Models\Booking;
+use App\Models\Hotel;
 use App\Models\Module;
 use App\Models\PlatformWhatsAppSetting;
 use App\Models\WhatsAppConfig;
+use App\Models\WhatsAppLog;
 use App\Models\WhatsAppTemplate;
 use App\Services\InvoicePdf;
 use App\Services\WhatsApp\Providers\MetaProvider;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
@@ -69,6 +72,45 @@ class WhatsAppService
         return new MetaProvider($config);
     }
 
+    private static function isOverLimit(int $hotelId): bool
+    {
+        try {
+            $hotel = Hotel::find($hotelId);
+            if (!$hotel) return false;
+
+            if ($hotel->wa_daily_limit) {
+                $todayCount = WhatsAppLog::where('hotel_id', $hotelId)
+                    ->where('direction', 'outgoing')
+                    ->where('event_type', 'message_sent')
+                    ->where('status', 'ok')
+                    ->where('created_at', '>=', now()->startOfDay())
+                    ->count();
+                if ($todayCount >= $hotel->wa_daily_limit) {
+                    static::setLastError("Daily WhatsApp message limit ({$hotel->wa_daily_limit}) reached for this hotel.");
+                    Log::warning("WhatsApp daily limit reached for hotel #{$hotelId}", ['limit' => $hotel->wa_daily_limit, 'count' => $todayCount]);
+                    return true;
+                }
+            }
+
+            if ($hotel->wa_monthly_limit) {
+                $monthCount = WhatsAppLog::where('hotel_id', $hotelId)
+                    ->where('direction', 'outgoing')
+                    ->where('event_type', 'message_sent')
+                    ->where('status', 'ok')
+                    ->where('created_at', '>=', now()->startOfMonth())
+                    ->count();
+                if ($monthCount >= $hotel->wa_monthly_limit) {
+                    static::setLastError("Monthly WhatsApp message limit ({$hotel->wa_monthly_limit}) reached for this hotel.");
+                    Log::warning("WhatsApp monthly limit reached for hotel #{$hotelId}", ['limit' => $hotel->wa_monthly_limit, 'count' => $monthCount]);
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('WhatsAppService::isOverLimit error: ' . $e->getMessage());
+        }
+        return false;
+    }
+
     public static function sendForEvent(string $event, Booking $booking): bool
     {
         static::$lastError = '';
@@ -77,6 +119,11 @@ class WhatsAppService
         try {
             if (!Module::isEnabled('whatsapp')) {
                 Log::info('WhatsApp sendForEvent skipped: module not enabled', $context);
+                return false;
+            }
+
+            if (static::isOverLimit($booking->hotel_id)) {
+                Log::info('WhatsApp sendForEvent blocked: hotel over limit', array_merge($context, ['error' => static::$lastError]));
                 return false;
             }
 
