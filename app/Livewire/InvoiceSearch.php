@@ -50,7 +50,9 @@ class InvoiceSearch extends Component
             $query->where(function ($q) use ($s) {
                 $q->where('invoice_number', 'like', "%$s%")
                   ->orWhere('total_amount', 'like', "%$s%")
-                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%$s%"))
+                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%$s%")
+                                                        ->orWhere('company_name', 'like', "%$s%")
+                                                        ->orWhere('gstin', 'like', "%$s%"))
                   ->orWhereHas('booking.room', fn($r) => $r->where('room_number', 'like', "%$s%"));
             });
         }

@@ -9,7 +9,7 @@
                 <div class="lv-filter-icon-wrap">
                     <i class="fas fa-search"></i>
                     <input type="text" wire:model.live.debounce.400ms="search"
-                        placeholder="Invoice #, guest, room, amount…"
+                        placeholder="Invoice #, guest, company, GSTIN, room, amount…"
                         class="lv-filter-input lv-filter-input-icon" style="border-color:{{ '' }};">
                     <div wire:loading.delay wire:target="search" class="lv-filter-spinner">
                         <svg class="animate-spin" style="width:14px;height:14px;color:#7c3aed;" fill="none" viewBox="0 0 24 24">
