@@ -55,6 +55,7 @@ class CustomerController extends Controller
             'notes'         => 'nullable|string',
             'company_name'  => 'nullable|string|max:255',
             'gstin'         => 'nullable|string|max:15',
+            'id_number'     => 'nullable|string|max:50',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
 
@@ -78,7 +79,6 @@ class CustomerController extends Controller
                 ]);
         }
 
-        $validated['id_number'] = '';
         $customer = Customer::create($validated);
         $this->saveDocuments($request, $customer->id, $validated['id_type']);
         ActivityLogger::log('Created', 'Guest', 'Created guest profile: ' . $customer->name . ' (' . $customer->phone . ')');
@@ -121,9 +121,9 @@ class CustomerController extends Controller
             'notes'         => 'nullable|string',
             'company_name'  => 'nullable|string|max:255',
             'gstin'         => 'nullable|string|max:15',
+            'id_number'     => 'nullable|string|max:50',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
-        $validated['id_number'] = $customer->id_number ?: '';
         $customer->update($validated);
         $this->saveDocuments($request, $customer->id, $validated['id_type']);
         ActivityLogger::log('Updated', 'Guest', 'Updated guest profile: ' . $customer->name);

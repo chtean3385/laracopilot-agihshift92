@@ -44,10 +44,10 @@
 
                 <div class="md:col-span-2 border-t border-gray-100 pt-4">
                     <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-id-card text-cyan-500 mr-2"></i>Identity Proof</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
-                            <select name="id_type" class="form-input" required>
+                            <select name="id_type" id="editIdType" onchange="updateIdPlaceholder('editIdNumber', this.value)" class="form-input" required>
                                 <option value="aadhaar"         {{ old('id_type', $customer->id_type) == 'aadhaar'         ? 'selected' : '' }}>Aadhaar Card</option>
                                 <option value="passport"        {{ old('id_type', $customer->id_type) == 'passport'        ? 'selected' : '' }}>Passport</option>
                                 <option value="driving_license" {{ old('id_type', $customer->id_type) == 'driving_license' ? 'selected' : '' }}>Driving License</option>
@@ -56,6 +56,16 @@
                                 <option value="visa"            {{ old('id_type', $customer->id_type) == 'visa'            ? 'selected' : '' }}>Visa</option>
                                 <option value="other"           {{ old('id_type', $customer->id_type) == 'other'           ? 'selected' : '' }}>Other</option>
                             </select>
+                        </div>
+                        <div>
+                            <label class="form-label">ID Number</label>
+                            <input type="text" name="id_number" id="editIdNumber"
+                                value="{{ old('id_number', $customer->id_number) }}"
+                                class="form-input @error('id_number') border-red-400 @enderror"
+                                placeholder="Enter ID number"
+                                style="text-transform:uppercase;"
+                                oninput="this.value=this.value.toUpperCase()">
+                            @error('id_number')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label class="form-label">Upload More Documents <span class="text-gray-400 font-normal text-xs">(optional, multiple)</span></label>
@@ -98,4 +108,23 @@
         </form>
     </div>
 </div>
+<script>
+const idPlaceholders = {
+    aadhaar:         'XXXX XXXX XXXX (12 digits)',
+    passport:        'A1234567',
+    driving_license: 'MH01 20110012345',
+    voter_id:        'ABC1234567',
+    pan_card:        'ABCDE1234F',
+    visa:            'Visa number',
+    other:           'ID number',
+};
+function updateIdPlaceholder(inputId, type) {
+    const el = document.getElementById(inputId);
+    if (el) el.placeholder = idPlaceholders[type] || 'Enter ID number';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const sel = document.getElementById('editIdType');
+    if (sel && sel.value) updateIdPlaceholder('editIdNumber', sel.value);
+});
+</script>
 @endsection
