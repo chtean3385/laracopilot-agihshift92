@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Hotel;
 use App\Models\OtaImportedBooking;
 use App\Models\OtaSource;
+use App\Services\FcmService;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -108,6 +109,25 @@ class OtaBookingParserService
                 'guest'       => $parsed['guest_name'] ?? 'Unknown',
                 'matched_by'  => $matchedBy,
             ]);
+
+            // ── Push notification to hotel staff ──────────────────────────────
+            try {
+                $fcm    = app(FcmService::class);
+                $tokens = $fcm->getTokensForHotel($hotelId);
+                if (!empty($tokens)) {
+                    $guestLabel = $parsed['guest_name'] ?? 'Guest';
+                    $otaLabel   = $parsed['ota_label']  ?? $otaSource->name;
+                    $refLabel   = $bookingRef           ?? 'N/A';
+                    $fcm->sendToTokens(
+                        $tokens,
+                        'New OTA Booking — ' . $otaLabel,
+                        $guestLabel . ' · Ref: ' . $refLabel . ' · Tap to review',
+                        ['url' => url('/ota-bookings'), 'notif_id' => (string) $import->id]
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::warning('OtaBookingParser: FCM push failed — ' . $e->getMessage());
+            }
 
             $hotelName = Hotel::find($hotelId)?->name ?? 'your property';
             $refLabel  = $bookingRef ?? 'N/A';

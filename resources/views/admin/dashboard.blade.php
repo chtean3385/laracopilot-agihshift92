@@ -552,6 +552,10 @@
                             $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
                         }
                         $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time & Slot', 'sub' => 'Manage time slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#0284c7)'];
+                        if (\App\Models\Module::isEnabled('ota_whatsapp_sync')) {
+                            $otaShortcutSub = ($otaPendingCount ?? 0) > 0 ? ($otaPendingCount . ' pending review') : 'WhatsApp imports';
+                            $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];
+                        }
                     @endphp
 
                     {{-- KPI Stats — single compact row of 8 cards --}}
@@ -636,13 +640,17 @@
                             <div class="kpi-sub">Pending confirm</div>
                         </a>
                         @endif
-                        @if(\App\Models\Module::isEnabled('ota_whatsapp_sync') && ($otaPendingCount ?? 0) > 0)
-                        <a href="{{ route('ota-bookings.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                        @if(\App\Models\Module::isEnabled('ota_whatsapp_sync'))
+                        <a href="{{ route('ota-bookings.index') }}" class="kpi-card kpi-card-sm"
+                           style="background:linear-gradient(135deg,#f59e0b,#d97706);position:relative;{{ ($otaPendingCount ?? 0) > 0 ? 'animation:pulse-dirty 1.8s infinite;' : '' }}">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
-                            <i class="fas fa-hotel kpi-icon"></i>
+                            @if(($otaPendingCount ?? 0) > 0)
+                            <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#dc2626;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;animation:dirty-badge-pop 1s ease-in-out infinite;z-index:2;line-height:1;">{{ $otaPendingCount }}</span>
+                            @endif
+                            <i class="fas fa-inbox kpi-icon"></i>
                             <div class="kpi-label">OTA Imports</div>
                             <div class="kpi-num" data-count="{{ $otaPendingCount ?? 0 }}">{{ $otaPendingCount ?? 0 }}</div>
-                            <div class="kpi-sub">Pending confirm</div>
+                            <div class="kpi-sub">{{ ($otaPendingCount ?? 0) > 0 ? 'Pending review' : 'All clear' }}</div>
                         </a>
                         @endif
                     </div>
@@ -659,8 +667,13 @@
                             <div style="display:flex;flex-direction:column;gap:10px;">
                                 @foreach($dashboardShortcuts as $shortcut)
                                 <a href="{{ $shortcut['route'] }}" class="qa-btn" style="background:#f8fafc;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
-                                    <div style="width:42px;height:42px;background:{{ $shortcut['bg'] }};border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.15);flex-shrink:0;">
-                                        <i class="fas {{ $shortcut['icon'] }}" style="color:#fff;font-size:14px;"></i>
+                                    <div style="position:relative;width:42px;height:42px;flex-shrink:0;">
+                                        <div style="width:42px;height:42px;background:{{ $shortcut['bg'] }};border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.15);">
+                                            <i class="fas {{ $shortcut['icon'] }}" style="color:#fff;font-size:14px;"></i>
+                                        </div>
+                                        @if(!empty($shortcut['badge']) && $shortcut['badge'] > 0)
+                                        <span style="position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;background:#dc2626;border-radius:999px;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;padding:0 3px;line-height:1;animation:dirty-badge-pop 1s ease-in-out infinite;">{{ $shortcut['badge'] }}</span>
+                                        @endif
                                     </div>
                                     <div>
                                         <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $shortcut['title'] }}</div>
