@@ -243,13 +243,25 @@
                 <span id="formErrorMsg">Please fill all required fields.</span>
             </div>
 
-            <button class="btn-wa" id="sendBtn" onclick="sendEnquiry()">
-                <i class="fab fa-whatsapp" style="font-size:22px;"></i>
-                Send Enquiry on WhatsApp
+            {{-- Success state (hidden until submitted) --}}
+            <div id="formSuccess" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:24px;text-align:center;margin-bottom:12px;">
+                <div style="font-size:40px;margin-bottom:10px;">✅</div>
+                <div style="font-size:16px;font-weight:800;color:#4ade80;margin-bottom:6px;">Enquiry Sent Successfully!</div>
+                <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:18px;">We've received your details and will contact you shortly on WhatsApp.</div>
+                <a href="https://wa.me/919725225519" target="_blank"
+                   style="display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#fff;text-decoration:none;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:800;">
+                    <i class="fab fa-whatsapp"></i> Chat with us directly
+                </a>
+            </div>
+
+            <button style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(109,40,217,.35);transition:all .2s;margin-top:8px;"
+                    id="sendBtn" onclick="sendEnquiry()">
+                <i class="fas fa-paper-plane" style="font-size:18px;"></i>
+                Send Enquiry
             </button>
             <p class="form-note">
                 <i class="fas fa-lock" style="margin-right:4px;color:rgba(255,255,255,.4);"></i>
-                Your details are only used to contact you. No payment is taken online.<br>
+                We'll reach out on your WhatsApp number. No payment is taken online.<br>
                 <a href="https://wa.me/919725225519" target="_blank" style="color:rgba(255,255,255,.45);">
                     <i class="fab fa-whatsapp" style="margin-right:3px;"></i>Direct WhatsApp: +91 97252 25519
                 </a>
@@ -270,15 +282,14 @@
 var selectedSlug  = '';
 var selectedLabel = '';
 var selectedPrice = 0;
+var csrfToken     = '{{ csrf_token() }}';
 
 function selectPlan(slug, label, price) {
-    // Deselect all
     document.querySelectorAll('.plan-card').forEach(function(c) { c.classList.remove('selected'); });
     document.querySelectorAll('[id^="btn-"]').forEach(function(b) {
         b.innerHTML = '<i class="fas fa-hand-pointer" style="margin-right:5px;"></i>Select Plan';
     });
 
-    // Select chosen
     selectedSlug  = slug;
     selectedLabel = label;
     selectedPrice = price;
@@ -288,17 +299,13 @@ function selectPlan(slug, label, price) {
     if (card) card.classList.add('selected');
     if (btn)  btn.innerHTML = '<i class="fas fa-check" style="margin-right:5px;"></i>Selected';
 
-    // Update bar
     var bar = document.getElementById('selectedPlanBar');
     bar.classList.remove('empty');
     bar.innerHTML = '<i class="fas fa-check-circle" style="color:#a78bfa;font-size:16px;"></i>'
         + '<span style="color:#c4b5fd;font-weight:800;">' + label + '</span>'
         + '<span style="color:rgba(255,255,255,.4);font-size:12px;margin-left:auto;">₹' + price.toLocaleString('en-IN') + '/yr</span>';
 
-    // Hide error if shown
     document.getElementById('formError').style.display = 'none';
-
-    // Scroll to form
     document.querySelector('.form-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -325,25 +332,47 @@ function sendEnquiry() {
     }
     errEl.style.display = 'none';
 
-    var text = 'Hello! I am interested in the Resort CRM.\n\n'
-        + '*Plan Selected:* ' + selectedLabel + ' (₹' + selectedPrice.toLocaleString('en-IN') + '/year)\n'
-        + '*Name:* ' + name + '\n'
-        + '*Hotel / Resort:* ' + hotel + '\n'
-        + '*Phone:* ' + phone + '\n'
-        + (rooms ? '*Rooms:* ' + rooms + '\n' : '')
-        + (msg   ? '*Message:* ' + msg  + '\n' : '')
-        + '\nPlease activate my account.';
-
     var btn = document.getElementById('sendBtn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:18px;"></i> Opening WhatsApp…';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:18px;"></i> Sending…';
 
-    window.open('https://wa.me/919725225519?text=' + encodeURIComponent(text), '_blank');
-
-    setTimeout(function() {
+    fetch('/pricing/enquire', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            name:       name,
+            hotel:      hotel,
+            phone:      phone,
+            plan_slug:  selectedSlug,
+            plan_label: selectedLabel,
+            plan_price: selectedPrice,
+            rooms:      rooms,
+            message:    msg
+        })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // Hide form fields and button, show success panel
+            document.getElementById('formSuccess').style.display = 'block';
+            btn.style.display = 'none';
+            document.querySelector('.form-note').style.display = 'none';
+            document.querySelector('.selected-plan-bar').style.display = 'none';
+            document.querySelectorAll('.field, .field-row').forEach(function(f){ f.style.display='none'; });
+        } else {
+            throw new Error('Server error');
+        }
+    })
+    .catch(function() {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fab fa-whatsapp" style="font-size:22px;"></i> Send Enquiry on WhatsApp';
-    }, 3000);
+        btn.innerHTML = '<i class="fas fa-paper-plane" style="font-size:18px;"></i> Send Enquiry';
+        errEl.style.display = 'block';
+        errMsg.textContent  = 'Something went wrong. Please try WhatsApp directly or try again.';
+    });
 }
 
 // Auto-select first plan on load

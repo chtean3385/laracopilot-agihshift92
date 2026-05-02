@@ -82,7 +82,8 @@ Route::withoutMiddleware([
     \App\Http\Middleware\SetHotelContext::class,
     \App\Http\Middleware\CheckTrialStatus::class,
 ])->group(function () {
-    Route::get('/pricing', [\App\Http\Controllers\PublicPricingController::class, 'index'])->name('pricing');
+    Route::get('/pricing',          [\App\Http\Controllers\PublicPricingController::class, 'index'])  ->name('pricing');
+    Route::post('/pricing/enquire', [\App\Http\Controllers\PublicPricingController::class, 'enquire'])->name('pricing.enquire');
 });
 
 // ── Super Admin Hotel Filter ─────────────────────────────────────────────────
