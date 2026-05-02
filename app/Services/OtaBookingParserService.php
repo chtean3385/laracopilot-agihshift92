@@ -239,14 +239,13 @@ class OtaBookingParserService
                     return [$candidates[0], 'wa_config'];
                 }
 
-                // Multiple children — require property name to disambiguate
+                // Multiple children — require property name to disambiguate; never silent fallback
                 if (count($candidates) > 1) {
-                    Log::warning('OtaBookingParser: multiple hotels under WA config #' . $waConfig->id . ' — property name required to disambiguate', [
+                    Log::warning('OtaBookingParser: multiple hotels under WA config #' . $waConfig->id . ' — property name required but no unique match found', [
                         'candidates' => $candidates,
                         'property'   => $propertyName,
                     ]);
-                    // Fall back to root hotel (message came to root's WA number)
-                    return [$rootId, 'wa_config_root'];
+                    return [null, 'unresolved'];
                 }
             }
 

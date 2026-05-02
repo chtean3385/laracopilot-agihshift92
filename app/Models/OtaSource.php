@@ -53,30 +53,28 @@ class OtaSource extends Model
     }
 
     /**
-     * Content-pattern based detection: returns the first active Generic/catch-all source
-     * (those with null sender_number) if the message body matches OTA generic format.
-     * Used as a fallback when sender number is unknown — primarily for demo and forwarded messages.
+     * Content-pattern based detection: returns the active Generic catch-all source
+     * (message_pattern_key = 'generic', null sender_number) if the body matches OTA format.
+     * ONLY targets the generic source — named OTA sources (Booking.com, Airbnb etc.) are
+     * exclusively matched by their configured sender_number / waba_id.
+     * Used for demo testing and forwarded messages without a known OTA sender number.
      */
     public static function findByContentPattern(string $body): ?static
     {
         // Must have at minimum a property identifier and a booking reference to qualify
-        $hasProperty = (bool) preg_match('/Property\s*:/i', $body);
+        $hasProperty   = (bool) preg_match('/Property\s*:/i', $body);
         $hasBookingRef = (bool) preg_match('/Booking\s+Ref\s*:|Confirmation\s+Code\s*:|Reservation\s+(?:Number|#|No)\s*:/i', $body);
 
         if (!$hasProperty || !$hasBookingRef) {
             return null;
         }
 
-        // Return first active source without a sender_number (catch-all / generic)
+        // Strictly: only return the Generic catch-all source (pattern_key = 'generic')
         return static::where('is_active', true)
+            ->where('message_pattern_key', 'generic')
             ->whereNull('sender_number')
             ->orderBy('id')
-            ->first()
-            // Prefer generic pattern key if multiple null-sender sources
-            ?? static::where('is_active', true)
-                ->whereNull('sender_number')
-                ->orderByRaw("CASE message_pattern_key WHEN 'generic' THEN 0 ELSE 1 END")
-                ->first();
+            ->first();
     }
 
     public static function allActive(): \Illuminate\Database\Eloquent\Collection
