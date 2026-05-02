@@ -221,6 +221,8 @@ Route::delete('/settings/add-ons/{id}',               [TimeSlotController::class
 // ── Dashboard calendar day-summary ─────────────────────────────────────────
 Route::get('/calendar/day-summary',      [DashboardController::class, 'daySummary']       )->name('calendar.day_summary');
 Route::get('/dashboard/availability',    [DashboardController::class, 'checkAvailability'])->name('dashboard.availability');
+Route::get('/dashboard/live-feed',       [DashboardController::class, 'liveFeed']          )->name('dashboard.live_feed');
+Route::get('/dashboard/kpi-live',        [DashboardController::class, 'kpiLive']           )->name('dashboard.kpi_live');
 
 // ── Slot Search Engine ──────────────────────────────────────────────────────
 use App\Http\Controllers\Admin\SlotSearchController;

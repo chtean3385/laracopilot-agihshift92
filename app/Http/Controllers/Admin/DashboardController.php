@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\Customer;
@@ -321,7 +322,7 @@ class DashboardController extends Controller
         $allWidgetKeys = [
             'kpi-row-1', 'shortcuts', 'quick-actions',
             'slot-availability', 'recent-bookings', 'booking-calendar',
-            'arrivals-departures', 'room-availability',
+            'arrivals-departures', 'room-availability', 'live-activity',
         ];
 
         $dashWidgetOrder   = $dashPref?->preferences['widget_order']   ?? $allWidgetKeys;
@@ -332,6 +333,19 @@ class DashboardController extends Controller
             ->where('is_hotel_default', true)
             ->first();
 
+        // ── Dirty rooms list for Today's Agenda modal ─────────────────────────
+        $dirtyRoomsList = Room::where('status', 'dirty')
+            ->orderBy('room_number')
+            ->get(['id', 'room_number', 'type'])
+            ->toArray();
+
+        // ── Today's Agenda: show once per login-day (tracked in session) ───────
+        $agendaKey  = 'agenda_shown_' . now()->toDateString();
+        $showAgenda = !session($agendaKey, false);
+        if ($showAgenda) {
+            session([$agendaKey => true]);
+        }
+
         return view('admin.dashboard', compact(
             'todayCheckins', 'todayCheckouts', 'availableRooms', 'occupiedRooms',
             'dirtyRooms', 'maintenanceRooms', 'totalRooms', 'monthRevenue', 'todayRevenue',
@@ -340,7 +354,82 @@ class DashboardController extends Controller
             'calWeeks', 'calStart', 'prevMonth', 'nextMonth',
             'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
             'websitePendingCount',
-            'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys'
+            'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys',
+            'dirtyRoomsList', 'showAgenda'
+        ));
+    }
+
+    // ── Live Activity Feed ────────────────────────────────────────────────────
+    public function liveFeed()
+    {
+        if (!session('crm_logged_in')) return response()->json([], 401);
+
+        $hotelId = (int) session('crm_hotel_id');
+        if (!$hotelId) return response()->json([]);
+
+        $actionColors = [
+            'created'   => ['bg' => '#dcfce7', 'color' => '#16a34a', 'label' => 'Created'],
+            'updated'   => ['bg' => '#fef9c3', 'color' => '#ca8a04', 'label' => 'Updated'],
+            'deleted'   => ['bg' => '#fee2e2', 'color' => '#dc2626', 'label' => 'Deleted'],
+            'checked_in'  => ['bg' => '#dbeafe', 'color' => '#2563eb', 'label' => 'Check-In'],
+            'checked_out' => ['bg' => '#f3e8ff', 'color' => '#9333ea', 'label' => 'Check-Out'],
+            'login'     => ['bg' => '#e0f2fe', 'color' => '#0891b2', 'label' => 'Login'],
+            'payment'   => ['bg' => '#d1fae5', 'color' => '#059669', 'label' => 'Payment'],
+            'cancelled' => ['bg' => '#fef2f2', 'color' => '#ef4444', 'label' => 'Cancelled'],
+        ];
+
+        $entries = ActivityLog::where('hotel_id', $hotelId)
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get()
+            ->map(function ($e) use ($actionColors) {
+                $action  = strtolower($e->action ?? '');
+                $style   = $actionColors[$action] ?? ['bg' => '#f1f5f9', 'color' => '#64748b', 'label' => ucfirst($action)];
+                return [
+                    'id'          => $e->id,
+                    'user_name'   => $e->user_name ?? 'System',
+                    'user_role'   => $e->user_role ?? '',
+                    'action'      => $e->action,
+                    'action_label'=> $style['label'],
+                    'action_bg'   => $style['bg'],
+                    'action_color'=> $style['color'],
+                    'module'      => $e->module ?? '',
+                    'description' => $e->description ?? '',
+                    'time'        => $e->created_at->diffForHumans(),
+                    'timestamp'   => $e->created_at->toISOString(),
+                    'avatar'      => strtoupper(substr($e->user_name ?? 'S', 0, 1)),
+                ];
+            });
+
+        return response()->json($entries);
+    }
+
+    // ── Live KPI Counts ───────────────────────────────────────────────────────
+    public function kpiLive()
+    {
+        if (!session('crm_logged_in')) return response()->json([], 401);
+
+        $today = Carbon::today();
+
+        try {
+            $checkins     = Booking::whereDate('check_in_date', $today)->where('status', 'confirmed')->count();
+            $checkouts    = Booking::whereDate('check_out_date', $today)->where('status', 'checked_in')->count();
+            $available    = Room::where('status', 'available')->count();
+            $occupied     = Room::where('status', 'occupied')->count();
+            $dirty        = Room::where('status', 'dirty')->count();
+            $total        = Room::count();
+            $occupancy    = $total > 0 ? round(($occupied / $total) * 100) : 0;
+            $pending      = Booking::where('payment_status', 'pending')
+                                   ->whereNotIn('status', ['cancelled', 'checked_out'])->count();
+            $todayRevenue = Payment::whereDate('created_at', $today)->where('status', 'completed')->sum('amount');
+            $monthRevenue = Payment::whereYear('created_at', $today->year)->whereMonth('created_at', $today->month)->where('status', 'completed')->sum('amount');
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'failed'], 500);
+        }
+
+        return response()->json(compact(
+            'checkins', 'checkouts', 'available', 'occupied',
+            'dirty', 'total', 'occupancy', 'pending', 'todayRevenue', 'monthRevenue'
         ));
     }
 

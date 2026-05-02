@@ -1,7 +1,7 @@
 # Hotel CRM — Laravel 12 Multi-Tenant SaaS
 
 ## Overview
-Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi-tenant SaaS platform. Features: guest management, rooms, bookings, check-in/out, payments, invoices, reports, RBAC, activity audit logging, WhatsApp messaging, Guest Register (signatures + ID docs), Pathik autofill, OTA Channel Manager, Payment Links, web-based installer, Per-Hotel Backup & Restore, SaaS Analytics Dashboard with Engagement Campaigns, Firebase Push Notifications (web + Android Flutter WebView), Platform Admin SaaS console, and **Customisable Dashboard** (per-user widget show/hide + drag-to-reorder + hotel-wide admin defaults).
+Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi-tenant SaaS platform. Features: guest management, rooms, bookings, check-in/out, payments, invoices, reports, RBAC, activity audit logging, WhatsApp messaging, Guest Register (signatures + ID docs), Pathik autofill, OTA Channel Manager, Payment Links, web-based installer, Per-Hotel Backup & Restore, SaaS Analytics Dashboard with Engagement Campaigns, Firebase Push Notifications (web + Android Flutter WebView), Platform Admin SaaS console, **Customisable Dashboard** (per-user widget show/hide + drag-to-reorder + hotel-wide admin defaults), and **Live Dashboard** (Today's Agenda modal on login, Live Activity Feed widget auto-polling every 30s, KPI card auto-refresh every 60s, dual-tab notification bell showing platform notifications + hotel activity feed).
 
 ## ⚠️ DEPLOYMENT RULE — READ BEFORE EVERY PUBLISH
 

@@ -1056,13 +1056,26 @@
                         <i class="fas fa-bell" style="font-size:15px;"></i>
                         <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;background:#ef4444;color:#fff;border-radius:8px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;"></span>
                     </button>
-                    <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:#fff;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.13);border:1px solid #f1f5f9;z-index:200;overflow:hidden;">
-                        <div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#1e293b;display:flex;justify-content:space-between;align-items:center;">
-                            <span><i class="fas fa-bell" style="color:#7c3aed;margin-right:6px;"></i>Notifications</span>
-                            <button onclick="markAllRead()" style="font-size:11px;color:#7c3aed;border:none;background:none;cursor:pointer;font-weight:700;">Mark all read</button>
+                    <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.13);border:1px solid #f1f5f9;z-index:200;overflow:hidden;">
+                        {{-- Tab Bar --}}
+                        <div style="display:flex;border-bottom:1px solid #f1f5f9;">
+                            <button id="notifTabPush" onclick="switchNotifTab('push')"
+                                style="flex:1;padding:11px 8px;font-size:12px;font-weight:700;color:#7c3aed;border:none;background:none;cursor:pointer;border-bottom:2px solid #7c3aed;transition:all .15s;">
+                                <i class="fas fa-bell" style="margin-right:5px;"></i>Notifications
+                            </button>
+                            <button id="notifTabActivity" onclick="switchNotifTab('activity')"
+                                style="flex:1;padding:11px 8px;font-size:12px;font-weight:700;color:#94a3b8;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;">
+                                <i class="fas fa-stream" style="margin-right:5px;"></i>Hotel Activity
+                            </button>
+                            <button onclick="markAllRead()" style="padding:11px 10px;font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;font-weight:700;white-space:nowrap;">All read</button>
                         </div>
-                        <div id="notif-list" style="max-height:320px;overflow-y:auto;">
+                        {{-- Push Notifications pane --}}
+                        <div id="notif-list-push" style="max-height:320px;overflow-y:auto;">
                             <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Loading...</div>
+                        </div>
+                        {{-- Hotel Activity pane --}}
+                        <div id="notif-list-activity" style="display:none;max-height:320px;overflow-y:auto;">
+                            <div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;"><i class="fas fa-spinner fa-spin" style="display:block;margin-bottom:6px;font-size:18px;color:#a78bfa;"></i>Loading…</div>
                         </div>
                     </div>
                 </div>
@@ -1500,18 +1513,41 @@
 
 @livewireScripts
 
-{{-- ── Firebase Push Notifications ────────────────────────────────────── --}}
+{{-- ── Notification Bell: Push + Hotel Activity ─────────────────────────── --}}
 <script>
 (function () {
-    // ── In-app bell polling (no Firebase needed) ──────────────────────────
-    let notifPanelOpen = false;
-    let notifItems     = [];
+    // ── State ─────────────────────────────────────────────────────────────
+    let notifPanelOpen  = false;
+    let notifItems      = [];
+    let activeTab       = 'push';
+    let activityItems   = [];
+    let activityLoaded  = false;
 
+    const LIVE_FEED_URL = '{{ route('dashboard.live_feed') }}';
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function escHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function timeAgo(ts) {
+        if (!ts) return '';
+        const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    // ── Panel open/close ──────────────────────────────────────────────────
     function toggleNotifPanel() {
         notifPanelOpen = !notifPanelOpen;
         const panel = document.getElementById('notif-panel');
         if (panel) panel.style.display = notifPanelOpen ? 'block' : 'none';
-        if (notifPanelOpen) loadNotifications();
+        if (notifPanelOpen) {
+            loadNotifications();
+            if (activeTab === 'activity') loadActivityFeed();
+        }
         document.addEventListener('click', onDocClick, { once: true });
     }
 
@@ -1524,9 +1560,34 @@
         }
     }
 
+    // ── Tab switching ─────────────────────────────────────────────────────
+    window.switchNotifTab = function (tab) {
+        activeTab = tab;
+        const pushPane     = document.getElementById('notif-list-push');
+        const actPane      = document.getElementById('notif-list-activity');
+        const pushTab      = document.getElementById('notifTabPush');
+        const actTab       = document.getElementById('notifTabActivity');
+        const activeStyle  = 'color:#7c3aed;border-bottom:2px solid #7c3aed;';
+        const inactiveStyle= 'color:#94a3b8;border-bottom:2px solid transparent;';
+
+        if (tab === 'push') {
+            if (pushPane) pushPane.style.display = 'block';
+            if (actPane)  actPane.style.display  = 'none';
+            if (pushTab)  pushTab.style.cssText  += activeStyle;
+            if (actTab)   actTab.style.cssText   += inactiveStyle;
+        } else {
+            if (pushPane) pushPane.style.display = 'none';
+            if (actPane)  actPane.style.display  = 'block';
+            if (pushTab)  pushTab.style.cssText  += inactiveStyle;
+            if (actTab)   actTab.style.cssText   += activeStyle;
+            loadActivityFeed();
+        }
+    };
+
+    // ── Push Notifications ────────────────────────────────────────────────
     async function loadNotifications() {
         try {
-            const res  = await fetch('{{ route('fcm.notifications.unread') }}', {
+            const res = await fetch('{{ route('fcm.notifications.unread') }}', {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
             });
             if (!res.ok) return;
@@ -1537,7 +1598,7 @@
     }
 
     function renderNotifications() {
-        const list = document.getElementById('notif-list');
+        const list = document.getElementById('notif-list-push');
         if (!list) return;
 
         if (!notifItems.length) {
@@ -1556,27 +1617,66 @@
         `).join('');
     }
 
-    function escHtml(str) {
-        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // ── Hotel Activity Feed (bell tab) ────────────────────────────────────
+    async function loadActivityFeed() {
+        const pane = document.getElementById('notif-list-activity');
+        if (!pane) return;
+        try {
+            const res = await fetch(LIVE_FEED_URL, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            });
+            if (!res.ok) return;
+            activityItems = await res.json();
+            activityLoaded = true;
+            renderActivityFeed();
+            updateBadge();
+        } catch (e) {}
     }
 
-    function timeAgo(ts) {
-        if (!ts) return '';
-        const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-        if (diff < 60) return 'just now';
-        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
-        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
-        return Math.floor(diff/86400) + 'd ago';
+    function renderActivityFeed() {
+        const pane = document.getElementById('notif-list-activity');
+        if (!pane) return;
+
+        if (!activityItems.length) {
+            pane.innerHTML = '<div style="padding:28px;text-align:center;color:#94a3b8;font-size:13px;"><i class="fas fa-history" style="font-size:20px;margin-bottom:8px;display:block;color:#c4b5fd;"></i>No recent activity</div>';
+            return;
+        }
+
+        pane.innerHTML = activityItems.map(e => `
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid #f8fafc;">
+                <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;">${escHtml(e.avatar)}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px;">
+                        <span style="font-weight:700;color:#1e293b;font-size:12px;">${escHtml(e.user_name)}</span>
+                        <span style="font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:${escHtml(e.action_bg)};color:${escHtml(e.action_color)};">${escHtml(e.action_label)}</span>
+                    </div>
+                    <div style="font-size:11px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(e.description)}</div>
+                </div>
+                <div style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">${escHtml(e.time)}</div>
+            </div>
+        `).join('');
     }
 
+    // ── Badge (push count; dot pulse if activity) ─────────────────────────
     function updateBadge() {
         const badge = document.getElementById('notif-badge');
         if (!badge) return;
-        if (notifItems.length > 0) {
-            badge.textContent = notifItems.length > 9 ? '9+' : notifItems.length;
-            badge.style.display = 'flex';
+        const count = notifItems.length;
+        if (count > 0) {
+            badge.textContent    = count > 9 ? '9+' : count;
+            badge.style.display  = 'flex';
+            badge.style.background = '#ef4444';
+        } else if (activityItems.length > 0 && activityLoaded) {
+            badge.textContent    = '';
+            badge.style.display  = 'flex';
+            badge.style.background = '#7c3aed';
+            badge.style.width    = '8px';
+            badge.style.height   = '8px';
+            badge.style.minWidth = '8px';
+            badge.style.top      = '-2px';
+            badge.style.right    = '-2px';
         } else {
-            badge.style.display = 'none';
+            badge.style.display  = 'none';
         }
     }
 
@@ -1618,9 +1718,12 @@
         renderNotifications();
     }
 
-    // Poll every 60 seconds
+    // ── Polling ───────────────────────────────────────────────────────────
     loadNotifications();
     setInterval(loadNotifications, 60000);
+    // Pre-load activity so badge dot appears quickly
+    loadActivityFeed();
+    setInterval(loadActivityFeed, 30000);
 
     // Expose to window for inline onclick
     window.toggleNotifPanel = toggleNotifPanel;

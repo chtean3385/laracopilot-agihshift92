@@ -110,6 +110,8 @@
                 .kpi-card-sm .kpi-shine  { width: 80px !important; height: 80px !important; top: -25px !important; right: -25px !important; }
                 .kpi-card-sm .kpi-shine2 { width: 60px !important; height: 60px !important; bottom: -18px !important; left: -12px !important; }
                 @keyframes pulse-dirty { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.4);} 50%{box-shadow:0 0 0 8px rgba(249,115,22,0);} }
+                @keyframes pulse-live  { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4);} 50%{box-shadow:0 0 0 6px rgba(16,185,129,0);} }
+                @keyframes agendaSlideIn { from{opacity:0;transform:scale(.93) translateY(16px);} to{opacity:1;transform:scale(1) translateY(0);} }
                 @media(max-width:900px){ .kpi-grid-8 { grid-template-columns: repeat(4,1fr) !important; } }
                 @media(max-width:540px){ .kpi-grid-8 { grid-template-columns: repeat(2,1fr) !important; } }
 
@@ -261,6 +263,143 @@
                 }
                 </style>
 
+                {{-- ══════════════════════════════════════════════════════════════════
+                     TODAY'S AGENDA MODAL — shown once per login-day
+                ══════════════════════════════════════════════════════════════════ --}}
+                @if($showAgenda)
+                <div id="agendaOverlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);">
+                    <div id="agendaModal" style="background:#fff;border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.25);width:100%;max-width:740px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:agendaSlideIn .35s cubic-bezier(.34,1.56,.64,1) both;">
+
+                        {{-- Header --}}
+                        <div style="padding:22px 28px 18px;background:linear-gradient(135deg,#0ea5e9,#7c3aed);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                            <div style="display:flex;align-items:center;gap:14px;">
+                                <div style="width:46px;height:46px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+                                    <i class="fas fa-calendar-day" style="color:#fff;font-size:20px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;">Today's Agenda</div>
+                                    <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px;">{{ now()->format('l, d F Y') }}</div>
+                                </div>
+                            </div>
+                            <button onclick="closeAgenda()" style="width:34px;height:34px;background:rgba(255,255,255,.15);border:none;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        {{-- Summary Strip --}}
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
+                            <div style="padding:14px 20px;text-align:center;border-right:1px solid #f1f5f9;">
+                                <div style="font-size:28px;font-weight:900;color:#0891b2;line-height:1;">{{ $todayCheckins->count() }}</div>
+                                <div style="font-size:11px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-sign-in-alt" style="color:#06b6d4;margin-right:4px;"></i>Arrivals</div>
+                            </div>
+                            <div style="padding:14px 20px;text-align:center;border-right:1px solid #f1f5f9;">
+                                <div style="font-size:28px;font-weight:900;color:#d97706;line-height:1;">{{ $todayCheckouts->count() }}</div>
+                                <div style="font-size:11px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-sign-out-alt" style="color:#f59e0b;margin-right:4px;"></i>Departures</div>
+                            </div>
+                            <div style="padding:14px 20px;text-align:center;">
+                                <div style="font-size:28px;font-weight:900;color:{{ ($dirtyRooms ?? 0) > 0 ? '#ea580c' : '#10b981' }};line-height:1;">{{ $dirtyRooms ?? 0 }}</div>
+                                <div style="font-size:11px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-broom" style="color:{{ ($dirtyRooms ?? 0) > 0 ? '#f97316' : '#10b981' }};margin-right:4px;"></i>Need Cleaning</div>
+                            </div>
+                        </div>
+
+                        {{-- Scrollable Body --}}
+                        <div style="overflow-y:auto;flex:1;padding:20px 28px;display:flex;flex-direction:column;gap:20px;">
+
+                            {{-- Arrivals --}}
+                            @if($todayCheckins->count() > 0)
+                            <div>
+                                <div style="font-size:12px;font-weight:800;color:#0891b2;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-sign-in-alt"></i> Today's Arrivals
+                                    <span style="background:#e0f2fe;color:#0891b2;border-radius:20px;padding:1px 9px;font-size:11px;">{{ $todayCheckins->count() }}</span>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:8px;">
+                                    @foreach($todayCheckins as $bk)
+                                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border-radius:12px;border-left:3px solid #06b6d4;">
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:34px;height:34px;background:linear-gradient(135deg,#06b6d4,#0284c7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;">{{ strtoupper(substr($bk->customer?->name ?? 'G', 0, 1)) }}</div>
+                                            <div>
+                                                <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $bk->customer?->name ?? '(Deleted Guest)' }}</div>
+                                                <div style="font-size:12px;color:#64748b;">{{ $bk->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($bk->room?->room_number ?? '—')) }} &bull; {{ $bk->nights }} night(s)</div>
+                                            </div>
+                                        </div>
+                                        @canDo('checkin.process')
+                                        <a href="{{ route('checkin.show', $bk->id) }}" onclick="closeAgenda()" style="background:linear-gradient(135deg,#06b6d4,#0284c7);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(6,182,212,.3);white-space:nowrap;">Check In</a>
+                                        @endCanDo
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Departures --}}
+                            @if($todayCheckouts->count() > 0)
+                            <div>
+                                <div style="font-size:12px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-sign-out-alt"></i> Today's Departures
+                                    <span style="background:#fef3c7;color:#b45309;border-radius:20px;padding:1px 9px;font-size:11px;">{{ $todayCheckouts->count() }}</span>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:8px;">
+                                    @foreach($todayCheckouts as $bk)
+                                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:12px;border-left:3px solid #f59e0b;">
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <div style="width:34px;height:34px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;">{{ strtoupper(substr($bk->customer?->name ?? 'G', 0, 1)) }}</div>
+                                            <div>
+                                                <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $bk->customer?->name ?? '(Deleted Guest)' }}</div>
+                                                <div style="font-size:12px;color:#64748b;">{{ $bk->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($bk->room?->room_number ?? '—')) }}
+                                                    @canDo('reports.view') &bull; Balance: ₹{{ number_format($bk->balance_due) }} @endCanDo
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @canDo('checkout.process')
+                                        <a href="{{ route('checkout.show', $bk->id) }}" onclick="closeAgenda()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(245,158,11,.3);white-space:nowrap;">Check Out</a>
+                                        @endCanDo
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Dirty Rooms --}}
+                            @if(count($dirtyRoomsList) > 0)
+                            <div>
+                                <div style="font-size:12px;font-weight:800;color:#c2410c;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-broom"></i> Needs Cleaning
+                                    <span style="background:#ffedd5;color:#c2410c;border-radius:20px;padding:1px 9px;font-size:11px;">{{ count($dirtyRoomsList) }}</span>
+                                </div>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                    @foreach($dirtyRoomsList as $dr)
+                                    <a href="{{ route('rooms.index') }}?status=dirty" onclick="closeAgenda()" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fed7aa;border-radius:10px;padding:8px 14px;text-decoration:none;display:flex;align-items:center;gap:6px;">
+                                        <i class="fas fa-broom" style="color:#f97316;font-size:11px;"></i>
+                                        <span style="font-weight:700;color:#c2410c;font-size:13px;">{{ $dr['room_number'] }}</span>
+                                        <span style="font-size:11px;color:#9a3412;">{{ ucfirst($dr['type']) }}</span>
+                                    </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- All-clear state --}}
+                            @if($todayCheckins->count() === 0 && $todayCheckouts->count() === 0 && count($dirtyRoomsList) === 0)
+                            <div style="text-align:center;padding:32px 0;">
+                                <div style="font-size:40px;margin-bottom:12px;">🎉</div>
+                                <div style="font-weight:800;color:#1e293b;font-size:16px;">All clear for today!</div>
+                                <div style="font-size:13px;color:#64748b;margin-top:4px;">No arrivals, departures, or rooms needing attention.</div>
+                            </div>
+                            @endif
+
+                        </div>
+
+                        {{-- Footer --}}
+                        <div style="padding:16px 28px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;flex-shrink:0;background:#fafafa;">
+                            <button onclick="closeAgenda()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,.3);transition:all .15s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+                                <i class="fas fa-check" style="margin-right:7px;"></i>Got it, let's go!
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                @endif
+
                 @php
                     $dashRole = session('crm_user_role');
                     $canSetDefault = in_array($dashRole, ['Super Admin', 'Admin']);
@@ -273,6 +412,7 @@
                         'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
                         'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
                         'room-availability'  => ['label' => 'Room Availability Checker',      'icon' => 'fa-door-open',     'bg' => 'linear-gradient(135deg,#10b981,#059669)'],
+                        'live-activity'      => ['label' => 'Live Activity Feed',              'icon' => 'fa-stream',        'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                     ];
                     $orderedWidgets = collect($dashWidgetOrder)->filter(fn($k) => array_key_exists($k, $widgetMeta))->values()->all();
                     foreach (array_keys($widgetMeta) as $k) {
@@ -944,6 +1084,36 @@
                     @endif
                     </div>{{-- /arrivals-departures widget --}}
 
+                    {{-- Live Activity Feed ──────────────────────────────────────────────── --}}
+                    <div data-widget="live-activity" class="db-widget-wrap">
+                    <div class="db-card" style="overflow:hidden;padding:0;">
+                        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#faf5ff,#ede9fe);">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,.3);">
+                                    <i class="fas fa-stream" style="color:#fff;font-size:14px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800;color:#1e293b;font-size:15px;">Live Activity Feed</div>
+                                    <div style="font-size:11px;color:#7c3aed;" id="liveActivityStatus">Auto-refreshes every 30s</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span id="liveActivityDot" style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;animation:pulse-live 2s infinite;flex-shrink:0;" title="Live"></span>
+                                <button onclick="loadLiveFeed(true)" title="Refresh now"
+                                    style="width:32px;height:32px;border:1.5px solid #ddd6fe;border-radius:9px;background:#faf5ff;color:#7c3aed;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;"
+                                    onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#faf5ff'">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="liveActivityList" style="max-height:360px;overflow-y:auto;padding:8px 0;">
+                            <div style="padding:32px;text-align:center;color:#94a3b8;font-size:13px;">
+                                <i class="fas fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block;color:#a78bfa;"></i>Loading activity…
+                            </div>
+                        </div>
+                    </div>
+                    </div>{{-- /live-activity widget --}}
+
                     {{-- Room Availability Checker --}}
                     <div data-widget="room-availability" class="db-widget-wrap">
                     <div class="db-card" style="overflow:hidden;padding:0;">
@@ -1471,6 +1641,186 @@
                         badge.classList.add('show');
                         setTimeout(function() { badge.classList.remove('show'); }, 2200);
                     }
+                })();
+                </script>
+
+                {{-- ══════════════════════════════════════════════════════════════════
+                     LIVE DASHBOARD JAVASCRIPT
+                     • closeAgenda()  — dismisses Today's Agenda modal
+                     • loadLiveFeed() — polls /dashboard/live-feed every 30s
+                     • pollKpi()      — polls /dashboard/kpi-live every 60s
+                ══════════════════════════════════════════════════════════════════ --}}
+                <script>
+                (function () {
+                    'use strict';
+
+                    var LIVE_FEED_URL = '{{ route('dashboard.live_feed') }}';
+                    var KPI_LIVE_URL  = '{{ route('dashboard.kpi_live') }}';
+                    var CSRF          = document.querySelector('meta[name=csrf-token]')?.content || '';
+
+                    // ── Agenda Modal ──────────────────────────────────────────────
+                    window.closeAgenda = function () {
+                        var overlay = document.getElementById('agendaOverlay');
+                        if (!overlay) return;
+                        overlay.style.transition = 'opacity .25s';
+                        overlay.style.opacity = '0';
+                        setTimeout(function () { overlay.remove(); }, 260);
+                    };
+                    // Dismiss on backdrop click
+                    var overlay = document.getElementById('agendaOverlay');
+                    if (overlay) {
+                        overlay.addEventListener('click', function (e) {
+                            if (e.target === overlay) closeAgenda();
+                        });
+                    }
+
+                    // ── Helpers ───────────────────────────────────────────────────
+                    function escHtml(str) {
+                        return String(str || '')
+                            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    }
+
+                    // ── Live Activity Feed ────────────────────────────────────────
+                    var lastFeedId   = 0;
+                    var feedLoading  = false;
+
+                    window.loadLiveFeed = function (manual) {
+                        if (feedLoading && !manual) return;
+                        feedLoading = true;
+
+                        fetch(LIVE_FEED_URL, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                        })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (items) {
+                            if (!items) return;
+                            var list = document.getElementById('liveActivityList');
+                            if (!list) return;
+
+                            if (!items.length) {
+                                list.innerHTML = '<div style="padding:32px;text-align:center;color:#94a3b8;font-size:13px;"><i class="fas fa-history" style="font-size:20px;margin-bottom:8px;display:block;color:#c4b5fd;"></i>No activity recorded yet.</div>';
+                                return;
+                            }
+
+                            // Highlight new entries since last fetch
+                            var topId = items[0].id;
+
+                            list.innerHTML = items.map(function (e, idx) {
+                                var isNew = (lastFeedId > 0 && e.id > lastFeedId);
+                                return '<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 18px;border-bottom:1px solid #f8fafc;' + (isNew ? 'background:#f5f3ff;' : 'background:transparent;') + 'transition:background .4s;">'
+                                    + '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;">' + escHtml(e.avatar) + '</div>'
+                                    + '<div style="flex:1;min-width:0;">'
+                                    +   '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;">'
+                                    +     '<span style="font-weight:700;color:#1e293b;font-size:13px;">' + escHtml(e.user_name) + '</span>'
+                                    +     (e.user_role ? '<span style="font-size:10px;font-weight:600;color:#7c3aed;background:#f5f3ff;border-radius:6px;padding:1px 7px;">' + escHtml(e.user_role) + '</span>' : '')
+                                    +     '<span style="font-size:10px;font-weight:700;border-radius:6px;padding:2px 8px;background:' + escHtml(e.action_bg) + ';color:' + escHtml(e.action_color) + ';">' + escHtml(e.action_label) + '</span>'
+                                    +     (e.module ? '<span style="font-size:10px;color:#94a3b8;">' + escHtml(e.module) + '</span>' : '')
+                                    +   '</div>'
+                                    +   '<div style="font-size:12px;color:#475569;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(e.description) + '</div>'
+                                    + '</div>'
+                                    + '<div style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;padding-top:2px;">' + escHtml(e.time) + '</div>'
+                                    + '</div>';
+                            }).join('');
+
+                            // Update last seen ID and status
+                            if (topId > lastFeedId) {
+                                lastFeedId = topId;
+                            }
+
+                            var statusEl = document.getElementById('liveActivityStatus');
+                            var now = new Date();
+                            if (statusEl) statusEl.textContent = 'Updated ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+                        })
+                        .catch(function () {
+                            var dot = document.getElementById('liveActivityDot');
+                            if (dot) dot.style.background = '#ef4444';
+                        })
+                        .finally(function () { feedLoading = false; });
+                    };
+
+                    // Initial load + 30s poll
+                    loadLiveFeed(true);
+                    setInterval(function () { loadLiveFeed(false); }, 30000);
+
+                    // ── KPI Live Refresh ──────────────────────────────────────────
+                    function animateNum(el, target, prefix, isCurrency) {
+                        var current = parseFloat(el.getAttribute('data-count') || '0');
+                        if (current === target) return;
+                        var steps   = 20;
+                        var delta   = (target - current) / steps;
+                        var step    = 0;
+                        var timer   = setInterval(function () {
+                            step++;
+                            current += delta;
+                            if (step >= steps) {
+                                current = target;
+                                clearInterval(timer);
+                            }
+                            el.setAttribute('data-count', target);
+                            if (isCurrency) {
+                                el.textContent = (prefix || '') + Number(Math.round(current)).toLocaleString('en-IN');
+                            } else {
+                                el.textContent = Math.round(current);
+                            }
+                        }, 30);
+                    }
+
+                    function pollKpi() {
+                        fetch(KPI_LIVE_URL, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                        })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (data) {
+                            if (!data || data.error) return;
+
+                            var map = [
+                                { label: 'Check-Ins',    value: data.checkins },
+                                { label: 'Check-Outs',   value: data.checkouts },
+                                { label: 'Available',    value: data.available },
+                                { label: 'Occupied',     value: data.occupied },
+                                { label: 'Needs Cleaning', value: data.dirty },
+                                { label: 'Pending Pay',  value: data.pending },
+                                { label: 'Today Revenue',  value: data.todayRevenue,  prefix: '₹', currency: true },
+                                { label: 'Month Revenue',  value: data.monthRevenue,  prefix: '₹', currency: true },
+                            ];
+
+                            document.querySelectorAll('.kpi-card .kpi-num').forEach(function (el) {
+                                var label = el.closest('.kpi-card')?.querySelector('.kpi-label')?.textContent?.trim();
+                                var match = map.find(function (m) { return m.label === label; });
+                                if (match && match.value !== undefined) {
+                                    animateNum(el, match.value, match.prefix || '', !!match.currency);
+                                }
+                            });
+
+                            // Update occupancy sub-text
+                            document.querySelectorAll('.kpi-card').forEach(function (card) {
+                                var lbl = card.querySelector('.kpi-label');
+                                if (lbl && lbl.textContent.trim() === 'Occupied') {
+                                    var sub = card.querySelector('.kpi-sub');
+                                    if (sub && data.occupancy !== undefined) sub.textContent = data.occupancy + '% occ.';
+                                }
+                            });
+
+                            // Pulse the dirty card if rooms > 0
+                            if (data.dirty > 0) {
+                                document.querySelectorAll('.kpi-card').forEach(function (card) {
+                                    var lbl = card.querySelector('.kpi-label');
+                                    if (lbl && lbl.textContent.trim() === 'Needs Cleaning') {
+                                        card.style.animation = 'pulse-dirty 2s infinite';
+                                    }
+                                });
+                            }
+                        })
+                        .catch(function () {});
+                    }
+
+                    // First KPI refresh 60s after page load, then every 60s
+                    setTimeout(function () {
+                        pollKpi();
+                        setInterval(pollKpi, 60000);
+                    }, 60000);
+
                 })();
                 </script>
                 @endsection
