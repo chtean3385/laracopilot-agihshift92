@@ -179,7 +179,8 @@ class WhatsAppController extends Controller
             return response()->json(['success' => false, 'error' => 'WhatsApp Business Account ID or access token is not configured in platform settings.']);
         }
 
-        $body     = $template->message_body;
+        // Trim body and convert named vars to positional numbers {{1}}, {{2}} ...
+        $body     = trim($template->message_body);
         $varMap   = [];
         $counter  = 0;
         $metaBody = preg_replace_callback('/\{\{(\w+)\}\}/', function ($m) use (&$varMap, &$counter) {
@@ -189,10 +190,27 @@ class WhatsAppController extends Controller
             return '{{' . $varMap[$m[1]] . '}}';
         }, $body);
 
+        // Meta rule: no variable at the start or end of ANY line
+        $varPattern = '/^\s*\{\{\d+\}\}|^\{\{\d+\}\}/m';   // starts a line
+        $varEndPat  = '/\{\{\d+\}\}\s*$/m';                  // ends a line
+        $badLines   = [];
+        foreach (explode("\n", $metaBody) as $i => $line) {
+            $trimLine = trim($line);
+            if (preg_match('/^\{\{\d+\}\}/', $trimLine) || preg_match('/\{\{\d+\}\}$/', $trimLine)) {
+                $badLines[] = 'Line ' . ($i + 1) . ': "' . $line . '"';
+            }
+        }
+        if (!empty($badLines)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Meta rejects variables at the start or end of a line. Fix these line(s) in your template — add text before/after the variable: ' . implode('; ', $badLines),
+            ]);
+        }
+
         $baseName     = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $template->template_name), '_'));
         $hotel        = $template->hotel_id ? \App\Models\Hotel::find($template->hotel_id) : null;
         $hotelSlug    = $hotel ? trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($hotel->slug ?: $hotel->name)), '_') : '';
-        $templateName = $hotelSlug ? $baseName . '_' . $hotelSlug : $baseName;
+        $templateName = $hotelSlug && !str_ends_with($baseName, '_' . $hotelSlug) ? $baseName . '_' . $hotelSlug : $baseName;
 
         $bodyComponent = ['type' => 'BODY', 'text' => $metaBody];
         if (!empty($varMap)) {
