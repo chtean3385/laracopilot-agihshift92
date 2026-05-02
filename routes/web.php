@@ -77,6 +77,14 @@ Route::get('/upgrade',         [\App\Http\Controllers\Admin\UpgradeController::c
 Route::post('/upgrade/request',[\App\Http\Controllers\Admin\UpgradeController::class, 'request'])->name('upgrade.request');
 Route::post('/upgrade/extend-trial',[\App\Http\Controllers\Admin\UpgradeController::class, 'extendTrial'])->name('upgrade.extend-trial');
 
+// ── Public Pricing Page (no auth required — shareable link) ─────────────────
+Route::withoutMiddleware([
+    \App\Http\Middleware\SetHotelContext::class,
+    \App\Http\Middleware\CheckTrialStatus::class,
+])->group(function () {
+    Route::get('/pricing', [\App\Http\Controllers\PublicPricingController::class, 'index'])->name('pricing');
+});
+
 // ── Super Admin Hotel Filter ─────────────────────────────────────────────────
 Route::post('/super-admin/hotel-filter', [SaHotelFilterController::class, 'filter'])->name('sa.hotel.filter');
 
