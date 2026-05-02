@@ -110,8 +110,6 @@ class WhatsAppWebhookController extends Controller
 
             $entries = $payload['entry'] ?? [];
             foreach ($entries as $entry) {
-                // WABA ID is the top-level entry ID (Meta WhatsApp Business Account ID)
-                $wabaId  = $entry['id'] ?? null;
                 $changes = $entry['changes'] ?? [];
                 foreach ($changes as $change) {
                     $field = $change['field'] ?? '';
@@ -122,7 +120,7 @@ class WhatsAppWebhookController extends Controller
                     }
 
                     if ($field === 'messages') {
-                        $this->handleIncomingMessages($value, $platform, $wabaId);
+                        $this->handleIncomingMessages($value, $platform);
                     }
                 }
             }
@@ -166,7 +164,7 @@ class WhatsAppWebhookController extends Controller
 
     // ── Incoming message handler ──────────────────────────────────────────
 
-    protected function handleIncomingMessages(array $value, ?object $platform = null, ?string $wabaId = null): void
+    protected function handleIncomingMessages(array $value, ?object $platform = null): void
     {
         // Meta webhook metadata identifies the RECEIVING WA Business number
         $recipientPhoneNumberId = $value['metadata']['phone_number_id'] ?? null;
@@ -221,10 +219,10 @@ class WhatsAppWebhookController extends Controller
                 }
 
                 // OTA booking sync:
-                // 1. Try matching by sender phone number OR WABA business account ID
+                // 1. Try matching by sender phone number
                 // 2. Fall back to content-pattern detection (generic format, e.g. demo testing)
                 if ($text !== null) {
-                    $otaSource = \App\Models\OtaSource::findBySender($phone, $wabaId)
+                    $otaSource = \App\Models\OtaSource::findBySender($phone)
                               ?? \App\Models\OtaSource::findByContentPattern($text);
                     if ($otaSource) {
                         (new \App\Services\OtaBookingParserService())->handle(

@@ -23,33 +23,18 @@ class OtaSource extends Model
 
     /**
      * Find an active OTA source by the sender's WhatsApp number (FROM field in webhook).
-     * Also accepts an optional WABA business account ID for fallback matching.
+     * The waba_id column is reserved for future use when Meta exposes a reliable
+     * sender-side business identifier; it is NOT matched against entry.id (receiving WABA).
      */
-    public static function findBySender(string $phone, ?string $wabaId = null): ?static
+    public static function findBySender(string $phone): ?static
     {
         $normalized = preg_replace('/[^0-9]/', '', $phone);
+        if (!$normalized) return null;
 
-        // 1. Match by sender phone number
-        if ($normalized) {
-            $match = static::where('is_active', true)
-                ->whereNotNull('sender_number')
-                ->whereRaw("regexp_replace(sender_number, '[^0-9]', '', 'g') = ?", [$normalized])
-                ->first();
-
-            if ($match) return $match;
-        }
-
-        // 2. Match by WABA business account ID (e.g. when OTA registers their WABA)
-        if ($wabaId) {
-            $match = static::where('is_active', true)
-                ->whereNotNull('waba_id')
-                ->where('waba_id', $wabaId)
-                ->first();
-
-            if ($match) return $match;
-        }
-
-        return null;
+        return static::where('is_active', true)
+            ->whereNotNull('sender_number')
+            ->whereRaw("regexp_replace(sender_number, '[^0-9]', '', 'g') = ?", [$normalized])
+            ->first();
     }
 
     /**
