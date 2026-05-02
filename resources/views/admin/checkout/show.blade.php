@@ -249,6 +249,35 @@
     </div>
     @endif
 
+    {{-- Early Checkout Banner --}}
+    @if($isEarlyCheckout && $pricingType === 'per_night')
+    <div style="background:#eff6ff;border:2px solid #3b82f6;border-radius:16px;padding:18px 20px;display:flex;align-items:flex-start;gap:14px;">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+            <i class="fas fa-clock" style="color:#fff;font-size:16px;"></i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-weight:800;color:#1d4ed8;font-size:15px;margin-bottom:4px;">Early Check-Out</div>
+            <div style="font-size:13px;color:#1e40af;line-height:1.6;">
+                Booked until <strong>{{ $booking->check_out_date->format('d M Y') }}</strong>
+                ({{ $bookingNights }} night{{ $bookingNights != 1 ? 's' : '' }})
+                &nbsp;·&nbsp;
+                Checking out today: <strong>{{ now()->format('d M Y') }}</strong>
+                — <span style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;">{{ $bookingNights - $actualDaysStayed }} night{{ ($bookingNights - $actualDaysStayed) != 1 ? 's' : '' }} early</span>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" onclick="chooseEarlyActual()"
+                    style="padding:9px 16px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(59,130,246,.35);">
+                    <i class="fas fa-calendar-day"></i> Charge Actual Stay ({{ $actualDaysStayed }} night{{ $actualDaysStayed != 1 ? 's' : '' }} — ₹{{ number_format($actualDaysStayed * ($booking->room?->price_per_night ?? 0)) }})
+                </button>
+                <button type="button" onclick="chooseEarlyFull()"
+                    style="padding:9px 16px;background:#fff;color:#1d4ed8;border:1.5px solid #3b82f6;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-receipt"></i> Charge Full Booking ({{ $bookingNights }} nights — ₹{{ number_format($bookingNights * ($booking->room?->price_per_night ?? 0)) }})
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Process Form --}}
     <div style="background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:24px;">
         <h3 style="font-weight:800;color:#1e293b;margin-bottom:20px;font-size:15px;"><i class="fas fa-sign-out-alt" style="color:#f59e0b;margin-right:8px;"></i>Complete Check-Out</h3>
@@ -383,6 +412,50 @@
 </div>
 @endif
 
+{{-- Early Checkout Confirmation Modal --}}
+@if($isEarlyCheckout && $pricingType === 'per_night')
+<div id="earlyModal" style="display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:440px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#3b82f6,#2563eb);padding:18px 22px;display:flex;align-items:center;gap:12px;">
+            <i class="fas fa-clock" style="color:#fff;font-size:20px;"></i>
+            <div>
+                <div style="font-weight:800;color:#fff;font-size:15px;">Early Check-Out — Choose Billing</div>
+                <div style="color:#bfdbfe;font-size:12px;">{{ $booking->customer?->name }} — Booking #{{ $booking->booking_number }}</div>
+            </div>
+        </div>
+        <div style="padding:24px;">
+            <p style="font-size:13px;color:#475569;margin-bottom:18px;line-height:1.6;">
+                This guest was booked until <strong>{{ $booking->check_out_date->format('d M Y') }}</strong>
+                ({{ $bookingNights }} night{{ $bookingNights != 1 ? 's' : '' }})
+                but is checking out today <strong>{{ now()->format('d M Y') }}</strong>
+                — <strong>{{ $bookingNights - $actualDaysStayed }} night{{ ($bookingNights - $actualDaysStayed) != 1 ? 's' : '' }} early</strong>.
+                <br>How should this checkout be billed?
+            </p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button type="button" onclick="confirmEarlyActual()"
+                    style="width:100%;padding:13px 16px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-calendar-day" style="font-size:15px;flex-shrink:0;"></i>
+                    <div>
+                        <div>Charge Actual Stay — {{ $actualDaysStayed }} night{{ $actualDaysStayed != 1 ? 's' : '' }}</div>
+                        <div style="font-size:11px;font-weight:600;opacity:.85;">₹{{ number_format($actualDaysStayed * ($booking->room?->price_per_night ?? 0)) }} room charge (before extras & GST)</div>
+                    </div>
+                </button>
+                <button type="button" onclick="confirmEarlyFull()"
+                    style="width:100%;padding:13px 16px;background:#f1f5f9;color:#1e293b;border:1.5px solid #e2e8f0;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-receipt" style="font-size:15px;color:#64748b;flex-shrink:0;"></i>
+                    <div>
+                        <div>Charge Full Booking — {{ $bookingNights }} nights</div>
+                        <div style="font-size:11px;font-weight:600;color:#64748b;">₹{{ number_format($bookingNights * ($booking->room?->price_per_night ?? 0)) }} room charge (before extras & GST)</div>
+                    </div>
+                </button>
+                <button type="button" onclick="document.getElementById('earlyModal').style.display='none'"
+                    style="width:100%;padding:9px;background:transparent;border:none;color:#94a3b8;font-size:12px;cursor:pointer;margin-top:2px;">Cancel — go back</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- Void/Cancel Modal --}}
 <div id="voidModal" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
     <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:420px;overflow:hidden;">
@@ -491,11 +564,18 @@ function markBannerChoice(choice) {
     if (chosen) { chosen.style.opacity = '1'; chosen.style.pointerEvents = 'auto'; chosen.style.outline = '2px solid #1e293b'; }
 }
 
-// Intercept form submit when overstay decision has not yet been made
+// Intercept form submit — overstay decision required
 document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     if (_isOverstay && !_overstayDecisionMade) {
         e.preventDefault();
         var m = document.getElementById('overstayModal');
+        if (m) m.style.display = 'flex';
+        return;
+    }
+    // Early checkout — must also make a decision
+    if (_isEarlyCheckout && !_earlyDecisionMade) {
+        e.preventDefault();
+        var m = document.getElementById('earlyModal');
         if (m) m.style.display = 'flex';
     }
 });
@@ -503,6 +583,57 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
 var overstayModalEl = document.getElementById('overstayModal');
 if (overstayModalEl) {
     overstayModalEl.addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+    });
+}
+
+// ── Early Checkout JS ───────────────────────────────────────────────────────
+var _isEarlyCheckout   = {{ $isEarlyCheckout ? 'true' : 'false' }};
+var _actualDaysStayed  = {{ $actualDaysStayed ?? 0 }};
+var _earlyDecisionMade = false;
+
+function chooseEarlyActual() {
+    document.getElementById('overrideNightsInput').value = _actualDaysStayed;
+    _earlyDecisionMade = true;
+    recalcAndSetPayment(_actualDaysStayed);
+    markEarlyChoice('actual');
+}
+
+function chooseEarlyFull() {
+    document.getElementById('overrideNightsInput').value = _bookingNights;
+    _earlyDecisionMade = true;
+    recalcAndSetPayment(_bookingNights);
+    markEarlyChoice('full');
+}
+
+function confirmEarlyActual() {
+    document.getElementById('overrideNightsInput').value = _actualDaysStayed;
+    _earlyDecisionMade = true;
+    recalcAndSetPayment(_actualDaysStayed);
+    var m = document.getElementById('earlyModal');
+    if (m) m.style.display = 'none';
+    document.getElementById('checkoutForm').submit();
+}
+
+function confirmEarlyFull() {
+    document.getElementById('overrideNightsInput').value = _bookingNights;
+    _earlyDecisionMade = true;
+    recalcAndSetPayment(_bookingNights);
+    var m = document.getElementById('earlyModal');
+    if (m) m.style.display = 'none';
+    document.getElementById('checkoutForm').submit();
+}
+
+function markEarlyChoice(choice) {
+    var btns = document.querySelectorAll('[onclick="chooseEarlyActual()"], [onclick="chooseEarlyFull()"]');
+    btns.forEach(function(b) { b.style.opacity = '0.45'; b.style.pointerEvents = 'none'; });
+    var chosen = document.querySelector('[onclick="chooseEarly' + (choice === 'actual' ? 'Actual' : 'Full') + '()"]');
+    if (chosen) { chosen.style.opacity = '1'; chosen.style.pointerEvents = 'auto'; chosen.style.outline = '2px solid #1e293b'; }
+}
+
+var earlyModalEl = document.getElementById('earlyModal');
+if (earlyModalEl) {
+    earlyModalEl.addEventListener('click', function(e) {
         if (e.target === this) this.style.display = 'none';
     });
 }

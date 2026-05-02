@@ -104,22 +104,31 @@ class CheckOutController extends Controller
         $bookingNights     = $actualNights;   // nights from check-in → booked checkout
         $todayNights       = $actualNights;   // nights from check-in → today
 
-        $chargeableNights = $actualNights; // nights to bill if manager picks "charge overdue"
+        $chargeableNights  = $actualNights;
+        $isEarlyCheckout   = false;
+        $actualDaysStayed  = $actualNights;
+
         if ($pricingType === 'per_night' && !$booking->price_overridden && !$booking->is_whole_hotel) {
             $checkinDay     = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
             $checkoutDay    = Carbon::parse($booking->check_out_date)->startOfDay();
-            $isSameDayStay  = $checkinDay->eq($checkoutDay); // check-in & check-out on same calendar date
-            $todayNights    = max(1, $checkinDay->diffInDays(now()->startOfDay()));
+            $isSameDayStay  = $checkinDay->eq($checkoutDay);
+            $todayDay       = now()->startOfDay();
+            $todayNights    = max(1, $checkinDay->diffInDays($todayDay));
             $overstayNights = max(0, $todayNights - $bookingNights);
 
-            // Time-overstay (past hotel checkout time) is only meaningful when the guest stayed
-            // at least one overnight — same-day bookings never trigger it.
-            $hotelCheckoutDT      = Carbon::parse($booking->check_out_date->format('Y-m-d') . ' ' . $hotelCheckOutTime);
-            $isPastCheckoutTime   = !$isSameDayStay && now()->gt($hotelCheckoutDT);
-            $isOverstay           = $overstayNights > 0 || $isPastCheckoutTime;
+            // Time-overstay only makes sense for overnight stays
+            $hotelCheckoutDT    = Carbon::parse($booking->check_out_date->format('Y-m-d') . ' ' . $hotelCheckOutTime);
+            $isPastCheckoutTime = !$isSameDayStay && now()->gt($hotelCheckoutDT);
+            $isOverstay         = $overstayNights > 0 || $isPastCheckoutTime;
 
-            // chargeableNights: actual days if extra full days exist, +1 for time-only overstay
+            // chargeableNights for overstay
             $chargeableNights = $overstayNights > 0 ? $todayNights : $bookingNights + 1;
+
+            // Early checkout: manager is processing checkout before the booked checkout date
+            if (!$isOverstay && $todayDay->lt($checkoutDay)) {
+                $isEarlyCheckout  = true;
+                $actualDaysStayed = max(1, $checkinDay->diffInDays($todayDay));
+            }
         }
 
         return view('admin.checkout.show', compact(
@@ -127,7 +136,8 @@ class CheckOutController extends Controller
             'actualTotal', 'roomCost', 'mealCost', 'extraBedCost',
             'extraChargesTotal', 'totalPaid', 'balanceDue', 'settings',
             'hotelCheckInTime', 'hotelCheckOutTime',
-            'isOverstay', 'overstayNights', 'bookingNights', 'todayNights', 'chargeableNights'
+            'isOverstay', 'overstayNights', 'bookingNights', 'todayNights', 'chargeableNights',
+            'isEarlyCheckout', 'actualDaysStayed'
         ));
     }
 
@@ -202,9 +212,9 @@ class CheckOutController extends Controller
         if ($pricingTypeProc === 'per_night' && !$booking->is_whole_hotel) {
             $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
             $checkoutDateProc = Carbon::parse($booking->check_out_date)->startOfDay();
-            $nightsProc       = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
-            // If manager chose to charge actual overstay nights, use that count
-            if ($request->filled('override_nights') && (int)$request->override_nights > $nightsProc) {
+            $nightsProc = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
+            // override_nights is set for both early checkout (fewer nights) and overstay (more nights)
+            if ($request->filled('override_nights') && (int)$request->override_nights >= 1) {
                 $nightsProc = (int)$request->override_nights;
             }
             $trueBase = $nightsProc * ($booking->room?->price_per_night ?? 0)
