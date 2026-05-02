@@ -114,8 +114,10 @@ class InvoiceController extends Controller
         $number  = $invoice->invoice_number;
         $booking = $invoice->booking;
 
-        $deletedBy = session('crm_user_name', session('crm_user_email', 'Unknown'));
-        ActivityLogger::log('Deleted', 'Invoice', 'Invoice ' . $number . ' deleted by ' . $deletedBy . ' (₹' . number_format($invoice->total_amount, 2) . ') for Booking #' . ($booking->booking_number ?? '—'));
+        $userName  = session('crm_user_name', 'Unknown');
+        $userEmail = session('crm_user_email', '');
+        $deletedBy = $userName . ($userEmail ? ' (' . $userEmail . ')' : '');
+        ActivityLogger::log('Deleted', 'Invoice', 'Invoice ' . $number . ' deleted by ' . $deletedBy . ' — ₹' . number_format($invoice->total_amount, 2) . ' for Booking #' . ($booking->booking_number ?? '—'));
 
         $invoice->delete();
 

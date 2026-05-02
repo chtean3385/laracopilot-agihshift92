@@ -41,7 +41,7 @@
                 <i class="fas fa-edit"></i>Edit Invoice
             </a>
             @canDo('invoices.delete')
-            <button type="button" onclick="document.getElementById('deleteInvoiceModal').classList.remove('hidden')"
+            <button type="button" onclick="showDeleteModal()"
                 class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all">
                 <i class="fas fa-trash"></i>Delete Invoice
             </button>
@@ -259,7 +259,7 @@
                     <div style="font-size:12px;color:rgba(255,255,255,.75);">This action is permanent and cannot be undone</div>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('deleteInvoiceModal').classList.add('hidden')"
+            <button type="button" onclick="hideDeleteModal()"
                 style="width:30px;height:30px;background:rgba(255,255,255,.15);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;">×</button>
         </div>
         {{-- Invoice details --}}
@@ -290,10 +290,11 @@
             </div>
             <p style="font-size:13px;color:#6b7280;margin-bottom:22px;line-height:1.6;">
                 <i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:6px;"></i>
-                Deleting this invoice will permanently remove it and reset the booking payment status to <strong>pending</strong>. This action cannot be reversed.
+                Deleting this invoice will permanently remove it and reset the booking payment status to <strong>pending</strong>.
+                <strong>This action is permanent and cannot be undone.</strong>
             </p>
             <div style="display:flex;gap:10px;justify-content:flex-end;">
-                <button type="button" onclick="document.getElementById('deleteInvoiceModal').classList.add('hidden')"
+                <button type="button" onclick="hideDeleteModal()"
                     style="padding:10px 20px;background:#f1f5f9;border:none;border-radius:11px;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;">
                     Cancel
                 </button>
@@ -309,13 +310,16 @@
     </div>
 </div>
 <script>
-// Auto-open modal if arriving from the list via #delete anchor
-if (window.location.hash === '#delete') {
-    document.addEventListener('DOMContentLoaded', function() {
-        var modal = document.getElementById('deleteInvoiceModal');
-        if (modal) modal.classList.remove('hidden');
-    });
+function showDeleteModal() {
+    document.getElementById('deleteInvoiceModal').classList.remove('hidden');
 }
+function hideDeleteModal() {
+    document.getElementById('deleteInvoiceModal').classList.add('hidden');
+}
+// Auto-open modal if arriving from the list via #delete anchor
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#delete') showDeleteModal();
+});
 </script>
 @endCanDo
 
