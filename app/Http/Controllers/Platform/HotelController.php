@@ -923,8 +923,13 @@ class HotelController extends Controller
             'whatsapp.send',
         ];
 
-        // Permissions excluded from Admin by default (must be granted manually)
-        $adminExcluded = ['whatsapp.send'];
+        // Permissions excluded from Admin by default (must be granted explicitly by SaaS admin)
+        $adminExcluded = [
+            'whatsapp.send',
+            // Delete permissions — never auto-granted; SaaS admin must enable per hotel
+            'guests.delete', 'rooms.delete', 'bookings.delete',
+            'payments.delete', 'invoices.delete', 'users.delete',
+        ];
 
         // Permissions excluded from Manager by default
         $managerExcluded = [

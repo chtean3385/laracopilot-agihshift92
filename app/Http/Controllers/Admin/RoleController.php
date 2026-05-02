@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
@@ -18,14 +19,6 @@ class RoleController extends Controller
         return view('admin.roles.index', compact('roles'));
     }
 
-    public function create()
-    {
-        if (!session('crm_logged_in')) return redirect()->route('login');
-        $permissions = Permission::orderBy('sort_order')->get()->groupBy('module');
-        $role = null;
-        return view('admin.roles.edit', compact('permissions', 'role'));
-    }
-
     private const SAAS_ONLY_PERMISSIONS = ['data.truncate'];
 
     private function filterPermissions(array $slugs): array
@@ -34,6 +27,49 @@ class RoleController extends Controller
             return $slugs;
         }
         return array_values(array_diff($slugs, self::SAAS_ONLY_PERMISSIONS));
+    }
+
+    private function isRestaurantEnabled(): bool
+    {
+        $hotelId = session('crm_hotel_id');
+        if (!$hotelId) return false;
+        return DB::table('modules')
+            ->where('hotel_id', $hotelId)
+            ->where('slug', 'restaurant')
+            ->where('is_enabled', true)
+            ->exists();
+    }
+
+    private function buildPermissions(): \Illuminate\Support\Collection
+    {
+        $isSuperAdmin       = session('crm_user_role') === 'Super Admin';
+        $restaurantEnabled  = $this->isRestaurantEnabled();
+
+        return Permission::orderBy('sort_order')->get()
+            ->filter(function ($perm) use ($isSuperAdmin, $restaurantEnabled) {
+                if ($perm->module === 'Restaurant' && !$restaurantEnabled) return false;
+                if ($perm->module === 'Danger Zone'  && !$isSuperAdmin)    return false;
+                return true;
+            })
+            ->groupBy('module');
+    }
+
+    private function getPreservedPermissionIds(Role $role): array
+    {
+        if ($this->isRestaurantEnabled()) return [];
+
+        return $role->permissions()
+            ->where('module', 'Restaurant')
+            ->pluck('permissions.id')
+            ->toArray();
+    }
+
+    public function create()
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        $permissions = $this->buildPermissions();
+        $role = null;
+        return view('admin.roles.edit', compact('permissions', 'role'));
     }
 
     public function store(Request $request)
@@ -56,7 +92,7 @@ class RoleController extends Controller
         ]);
 
         $allowed = $this->filterPermissions($request->input('permissions', []));
-        $permIds = Permission::whereIn('slug', $allowed)->pluck('id');
+        $permIds = Permission::whereIn('slug', $allowed)->pluck('id')->toArray();
         $role->permissions()->sync($permIds);
 
         ActivityLogger::log('Created', 'Roles', 'Created role: ' . $role->name);
@@ -67,7 +103,7 @@ class RoleController extends Controller
     public function edit(Role $role)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $permissions    = Permission::orderBy('sort_order')->get()->groupBy('module');
+        $permissions     = $this->buildPermissions();
         $rolePermissions = $role->permissions->pluck('slug')->toArray();
         return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
@@ -93,8 +129,12 @@ class RoleController extends Controller
         $role->save();
 
         $allowed = $this->filterPermissions($request->input('permissions', []));
-        $permIds = Permission::whereIn('slug', $allowed)->pluck('id');
-        $role->permissions()->sync($permIds);
+        $permIds = Permission::whereIn('slug', $allowed)->pluck('id')->toArray();
+
+        $preservedIds = $this->getPreservedPermissionIds($role);
+        $allPermIds   = array_unique(array_merge($permIds, $preservedIds));
+
+        $role->permissions()->sync($allPermIds);
 
         ActivityLogger::log('Updated', 'Roles', 'Updated role permissions: ' . $role->name);
 

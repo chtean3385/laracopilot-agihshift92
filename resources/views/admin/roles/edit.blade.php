@@ -56,28 +56,36 @@
             @foreach($permissions as $module => $perms)
             @php
                 $moduleIcons = [
-                    'Guests'    => 'fas fa-users',
-                    'Rooms'     => 'fas fa-door-open',
-                    'Bookings'  => 'fas fa-calendar-check',
-                    'Operations'=> 'fas fa-exchange-alt',
-                    'Payments'  => 'fas fa-credit-card',
-                    'Invoices'  => 'fas fa-file-invoice-dollar',
-                    'Reports'   => 'fas fa-chart-bar',
-                    'Settings'  => 'fas fa-cog',
-                    'System'    => 'fas fa-shield-halved',
+                    'Guests'     => 'fas fa-users',
+                    'Rooms'      => 'fas fa-door-open',
+                    'Bookings'   => 'fas fa-calendar-check',
+                    'Operations' => 'fas fa-exchange-alt',
+                    'Payments'   => 'fas fa-credit-card',
+                    'Invoices'   => 'fas fa-file-invoice-dollar',
+                    'Reports'    => 'fas fa-chart-bar',
+                    'Settings'   => 'fas fa-cog',
+                    'System'     => 'fas fa-shield-halved',
+                    'Users'      => 'fas fa-user-gear',
+                    'WhatsApp'   => 'fab fa-whatsapp',
+                    'Restaurant' => 'fas fa-utensils',
+                    'Danger Zone'=> 'fas fa-triangle-exclamation',
                 ];
+                $isDangerZone = ($module === 'Danger Zone');
                 $icon = $moduleIcons[$module] ?? 'fas fa-circle';
             @endphp
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden {{ $isDangerZone ? 'border-2 border-red-200' : 'border border-gray-100' }}">
+                <div class="flex items-center justify-between px-6 py-4 {{ $isDangerZone ? 'border-b border-red-100 bg-red-50/50' : 'border-b border-gray-100' }}">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-cyan-50 rounded-lg flex items-center justify-center">
-                            <i class="{{ $icon }} text-cyan-600 text-sm"></i>
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center {{ $isDangerZone ? 'bg-red-100' : 'bg-cyan-50' }}">
+                            <i class="{{ $icon }} text-sm {{ $isDangerZone ? 'text-red-500' : 'text-cyan-600' }}"></i>
                         </div>
-                        <span class="font-bold text-gray-800">{{ $module }}</span>
+                        <span class="font-bold {{ $isDangerZone ? 'text-red-700' : 'text-gray-800' }}">{{ $module }}</span>
+                        @if($isDangerZone)
+                        <span style="font-size:10px;background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;padding:1px 7px;border-radius:99px;font-weight:600;letter-spacing:.03em;">SaaS Admin only</span>
+                        @endif
                     </div>
                     <button type="button" onclick="toggleModule('{{ Str::slug($module) }}')"
-                        class="text-xs text-cyan-600 hover:text-cyan-800 font-semibold">Toggle All</button>
+                        class="text-xs font-semibold {{ $isDangerZone ? 'text-red-500 hover:text-red-700' : 'text-cyan-600 hover:text-cyan-800' }}">Toggle All</button>
                 </div>
                 <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @foreach($perms as $perm)

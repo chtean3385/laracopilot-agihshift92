@@ -156,10 +156,23 @@ class SafeMigrate extends Command
     private function provisionHotel(int $hotelId, string $hotelName): void
     {
         // ── Roles + permissions ──────────────────────────────────────────────────
-        $allSlugs      = DB::table('permissions')->pluck('slug')->all();
-        $limitedSlugs  = DB::table('permissions')
-            ->whereNotIn('slug', ['settings.view', 'roles.view', 'roles.edit',
-                                  'users.view', 'users.create', 'users.edit', 'users.delete'])
+        // Permissions that must NEVER be auto-granted to any role during provisioning.
+        // SaaS admin must explicitly enable these per hotel via the role editor.
+        $neverAutoGrant = [
+            'guests.delete', 'rooms.delete', 'bookings.delete',
+            'payments.delete', 'invoices.delete', 'users.delete',
+            'data.truncate',  // Danger Zone — SaaS admin only
+            'whatsapp.send',  // WhatsApp — opt-in only
+        ];
+
+        $allSlugs     = DB::table('permissions')
+            ->whereNotIn('slug', $neverAutoGrant)
+            ->pluck('slug')->all();
+        $limitedSlugs = DB::table('permissions')
+            ->whereNotIn('slug', array_merge($neverAutoGrant, [
+                'settings.view', 'roles.view', 'roles.edit',
+                'users.view', 'users.create', 'users.edit',
+            ]))
             ->pluck('slug')->all();
         $frontdeskSlugs = [
             'guests.view', 'guests.create', 'guests.edit',
