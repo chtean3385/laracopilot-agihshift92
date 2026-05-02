@@ -55,7 +55,7 @@ class CustomerController extends Controller
             'notes'         => 'nullable|string',
             'company_name'  => 'nullable|string|max:255',
             'gstin'         => 'nullable|string|max:15',
-            'id_number'     => 'nullable|string|max:50',
+            'id_number'     => 'required_with:id_type|nullable|string|max:50',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
 
@@ -121,7 +121,7 @@ class CustomerController extends Controller
             'notes'         => 'nullable|string',
             'company_name'  => 'nullable|string|max:255',
             'gstin'         => 'nullable|string|max:15',
-            'id_number'     => 'nullable|string|max:50',
+            'id_number'     => 'required_with:id_type|nullable|string|max:50',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
         $customer->update($validated);

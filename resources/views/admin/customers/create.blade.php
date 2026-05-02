@@ -83,7 +83,7 @@
                             @error('id_type')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="form-label">ID Number <span class="text-gray-400 font-normal text-xs">(required for compliance)</span></label>
+                            <label class="form-label">ID Number <span class="text-red-500">*</span> <span class="text-gray-400 font-normal text-xs">(required when type is selected)</span></label>
                             <input type="text" name="id_number" id="createIdNumber"
                                 value="{{ old('id_number') }}"
                                 class="form-input @error('id_number') border-red-400 @enderror"

@@ -58,7 +58,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">ID Number</label>
+                            <label class="form-label">ID Number <span class="text-red-500">*</span></label>
                             <input type="text" name="id_number" id="editIdNumber"
                                 value="{{ old('id_number', $customer->id_number) }}"
                                 class="form-input @error('id_number') border-red-400 @enderror"
