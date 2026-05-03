@@ -84,6 +84,16 @@ public function booking()
         return $this->payment_status === 'paid';
     }
 
+    // Items are frozen once an order is paid OR a guest QR order has been
+    // approved (room charges already posted). Used by addItem/removeItem
+    // /updateItemQty to refuse silent edits that would desync billing.
+    public function isLocked(): bool
+    {
+        if ($this->isPaid()) return true;
+        if ($this->isGuestQr() && $this->approval_status === 'approved') return true;
+        return false;
+    }
+
     public function statusBadge(): string
     {
         return match($this->status) {

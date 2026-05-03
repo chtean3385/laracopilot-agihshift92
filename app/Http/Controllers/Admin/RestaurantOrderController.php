@@ -111,6 +111,9 @@ class RestaurantOrderController extends Controller
         ]);
 
         $order    = RestaurantOrder::findOrFail($id);
+        if ($order->isLocked()) {
+            return response()->json(['success' => false, 'message' => 'Order is locked — items can no longer be changed.'], 422);
+        }
         $menuItem = RestaurantMenuItem::findOrFail($request->menu_item_id);
 
         $finalPrice = $request->filled('final_price') ? $request->final_price : $menuItem->price;
@@ -139,6 +142,9 @@ class RestaurantOrderController extends Controller
     public function removeItem($id, $itemId)
     {
         $order = RestaurantOrder::findOrFail($id);
+        if ($order->isLocked()) {
+            return response()->json(['success' => false, 'message' => 'Order is locked — items can no longer be changed.'], 422);
+        }
         RestaurantOrderItem::where('id', $itemId)->where('order_id', $order->id)->delete();
         $this->recalculateTotals($order);
 
@@ -151,6 +157,9 @@ class RestaurantOrderController extends Controller
         $request->validate(['quantity' => 'required|integer|min:1|max:99']);
 
         $order = RestaurantOrder::findOrFail($id);
+        if ($order->isLocked()) {
+            return response()->json(['success' => false, 'message' => 'Order is locked — items can no longer be changed.'], 422);
+        }
         $item  = RestaurantOrderItem::where('id', $itemId)
             ->where('order_id', $order->id)
             ->firstOrFail();

@@ -30,8 +30,15 @@ class RestaurantTable extends Model
 
     public function activeOrder()
     {
+        // Pending guest-QR orders are NOT yet active — staff must approve
+        // them first. Excluding them prevents the table-map from showing
+        // a session before approval and avoids accidental attachment.
         return $this->hasOne(RestaurantOrder::class, 'table_id')
-            ->whereIn('status', ['open', 'kotted', 'served']);
+            ->whereIn('status', ['open', 'kotted', 'served'])
+            ->where(function ($q) {
+                $q->whereNull('approval_status')
+                  ->orWhere('approval_status', '!=', 'pending');
+            });
     }
 
     // Helpers
