@@ -20,6 +20,53 @@
             </a>
         </div>
     </form>
+    {{-- Inline charts: bookings per room + bookings by type --}}
+    @php
+        $occRoomLabels = $roomStats->pluck('room_number')->map(fn($r)=>(string)$r)->all();
+        $occRoomData   = $roomStats->pluck('bookings_count')->map(fn($v)=>(int)$v)->all();
+        $occTypeLabels = $bookingsByType->keys()->map(fn($k)=>ucfirst((string)($k ?: 'Other')))->all();
+        $occTypeData   = $bookingsByType->values()->map(fn($v)=>(int)$v)->all();
+    @endphp
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100" style="padding:18px;">
+            <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Bookings per Room</div>
+            <div id="occRoomChart" style="min-height:280px;"></div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100" style="padding:18px;">
+            <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Bookings by Room Type</div>
+            <div id="occTypeChart" style="min-height:280px;"></div>
+        </div>
+    </div>
+    <script>
+    (function(){
+        var rl=@json($occRoomLabels), rd=@json($occRoomData), tl=@json($occTypeLabels), td=@json($occTypeData);
+        function go(){
+            new ApexCharts(document.querySelector('#occRoomChart'), {
+                chart:{type:'bar',height:280,toolbar:{show:false},fontFamily:'Inter,sans-serif'},
+                series:[{name:'Bookings',data:rd}],
+                xaxis:{categories:rl,labels:{style:{fontSize:'10px',colors:'#64748b'},rotate:-45}},
+                yaxis:{labels:{style:{fontSize:'11px',colors:'#64748b'}}},
+                colors:['#0ea5e9'],plotOptions:{bar:{borderRadius:5,columnWidth:'60%'}},
+                dataLabels:{enabled:false},grid:{borderColor:'#f1f5f9',strokeDashArray:4},
+                noData:{text:'No data',style:{color:'#94a3b8',fontSize:'13px'}}
+            }).render();
+            if (td.reduce(function(a,b){return a+b;},0) > 0){
+                new ApexCharts(document.querySelector('#occTypeChart'), {
+                    chart:{type:'donut',height:280,fontFamily:'Inter,sans-serif'},
+                    series:td,labels:tl,colors:['#f43f5e','#fb923c','#facc15','#84cc16','#06b6d4','#8b5cf6','#ec4899','#64748b'],
+                    legend:{position:'bottom',fontSize:'12px'},
+                    dataLabels:{enabled:true,formatter:function(v){return Math.round(v)+'%';}},
+                    plotOptions:{pie:{donut:{size:'62%'}}}
+                }).render();
+            } else {
+                document.querySelector('#occTypeChart').innerHTML='<div style="padding:90px 0;text-align:center;color:#94a3b8;font-size:13px;">No bookings in this period</div>';
+            }
+        }
+        if (typeof ApexCharts !== 'undefined') go();
+        else { var n=0,t=setInterval(function(){if(typeof ApexCharts!=='undefined'||++n>40){clearInterval(t);if(typeof ApexCharts!=='undefined')go();}},100); }
+    })();
+    </script>
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-bold text-gray-800">Room Booking Count</h3>

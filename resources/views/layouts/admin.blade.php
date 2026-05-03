@@ -2303,5 +2303,8 @@ window.crmToast = function(type, message, title) {
     window.dispatchEvent(new CustomEvent('crm-toast', { detail: { type, message, title } }));
 };
 </script>
+
+{{-- ApexCharts (self-hosted) — required by dashboard & report charts --}}
+<script src="/js/apexcharts.min.js"></script>
 </body>
 </html>

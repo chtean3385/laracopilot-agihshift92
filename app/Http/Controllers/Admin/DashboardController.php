@@ -368,6 +368,7 @@ class DashboardController extends Controller
 
         $allWidgetKeys = [
             'kpi-row-1', 'shortcuts-actions-pair',
+            'revenue-trend',
             'slot-availability', 'booking-calendar',
             'arrivals-departures', 'recent-room-pair', 'live-activity',
         ];
@@ -452,6 +453,118 @@ class DashboardController extends Controller
             });
 
         return response()->json($entries);
+    }
+
+    // ── Revenue Trend JSON (for dashboard chart widget) ───────────────────────
+    public function revenueTrend(Request $request)
+    {
+        if (!session('crm_logged_in')) return response()->json([], 401);
+
+        $range = $request->input('range', '7d');
+        $today = Carbon::today();
+
+        switch ($range) {
+            case '30d':
+                $from = $today->copy()->subDays(29); $to = $today->copy(); $step = 'day'; break;
+            case '90d':
+                $from = $today->copy()->subDays(89); $to = $today->copy(); $step = 'day'; break;
+            case '12m':
+                $from = $today->copy()->startOfMonth()->subMonths(11);
+                $to   = $today->copy()->endOfMonth();
+                $step = 'month';
+                break;
+            case '7d':
+            default:
+                $from = $today->copy()->subDays(6); $to = $today->copy(); $step = 'day';
+        }
+
+        try {
+            $payments = Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+                ->get(['amount', 'created_at']);
+        } catch (\Exception $e) {
+            $payments = collect();
+        }
+
+        $totalRooms = max(1, (int) Room::count());
+
+        // Single query: all bookings overlapping the period (any of its nights)
+        try {
+            $bookings = Booking::whereIn('status', ['confirmed','checked_in','checked_out'])
+                ->where('check_in_date',  '<=', $to->toDateString())
+                ->where('check_out_date', '>',  $from->toDateString())
+                ->get(['check_in_date','check_out_date','is_whole_hotel']);
+        } catch (\Exception $e) { $bookings = collect(); }
+
+        // Build per-day occupied-room counts (whole-hotel = all rooms occupied)
+        $occByDay = [];
+        foreach ($bookings as $b) {
+            try {
+                $ci = Carbon::parse($b->check_in_date)->startOfDay();
+                $co = Carbon::parse($b->check_out_date)->startOfDay();
+            } catch (\Exception $e) { continue; }
+            $start = $ci->greaterThan($from) ? $ci->copy() : $from->copy()->startOfDay();
+            $end   = $co->lessThan($to->copy()->addDay()) ? $co->copy() : $to->copy()->addDay();
+            $cur = $start->copy();
+            $add = $b->is_whole_hotel ? $totalRooms : 1;
+            while ($cur->lt($end)) {
+                $k = $cur->toDateString();
+                $occByDay[$k] = ($occByDay[$k] ?? 0) + $add;
+                $cur->addDay();
+            }
+        }
+
+        $labels = [];
+        $revenue = [];
+        $occupancy = [];
+
+        if ($step === 'month') {
+            $g = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m'));
+            $cur = $from->copy();
+            while ($cur <= $to) {
+                $k = $cur->format('Y-m');
+                $labels[] = $cur->format('M Y');
+                $revenue[] = (float) ($g->get($k)?->sum('amount') ?? 0);
+                // Sum room-nights across days in this month, divide by (rooms × days_in_month)
+                $monthStart = $cur->copy()->startOfMonth();
+                $monthEnd   = $cur->copy()->endOfMonth();
+                $roomNights = 0; $d = $monthStart->copy();
+                while ($d->lte($monthEnd)) {
+                    $roomNights += min($totalRooms, $occByDay[$d->toDateString()] ?? 0);
+                    $d->addDay();
+                }
+                $denom = $totalRooms * $monthStart->daysInMonth;
+                $occupancy[] = round(min(100, ($roomNights / max(1,$denom)) * 100), 1);
+                $cur->addMonth();
+            }
+        } else {
+            $g = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->toDateString());
+            $cur = $from->copy();
+            while ($cur <= $to) {
+                $k = $cur->toDateString();
+                $labels[] = $cur->format('d M');
+                $revenue[] = (float) ($g->get($k)?->sum('amount') ?? 0);
+                $occRooms = min($totalRooms, $occByDay[$k] ?? 0);
+                $occupancy[] = round(min(100, ($occRooms / $totalRooms) * 100), 1);
+                $cur->addDay();
+            }
+        }
+
+        $total = array_sum($revenue);
+        $avg   = count($revenue) ? $total / count($revenue) : 0;
+        $peak  = count($revenue) ? max($revenue) : 0;
+
+        return response()->json([
+            'range'     => $range,
+            'labels'    => $labels,
+            'revenue'   => $revenue,
+            'occupancy' => $occupancy,
+            'total'     => $total,
+            'avg'       => $avg,
+            'peak'      => $peak,
+            'from'      => $from->toDateString(),
+            'to'        => $to->toDateString(),
+        ]);
     }
 
     // ── Live KPI Counts ───────────────────────────────────────────────────────

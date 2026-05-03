@@ -580,6 +580,256 @@ class ReportController extends Controller
         return view('admin.reports.inventory-stock', compact('items', 'totals', 'categories', 'categoryId', 'onlyLow'));
     }
 
+    // ── Performance Analysis ──────────────────────────────────────────────────
+    public function performance(Request $request)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+
+        $today = Carbon::today();
+
+        // ── Last 12 months: revenue + occupancy ──────────────────────────────
+        $months = [];
+        $monthRevenue = [];
+        $monthOccupancy = [];
+        $monthBookings = [];
+        $totalRooms = max(1, (int) Room::count());
+
+        $rangeStart = $today->copy()->startOfMonth()->subMonths(11);
+        $rangeEnd   = $today->copy()->endOfMonth();
+
+        // ── Single payments query for 12 months, grouped by month ────────────
+        try {
+            $allPayments = Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$rangeStart->copy()->startOfDay(), $rangeEnd->copy()->endOfDay()])
+                ->get(['amount', 'created_at']);
+        } catch (\Exception $e) { $allPayments = collect(); }
+        $payByMonth = $allPayments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m'));
+
+        // ── Single bookings query overlapping the 12-month window ────────────
+        try {
+            $allBookings = Booking::whereIn('status', ['confirmed','checked_in','checked_out'])
+                ->where('check_in_date',  '<=', $rangeEnd->toDateString())
+                ->where('check_out_date', '>',  $rangeStart->toDateString())
+                ->get(['check_in_date','check_out_date','is_whole_hotel','total_amount','nights']);
+        } catch (\Exception $e) { $allBookings = collect(); }
+
+        // Build per-day occupied-room counts across the entire 12-month window
+        $occByDay = [];
+        $bkByMonth = [];
+        foreach ($allBookings as $b) {
+            try {
+                $ci = Carbon::parse($b->check_in_date)->startOfDay();
+                $co = Carbon::parse($b->check_out_date)->startOfDay();
+            } catch (\Exception $e) { continue; }
+            $start = $ci->greaterThan($rangeStart) ? $ci->copy() : $rangeStart->copy();
+            $end   = $co->lessThan($rangeEnd->copy()->addDay()) ? $co->copy() : $rangeEnd->copy()->addDay();
+            $cur = $start->copy();
+            $add = $b->is_whole_hotel ? $totalRooms : 1;
+            while ($cur->lt($end)) {
+                $k = $cur->toDateString();
+                $occByDay[$k] = ($occByDay[$k] ?? 0) + $add;
+                $cur->addDay();
+            }
+            // Count booking under each month it overlaps
+            $monthCur = $start->copy()->startOfMonth();
+            $monthLast = $end->copy()->subDay()->startOfMonth();
+            while ($monthCur->lte($monthLast)) {
+                $mk = $monthCur->format('Y-m');
+                $bkByMonth[$mk] = ($bkByMonth[$mk] ?? 0) + 1;
+                $monthCur->addMonth();
+            }
+        }
+
+        for ($i = 11; $i >= 0; $i--) {
+            $m       = $today->copy()->startOfMonth()->subMonths($i);
+            $mStart  = $m->copy()->startOfMonth();
+            $mEnd    = $m->copy()->endOfMonth();
+            $mk      = $m->format('Y-m');
+            $months[] = $m->format('M Y');
+
+            $monthRevenue[]  = (float) ($payByMonth->get($mk)?->sum('amount') ?? 0);
+            $monthBookings[] = (int)   ($bkByMonth[$mk] ?? 0);
+
+            $roomNights = 0; $d = $mStart->copy();
+            while ($d->lte($mEnd)) {
+                $roomNights += min($totalRooms, $occByDay[$d->toDateString()] ?? 0);
+                $d->addDay();
+            }
+            $denom = $totalRooms * $mStart->daysInMonth;
+            $monthOccupancy[] = round(min(100, ($roomNights / max(1,$denom)) * 100), 1);
+        }
+
+        // ── ADR / RevPAR (last 30 days) — overlap-prorated ──────────────────
+        $adrFrom  = $today->copy()->subDays(29)->startOfDay();
+        $adrTo    = $today->copy()->endOfDay();
+        $adrDays  = 30;
+        $totalRoomRevenue = 0.0;
+        $totalRoomNights  = 0;
+
+        try {
+            $stayBookings = Booking::whereIn('status', ['confirmed','checked_in','checked_out'])
+                ->where('check_in_date',  '<=', $adrTo->toDateString())
+                ->where('check_out_date', '>',  $adrFrom->toDateString())
+                ->get(['check_in_date','check_out_date','is_whole_hotel','total_amount','nights']);
+        } catch (\Exception $e) { $stayBookings = collect(); }
+
+        foreach ($stayBookings as $b) {
+            try {
+                $ci = Carbon::parse($b->check_in_date)->startOfDay();
+                $co = Carbon::parse($b->check_out_date)->startOfDay();
+            } catch (\Exception $e) { continue; }
+            $totalNights = max(1, (int)($b->nights ?: $ci->diffInDays($co)));
+            $overlapStart = $ci->greaterThan($adrFrom) ? $ci : $adrFrom->copy()->startOfDay();
+            $overlapEnd   = $co->lessThan($adrTo->copy()->addDay()->startOfDay()) ? $co : $adrTo->copy()->addDay()->startOfDay();
+            $overlap = max(0, $overlapStart->diffInDays($overlapEnd, false));
+            if ($overlap <= 0) continue;
+            $rooms = $b->is_whole_hotel ? $totalRooms : 1;
+            $totalRoomNights += $overlap * $rooms;
+            $totalRoomRevenue += ((float)$b->total_amount) * ($overlap / $totalNights);
+        }
+
+        $adr    = $totalRoomNights > 0 ? round($totalRoomRevenue / $totalRoomNights, 2) : 0;
+        $revpar = $totalRooms > 0     ? round($totalRoomRevenue / ($totalRooms * $adrDays), 2) : 0;
+
+        // ── Last 90d slices ──────────────────────────────────────────────────
+        $sliceFrom = $today->copy()->subDays(89);
+
+        // Room-type donut
+        try {
+            $typeData = Booking::with('room:id,type')
+                ->whereIn('status', ['confirmed','checked_in','checked_out'])
+                ->where('check_in_date', '>=', $sliceFrom->toDateString())
+                ->get()
+                ->groupBy(fn($b) => $b->room->type ?? 'Whole Hotel')
+                ->map->count()
+                ->sortDesc()
+                ->take(8);
+        } catch (\Exception $e) { $typeData = collect(); }
+
+        $roomTypeLabels = $typeData->keys()->map(fn($k) => ucfirst((string)$k))->all();
+        $roomTypeData   = $typeData->values()->all();
+
+        // Source mix
+        try {
+            $sourceData = Booking::where('check_in_date', '>=', $sliceFrom->toDateString())
+                ->whereIn('status', ['confirmed','checked_in','checked_out'])
+                ->get(['source'])
+                ->groupBy(fn($b) => $b->source ?: 'Direct')
+                ->map->count()
+                ->sortDesc()
+                ->take(8);
+        } catch (\Exception $e) { $sourceData = collect(); }
+        $sourceLabels = $sourceData->keys()->map(fn($k) => ucfirst((string)$k))->all();
+        $sourceCounts = $sourceData->values()->all();
+
+        // Day-of-week revenue (last 90d)
+        try {
+            $dowPayments = Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$sliceFrom->copy()->startOfDay(), $today->copy()->endOfDay()])
+                ->get(['amount', 'created_at']);
+        } catch (\Exception $e) { $dowPayments = collect(); }
+
+        $dowLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        $dowTotals = array_fill(0, 7, 0.0);
+        foreach ($dowPayments as $p) {
+            $idx = (int) Carbon::parse($p->created_at)->dayOfWeekIso - 1; // 0=Mon
+            $dowTotals[$idx] += (float) $p->amount;
+        }
+
+        // Payment-method breakdown (last 90d)
+        try {
+            $pmData = Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$sliceFrom->copy()->startOfDay(), $today->copy()->endOfDay()])
+                ->get(['amount', 'payment_method'])
+                ->groupBy(fn($p) => strtolower($p->payment_method ?: 'other'))
+                ->map(fn($g) => (float) $g->sum('amount'));
+        } catch (\Exception $e) { $pmData = collect(); }
+        $pmLabels = $pmData->keys()->map(fn($k) => strtoupper($k))->all();
+        $pmAmounts = $pmData->values()->all();
+
+        // ── Insights (rule-based) ────────────────────────────────────────────
+        $insights = [];
+
+        // 1. Revenue trend MoM
+        $n = count($monthRevenue);
+        if ($n >= 2 && $monthRevenue[$n-2] > 0) {
+            $delta = (($monthRevenue[$n-1] - $monthRevenue[$n-2]) / $monthRevenue[$n-2]) * 100;
+            if ($delta >= 10) {
+                $insights[] = ['type'=>'good','icon'=>'fa-arrow-trend-up','title'=>'Revenue is growing',
+                    'msg'=>'This month is up '.round($delta,1).'% vs last month. Keep the momentum — consider a small rate increase on peak days.'];
+            } elseif ($delta <= -10) {
+                $insights[] = ['type'=>'warn','icon'=>'fa-arrow-trend-down','title'=>'Revenue dropped',
+                    'msg'=>'This month is down '.round(abs($delta),1).'% vs last month. Try a short-stay promo or review pricing on slow days.'];
+            } else {
+                $insights[] = ['type'=>'info','icon'=>'fa-equals','title'=>'Revenue is stable',
+                    'msg'=>'Movement of '.round($delta,1).'% vs last month. Steady performance — focus on guest satisfaction & repeat visits.'];
+            }
+        }
+
+        // 2. Occupancy
+        $avgOcc = count($monthOccupancy) ? array_sum($monthOccupancy) / count($monthOccupancy) : 0;
+        if ($avgOcc < 40) {
+            $insights[] = ['type'=>'warn','icon'=>'fa-bed','title'=>'Low average occupancy',
+                'msg'=>'Last 12 months avg is '.round($avgOcc,1).'%. Push direct booking discounts and OTA visibility.'];
+        } elseif ($avgOcc >= 75) {
+            $insights[] = ['type'=>'good','icon'=>'fa-bed','title'=>'Strong occupancy',
+                'msg'=>'Avg occupancy of '.round($avgOcc,1).'% is excellent. Consider raising weekend/holiday rates to grow ADR.'];
+        }
+
+        // 3. ADR / RevPAR
+        if ($adr > 0) {
+            $insights[] = ['type'=>'info','icon'=>'fa-tag','title'=>'ADR & RevPAR (30d)',
+                'msg'=>'ADR ₹'.number_format($adr).' · RevPAR ₹'.number_format($revpar).'. RevPAR is the truer profitability metric — track it monthly.'];
+        }
+
+        // 4. Source concentration
+        if (!empty($sourceCounts)) {
+            $totalSrc = array_sum($sourceCounts);
+            if ($totalSrc > 0 && $sourceCounts[0] / $totalSrc > 0.7) {
+                $insights[] = ['type'=>'warn','icon'=>'fa-share-nodes','title'=>'Channel concentration risk',
+                    'msg'=>'Over 70% of bookings come from '.$sourceLabels[0].'. Diversify by enabling more OTAs or pushing direct bookings.'];
+            }
+        }
+
+        // 5. Best day of week
+        if (array_sum($dowTotals) > 0) {
+            $bestIdx = array_search(max($dowTotals), $dowTotals);
+            $insights[] = ['type'=>'info','icon'=>'fa-calendar-day','title'=>'Best revenue day',
+                'msg'=>$dowLabels[$bestIdx].' generates the most revenue. Plan special offers, events or staff coverage around it.'];
+        }
+
+        // 6. Cash dominance
+        if (!empty($pmAmounts)) {
+            $totalPm = array_sum($pmAmounts);
+            $cashIdx = array_search('CASH', $pmLabels);
+            if ($cashIdx !== false && $totalPm > 0 && $pmAmounts[$cashIdx] / $totalPm > 0.6) {
+                $insights[] = ['type'=>'warn','icon'=>'fa-money-bill-wave','title'=>'Cash-heavy collections',
+                    'msg'=>'Over 60% of revenue is in cash. Encourage UPI/Card to cut handling risk and improve reconciliation.'];
+            }
+        }
+
+        // 7. Top room type
+        if (!empty($roomTypeLabels)) {
+            $insights[] = ['type'=>'good','icon'=>'fa-door-open','title'=>'Most-booked room type',
+                'msg'=>$roomTypeLabels[0].' is your top performer (90d). Consider featuring it on your website hero & pricing it as a premium tier.'];
+        }
+
+        if (empty($insights)) {
+            $insights[] = ['type'=>'info','icon'=>'fa-circle-info','title'=>'No data yet',
+                'msg'=>'Once you have a few bookings & payments, this panel will surface improvement ideas.'];
+        }
+
+        return view('admin.reports.performance', compact(
+            'months', 'monthRevenue', 'monthOccupancy', 'monthBookings',
+            'adr', 'revpar', 'totalRoomRevenue', 'totalRoomNights',
+            'roomTypeLabels', 'roomTypeData',
+            'sourceLabels', 'sourceCounts',
+            'dowLabels', 'dowTotals',
+            'pmLabels', 'pmAmounts',
+            'insights'
+        ));
+    }
+
     public function inventoryMovements(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');

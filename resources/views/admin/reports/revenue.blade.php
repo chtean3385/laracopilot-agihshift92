@@ -38,6 +38,57 @@
             <div class="text-2xl font-black text-gray-700 mt-1">₹{{ number_format($upiRevenue) }}</div>
         </div>
     </div>
+    {{-- Inline charts: daily revenue trend + payment method split --}}
+    @php
+        $rvLabels  = $dailyRevenue->keys()->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M'))->values()->all();
+        $rvValues  = $dailyRevenue->values()->map(fn($v) => (float)$v)->all();
+        $rvPmLabels = ['Cash','Card','UPI'];
+        $rvPmData   = [(float)$cashRevenue, (float)$cardRevenue, (float)$upiRevenue];
+    @endphp
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100" style="padding:18px;">
+            <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Daily Revenue Trend</div>
+            <div id="rvDailyChart" style="min-height:280px;"></div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100" style="padding:18px;">
+            <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Payment Method Split</div>
+            <div id="rvPmChart" style="min-height:280px;"></div>
+        </div>
+    </div>
+    <script>
+    (function(){
+        var labels = @json($rvLabels), data = @json($rvValues);
+        var pmL = @json($rvPmLabels), pmD = @json($rvPmData);
+        function fmt(v){v=Math.round(v||0); if(v>=1e7)return '₹'+(v/1e7).toFixed(2)+'Cr'; if(v>=1e5)return '₹'+(v/1e5).toFixed(2)+'L'; if(v>=1e3)return '₹'+(v/1e3).toFixed(1)+'K'; return '₹'+v;}
+        function go(){
+            new ApexCharts(document.querySelector('#rvDailyChart'), {
+                chart:{type:'area',height:280,toolbar:{show:false},fontFamily:'Inter,sans-serif'},
+                series:[{name:'Revenue',data:data}],
+                xaxis:{categories:labels,labels:{style:{fontSize:'11px',colors:'#64748b'}}},
+                yaxis:{labels:{formatter:fmt,style:{fontSize:'11px',colors:'#64748b'}}},
+                stroke:{curve:'smooth',width:3},colors:['#10b981'],
+                fill:{type:'gradient',gradient:{opacityFrom:.45,opacityTo:.05}},
+                dataLabels:{enabled:false},grid:{borderColor:'#f1f5f9',strokeDashArray:4},
+                tooltip:{y:{formatter:function(v){return '₹'+Number(v||0).toLocaleString('en-IN');}}},
+                noData:{text:'No revenue in this period',style:{color:'#94a3b8',fontSize:'13px'}}
+            }).render();
+            if (pmD.reduce(function(a,b){return a+b;},0) > 0) {
+                new ApexCharts(document.querySelector('#rvPmChart'), {
+                    chart:{type:'donut',height:280,fontFamily:'Inter,sans-serif'},
+                    series:pmD,labels:pmL,colors:['#64748b','#3b82f6','#8b5cf6'],
+                    legend:{position:'bottom',fontSize:'12px'},
+                    dataLabels:{enabled:true,formatter:function(v){return Math.round(v)+'%';}},
+                    plotOptions:{pie:{donut:{size:'62%',labels:{show:true,total:{show:true,label:'Total',formatter:function(){return fmt(pmD.reduce(function(a,b){return a+b;},0));}}}}}}
+                }).render();
+            } else {
+                document.querySelector('#rvPmChart').innerHTML = '<div style="padding:90px 0;text-align:center;color:#94a3b8;font-size:13px;">No payments in this period</div>';
+            }
+        }
+        if (typeof ApexCharts !== 'undefined') go();
+        else { var n=0,t=setInterval(function(){if(typeof ApexCharts!=='undefined'||++n>40){clearInterval(t);if(typeof ApexCharts!=='undefined')go();}},100); }
+    })();
+    </script>
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100"><h3 class="font-bold text-gray-800">Transactions ({{ $payments->count() }})</h3></div>
         <div class="overflow-x-auto">

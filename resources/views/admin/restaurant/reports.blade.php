@@ -61,6 +61,58 @@
     </div>
 </div>
 
+{{-- Inline charts: daily revenue trend + bill type split --}}
+@php
+    $rstDaily = $bills->groupBy(function($b){ return \Carbon\Carbon::parse($b->created_at)->format('Y-m-d'); })
+        ->map(function($g){ return (float)$g->sum('total'); });
+    $rstLabels = $rstDaily->keys()->map(fn($d)=>\Carbon\Carbon::parse($d)->format('d M'))->values()->all();
+    $rstData   = $rstDaily->values()->all();
+    $rstBtTotal = (float)($directBills + $roomBills);
+@endphp
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px;">
+    <div class="bg-white rounded-xl border border-gray-200" style="padding:16px;">
+        <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Daily Bill Revenue</div>
+        <div id="rstDailyChart" style="min-height:260px;"></div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200" style="padding:16px;">
+        <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Bill Type Split</div>
+        <div id="rstTypeChart" style="min-height:260px;"></div>
+    </div>
+</div>
+<script>
+(function(){
+    var l=@json($rstLabels), d=@json($rstData);
+    var direct={{ (int)$directBills }}, room={{ (int)$roomBills }};
+    function fmt(v){v=Math.round(v||0); if(v>=1e7)return '₹'+(v/1e7).toFixed(2)+'Cr'; if(v>=1e5)return '₹'+(v/1e5).toFixed(2)+'L'; if(v>=1e3)return '₹'+(v/1e3).toFixed(1)+'K'; return '₹'+v;}
+    function go(){
+        new ApexCharts(document.querySelector('#rstDailyChart'), {
+            chart:{type:'area',height:260,toolbar:{show:false},fontFamily:'Inter,sans-serif'},
+            series:[{name:'Revenue',data:d}],
+            xaxis:{categories:l,labels:{style:{fontSize:'11px',colors:'#64748b'}}},
+            yaxis:{labels:{formatter:fmt,style:{fontSize:'11px',colors:'#64748b'}}},
+            stroke:{curve:'smooth',width:3},colors:['#f59e0b'],
+            fill:{type:'gradient',gradient:{opacityFrom:.45,opacityTo:.05}},
+            dataLabels:{enabled:false},grid:{borderColor:'#f1f5f9',strokeDashArray:4},
+            tooltip:{y:{formatter:function(v){return '₹'+Number(v||0).toLocaleString('en-IN');}}},
+            noData:{text:'No bills in this period',style:{color:'#94a3b8',fontSize:'13px'}}
+        }).render();
+        if (direct + room > 0){
+            new ApexCharts(document.querySelector('#rstTypeChart'), {
+                chart:{type:'donut',height:260,fontFamily:'Inter,sans-serif'},
+                series:[direct, room],labels:['Direct','Room'],
+                colors:['#22c55e','#3b82f6'],legend:{position:'bottom',fontSize:'12px'},
+                dataLabels:{enabled:true,formatter:function(v){return Math.round(v)+'%';}},
+                plotOptions:{pie:{donut:{size:'62%',labels:{show:true,total:{show:true,label:'Bills',formatter:function(w){return w.globals.seriesTotals.reduce(function(a,b){return a+b;},0);}}}}}}
+            }).render();
+        } else {
+            document.querySelector('#rstTypeChart').innerHTML='<div style="padding:90px 0;text-align:center;color:#94a3b8;font-size:13px;">No bills in this period</div>';
+        }
+    }
+    if (typeof ApexCharts !== 'undefined') go();
+    else { var n=0,t=setInterval(function(){if(typeof ApexCharts!=='undefined'||++n>40){clearInterval(t);if(typeof ApexCharts!=='undefined')go();}},100); }
+})();
+</script>
+
 {{-- Bills Table --}}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">

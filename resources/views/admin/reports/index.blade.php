@@ -4,6 +4,15 @@
 @section('page-subtitle','Detailed business insights')
 @section('content')
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <a href="{{ route('reports.performance') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group" style="position:relative;overflow:hidden;">
+        <div style="position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#fb7185,#f43f5e);color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.05em;">NEW</div>
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+            <i class="fas fa-chart-pie text-white text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">Performance Analysis</h3>
+        <p class="text-gray-400 text-sm mt-1">Monthly trends · ADR · RevPAR · channel mix · improvement insights</p>
+        <div class="mt-4 text-indigo-500 text-sm font-semibold">View Insights <i class="fas fa-arrow-right ml-1"></i></div>
+    </a>
     <a href="{{ route('reports.revenue') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group">
         <div class="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center mb-4 shadow-md">
             <i class="fas fa-chart-line text-white text-xl"></i>

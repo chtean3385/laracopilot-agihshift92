@@ -596,6 +596,7 @@
                     $widgetMeta = [
                         'kpi-row-1'          => ['label' => 'KPI Stats — All 8 cards',           'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
                         'shortcuts-actions-pair' => ['label' => 'Shortcuts + Quick Actions', 'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#f59e0b,#f97316)'],
+                        'revenue-trend'      => ['label' => 'Revenue Trend & Occupancy chart', 'icon' => 'fa-chart-area', 'bg' => 'linear-gradient(135deg,#10b981,#0ea5e9)'],
                         'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                         'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
                         'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
@@ -894,6 +895,145 @@
                         @endif
                     </div>
                     </div>{{-- /kpi-row-1 widget --}}
+
+                    {{-- ── Revenue Trend & Occupancy ────────────────────────────────── --}}
+                    <div data-widget="revenue-trend" class="db-widget-wrap">
+                    <div class="db-card" style="overflow:hidden;padding:0;">
+                        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#ecfdf5,#e0f2fe);flex-wrap:wrap;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#10b981,#0ea5e9);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,.3);">
+                                    <i class="fas fa-chart-area" style="color:#fff;font-size:14px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800;color:#1e293b;font-size:15px;">Revenue & Occupancy Trend</div>
+                                    <div style="font-size:11px;color:#0ea5e9;" id="rtRangeLabel">Last 7 days</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                                <button type="button" data-rt-range="7d"  onclick="rtSetRange('7d',this)"  style="padding:6px 12px;border-radius:8px;border:1.5px solid #10b981;background:#10b981;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">7D</button>
+                                <button type="button" data-rt-range="30d" onclick="rtSetRange('30d',this)" style="padding:6px 12px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;color:#475569;font-size:12px;font-weight:700;cursor:pointer;">30D</button>
+                                <button type="button" data-rt-range="90d" onclick="rtSetRange('90d',this)" style="padding:6px 12px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;color:#475569;font-size:12px;font-weight:700;cursor:pointer;">90D</button>
+                                <button type="button" data-rt-range="12m" onclick="rtSetRange('12m',this)" style="padding:6px 12px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;color:#475569;font-size:12px;font-weight:700;cursor:pointer;">12M</button>
+                            </div>
+                        </div>
+
+                        <div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;border-bottom:1px solid #f1f5f9;background:#fafbfc;">
+                            <div>
+                                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Total</div>
+                                <div id="rtTotal" style="font-size:18px;font-weight:900;color:#10b981;margin-top:2px;">₹0</div>
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Avg / Period</div>
+                                <div id="rtAvg" style="font-size:18px;font-weight:900;color:#0ea5e9;margin-top:2px;">₹0</div>
+                            </div>
+                            <div>
+                                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Peak</div>
+                                <div id="rtPeak" style="font-size:18px;font-weight:900;color:#7c3aed;margin-top:2px;">₹0</div>
+                            </div>
+                        </div>
+
+                        <div id="rtRevenueChart" style="min-height:300px;padding:8px 4px 0;"></div>
+                        <div style="padding:0 18px 4px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Occupancy %</div>
+                        <div id="rtOccupancyChart" style="min-height:120px;padding:0 4px 12px;"></div>
+                    </div>
+                    </div>{{-- /revenue-trend widget --}}
+
+                    <script>
+                    (function(){
+                        var revChart = null, occChart = null, currentRange = '7d', loading = false;
+                        var endpoint = "{{ route('dashboard.revenue_trend') }}";
+
+                        function fmtINR(v){
+                            v = Math.round(v||0);
+                            if (v >= 10000000) return '₹' + (v/10000000).toFixed(2) + 'Cr';
+                            if (v >= 100000)   return '₹' + (v/100000).toFixed(2) + 'L';
+                            if (v >= 1000)     return '₹' + (v/1000).toFixed(1) + 'K';
+                            return '₹' + v;
+                        }
+
+                        function ensureApex(cb){
+                            if (typeof ApexCharts !== 'undefined') { cb(); return; }
+                            var tries = 0;
+                            var t = setInterval(function(){
+                                if (typeof ApexCharts !== 'undefined' || ++tries > 40) {
+                                    clearInterval(t);
+                                    if (typeof ApexCharts !== 'undefined') cb();
+                                }
+                            }, 100);
+                        }
+
+                        function renderRevenue(labels, data){
+                            var opts = {
+                                chart: { type: 'area', height: 280, toolbar: { show: false }, animations: { speed: 400 }, fontFamily: 'Inter, sans-serif' },
+                                series: [{ name: 'Revenue', data: data }],
+                                xaxis: { categories: labels, labels: { style: { fontSize: '11px', colors: '#64748b' } }, axisBorder:{show:false}, axisTicks:{show:false} },
+                                yaxis: { labels: { formatter: fmtINR, style: { fontSize: '11px', colors: '#64748b' } } },
+                                stroke: { curve: 'smooth', width: 3 },
+                                colors: ['#10b981'],
+                                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0,90,100] } },
+                                dataLabels: { enabled: false },
+                                grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+                                tooltip: { y: { formatter: function(v){ return '₹' + Number(v||0).toLocaleString('en-IN'); } } },
+                                noData: { text: 'No revenue in this period', style: { color:'#94a3b8', fontSize:'13px' } },
+                            };
+                            if (revChart) { revChart.updateOptions(opts, true, true); }
+                            else { revChart = new ApexCharts(document.querySelector('#rtRevenueChart'), opts); revChart.render(); }
+                        }
+
+                        function renderOccupancy(labels, data){
+                            var opts = {
+                                chart: { type: 'bar', height: 110, toolbar: { show: false }, sparkline: { enabled: false }, fontFamily: 'Inter, sans-serif' },
+                                series: [{ name: 'Occupancy %', data: data }],
+                                xaxis: { categories: labels, labels: { show: false }, axisBorder:{show:false}, axisTicks:{show:false} },
+                                yaxis: { max: 100, labels: { formatter: function(v){ return Math.round(v) + '%'; }, style:{ fontSize:'10px', colors:'#94a3b8' } } },
+                                colors: ['#0ea5e9'],
+                                plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+                                dataLabels: { enabled: false },
+                                grid: { show: false, padding: { left: 0, right: 0, top: 0, bottom: 0 } },
+                                tooltip: { y: { formatter: function(v){ return v + '%'; } }, x: { formatter: function(_,o){ return labels[o.dataPointIndex]; } } },
+                            };
+                            if (occChart) { occChart.updateOptions(opts, true, true); }
+                            else { occChart = new ApexCharts(document.querySelector('#rtOccupancyChart'), opts); occChart.render(); }
+                        }
+
+                        window.rtSetRange = function(range, btn){
+                            if (loading || range === currentRange) return;
+                            currentRange = range;
+                            document.querySelectorAll('[data-rt-range]').forEach(function(b){
+                                if (b.dataset.rtRange === range) {
+                                    b.style.background = '#10b981'; b.style.color = '#fff'; b.style.borderColor = '#10b981';
+                                } else {
+                                    b.style.background = '#fff'; b.style.color = '#475569'; b.style.borderColor = '#cbd5e1';
+                                }
+                            });
+                            var labelMap = { '7d':'Last 7 days', '30d':'Last 30 days', '90d':'Last 90 days', '12m':'Last 12 months' };
+                            document.getElementById('rtRangeLabel').innerText = labelMap[range] || '';
+                            loadRT();
+                        };
+
+                        function loadRT(){
+                            loading = true;
+                            fetch(endpoint + '?range=' + currentRange, { credentials: 'same-origin' })
+                                .then(function(r){ return r.ok ? r.json() : null; })
+                                .then(function(d){
+                                    loading = false;
+                                    if (!d) return;
+                                    document.getElementById('rtTotal').innerText = fmtINR(d.total);
+                                    document.getElementById('rtAvg').innerText   = fmtINR(d.avg);
+                                    document.getElementById('rtPeak').innerText  = fmtINR(d.peak);
+                                    ensureApex(function(){
+                                        renderRevenue(d.labels, d.revenue);
+                                        renderOccupancy(d.labels, d.occupancy);
+                                    });
+                                })
+                                .catch(function(){ loading = false; });
+                        }
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', loadRT);
+                        } else { loadRT(); }
+                    })();
+                    </script>
 
                     {{-- Shortcuts + Quick Actions — side-by-side ──────────────────────── --}}
                     <div data-widget="shortcuts-actions-pair" class="db-widget-wrap">

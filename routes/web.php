@@ -178,6 +178,7 @@ Route::get('/invoices/{id}',                  [InvoiceController::class, 'show']
 // ── Reports ────────────────────────────────────────────────────────────────
 Route::middleware('permission:reports.view')->group(function () {
     Route::get('/reports',           [ReportController::class, 'index']    )->name('reports.index');
+    Route::get('/reports/performance', [ReportController::class, 'performance'])->name('reports.performance');
     Route::get('/reports/revenue',   [ReportController::class, 'revenue']  )->name('reports.revenue');
     Route::get('/reports/occupancy',       [ReportController::class, 'occupancy']     )->name('reports.occupancy');
     Route::get('/reports/bookings',        [ReportController::class, 'bookings']      )->name('reports.bookings');
@@ -185,6 +186,10 @@ Route::middleware('permission:reports.view')->group(function () {
     Route::get('/reports/inventory-stock',     [ReportController::class, 'inventoryStock']     )->name('reports.inventory_stock');
     Route::get('/reports/inventory-movements', [ReportController::class, 'inventoryMovements'] )->name('reports.inventory_movements');
 });
+
+// ── Dashboard JSON endpoint for Revenue Trend widget ──────────────────────
+Route::get('/dashboard/revenue-trend', [\App\Http\Controllers\Admin\DashboardController::class, 'revenueTrend'])
+    ->name('dashboard.revenue_trend');
 
 // ── Settings ───────────────────────────────────────────────────────────────
 Route::middleware('permission:settings.view')->group(function () {

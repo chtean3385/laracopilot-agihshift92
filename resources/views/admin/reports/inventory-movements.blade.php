@@ -68,6 +68,31 @@
     </div>
 </div>
 
+{{-- Inline chart: stock movement breakdown --}}
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin-bottom:18px;">
+    <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Movement Breakdown</div>
+    <div id="invMovChart" style="min-height:260px;"></div>
+</div>
+<script>
+(function(){
+    var data=[{{ (float)$totals['in'] }}, {{ (float)$totals['out'] }}, {{ (float)$totals['adjust'] }}];
+    function go(){
+        new ApexCharts(document.querySelector('#invMovChart'), {
+            chart:{type:'bar',height:260,toolbar:{show:false},fontFamily:'Inter,sans-serif'},
+            series:[{name:'Quantity',data:data}],
+            xaxis:{categories:['Stock In','Stock Out','Adjustments'],labels:{style:{fontSize:'12px',colors:'#64748b',fontWeight:700}}},
+            yaxis:{labels:{style:{fontSize:'11px',colors:'#64748b'}}},
+            colors:['#15803d','#b91c1c','#6d28d9'],
+            plotOptions:{bar:{borderRadius:8,columnWidth:'45%',distributed:true}},
+            dataLabels:{enabled:true,style:{fontSize:'12px',fontWeight:700}},
+            legend:{show:false},grid:{borderColor:'#f1f5f9',strokeDashArray:4}
+        }).render();
+    }
+    if (typeof ApexCharts !== 'undefined') go();
+    else { var n=0,t=setInterval(function(){if(typeof ApexCharts!=='undefined'||++n>40){clearInterval(t);if(typeof ApexCharts!=='undefined')go();}},100); }
+})();
+</script>
+
 <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead style="background:#f8fafc;">

@@ -28,6 +28,38 @@
         </div>
         @endforeach
     </div>
+    {{-- Inline chart: status breakdown --}}
+    @php
+        $bkLabels = []; $bkData = [];
+        foreach($statusCounts as $s=>$c){ $bkLabels[]=ucfirst(str_replace('_',' ',$s)); $bkData[]=(int)$c; }
+        $bkTotal = array_sum($bkData);
+    @endphp
+    @if($bkTotal > 0)
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100" style="padding:18px;">
+        <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:6px;">Booking Status Breakdown</div>
+        <div id="bkStatusChart" style="min-height:280px;"></div>
+    </div>
+    <script>
+    (function(){
+        var l=@json($bkLabels), d=@json($bkData);
+        function go(){
+            new ApexCharts(document.querySelector('#bkStatusChart'), {
+                chart:{type:'bar',height:280,toolbar:{show:false},fontFamily:'Inter,sans-serif'},
+                series:[{name:'Bookings',data:d}],
+                xaxis:{categories:l,labels:{style:{fontSize:'12px',colors:'#64748b',fontWeight:600}}},
+                yaxis:{labels:{style:{fontSize:'11px',colors:'#64748b'}}},
+                colors:['#10b981','#3b82f6','#7c3aed','#ef4444'],
+                plotOptions:{bar:{borderRadius:8,columnWidth:'45%',distributed:true}},
+                dataLabels:{enabled:true,style:{fontSize:'12px',fontWeight:700}},
+                legend:{show:false},grid:{borderColor:'#f1f5f9',strokeDashArray:4}
+            }).render();
+        }
+        if (typeof ApexCharts !== 'undefined') go();
+        else { var n=0,t=setInterval(function(){if(typeof ApexCharts!=='undefined'||++n>40){clearInterval(t);if(typeof ApexCharts!=='undefined')go();}},100); }
+    })();
+    </script>
+    @endif
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
