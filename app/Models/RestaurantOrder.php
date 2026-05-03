@@ -24,7 +24,7 @@ class RestaurantOrder extends Model
         'total',
         'notes',
         'billed_at',
-        // Task #111 — Guest QR / scan-to-order fields
+        // Guest QR / scan-to-order fields
         'source',              // staff | guest_qr
         'approval_status',     // null | pending | approved | rejected
         'room_number',

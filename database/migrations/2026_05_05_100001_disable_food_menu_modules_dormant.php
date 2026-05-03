@@ -7,7 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Task #111 — food-menu module is dormant. Disable for every hotel.
+        // food-menu module is dormant — disable for every hotel.
         // Code, tables and permissions are kept intact (no deletes) so it can be
         // re-enabled later if needed.
         DB::table('modules')

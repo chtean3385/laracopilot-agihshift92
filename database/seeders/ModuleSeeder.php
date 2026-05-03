@@ -40,8 +40,8 @@ class ModuleSeeder extends Seeder
     ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking',     'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.'],
     ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',      'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.'],
     ['slug' => 'inventory',           'name' => 'Inventory Management',    'description' => 'Track consumables, food ingredients, and hotel supplies. Monitor stock levels, record purchases and usage, and get low-stock alerts.'],
-    // Task #111 — Standalone Food Menu module is dormant. Scan-to-order now
-    // lives inside the Restaurant module. Row commented out so new hotels are
+    // Dormant: standalone Food Menu module — superseded by Restaurant QR.
+    // Row commented out so new hotels are
     // not provisioned with the dormant module.
     // ['slug' => 'food-menu',           'name' => 'Food Menu & Ordering',    'description' => 'QR-based in-room food ordering. Guests scan a room QR, browse the menu, and place orders that are billed directly to their room.'],
 ];

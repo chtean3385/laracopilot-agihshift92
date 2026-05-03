@@ -45,7 +45,7 @@
     <div class="alert-error mb-4">{{ session('error') }}</div>
 @endif
 
-{{-- ── Task #111 — Pending Guest QR Orders Banner ── --}}
+{{-- Pending guest QR orders banner --}}
 @canDo('restaurant.orders')
 @php
     $pendingGuestOrders = \App\Models\RestaurantOrder::with(['items', 'table'])

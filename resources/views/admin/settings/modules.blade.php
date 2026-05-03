@@ -46,6 +46,7 @@ $icons = [
 
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
             @foreach($hotelModules as $module)
+            @continue($module->slug === 'food-menu')
             @php [$icon, $grad, $color] = $icons[$module->slug] ?? ['fas fa-puzzle-piece', 'linear-gradient(135deg,#64748b,#334155)', '#64748b']; @endphp
             <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:2px solid {{ $module->is_enabled ? $color.'33' : '#f1f5f9' }};transition:border-color .2s;position:relative;overflow:hidden;">
                 <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:{{ $module->is_enabled ? $color.'15' : '#f8fafc' }};"></div>
@@ -71,12 +72,6 @@ $icons = [
                     <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
-                    {{-- Task #111: food-menu Configure removed — module dormant.
-                    @elseif($module->is_enabled && $module->slug === 'food-menu')
-                    <a href="{{ route('food-menu.dashboard') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
-                        <i class="fas fa-cog" style="font-size:11px;"></i> Configure
-                    </a>
-                    --}}
                     @endif
                 </div>
             </div>
@@ -90,6 +85,7 @@ $icons = [
     {{-- Regular hotel-scoped view --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
         @foreach($modules as $module)
+        @continue($module->slug === 'food-menu')
         @php [$icon, $grad, $color] = $icons[$module->slug] ?? ['fas fa-puzzle-piece', 'linear-gradient(135deg,#64748b,#334155)', '#64748b']; @endphp
         <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:2px solid {{ $module->is_enabled ? $color.'33' : '#f1f5f9' }};transition:border-color .2s;position:relative;overflow:hidden;">
             <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:{{ $module->is_enabled ? $color.'15' : '#f8fafc' }};"></div>
@@ -120,12 +116,6 @@ $icons = [
                     <a href="{{ route('admin.booking-widget.settings') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
-                    {{-- Task #111: food-menu Configure removed — module dormant.
-                    @elseif($module->slug === 'food-menu')
-                    <a href="{{ route('food-menu.dashboard') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
-                        <i class="fas fa-cog" style="font-size:11px;"></i> Configure
-                    </a>
-                    --}}
                     @endif
                 @endif
             </div>

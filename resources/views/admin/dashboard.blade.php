@@ -266,7 +266,7 @@
                 }
                 </style>
 
-                {{-- ══ PENDING GUEST QR ORDERS (Restaurant module) — Task #111 ══════ --}}
+                {{-- Pending guest QR orders (Restaurant module) --}}
                 @if(\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.orders'))
                 @php
                     $pendingGuestOrders = \App\Models\RestaurantOrder::with('items')

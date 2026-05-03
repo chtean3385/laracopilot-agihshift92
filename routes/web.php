@@ -360,8 +360,8 @@ Route::withoutMiddleware([
     // Guest submits UPI UTR
     Route::post('/book/{slug}/payment-ref',  [\App\Http\Controllers\PublicBookingController::class, 'submitPaymentRef'])->name('public.booking.payment_ref');
 
-    /* ── Task #111 — Standalone Food Menu module is dormant. Routes below
-     *     are kept for reference but commented out. The QR + scan-to-order
+    /* ── Standalone Food Menu module is dormant. Routes below are kept for
+     *     reference but commented out. The QR + scan-to-order
      *     flow now lives in the Restaurant module (/r/{slug}/...).
      *
      * Route::get( '/menu/{slug}',                        [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show.no-room');
@@ -370,7 +370,7 @@ Route::withoutMiddleware([
      * Route::get( '/menu/{slug}/{room}',                 [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show')->where('room', '[A-Za-z0-9_\-]+');
      */
 
-    // ── Public Restaurant Menu (QR scan-to-order) — Task #111 ──
+    // ── Public Restaurant Menu (QR scan-to-order) ──
     Route::get( '/r/{slug}',                       [\App\Http\Controllers\RestaurantPublicController::class, 'show']      )->name('public.restaurant.show');
     Route::get( '/r/{slug}/order/{number}',        [\App\Http\Controllers\RestaurantPublicController::class, 'status']    )->name('public.restaurant.status');
     Route::post('/r/{slug}/order',                 [\App\Http\Controllers\RestaurantPublicController::class, 'order']     )->name('public.restaurant.order');
@@ -420,12 +420,12 @@ Route::middleware('permission:restaurant.view')->prefix('restaurant')->name('res
         Route::post('/orders/{id}/cancel', [RestaurantOrderController::class, 'cancel']     )->name('orders.cancel');
         Route::post('/orders/{id}/items',  [RestaurantOrderController::class, 'addItem']    )->name('orders.items.add');
         Route::delete('/orders/{id}/items/{itemId}', [RestaurantOrderController::class, 'removeItem'])->name('orders.items.remove');
-        // Task #111 — guest QR order approval flow
+        // Guest QR order approval flow
         Route::post('/orders/{id}/approve', [RestaurantOrderController::class, 'approve']  )->name('orders.approve');
         Route::post('/orders/{id}/reject',  [RestaurantOrderController::class, 'reject']   )->name('orders.reject');
     });
 
-    // Task #111 — QR codes for tables and rooms (Restaurant module)
+    // QR codes for tables and rooms (Restaurant module)
     Route::middleware('permission:restaurant.menu')->group(function () {
         Route::get('/menu/qr',          [\App\Http\Controllers\Admin\RestaurantQrController::class, 'index']   )->name('qr.index');
         Route::get('/menu/qr/pdf',      [\App\Http\Controllers\Admin\RestaurantQrController::class, 'pdf']     )->name('qr.pdf');
@@ -468,7 +468,7 @@ Route::middleware('permission:inventory.view')->prefix('inventory')->name('inven
 });
 
 
-/* ── Task #111 — Standalone Food Menu / Food Orders modules are dormant.
+/* ── Standalone Food Menu / Food Orders modules are dormant.
  *     All scan-to-order flow now lives inside the Restaurant module
  *     (admin: /restaurant/menu/qr  •  guest: /r/{slug}/...).
  *     Code, controllers, models, tables and permissions are kept intact

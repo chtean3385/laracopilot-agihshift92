@@ -39,7 +39,7 @@
     </div>
 </div>
 
-{{-- ── Task #111 — Guest QR pending approval panel ── --}}
+{{-- Guest QR — pending approval panel --}}
 @if($order->isPendingApproval())
 <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:14px;padding:18px 22px;margin-bottom:18px;">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">

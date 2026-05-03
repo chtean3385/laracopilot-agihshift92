@@ -8,6 +8,8 @@ use App\Models\RestaurantOrder;
 use App\Models\RestaurantOrderItem;
 use App\Models\RestaurantMenuItem;
 use App\Models\Booking;
+use App\Models\BookingExtraCharge;
+use App\Models\RestaurantBill;
 use App\Models\Setting;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
@@ -164,7 +166,7 @@ class RestaurantOrderController extends Controller
         return view('admin.restaurant.kot-print', compact('order'));
     }
 
-    // ── Task #111 — Approve a pending guest QR order ──
+    // Approve a pending guest QR order — auto-bills to room when applicable.
     public function approve(Request $request, $id)
     {
         $order = RestaurantOrder::findOrFail($id);
@@ -182,14 +184,15 @@ class RestaurantOrderController extends Controller
             'table_id'   => ['nullable', \Illuminate\Validation\Rule::exists('restaurant_tables', 'id')->where('hotel_id', $hotelId)],
         ]);
 
-        DB::transaction(function () use ($order, $request) {
+        DB::transaction(function () use ($order, $request, $hotelId) {
             $bookingId = $request->booking_id ?: $order->booking_id;
             $tableId   = $request->table_id   ?: $order->table_id;
 
             // If guest gave a room number and admin didn't override, try to auto-link
-            // to the currently checked-in booking on that room.
+            // to the currently checked-in booking on that room (hotel-scoped).
             if (!$bookingId && $order->room_number) {
-                $booking = Booking::where('status', 'checked_in')
+                $booking = Booking::where('hotel_id', $hotelId)
+                    ->where('status', 'checked_in')
                     ->whereHas('room', fn($q) => $q->where('room_number', $order->room_number))
                     ->first();
                 if ($booking) {
@@ -199,8 +202,7 @@ class RestaurantOrderController extends Controller
 
             $billType = $bookingId ? 'room' : 'direct';
 
-            // If a table is now attached, mark it occupied (skip if it already
-            // has another active order — staff should handle that manually).
+            // Mark a newly-attached table as occupied.
             if ($tableId) {
                 $tbl = RestaurantTable::find($tableId);
                 if ($tbl && $tbl->status !== 'occupied') {
@@ -215,6 +217,48 @@ class RestaurantOrderController extends Controller
                 'table_id'        => $tableId,
                 'bill_type'       => $billType,
             ]);
+
+            // Auto-bill room QR orders: post each line as a BookingExtraCharge so
+            // the order shows on the room invoice immediately at approval. Direct
+            // / table orders still go through the normal Generate Bill flow.
+            if ($billType === 'room' && $bookingId) {
+                $order->load('items');
+                foreach ($order->items as $item) {
+                    BookingExtraCharge::create([
+                        'booking_id'  => $bookingId,
+                        'name'        => $item->item_name . ($item->kot_note ? ' (' . $item->kot_note . ')' : ''),
+                        'category'    => 'restaurant',
+                        'quantity'    => $item->quantity,
+                        'unit_price'  => $item->final_price,
+                        'total_price' => $item->subtotal,
+                        'notes'       => 'Restaurant Order ' . $order->order_number . ' (guest QR)',
+                    ]);
+                }
+
+                // Mirror the manual bill flow: create a RestaurantBill row +
+                // mark the order paid/billed so it does not show as still-open.
+                $bill = RestaurantBill::create([
+                    'hotel_id'       => $hotelId,
+                    'order_id'       => $order->id,
+                    'booking_id'     => $bookingId,
+                    'bill_number'    => RestaurantBill::generateBillNumber(),
+                    'bill_type'      => 'room',
+                    'payment_method' => 'room',
+                    'subtotal'       => $order->subtotal,
+                    'tax_rate'       => $order->tax_rate,
+                    'tax_amount'     => $order->tax_amount,
+                    'total'          => $order->total,
+                    'notes'          => 'Auto-billed on guest QR approval',
+                    'paid_at'        => now(),
+                ]);
+
+                $order->update([
+                    'status'         => 'billed',
+                    'payment_status' => 'paid',
+                    'payment_method' => 'room',
+                    'billed_at'      => now(),
+                ]);
+            }
         });
 
         ActivityLogger::log('restaurant_order_approved', 'Restaurant', "Guest QR order {$order->order_number} approved");
@@ -223,7 +267,7 @@ class RestaurantOrderController extends Controller
             ->with('success', 'Order approved and sent to kitchen.');
     }
 
-    // ── Task #111 — Reject a pending guest QR order ──
+    // Reject a pending guest QR order.
     public function reject(Request $request, $id)
     {
         $order = RestaurantOrder::findOrFail($id);

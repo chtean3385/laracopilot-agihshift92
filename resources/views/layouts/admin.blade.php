@@ -869,8 +869,8 @@
 </a>
 @endCanDo
 @endif
-{{-- Task #111 — Standalone Food Menu module is dormant. QR + scan-to-order
-     now lives inside the Restaurant module sidebar entry above. Block kept
+{{-- Standalone Food Menu module is dormant — QR + scan-to-order now live
+     inside the Restaurant module sidebar entry above. Block kept
      commented for reference. --}}
 {{--
 @if(\App\Models\Module::isEnabled('food-menu'))
