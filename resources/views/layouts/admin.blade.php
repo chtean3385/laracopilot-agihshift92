@@ -624,6 +624,7 @@
         @media (max-width: 768px) {
             .topbar-date, .topbar-time { display: none !important; }
             .topbar-wa-label { display: none !important; }
+            .topbar-user { display: none !important; }
             .topbar-title h1 { font-size: 15px !important; }
             .topbar-title p  { display: none !important; }
             #main-wrap > header { padding: 0 12px !important; }
@@ -843,22 +844,7 @@
         </div>
         @endif
 
-        <!-- User -->
-        <div style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);">
-            <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;">
-                @php
-                    $roleColors = ['Super Admin'=>'#7c3aed','Admin'=>'#dc2626','Manager'=>'#2563eb','Receptionist'=>'#16a34a'];
-                    $roleBg = $roleColors[session('crm_user_role','Admin')] ?? '#475569';
-                @endphp
-                <div style="width:36px;height:36px;background:{{ $roleBg }};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0;">{{ session('crm_user_avatar','A') }}</div>
-                <div style="min-width:0;">
-                    <div style="color:#e2e8f0;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_user_name','Admin') }}</div>
-                    <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
-                        <span style="display:inline-block;background:{{ $roleBg }};color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;letter-spacing:.05em;text-transform:uppercase;">{{ session('crm_user_role','Admin') }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- User identity moved to top header (cleaner sidebar) -->
 
         <!-- Navigation -->
         <nav style="flex:1;padding:10px 10px 10px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent;min-height:0;">
@@ -878,48 +864,59 @@
             @endCanDo
 
             @php
-                $showOps = \App\Services\PermissionService::check('rooms.view')
-                    || \App\Services\PermissionService::check('bookings.view')
-                    || \App\Services\PermissionService::check('checkin.process')
-                    || \App\Services\PermissionService::check('checkout.process');
+                $opsChildren = [
+                    'rooms'        => \App\Services\PermissionService::check('rooms.view'),
+                    'bookings'     => \App\Services\PermissionService::check('bookings.view'),
+                    'checkin'      => \App\Services\PermissionService::check('checkin.process'),
+                    'checkout'     => \App\Services\PermissionService::check('checkout.process'),
+                    'food_billing' => \App\Models\Module::isEnabled('extra-billing'),
+                ];
+                $hasOps = collect($opsChildren)->contains(true);
+                $opsActive = request()->routeIs('rooms.*') || request()->routeIs('bookings.*')
+                    || request()->routeIs('checkin.*') || request()->routeIs('checkout.*')
+                    || request()->routeIs('food-billing.*');
             @endphp
-            @if($showOps)
+            @if($hasOps)
             <div class="nav-section">Operations</div>
-            @endif
-
-            @canDo('rooms.view')
-            <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-door-open"></i></span>
-                Rooms
-            </a>
-            @endCanDo
-
-            @canDo('bookings.view')
-            <a href="{{ route('bookings.index') }}" class="nav-link {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-calendar-check"></i></span>
-                Bookings
-            </a>
-            @endCanDo
-
-            @canDo('checkin.process')
-            <a href="{{ route('checkin.index') }}" class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
-                Check-In
-            </a>
-            @endCanDo
-
-            @canDo('checkout.process')
-            <a href="{{ route('checkout.index') }}" class="nav-link {{ request()->routeIs('checkout.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
-                Check-Out
-            </a>
-            @endCanDo
-
-            @if(\App\Models\Module::isEnabled('extra-billing'))
-            <a href="{{ route('food-billing.index') }}" class="nav-link {{ request()->routeIs('food-billing.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-utensils"></i></span>
-                Food Billing
-            </a>
+            <div class="nav-group {{ $opsActive ? 'open' : '' }}" data-group="operations">
+                <button type="button" class="nav-group-toggle {{ $opsActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                    <span class="icon"><i class="fas fa-hotel"></i></span>
+                    <span>Front Desk</span>
+                    <i class="fas fa-chevron-right chev"></i>
+                </button>
+                <div class="nav-group-children">
+                    @if($opsChildren['rooms'])
+                    <a href="{{ route('rooms.index') }}" class="nav-link {{ request()->routeIs('rooms.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-door-open"></i></span>
+                        Rooms
+                    </a>
+                    @endif
+                    @if($opsChildren['bookings'])
+                    <a href="{{ route('bookings.index') }}" class="nav-link {{ request()->routeIs('bookings.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-calendar-check"></i></span>
+                        Bookings
+                    </a>
+                    @endif
+                    @if($opsChildren['checkin'])
+                    <a href="{{ route('checkin.index') }}" class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
+                        Check-In
+                    </a>
+                    @endif
+                    @if($opsChildren['checkout'])
+                    <a href="{{ route('checkout.index') }}" class="nav-link {{ request()->routeIs('checkout.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                        Check-Out
+                    </a>
+                    @endif
+                    @if($opsChildren['food_billing'])
+                    <a href="{{ route('food-billing.index') }}" class="nav-link {{ request()->routeIs('food-billing.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-utensils"></i></span>
+                        Food Billing
+                    </a>
+                    @endif
+                </div>
+            </div>
             @endif
 
 
@@ -1239,6 +1236,17 @@
                 <div class="topbar-title" style="min-width:0;">
                     <h1 style="font-size:18px;font-weight:800;color:#0f172a;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@yield('page-title','Dashboard')</h1>
                     <p style="font-size:12px;color:#94a3b8;margin:0;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@yield('page-subtitle','Azure Paradise Resort CRM')</p>
+                </div>
+                @php
+                    $roleColorsTop = ['Super Admin'=>'#7c3aed','Admin'=>'#dc2626','Manager'=>'#2563eb','Receptionist'=>'#16a34a'];
+                    $roleBgTop = $roleColorsTop[session('crm_user_role','Admin')] ?? '#475569';
+                @endphp
+                <div class="topbar-user" style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:5px 12px 5px 5px;flex-shrink:0;">
+                    <div style="width:28px;height:28px;background:{{ $roleBgTop }};border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;">{{ session('crm_user_avatar','A') }}</div>
+                    <div style="display:flex;flex-direction:column;line-height:1.15;min-width:0;">
+                        <span style="font-size:10px;color:#94a3b8;font-weight:600;">Logged in as</span>
+                        <span style="font-size:12px;color:#0f172a;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">{{ session('crm_user_name','Admin') }} · <span style="color:{{ $roleBgTop }};">{{ session('crm_user_role','Admin') }}</span></span>
+                    </div>
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
