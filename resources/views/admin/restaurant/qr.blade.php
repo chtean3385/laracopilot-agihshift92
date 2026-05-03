@@ -10,7 +10,6 @@
             <p style="color:#64748b;margin:0;font-size:14px;">Print and place QR codes on tables and in rooms. Guests scan to view menu and order.</p>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;" class="no-print">
-            <a href="{{ route('restaurant.qr.pdf') }}" style="padding:10px 18px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;"><i class="fas fa-file-pdf"></i> Download PDF</a>
             <button type="button" onclick="window.print()" style="padding:10px 18px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;"><i class="fas fa-print"></i> Print Page</button>
         </div>
     </div>
