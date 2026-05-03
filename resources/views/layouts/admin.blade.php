@@ -142,13 +142,83 @@
 
         /* ── Section label ── */
         .nav-section {
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: .1em;
+            letter-spacing: .12em;
             color: #475569;
-            padding: 18px 14px 6px;
+            padding: 12px 14px 4px;
         }
+        .nav-link { padding: 8px 14px; }
+
+        /* ── Collapsible group ── */
+        .nav-group-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: #94a3b8;
+            font-size: 13.5px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: all .18s ease;
+        }
+        .nav-group-toggle:hover { color: #fff; background: rgba(255,255,255,.07); }
+        .nav-group-toggle.has-active { color: #fff; }
+        .nav-group-toggle.has-active .icon {
+            background: linear-gradient(135deg,#06b6d4,#3b82f6);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(6,182,212,.4);
+        }
+        .nav-group-toggle .icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; flex-shrink: 0;
+            background: rgba(255,255,255,.05);
+            color: #64748b;
+        }
+        .nav-group-toggle .chev {
+            margin-left: auto;
+            font-size: 10px;
+            color: #475569;
+            transition: transform .2s ease;
+        }
+        .nav-group.open > .nav-group-toggle .chev { transform: rotate(90deg); color: #cbd5e1; }
+        .nav-group-children {
+            display: none;
+            padding: 2px 0 4px 14px;
+            margin-left: 14px;
+            border-left: 1px solid rgba(255,255,255,.06);
+        }
+        .nav-group.open > .nav-group-children { display: block; }
+        .nav-group-children .nav-link {
+            padding: 6px 10px;
+            font-size: 12.5px;
+        }
+        .nav-group-children .nav-link .icon {
+            width: 22px; height: 22px;
+            font-size: 10.5px;
+            border-radius: 6px;
+        }
+        .nav-group-toggle .nav-badge {
+            margin-left: auto;
+            background: #f59e0b;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            min-width: 18px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        .nav-group-toggle .nav-badge + .chev { margin-left: 8px; }
 
         /* ── Logout btn ── */
         .logout-btn {
@@ -855,10 +925,59 @@
 
 @if(\App\Models\Module::isEnabled('restaurant'))
 @canDo('restaurant.view')
-<a href="{{ route('restaurant.index') }}" class="nav-link {{ request()->routeIs('restaurant.*') ? 'active' : '' }}">
-    <span class="icon"><i class="fas fa-concierge-bell"></i></span>
-    Restaurant
-</a>
+@php
+    $restaurantPending = \App\Services\PermissionService::check('restaurant.orders')
+        ? \App\Models\RestaurantOrder::where('approval_status', 'pending')->count()
+        : 0;
+    $restActive = request()->routeIs('restaurant.*');
+@endphp
+<div class="nav-group {{ $restActive ? 'open' : '' }}" data-group="restaurant">
+    <button type="button" class="nav-group-toggle {{ $restActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+        <span class="icon"><i class="fas fa-concierge-bell"></i></span>
+        <span>Restaurant</span>
+        @if($restaurantPending > 0)
+        <span class="nav-badge">{{ $restaurantPending }}</span>
+        @endif
+        <i class="fas fa-chevron-right chev"></i>
+    </button>
+    <div class="nav-group-children">
+        <a href="{{ route('restaurant.index') }}" class="nav-link {{ request()->routeIs('restaurant.index') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-table"></i></span>
+            Table Map
+        </a>
+        @canDo('restaurant.orders')
+        <a href="{{ route('restaurant.orders.index') }}" class="nav-link {{ request()->routeIs('restaurant.orders.*') ? 'active' : '' }}" style="position:relative;">
+            <span class="icon"><i class="fas fa-receipt"></i></span>
+            Orders
+            @if($restaurantPending > 0)
+            <span class="nav-badge">{{ $restaurantPending }}</span>
+            @endif
+        </a>
+        @endCanDo
+        @canDo('restaurant.menu')
+        <a href="{{ route('restaurant.menu.index') }}" class="nav-link {{ request()->routeIs('restaurant.menu.index') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-utensils"></i></span>
+            Menu &amp; Categories
+        </a>
+        <a href="{{ route('restaurant.qr.index') }}" class="nav-link {{ request()->routeIs('restaurant.qr.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-qrcode"></i></span>
+            QR Codes
+        </a>
+        @endCanDo
+        @canDo('restaurant.billing')
+        <a href="{{ route('restaurant.bills.index') }}" class="nav-link {{ request()->routeIs('restaurant.bills.*') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-file-invoice"></i></span>
+            Bills
+        </a>
+        @endCanDo
+        @canDo('restaurant.reports')
+        <a href="{{ route('restaurant.reports') }}" class="nav-link {{ request()->routeIs('restaurant.reports') ? 'active' : '' }}">
+            <span class="icon"><i class="fas fa-chart-line"></i></span>
+            Reports
+        </a>
+        @endCanDo
+    </div>
+</div>
 @endCanDo
 @endif
 @if(\App\Models\Module::isEnabled('inventory'))
@@ -924,113 +1043,157 @@
             </a>
             @endCanDo
 
+            @php
+                $autoChildren = [
+                    'whatsapp'           => \App\Models\Module::isEnabled('whatsapp'),
+                    'payment_links'      => \App\Models\Module::isEnabled('payment_links'),
+                    'channel_manager'    => \App\Models\Module::isEnabled('channel_manager'),
+                    'ota_whatsapp_sync'  => \App\Models\Module::isEnabled('ota_whatsapp_sync'),
+                    'booking-widget'     => \App\Models\Module::isEnabled('booking-widget'),
+                    'pathik'             => \App\Models\Module::isEnabled('pathik'),
+                    'time-slots'         => \App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing'),
+                ];
+                $hasAutomation = collect($autoChildren)->contains(true);
+                $otaNavCount   = $autoChildren['ota_whatsapp_sync']
+                    ? \App\Models\OtaImportedBooking::pendingCountForHotel((int) session('crm_hotel_id'))
+                    : 0;
+                $autoActive = request()->routeIs('whatsapp.*') || request()->routeIs('payment_links.*')
+                    || request()->routeIs('channel_manager.*') || request()->routeIs('ota-bookings.*')
+                    || request()->routeIs('admin.booking-widget.*') || request()->routeIs('pathik.*')
+                    || request()->routeIs('time-slots.*');
+            @endphp
+            @if($hasAutomation)
             <div class="nav-section">Automation</div>
-
-            @if(\App\Models\Module::isEnabled('whatsapp'))
-            <a href="{{ route('whatsapp.setup') }}" class="nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fab fa-whatsapp"></i></span>
-                WhatsApp
-            </a>
+            <div class="nav-group {{ $autoActive ? 'open' : '' }}" data-group="automation">
+                <button type="button" class="nav-group-toggle {{ $autoActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                    <span class="icon"><i class="fas fa-bolt"></i></span>
+                    <span>Integrations</span>
+                    @if($otaNavCount > 0)
+                    <span class="nav-badge">{{ $otaNavCount }}</span>
+                    @endif
+                    <i class="fas fa-chevron-right chev"></i>
+                </button>
+                <div class="nav-group-children">
+                    @if($autoChildren['whatsapp'])
+                    <a href="{{ route('whatsapp.setup') }}" class="nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fab fa-whatsapp"></i></span>
+                        WhatsApp
+                    </a>
+                    @endif
+                    @if($autoChildren['payment_links'])
+                    <a href="{{ route('payment_links.config') }}" class="nav-link {{ request()->routeIs('payment_links.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-qrcode"></i></span>
+                        Payment Links
+                    </a>
+                    @endif
+                    @if($autoChildren['channel_manager'])
+                    <a href="{{ route('channel_manager.index') }}" class="nav-link {{ request()->routeIs('channel_manager.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-sitemap"></i></span>
+                        Channel Manager
+                    </a>
+                    @endif
+                    @if($autoChildren['ota_whatsapp_sync'])
+                    <a href="{{ route('ota-bookings.index') }}" class="nav-link {{ request()->routeIs('ota-bookings.*') ? 'active' : '' }}" style="position:relative;">
+                        <span class="icon"><i class="fas fa-hotel"></i></span>
+                        OTA Import Queue
+                        @if($otaNavCount > 0)
+                        <span class="nav-badge">{{ $otaNavCount }}</span>
+                        @endif
+                    </a>
+                    @endif
+                    @if($autoChildren['booking-widget'])
+                    <a href="{{ route('admin.booking-widget.settings') }}" class="nav-link {{ request()->routeIs('admin.booking-widget.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-globe"></i></span>
+                        Booking Widget
+                    </a>
+                    @endif
+                    @if($autoChildren['pathik'])
+                    <a href="{{ route('pathik.index') }}" class="nav-link {{ request()->routeIs('pathik.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-clipboard-list"></i></span>
+                        Pathik Portal
+                    </a>
+                    @endif
+                    @if($autoChildren['time-slots'])
+                    <a href="{{ route('time-slots.index') }}" class="nav-link {{ request()->routeIs('time-slots.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-clock"></i></span>
+                        Time Slots &amp; Add-Ons
+                    </a>
+                    @endif
+                </div>
+            </div>
             @endif
 
-            @if(\App\Models\Module::isEnabled('payment_links'))
-            <a href="{{ route('payment_links.config') }}" class="nav-link {{ request()->routeIs('payment_links.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-qrcode"></i></span>
-                Payment Links
-            </a>
+            @php
+                $isSA = session('crm_user_role') === 'Super Admin';
+                $admChildren = [
+                    'platform'  => $isSA,
+                    'modules'   => $isSA,
+                    'settings'  => \App\Services\PermissionService::check('settings.view'),
+                    'activity'  => \App\Services\PermissionService::check('activity_log.view'),
+                    'cleanup'   => \App\Services\PermissionService::check('data.truncate'),
+                    'roles'     => \App\Services\PermissionService::check('roles.view'),
+                    'users'     => \App\Services\PermissionService::check('users.view'),
+                ];
+                $hasAdmin = collect($admChildren)->contains(true);
+                $admActive = request()->routeIs('platform.*') || request()->routeIs('modules.*')
+                    || request()->routeIs('settings.index') || request()->routeIs('activity_log.*')
+                    || request()->routeIs('data-cleanup.*') || request()->routeIs('roles.*')
+                    || request()->routeIs('users.*');
+            @endphp
+            @if($hasAdmin)
+            <div class="nav-section">Administration</div>
+            <div class="nav-group {{ $admActive ? 'open' : '' }}" data-group="administration">
+                <button type="button" class="nav-group-toggle {{ $admActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                    <span class="icon"><i class="fas fa-shield-halved"></i></span>
+                    <span>Administration</span>
+                    <i class="fas fa-chevron-right chev"></i>
+                </button>
+                <div class="nav-group-children">
+                    @if($admChildren['platform'])
+                    <a href="{{ route('platform.dashboard') }}" class="nav-link {{ request()->routeIs('platform.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-layer-group"></i></span>
+                        Platform Admin
+                    </a>
+                    @endif
+                    @if($admChildren['modules'])
+                    <a href="{{ route('modules.index') }}" class="nav-link {{ request()->routeIs('modules.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-puzzle-piece"></i></span>
+                        Modules
+                    </a>
+                    @endif
+                    @if($admChildren['settings'])
+                    <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-cog"></i></span>
+                        Settings
+                    </a>
+                    @endif
+                    @if($admChildren['activity'])
+                    <a href="{{ route('activity_log.index') }}" class="nav-link {{ request()->routeIs('activity_log.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-history"></i></span>
+                        Activity Log
+                    </a>
+                    @endif
+                    @if($admChildren['roles'])
+                    <a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-user-shield"></i></span>
+                        Roles &amp; Permissions
+                    </a>
+                    @endif
+                    @if($admChildren['users'])
+                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-user-cog"></i></span>
+                        User Management
+                    </a>
+                    @endif
+                    @if($admChildren['cleanup'])
+                    <a href="{{ route('data-cleanup.index') }}" class="nav-link {{ request()->routeIs('data-cleanup.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="bi bi-trash3-fill" style="color:#dc2626;"></i></span>
+                        <span style="color:#fca5a5;">Data Cleanup</span>
+                    </a>
+                    @endif
+                </div>
+            </div>
             @endif
-
-            @if(\App\Models\Module::isEnabled('channel_manager'))
-            <a href="{{ route('channel_manager.index') }}" class="nav-link {{ request()->routeIs('channel_manager.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-sitemap"></i></span>
-                Channel Manager
-            </a>
-            @endif
-
-            @if(\App\Models\Module::isEnabled('ota_whatsapp_sync'))
-            @php $otaNavCount = \App\Models\OtaImportedBooking::pendingCountForHotel((int) session('crm_hotel_id')); @endphp
-            <a href="{{ route('ota-bookings.index') }}" class="nav-link {{ request()->routeIs('ota-bookings.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-hotel"></i></span>
-                OTA Import Queue
-                @if($otaNavCount > 0)
-                <span style="margin-left:auto;background:#f59e0b;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center;line-height:1.4;">{{ $otaNavCount }}</span>
-                @endif
-            </a>
-            @endif
-
-            @if(\App\Models\Module::isEnabled('booking-widget'))
-            <a href="{{ route('admin.booking-widget.settings') }}" class="nav-link {{ request()->routeIs('admin.booking-widget.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-globe"></i></span>
-                Booking Widget
-            </a>
-            @endif
-
-            @if(\App\Models\Module::isEnabled('pathik'))
-            <a href="{{ route('pathik.index') }}" class="nav-link {{ request()->routeIs('pathik.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-clipboard-list"></i></span>
-                Pathik Portal
-            </a>
-            @endif
-
-            @if(\App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing'))
-            <a href="{{ route('time-slots.index') }}" class="nav-link {{ request()->routeIs('time-slots.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-clock"></i></span>
-                Time Slots & Add-Ons
-            </a>
-            @endif
-
-            <div class="nav-section">System</div>
-
-            @if(session('crm_user_role') === 'Super Admin')
-            <a href="{{ route('platform.dashboard') }}" class="nav-link {{ request()->routeIs('platform.*') ? 'active' : '' }}" style="{{ request()->routeIs('platform.*') ? '' : 'border:1px dashed rgba(139,92,246,.3);' }}">
-                <span class="icon" style="{{ request()->routeIs('platform.*') ? '' : 'background:rgba(139,92,246,.12);color:#7c3aed;' }}"><i class="fas fa-layer-group"></i></span>
-                Platform Admin
-            </a>
-            @endif
-
-            @if(session('crm_user_role') === 'Super Admin')
-            <a href="{{ route('modules.index') }}" class="nav-link {{ request()->routeIs('modules.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-puzzle-piece"></i></span>
-                Modules
-            </a>
-            @endif
-
-            @canDo('settings.view')
-            <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-cog"></i></span>
-                Settings
-            </a>
-
-            @endCanDo
-
-            @canDo('activity_log.view')
-            <a href="{{ route('activity_log.index') }}" class="nav-link {{ request()->routeIs('activity_log.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-history"></i></span>
-                Activity Log
-            </a>
-            @endCanDo
-
-            @canDo('data.truncate')
-            <a href="{{ route('data-cleanup.index') }}" class="nav-link {{ request()->routeIs('data-cleanup.*') ? 'active' : '' }}"
-               style="{{ request()->routeIs('data-cleanup.*') ? '' : 'border:1px solid rgba(220,38,38,.25);' }}">
-                <span class="icon"><i class="bi bi-trash3-fill" style="color:#dc2626;"></i></span>
-                <span style="{{ request()->routeIs('data-cleanup.*') ? '' : 'color:#dc2626;font-weight:600;' }}">Data Cleanup</span>
-            </a>
-            @endCanDo
-
-            @canDo('roles.view')
-            <a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-shield-halved"></i></span>
-                Roles & Permissions
-            </a>
-            @endCanDo
-
-            @canDo('users.view')
-            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-user-cog"></i></span>
-                User Management
-            </a>
-            @endCanDo
 
         </nav>
 
@@ -1259,6 +1422,29 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // ── Collapsible sidebar groups (open/closed state persisted) ──
+    function toggleNavGroup(btn) {
+        const group = btn.closest('.nav-group');
+        if (!group) return;
+        group.classList.toggle('open');
+        try {
+            const key = 'crm_nav_groups';
+            const state = JSON.parse(localStorage.getItem(key) || '{}');
+            state[group.dataset.group] = group.classList.contains('open');
+            localStorage.setItem(key, JSON.stringify(state));
+        } catch (e) {}
+    }
+    (function restoreNavGroups() {
+        try {
+            const state = JSON.parse(localStorage.getItem('crm_nav_groups') || '{}');
+            document.querySelectorAll('.nav-group').forEach(g => {
+                // Auto-open wins: if a child route is active the server already added .open.
+                if (g.classList.contains('open')) return;
+                if (state[g.dataset.group] === true) g.classList.add('open');
+            });
+        } catch (e) {}
+    })();
 
     // Mobile sidebar
     function openSidebar() {
