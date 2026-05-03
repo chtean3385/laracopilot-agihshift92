@@ -155,6 +155,75 @@
             padding: 14px 14px 4px;
         }
 
+        /* ── Collapsible group (Platform Admin theme) ── */
+        .nav-group-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: #c4b5fd;
+            font-size: 13.5px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: all .18s ease;
+        }
+        .nav-group-toggle:hover { color: #fff; background: rgba(255,255,255,.07); }
+        .nav-group-toggle.has-active { color: #fff; }
+        .nav-group-toggle.has-active .icon {
+            background: linear-gradient(135deg,#8b5cf6,#7c3aed);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(124,58,237,.5);
+        }
+        .nav-group-toggle .icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; flex-shrink: 0;
+            background: rgba(255,255,255,.06);
+            color: #7c3aed;
+        }
+        .nav-group-toggle .chev {
+            margin-left: auto;
+            font-size: 10px;
+            color: rgba(196,181,253,.45);
+            transition: transform .2s ease;
+        }
+        .nav-group.open > .nav-group-toggle .chev { transform: rotate(90deg); color: #c4b5fd; }
+        .nav-group-children {
+            display: none;
+            padding: 2px 0 4px 14px;
+            margin-left: 14px;
+            border-left: 1px solid rgba(196,181,253,.12);
+        }
+        .nav-group.open > .nav-group-children { display: block; }
+        .nav-group-children .nav-link {
+            padding: 6px 10px;
+            font-size: 12.5px;
+        }
+        .nav-group-children .nav-link .icon {
+            width: 22px; height: 22px;
+            font-size: 10.5px;
+            border-radius: 6px;
+        }
+        .nav-group-toggle .nav-badge {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            min-width: 18px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        .nav-group-toggle .nav-badge + .chev { margin-left: 8px; }
+
         /* ── Top bar ── */
         #topbar {
             background: #fff;
@@ -347,118 +416,190 @@
     </div>
 
     <!-- Navigation -->
-    <nav style="flex:1;padding:10px 10px 0;">
+    @php
+        $tenantsActive = request()->routeIs('platform.hotels.*')
+            || request()->routeIs('platform.users.*')
+            || request()->routeIs('platform.guests.*')
+            || request()->routeIs('platform.plans.*')
+            || request()->routeIs('platform.backups.*');
 
-        <div class="nav-section">Platform</div>
+        $waActive = request()->routeIs('platform.whatsapp.*')
+            || request()->routeIs('platform.wa-inbox');
+
+        $otaActive = request()->routeIs('platform.ota-sources.*')
+            || request()->routeIs('platform.ota-email-sources.*');
+
+        $analyticsActive = request()->routeIs('platform.analytics.*');
+
+        $notifActive = request()->routeIs('platform.notifications.*');
+
+        $sysActive = request()->routeIs('activity_log.*')
+            || request()->routeIs('platform.settings.*');
+
+        $waInboxUnread = (int) \Illuminate\Support\Facades\DB::table('whatsapp_logs')
+            ->where('direction','incoming')
+            ->where('event_type','message_received')
+            ->where('created_at','>=', now()->subHours(24))
+            ->count();
+    @endphp
+    <nav style="flex:1;padding:10px 10px 0;overflow-y:auto;overflow-x:hidden;min-height:0;">
 
         <a href="{{ route('platform.dashboard') }}" class="nav-link {{ request()->routeIs('platform.dashboard') ? 'active' : '' }}">
             <span class="icon"><i class="fas fa-chart-pie"></i></span>
             Dashboard
         </a>
 
-        <div class="nav-section">Tenant Management</div>
+        <!-- Hotels & Tenants -->
+        <div class="nav-group {{ $tenantsActive ? 'open' : '' }}" data-group="platform_tenants">
+            <button type="button" class="nav-group-toggle {{ $tenantsActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                <span class="icon"><i class="fas fa-building"></i></span>
+                <span>Hotels &amp; Tenants</span>
+                <i class="fas fa-chevron-right chev"></i>
+            </button>
+            <div class="nav-group-children">
+                <a href="{{ route('platform.hotels.index') }}" class="nav-link {{ request()->routeIs('platform.hotels.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-building"></i></span>
+                    Hotels
+                </a>
+                <a href="{{ route('platform.users.index') }}" class="nav-link {{ request()->routeIs('platform.users.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-users"></i></span>
+                    Users
+                </a>
+                <a href="{{ route('platform.guests.deleted') }}" class="nav-link {{ request()->routeIs('platform.guests.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-user-slash"></i></span>
+                    Deleted Guests
+                </a>
+                <a href="{{ route('platform.plans.index') }}" class="nav-link {{ request()->routeIs('platform.plans.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-layer-group"></i></span>
+                    Plans
+                </a>
+                <a href="{{ route('platform.backups.index') }}" class="nav-link {{ request()->routeIs('platform.backups.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-database"></i></span>
+                    Hotel Backups
+                </a>
+            </div>
+        </div>
 
-        <a href="{{ route('platform.hotels.index') }}" class="nav-link {{ request()->routeIs('platform.hotels.*') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-building"></i></span>
-            Hotels
-        </a>
+        <!-- WhatsApp -->
+        <div class="nav-group {{ $waActive ? 'open' : '' }}" data-group="platform_whatsapp">
+            <button type="button" class="nav-group-toggle {{ $waActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                <span class="icon"><i class="fab fa-whatsapp"></i></span>
+                <span>WhatsApp</span>
+                @if($waInboxUnread > 0)
+                <span class="nav-badge">{{ $waInboxUnread }}</span>
+                @endif
+                <i class="fas fa-chevron-right chev"></i>
+            </button>
+            <div class="nav-group-children">
+                <a href="{{ route('platform.whatsapp.settings') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.settings') || request()->routeIs('platform.whatsapp.save') || request()->routeIs('platform.whatsapp.test') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-cog"></i></span>
+                    Settings
+                </a>
+                <a href="{{ route('platform.whatsapp.templates') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.templates') || request()->routeIs('platform.whatsapp.template.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-file-alt"></i></span>
+                    Message Templates
+                </a>
+                <a href="{{ route('platform.whatsapp.logs') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.logs') || request()->routeIs('platform.whatsapp.logs.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-list-alt"></i></span>
+                    Webhook Logs
+                </a>
+                <a href="{{ route('platform.whatsapp.numbers') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.numbers') || request()->routeIs('platform.whatsapp.numbers.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-sim-card"></i></span>
+                    Hotel Numbers
+                </a>
+                <a href="{{ route('platform.wa-inbox') }}" class="nav-link {{ request()->routeIs('platform.wa-inbox') ? 'active' : '' }}" style="position:relative;">
+                    <span class="icon"><i class="fab fa-whatsapp"></i></span>
+                    WA Inbox
+                    @if($waInboxUnread > 0)
+                    <span class="nav-badge">{{ $waInboxUnread }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('platform.whatsapp.billing') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.billing') || request()->routeIs('platform.whatsapp.billing.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-rupee-sign"></i></span>
+                    WA Billing
+                </a>
+            </div>
+        </div>
 
-        <a href="{{ route('platform.users.index') }}" class="nav-link {{ request()->routeIs('platform.users.*') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-users"></i></span>
-            Users
-        </a>
+        <!-- OTA Sources -->
+        <div class="nav-group {{ $otaActive ? 'open' : '' }}" data-group="platform_ota">
+            <button type="button" class="nav-group-toggle {{ $otaActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                <span class="icon"><i class="fas fa-hotel"></i></span>
+                <span>OTA Sources</span>
+                <i class="fas fa-chevron-right chev"></i>
+            </button>
+            <div class="nav-group-children">
+                <a href="{{ route('platform.ota-sources.index') }}" class="nav-link {{ request()->routeIs('platform.ota-sources.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-hotel"></i></span>
+                    OTA WA Sources
+                </a>
+                <a href="{{ route('platform.ota-email-sources.index') }}" class="nav-link {{ request()->routeIs('platform.ota-email-sources.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-envelope"></i></span>
+                    OTA Email Sources
+                </a>
+            </div>
+        </div>
 
-        <a href="{{ route('platform.guests.deleted') }}" class="nav-link {{ request()->routeIs('platform.guests.*') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-user-slash"></i></span>
-            Deleted Guests
-        </a>
+        <!-- Analytics -->
+        <div class="nav-group {{ $analyticsActive ? 'open' : '' }}" data-group="platform_analytics">
+            <button type="button" class="nav-group-toggle {{ $analyticsActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                <span class="icon"><i class="fas fa-chart-line"></i></span>
+                <span>Analytics</span>
+                <i class="fas fa-chevron-right chev"></i>
+            </button>
+            <div class="nav-group-children">
+                <a href="{{ route('platform.analytics.index') }}" class="nav-link {{ request()->routeIs('platform.analytics.index') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-chart-line"></i></span>
+                    Analytics Dashboard
+                </a>
+                <a href="{{ route('platform.analytics.campaigns') }}" class="nav-link {{ request()->routeIs('platform.analytics.campaigns') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-bullhorn"></i></span>
+                    Send Campaign
+                </a>
+            </div>
+        </div>
 
-        <a href="{{ route('platform.plans.index') }}" class="nav-link {{ request()->routeIs('platform.plans.*') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-layer-group"></i></span>
-            Plans
-        </a>
+        <!-- Push Notifications -->
+        <div class="nav-group {{ $notifActive ? 'open' : '' }}" data-group="platform_notif">
+            <button type="button" class="nav-group-toggle {{ $notifActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                <span class="icon"><i class="fas fa-bell"></i></span>
+                <span>Push Notifications</span>
+                <i class="fas fa-chevron-right chev"></i>
+            </button>
+            <div class="nav-group-children">
+                <a href="{{ route('platform.notifications.settings') }}" class="nav-link {{ request()->routeIs('platform.notifications.settings') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-cog"></i></span>
+                    Firebase Settings
+                </a>
+                <a href="{{ route('platform.notifications.send') }}" class="nav-link {{ request()->routeIs('platform.notifications.send') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    Send Notification
+                </a>
+                <a href="{{ route('platform.notifications.history') }}" class="nav-link {{ request()->routeIs('platform.notifications.history') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-history"></i></span>
+                    History
+                </a>
+            </div>
+        </div>
 
-        <a href="{{ route('platform.backups.index') }}" class="nav-link {{ request()->routeIs('platform.backups.*') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-database"></i></span>
-            Hotel Backups
-        </a>
-
-        <a href="{{ route('platform.whatsapp.settings') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.settings') || request()->routeIs('platform.whatsapp.save') || request()->routeIs('platform.whatsapp.test') ? 'active' : '' }}">
-            <span class="icon"><i class="fab fa-whatsapp"></i></span>
-            WhatsApp Settings
-        </a>
-        <a href="{{ route('platform.whatsapp.templates') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.templates') || request()->routeIs('platform.whatsapp.template.*') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-file-alt" style="font-size:12px;"></i></span>
-            Message Templates
-        </a>
-        <a href="{{ route('platform.whatsapp.logs') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.logs') || request()->routeIs('platform.whatsapp.logs.*') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-list-alt" style="font-size:12px;"></i></span>
-            Webhook Logs
-        </a>
-        <a href="{{ route('platform.whatsapp.numbers') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.numbers') || request()->routeIs('platform.whatsapp.numbers.*') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-sim-card" style="font-size:12px;"></i></span>
-            Hotel Numbers
-        </a>
-        @php $waInboxUnread = (int) \Illuminate\Support\Facades\DB::table('whatsapp_logs')->where('direction','incoming')->where('event_type','message_received')->where('created_at','>=',now()->subHours(24))->count(); @endphp
-        <a href="{{ route('platform.wa-inbox') }}" class="nav-link {{ request()->routeIs('platform.wa-inbox') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fab fa-whatsapp" style="font-size:12px;"></i></span>
-            WA Inbox
-            @if($waInboxUnread > 0)
-            <span style="margin-left:auto;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center;line-height:1.4;">{{ $waInboxUnread }}</span>
-            @endif
-        </a>
-        <a href="{{ route('platform.whatsapp.billing') }}" class="nav-link {{ request()->routeIs('platform.whatsapp.billing') || request()->routeIs('platform.whatsapp.billing.*') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-rupee-sign" style="font-size:12px;"></i></span>
-            WA Billing
-        </a>
-
-        <a href="{{ route('platform.ota-sources.index') }}" class="nav-link {{ request()->routeIs('platform.ota-sources.*') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-hotel" style="font-size:12px;"></i></span>
-            OTA WA Sources
-        </a>
-
-        <a href="{{ route('platform.ota-email-sources.index') }}" class="nav-link {{ request()->routeIs('platform.ota-email-sources.*') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-envelope" style="font-size:12px;"></i></span>
-            OTA Email Sources
-        </a>
-
-        <div class="nav-section">Analytics</div>
-
-        <a href="{{ route('platform.analytics.index') }}" class="nav-link {{ request()->routeIs('platform.analytics.index') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-chart-line"></i></span>
-            Analytics Dashboard
-        </a>
-        <a href="{{ route('platform.analytics.campaigns') }}" class="nav-link {{ request()->routeIs('platform.analytics.campaigns') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-bullhorn" style="font-size:12px;"></i></span>
-            Send Campaign
-        </a>
-
-        <div class="nav-section">Push Notifications</div>
-
-        <a href="{{ route('platform.notifications.settings') }}" class="nav-link {{ request()->routeIs('platform.notifications.settings') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-cog"></i></span>
-            Firebase Settings
-        </a>
-        <a href="{{ route('platform.notifications.send') }}" class="nav-link {{ request()->routeIs('platform.notifications.send') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-paper-plane" style="font-size:12px;"></i></span>
-            Send Notification
-        </a>
-        <a href="{{ route('platform.notifications.history') }}" class="nav-link {{ request()->routeIs('platform.notifications.history') ? 'active' : '' }}" style="padding-left:36px;">
-            <span class="icon"><i class="fas fa-history" style="font-size:12px;"></i></span>
-            History
-        </a>
-
-        <div class="nav-section">System</div>
-
-        <a href="{{ route('activity_log.index') }}" class="nav-link">
-            <span class="icon"><i class="fas fa-history"></i></span>
-            Activity Log
-        </a>
-
-        <a href="{{ route('platform.settings.2fa') }}" class="nav-link {{ request()->routeIs('platform.settings.*') ? 'active' : '' }}">
-            <span class="icon"><i class="fas fa-shield-halved"></i></span>
-            Security (2FA)
-        </a>
+        <!-- System -->
+        <div class="nav-group {{ $sysActive ? 'open' : '' }}" data-group="platform_system">
+            <button type="button" class="nav-group-toggle {{ $sysActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                <span class="icon"><i class="fas fa-shield-halved"></i></span>
+                <span>System</span>
+                <i class="fas fa-chevron-right chev"></i>
+            </button>
+            <div class="nav-group-children">
+                <a href="{{ route('activity_log.index') }}" class="nav-link {{ request()->routeIs('activity_log.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-history"></i></span>
+                    Activity Log
+                </a>
+                <a href="{{ route('platform.settings.2fa') }}" class="nav-link {{ request()->routeIs('platform.settings.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-shield-halved"></i></span>
+                    Security (2FA)
+                </a>
+            </div>
+        </div>
 
     </nav>
 
@@ -531,6 +672,29 @@ function toggleSidebar() {
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
 }
+
+// ── Collapsible sidebar groups (open/closed state persisted) ──
+function toggleNavGroup(btn) {
+    const group = btn.closest('.nav-group');
+    if (!group) return;
+    group.classList.toggle('open');
+    try {
+        const key = 'platform_nav_groups';
+        const state = JSON.parse(localStorage.getItem(key) || '{}');
+        state[group.dataset.group] = group.classList.contains('open');
+        localStorage.setItem(key, JSON.stringify(state));
+    } catch (e) {}
+}
+(function restorePlatformNavGroups() {
+    try {
+        const state = JSON.parse(localStorage.getItem('platform_nav_groups') || '{}');
+        document.querySelectorAll('#platform-sidebar .nav-group').forEach(g => {
+            // Auto-open wins: server already added .open if a child route is active.
+            if (g.classList.contains('open')) return;
+            if (state[g.dataset.group] === true) g.classList.add('open');
+        });
+    } catch (e) {}
+})();
 
 // Close sidebar when clicking a nav link on mobile
 document.addEventListener('DOMContentLoaded', function() {
