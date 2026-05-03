@@ -3,81 +3,142 @@
 @section('title', 'Order ' . $order->order_number)
 
 @section('content')
-<div class="content-header">
-    <div class="flex items-center justify-between flex-wrap gap-3">
-        <div>
-            <a href="{{ route('restaurant.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Tables</a>
-            <h1 class="text-2xl font-bold text-gray-800 mt-1">
-                {{ $order->table?->name ?? ($order->room_number ? 'Room ' . $order->room_number : 'Walk-in') }} — {{ $order->order_number }}
-            </h1>
-            <p class="text-gray-500 text-sm">
-                {!! $order->statusBadge() !!}
-                @if($order->isGuestQr())
-                    <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fas fa-qrcode"></i> Guest QR</span>
-                @endif
-                @if($order->isPendingApproval())
-                    <span style="background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">Pending approval</span>
-                @endif
-                <span class="ml-2">Started {{ $order->created_at->diffForHumans() }}</span>
-            </p>
-        </div>
-        <div class="flex gap-2 flex-wrap">
-            @if($order->isOpen() && !$order->isPendingApproval())
-            <button onclick="printKot()" class="btn-secondary">🖨️ Print KOT</button>
-            @if(!$order->isPaid())
-            <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="btn-primary">
-                💳 Generate Bill
-            </button>
-            @else
-            <span style="padding:8px 14px;border-radius:8px;background:#dcfce7;color:#15803d;font-weight:700;font-size:13px;">
-                <i class="fas fa-check-circle"></i> Billed to Room
-            </span>
-            @endif
-            @endif
-            @if($order->isOpen() && !$order->isPendingApproval())
-            <form action="{{ route('restaurant.orders.cancel', $order->id) }}" method="POST"
-                onsubmit="return confirm('Cancel this order? Table will be freed.')">
-                @csrf
-                <button type="submit" class="btn-danger">✕ Cancel Order</button>
-            </form>
-            @endif
-        </div>
-    </div>
+<div style="margin-bottom:14px;">
+    <a href="{{ route('restaurant.orders.index') }}" style="font-size:13px;color:#2563eb;text-decoration:none;">← Back to Orders</a>
 </div>
 
-{{-- Guest QR — pending approval panel --}}
-@if($order->isPendingApproval())
-<div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:14px;padding:18px 22px;margin-bottom:18px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <i class="fas fa-hourglass-half" style="color:#ea580c;font-size:18px;"></i>
-        <strong style="color:#7c2d12;font-size:16px;">Guest QR order — needs your approval</strong>
+{{-- ═════ TICKET HEADER (KOT-style) ═════ --}}
+<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px 24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:18px;">
+        <div style="min-width:240px;">
+            <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Order Number</div>
+            <div style="font-family:'SF Mono',Menlo,monospace;font-size:26px;font-weight:900;color:#0f172a;letter-spacing:.5px;">{{ $order->order_number }}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                {!! $order->statusBadge() !!}
+                @if($order->isGuestQr())
+                    <span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;"><i class="fas fa-qrcode"></i> Guest QR</span>
+                @endif
+                @if($order->isPendingApproval())
+                    <span style="background:#ffedd5;color:#9a3412;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;">⏳ Pending approval</span>
+                @endif
+                @if($order->isPaid())
+                    <span style="background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;">✓ Billed to Room</span>
+                @endif
+            </div>
+        </div>
+
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+            <div>
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Where</div>
+                <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
+                    @if($order->table)
+                        <i class="fas fa-chair" style="color:#64748b;"></i> {{ $order->table->name }}
+                    @elseif($order->room_number)
+                        <i class="fas fa-door-open" style="color:#64748b;"></i> Room {{ $order->room_number }}
+                    @else
+                        <span style="color:#94a3b8;">Walk-in</span>
+                    @endif
+                </div>
+            </div>
+            <div>
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Started</div>
+                <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">{{ $order->created_at->format('h:i A') }}</div>
+                <div style="font-size:11px;color:#94a3b8;">{{ $order->created_at->diffForHumans() }}</div>
+            </div>
+            <div>
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Total</div>
+                <div style="font-size:22px;font-weight:900;color:#dc2626;margin-top:2px;">₹{{ number_format($order->total, 2) }}</div>
+            </div>
+        </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px;font-size:13px;">
-        @if($order->guest_name)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Guest</div><div style="color:#1e293b;font-weight:600;">{{ $order->guest_name }}</div></div>@endif
-        @if($order->guest_phone)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Phone</div><div style="color:#1e293b;font-weight:600;">{{ $order->guest_phone }}</div></div>@endif
-        @if($order->room_number)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Room</div><div style="color:#1e293b;font-weight:600;">{{ $order->room_number }}</div></div>@endif
-        @if($order->table)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Table</div><div style="color:#1e293b;font-weight:600;">{{ $order->table->name }}</div></div>@endif
+
+    {{-- Action buttons (only for approved + open orders) --}}
+    @if($order->isOpen() && !$order->isPendingApproval())
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed #e2e8f0;">
+        <button onclick="printKot()" style="padding:11px 22px;background:#0f172a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">🖨️ Print KOT</button>
+        @if(!$order->isPaid())
+        <button onclick="document.getElementById('billModal').classList.remove('hidden')" style="padding:11px 22px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">💳 Generate Bill</button>
+        @endif
+        <form action="{{ route('restaurant.orders.cancel', $order->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Cancel this order? Table will be freed.')">
+            @csrf
+            <button type="submit" style="padding:11px 22px;background:#fff;color:#dc2626;border:1.5px solid #fecaca;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">✕ Cancel</button>
+        </form>
     </div>
-    @if($order->guest_notes)
-    <div style="background:#fff;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#475569;"><strong style="color:#7c2d12;">Notes:</strong> {{ $order->guest_notes }}</div>
     @endif
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <form action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="display:inline;">
+</div>
+
+{{-- ═════ PENDING APPROVAL PANEL ═════ --}}
+@if($order->isPendingApproval())
+<div style="background:#fff7ed;border:2px solid #f97316;border-radius:14px;padding:22px 26px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px dashed #fdba74;">
+        <div style="width:42px;height:42px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-hourglass-half" style="color:#fff;font-size:18px;"></i>
+        </div>
+        <div>
+            <div style="color:#7c2d12;font-size:17px;font-weight:900;">Guest QR order — needs your approval</div>
+            <div style="color:#9a3412;font-size:12px;margin-top:2px;">Review the items below, then approve to send to the kitchen.</div>
+        </div>
+    </div>
+
+    {{-- Guest details grid --}}
+    @if($order->guest_name || $order->guest_phone || $order->room_number || $order->table)
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:18px;">
+        @if($order->guest_name)
+        <div style="background:#fff;padding:12px 14px;border-radius:10px;border:1px solid #fed7aa;">
+            <div style="color:#9a3412;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Guest</div>
+            <div style="color:#0f172a;font-weight:800;font-size:14px;">{{ $order->guest_name }}</div>
+        </div>
+        @endif
+        @if($order->guest_phone)
+        <div style="background:#fff;padding:12px 14px;border-radius:10px;border:1px solid #fed7aa;">
+            <div style="color:#9a3412;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Phone</div>
+            <div style="color:#0f172a;font-weight:800;font-size:14px;">📞 {{ $order->guest_phone }}</div>
+        </div>
+        @endif
+        @if($order->room_number)
+        <div style="background:#fff;padding:12px 14px;border-radius:10px;border:1px solid #fed7aa;">
+            <div style="color:#9a3412;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Room</div>
+            <div style="color:#0f172a;font-weight:800;font-size:14px;">🛏️ {{ $order->room_number }}</div>
+        </div>
+        @endif
+        @if($order->table)
+        <div style="background:#fff;padding:12px 14px;border-radius:10px;border:1px solid #fed7aa;">
+            <div style="color:#9a3412;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Table</div>
+            <div style="color:#0f172a;font-weight:800;font-size:14px;">🪑 {{ $order->table->name }}</div>
+        </div>
+        @endif
+    </div>
+    @endif
+
+    @if($order->guest_notes)
+    <div style="background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:18px;border-left:4px solid #f97316;">
+        <div style="color:#9a3412;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">📝 Special instructions</div>
+        <div style="color:#1e293b;font-size:14px;">{{ $order->guest_notes }}</div>
+    </div>
+    @endif
+
+    {{-- Action buttons — large + clear --}}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <form action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="display:flex;flex-direction:column;gap:8px;">
             @csrf
             @if(!$order->booking_id && !$order->room_number)
-            <select name="booking_id" style="padding:9px 12px;border:1.5px solid #fdba74;border-radius:8px;background:#fff;font-size:13px;">
-                <option value="">— Direct payment —</option>
+            <select name="booking_id" style="padding:11px 14px;border:1.5px solid #fdba74;border-radius:10px;background:#fff;font-size:13px;font-weight:600;">
+                <option value="">— Direct payment (no room) —</option>
                 @foreach($bookings as $b)
                 <option value="{{ $b->id }}">{{ $b->booking_number }} · {{ $b->customer?->name }} (Room {{ $b->room?->room_number ?? 'N/A' }})</option>
                 @endforeach
             </select>
             @endif
-            <button type="submit" style="padding:10px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;font-size:13px;"><i class="fas fa-check"></i> Approve &amp; Send to Kitchen</button>
+            <button type="submit" style="padding:14px 18px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(22,163,74,.3);">
+                <i class="fas fa-check-circle"></i> Approve &amp; Send to Kitchen
+            </button>
         </form>
-        <form action="{{ route('restaurant.orders.reject', $order->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Decline this guest order?');">
+        <form action="{{ route('restaurant.orders.reject', $order->id) }}" method="POST" style="display:flex;flex-direction:column;gap:8px;" onsubmit="return confirm('Decline this guest order?');">
             @csrf
-            <input type="text" name="cancellation_reason" placeholder="Reason (optional)" style="padding:9px 12px;border:1.5px solid #fdba74;border-radius:8px;background:#fff;font-size:13px;">
-            <button type="submit" style="padding:10px 18px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;font-size:13px;"><i class="fas fa-times"></i> Decline</button>
+            <input type="text" name="cancellation_reason" placeholder="Reason (optional)" style="padding:11px 14px;border:1.5px solid #fdba74;border-radius:10px;background:#fff;font-size:13px;">
+            <button type="submit" style="padding:14px 18px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(220,38,38,.3);">
+                <i class="fas fa-times-circle"></i> Decline Order
+            </button>
         </form>
     </div>
 </div>
@@ -267,12 +328,22 @@
             </div>
         </div>
 
-        @if($order->isOpen())
+        @if($order->isOpen() && !$order->isPendingApproval() && !$order->isPaid())
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-            <p class="font-medium mb-1">Quick Actions</p>
+            <p class="font-medium mb-1">Next Steps</p>
             <p>1. Add items from menu</p>
             <p>2. Print KOT for kitchen</p>
             <p>3. Generate bill when done</p>
+        </div>
+        @elseif($order->isPendingApproval())
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:13px;color:#9a3412;">
+            <p style="font-weight:700;margin-bottom:4px;">⏳ Awaiting your approval</p>
+            <p style="font-size:12px;">Use the orange panel to Approve or Decline this guest order.</p>
+        </div>
+        @elseif($order->isPaid())
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;font-size:13px;color:#15803d;">
+            <p style="font-weight:700;margin-bottom:4px;">✓ Billed to Room</p>
+            <p style="font-size:12px;">Charges have been added to the guest's room invoice. You can still print KOT.</p>
         </div>
         @endif
     </div>

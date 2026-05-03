@@ -288,7 +288,11 @@
                                 <div style="font-size:12px;color:#9a3412;">Scan-to-order from QR — review and approve to send to kitchen.</div>
                             </div>
                         </div>
+                        @if($pendingGuestOrders->count() === 1)
+                        <a href="{{ route('restaurant.orders.show', $pendingGuestOrders->first()->id) }}" style="padding:9px 16px;background:#ea580c;color:#fff;border:1.5px solid #c2410c;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;">Open order →</a>
+                        @else
                         <a href="{{ route('restaurant.orders.index') }}" style="padding:9px 16px;background:#fff;color:#ea580c;border:1.5px solid #f97316;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;">View all →</a>
+                        @endif
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
                         @foreach($pendingGuestOrders as $po)
