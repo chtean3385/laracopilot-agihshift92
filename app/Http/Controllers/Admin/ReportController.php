@@ -14,6 +14,7 @@ use App\Models\Room;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
 use App\Services\SlotConflictService;
+use App\Support\AnalyticsCache;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -619,7 +620,100 @@ class ReportController extends Controller
         $rangeDays  = max(1, $rangeStart->copy()->startOfDay()->diffInDays($rangeEnd->copy()->endOfDay()->addSecond()));
         $periodLabel = $from->format('d M Y') . ' – ' . $to->format('d M Y');
 
-        // ── Monthly buckets covering the selected range ──────────────────────
+        $hotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+        $cacheParts = [
+            'from'  => $rangeStart->toDateString(),
+            'to'    => $rangeEnd->toDateString(),
+            'rooms' => $totalRooms,
+            'days'  => $rangeDays,
+        ];
+
+        $build = fn() => $this->buildPerformanceData($rangeStart, $rangeEnd, $rangeDays, $totalRooms);
+        $data = $hotelId
+            ? AnalyticsCache::remember($hotelId, 'performance', $cacheParts, $build)
+            : $build();
+
+        $months          = $data['months'];
+        $monthRevenue    = $data['monthRevenue'];
+        $monthOccupancy  = $data['monthOccupancy'];
+        $monthBookings   = $data['monthBookings'];
+        $totalRoomRevenue= $data['totalRoomRevenue'];
+        $totalRoomNights = $data['totalRoomNights'];
+        $adr             = $data['adr'];
+        $revpar          = $data['revpar'];
+        $roomTypeLabels  = $data['roomTypeLabels'];
+        $roomTypeData    = $data['roomTypeData'];
+        $sourceLabels    = $data['sourceLabels'];
+        $sourceCounts    = $data['sourceCounts'];
+        $dowLabels       = $data['dowLabels'];
+        $dowTotals       = $data['dowTotals'];
+        $pmLabels        = $data['pmLabels'];
+        $pmAmounts       = $data['pmAmounts'];
+
+        // ── Insights (rule-based) ────────────────────────────────────────────
+        $insights = $this->buildPerformanceInsights(
+            $monthRevenue, $monthOccupancy, $adr, $revpar,
+            $sourceLabels, $sourceCounts, $dowLabels, $dowTotals,
+            $pmLabels, $pmAmounts, $roomTypeLabels
+        );
+
+        // ── Aggregates used by the view & exports ────────────────────────────
+        $rev12m = array_sum($monthRevenue);
+        $occAvg = count($monthOccupancy) ? round(array_sum($monthOccupancy) / count($monthOccupancy), 1) : 0;
+
+        if ($request->export === 'csv') {
+            return $this->exportPerformanceCsv(
+                $from, $to, $rev12m, $occAvg, $adr, $revpar, $totalRoomNights,
+                $months, $monthRevenue, $monthOccupancy, $monthBookings,
+                $roomTypeLabels, $roomTypeData,
+                $sourceLabels, $sourceCounts,
+                $dowLabels, $dowTotals,
+                $pmLabels, $pmAmounts
+            );
+        }
+
+        if ($request->export === 'pdf') {
+            $hotel = \App\Models\Hotel::find(session('crm_hotel_id'));
+            $pdf = Pdf::loadView('admin.reports.performance-pdf', [
+                'hotel'          => $hotel,
+                'from'           => $from,
+                'to'             => $to,
+                'periodLabel'    => $periodLabel,
+                'totalRevenue'   => $rev12m,
+                'avgOccupancy'   => $occAvg,
+                'adr'            => $adr,
+                'revpar'         => $revpar,
+                'totalRoomNights'=> $totalRoomNights,
+                'months'         => $months,
+                'monthRevenue'   => $monthRevenue,
+                'monthOccupancy' => $monthOccupancy,
+                'monthBookings'  => $monthBookings,
+                'roomTypeLabels' => $roomTypeLabels,
+                'roomTypeData'   => $roomTypeData,
+                'sourceLabels'   => $sourceLabels,
+                'sourceCounts'   => $sourceCounts,
+                'dowLabels'      => $dowLabels,
+                'dowTotals'      => $dowTotals,
+                'pmLabels'       => $pmLabels,
+                'pmAmounts'      => $pmAmounts,
+                'insights'       => $insights,
+            ])->setPaper('a4', 'portrait');
+            return $pdf->download('performance-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
+        }
+
+        return view('admin.reports.performance', compact(
+            'months', 'monthRevenue', 'monthOccupancy', 'monthBookings',
+            'adr', 'revpar', 'totalRoomRevenue', 'totalRoomNights',
+            'roomTypeLabels', 'roomTypeData',
+            'sourceLabels', 'sourceCounts',
+            'dowLabels', 'dowTotals',
+            'pmLabels', 'pmAmounts',
+            'insights', 'from', 'to', 'periodLabel', 'rev12m', 'occAvg'
+        ));
+    }
+
+    private function buildPerformanceData(Carbon $rangeStart, Carbon $rangeEnd, int $rangeDays, int $totalRooms): array
+    {
         $months = [];
         $monthRevenue = [];
         $monthOccupancy = [];
@@ -769,7 +863,31 @@ class ReportController extends Controller
         $pmLabels = $pmData->keys()->map(fn($k) => strtoupper($k))->all();
         $pmAmounts = $pmData->values()->all();
 
-        // ── Insights (rule-based) ────────────────────────────────────────────
+        return [
+            'months'           => $months,
+            'monthRevenue'     => $monthRevenue,
+            'monthOccupancy'   => $monthOccupancy,
+            'monthBookings'    => $monthBookings,
+            'totalRoomRevenue' => $totalRoomRevenue,
+            'totalRoomNights'  => $totalRoomNights,
+            'adr'              => $adr,
+            'revpar'           => $revpar,
+            'roomTypeLabels'   => $roomTypeLabels,
+            'roomTypeData'     => $roomTypeData,
+            'sourceLabels'     => $sourceLabels,
+            'sourceCounts'     => $sourceCounts,
+            'dowLabels'        => $dowLabels,
+            'dowTotals'        => $dowTotals,
+            'pmLabels'         => $pmLabels,
+            'pmAmounts'        => $pmAmounts,
+        ];
+    }
+
+    private function buildPerformanceInsights(
+        array $monthRevenue, array $monthOccupancy, $adr, $revpar,
+        array $sourceLabels, array $sourceCounts, array $dowLabels, array $dowTotals,
+        array $pmLabels, array $pmAmounts, array $roomTypeLabels
+    ): array {
         $insights = [];
 
         // 1. Revenue trend MoM
@@ -841,59 +959,7 @@ class ReportController extends Controller
                 'msg'=>'Once you have a few bookings & payments, this panel will surface improvement ideas.'];
         }
 
-        // ── Aggregates used by the view & exports ────────────────────────────
-        $rev12m = array_sum($monthRevenue);
-        $occAvg = count($monthOccupancy) ? round(array_sum($monthOccupancy) / count($monthOccupancy), 1) : 0;
-
-        if ($request->export === 'csv') {
-            return $this->exportPerformanceCsv(
-                $from, $to, $rev12m, $occAvg, $adr, $revpar, $totalRoomNights,
-                $months, $monthRevenue, $monthOccupancy, $monthBookings,
-                $roomTypeLabels, $roomTypeData,
-                $sourceLabels, $sourceCounts,
-                $dowLabels, $dowTotals,
-                $pmLabels, $pmAmounts
-            );
-        }
-
-        if ($request->export === 'pdf') {
-            $hotel = \App\Models\Hotel::find(session('crm_hotel_id'));
-            $pdf = Pdf::loadView('admin.reports.performance-pdf', [
-                'hotel'          => $hotel,
-                'from'           => $from,
-                'to'             => $to,
-                'periodLabel'    => $periodLabel,
-                'totalRevenue'   => $rev12m,
-                'avgOccupancy'   => $occAvg,
-                'adr'            => $adr,
-                'revpar'         => $revpar,
-                'totalRoomNights'=> $totalRoomNights,
-                'months'         => $months,
-                'monthRevenue'   => $monthRevenue,
-                'monthOccupancy' => $monthOccupancy,
-                'monthBookings'  => $monthBookings,
-                'roomTypeLabels' => $roomTypeLabels,
-                'roomTypeData'   => $roomTypeData,
-                'sourceLabels'   => $sourceLabels,
-                'sourceCounts'   => $sourceCounts,
-                'dowLabels'      => $dowLabels,
-                'dowTotals'      => $dowTotals,
-                'pmLabels'       => $pmLabels,
-                'pmAmounts'      => $pmAmounts,
-                'insights'       => $insights,
-            ])->setPaper('a4', 'portrait');
-            return $pdf->download('performance-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
-        }
-
-        return view('admin.reports.performance', compact(
-            'months', 'monthRevenue', 'monthOccupancy', 'monthBookings',
-            'adr', 'revpar', 'totalRoomRevenue', 'totalRoomNights',
-            'roomTypeLabels', 'roomTypeData',
-            'sourceLabels', 'sourceCounts',
-            'dowLabels', 'dowTotals',
-            'pmLabels', 'pmAmounts',
-            'insights', 'from', 'to', 'periodLabel', 'rev12m', 'occAvg'
-        ));
+        return $insights;
     }
 
     private function exportPerformanceCsv(

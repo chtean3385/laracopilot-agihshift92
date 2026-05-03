@@ -14,6 +14,7 @@ use App\Models\HotelTimeSlot;
 use App\Models\Module;
 use App\Models\DashboardPreference;
 use App\Services\SlotConflictService;
+use App\Support\AnalyticsCache;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -463,6 +464,23 @@ class DashboardController extends Controller
         $range = $request->input('range', '7d');
         $today = Carbon::today();
 
+        $hotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+        if ($hotelId) {
+            $payload = AnalyticsCache::remember(
+                $hotelId,
+                'revenue_trend',
+                ['range' => $range, 'today' => $today->toDateString()],
+                fn() => $this->buildRevenueTrend($range, $today)
+            );
+            return response()->json($payload);
+        }
+
+        return response()->json($this->buildRevenueTrend($range, $today));
+    }
+
+    private function buildRevenueTrend(string $range, Carbon $today): array
+    {
+
         switch ($range) {
             case '30d':
                 $from = $today->copy()->subDays(29); $to = $today->copy(); $step = 'day'; break;
@@ -592,7 +610,7 @@ class DashboardController extends Controller
             return round((($cur - $prev) / $prev) * 100, 1);
         };
 
-        return response()->json([
+        return [
             'range'        => $range,
             'labels'       => $labels,
             'revenue'      => $revenue,
@@ -611,7 +629,7 @@ class DashboardController extends Controller
             'to'           => $to->toDateString(),
             'prev_from'    => $prevFrom->toDateString(),
             'prev_to'      => $prevTo->toDateString(),
-        ]);
+        ];
     }
 
     // ── Live KPI Counts ───────────────────────────────────────────────────────

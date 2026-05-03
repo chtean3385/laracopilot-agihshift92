@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
 use App\Models\Module;
+use App\Support\AnalyticsCache;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BookingExtraCharge;
 
@@ -18,6 +19,12 @@ class Booking extends Model
         $bump = function (self $booking) {
             if ($booking->hotel_id) {
                 Module::bumpSearchCache((int) $booking->hotel_id);
+                AnalyticsCache::bump((int) $booking->hotel_id);
+            }
+            $orig = $booking->getOriginal('hotel_id');
+            if ($orig && (int) $orig !== (int) $booking->hotel_id) {
+                Module::bumpSearchCache((int) $orig);
+                AnalyticsCache::bump((int) $orig);
             }
         };
 

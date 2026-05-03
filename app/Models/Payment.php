@@ -3,11 +3,31 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use App\Support\AnalyticsCache;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
     use BelongsToHotel;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        $bump = function (self $payment) {
+            if ($payment->hotel_id) {
+                AnalyticsCache::bump((int) $payment->hotel_id);
+            }
+            $orig = $payment->getOriginal('hotel_id');
+            if ($orig && (int) $orig !== (int) $payment->hotel_id) {
+                AnalyticsCache::bump((int) $orig);
+            }
+        };
+
+        static::created($bump);
+        static::updated($bump);
+        static::deleted($bump);
+    }
 
     protected $fillable = [
         'hotel_id',
