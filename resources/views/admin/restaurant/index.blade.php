@@ -93,11 +93,11 @@
 @endCanDo
 
 {{-- Legend --}}
-<div class="flex gap-4 mb-6 flex-wrap">
-    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-green-500 inline-block"></span><span class="text-sm text-gray-600">Free</span></div>
-    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-orange-500 inline-block"></span><span class="text-sm text-gray-600">Occupied</span></div>
-    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-red-500 inline-block"></span><span class="text-sm text-gray-600">Needs Cleaning</span></div>
-    <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-gray-800 inline-block"></span><span class="text-sm text-gray-600">Not Available</span></div>
+<div style="display:flex;gap:18px;margin-bottom:22px;flex-wrap:wrap;align-items:center;">
+    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#22c55e;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Free</span></div>
+    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#f97316;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Occupied</span></div>
+    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#ef4444;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Needs Cleaning</span></div>
+    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#1f2937;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Not Available</span></div>
 </div>
 {{-- Table Grid --}}
 @if($tables->isEmpty())
