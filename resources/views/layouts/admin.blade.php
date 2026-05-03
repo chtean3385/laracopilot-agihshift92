@@ -855,6 +855,12 @@
                 Dashboard
             </a>
 
+            <!-- User Guide / Help -->
+            <a href="{{ route('help.guide') }}" class="nav-link {{ request()->routeIs('help.guide') ? 'active' : '' }}">
+                <span class="icon" style="background:rgba(16,185,129,.15);color:#10b981;"><i class="fas fa-book-open"></i></span>
+                User Guide
+            </a>
+
             @canDo('guests.view')
             <div class="nav-section">Guest Management</div>
             <a href="{{ route('customers.index') }}" class="nav-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">

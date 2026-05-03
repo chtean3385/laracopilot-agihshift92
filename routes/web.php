@@ -98,6 +98,9 @@ Route::post('/super-admin/hotel-filter', [SaHotelFilterController::class, 'filte
 // ── Dashboard (all logged-in users) ────────────────────────────────────────
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+// ── Help / User Guide (bilingual EN/HI, all logged-in users) ───────────────
+Route::get('/help', fn() => view('admin.help.guide'))->name('help.guide');
+
 // ── Customers ──────────────────────────────────────────────────────────────
 Route::get('/customers',           [CustomerController::class, 'index'])->name('customers.index');
 Route::get('/customers/create',    [CustomerController::class, 'create'])->middleware('permission:guests.create')->name('customers.create');
