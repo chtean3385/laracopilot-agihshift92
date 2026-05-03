@@ -34,13 +34,11 @@ return new class extends Migration
         });
 
         // Allow guest room-QR orders that don't have a restaurant table.
-        // Driver-portable: emit the right ALTER per database engine.
-        match (DB::getDriverName()) {
-            'pgsql'  => DB::statement('ALTER TABLE restaurant_orders ALTER COLUMN table_id DROP NOT NULL'),
-            'mysql', 'mariadb' => DB::statement('ALTER TABLE restaurant_orders MODIFY table_id BIGINT UNSIGNED NULL'),
-            'sqlite' => null, // SQLite ignores NOT NULL changes via raw ALTER; new inserts with null work in practice.
-            default  => null,
-        };
+        // Use the schema builder so Laravel emits the correct DDL per
+        // driver (pgsql/mysql/sqlite all supported in L12 without DBAL).
+        Schema::table('restaurant_orders', function (Blueprint $t) {
+            $t->unsignedBigInteger('table_id')->nullable()->change();
+        });
     }
 
     public function down(): void

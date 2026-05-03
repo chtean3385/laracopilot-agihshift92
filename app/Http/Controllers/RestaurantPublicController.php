@@ -131,6 +131,14 @@ class RestaurantPublicController extends Controller
         abort_unless(in_array($lockMode, ['open', 'room', 'table'], true), 419, 'Invalid token.');
         abort_unless($this->verifyToken($request, $slug, $lockMode, $lockValue), 419, 'Invalid token.');
 
+        // Apply the QR lock BEFORE validation — locked room/table pages
+        // never need to submit `mode`, the scan context is authoritative.
+        if ($lockMode === 'room') {
+            $request->merge(['mode' => 'room', 'room_number' => $lockValue]);
+        } elseif ($lockMode === 'table') {
+            $request->merge(['mode' => 'table', 'table_name' => $lockValue]);
+        }
+
         // Walk-in / direct mode is intentionally not accepted — every
         // scan-to-order must attach to either a room (booking) or a table.
         $data = $request->validate([
@@ -144,15 +152,6 @@ class RestaurantPublicController extends Controller
             'items.*.id'   => 'required|integer',
             'items.*.qty'  => 'required|integer|min:1|max:99',
         ]);
-
-        // Lock the mode + value when the QR was bound to a context.
-        if ($lockMode === 'room') {
-            $data['mode']        = 'room';
-            $data['room_number'] = $lockValue;
-        } elseif ($lockMode === 'table') {
-            $data['mode']        = 'table';
-            $data['table_name']  = $lockValue;
-        }
 
         // Validate the chosen room maps to a checked-in booking.
         if ($data['mode'] === 'room') {
