@@ -42,18 +42,27 @@ class ReportController extends Controller
         $dailyRevenue = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m-d'))
             ->map(fn($g) => $g->sum('amount'));
 
+        $headers = ['Date', 'Booking#', 'Guest', 'Room', 'Method', 'Amount'];
+        $rows = $payments->map(fn($p) => [
+            Carbon::parse($p->created_at)->format('d/m/Y H:i'),
+            $p->booking->booking_number ?? '',
+            $p->booking->customer->name ?? '',
+            $p->booking->room->room_number ?? '',
+            ucfirst($p->payment_method ?? ''),
+            number_format((float)$p->amount, 2, '.', ''),
+        ])->all();
+
         if ($request->export === 'csv') {
-            return $this->streamCsv('revenue-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
-                ['Date', 'Booking#', 'Guest', 'Room', 'Method', 'Amount'],
-                $payments->map(fn($p) => [
-                    Carbon::parse($p->created_at)->format('d/m/Y H:i'),
-                    $p->booking->booking_number ?? '',
-                    $p->booking->customer->name ?? '',
-                    $p->booking->room->room_number ?? '',
-                    ucfirst($p->payment_method ?? ''),
-                    number_format((float)$p->amount, 2, '.', ''),
-                ])
-            );
+            return $this->streamCsv('revenue-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv', $headers, $rows);
+        }
+        if ($request->export === 'pdf') {
+            return $this->renderReportPdf('Revenue Report', $from, $to, [
+                'Total Revenue' => '₹' . number_format($totalRevenue, 2),
+                'Cash'          => '₹' . number_format($cashRevenue, 2),
+                'Card'          => '₹' . number_format($cardRevenue, 2),
+                'UPI'           => '₹' . number_format($upiRevenue, 2),
+            ], $headers, $rows, [0,0,0,0,0,1], null,
+                'revenue-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
         }
 
         return view('admin.reports.revenue', compact('payments', 'totalRevenue', 'cashRevenue', 'cardRevenue', 'upiRevenue', 'dailyRevenue', 'from', 'to'));
@@ -88,11 +97,18 @@ class ReportController extends Controller
         $bookingsByType = Booking::with('room')->where($periodFilter)->get()
             ->groupBy('room.type')->map(fn($g) => $g->count());
 
+        $headers = ['Room#', 'Type', 'Bookings'];
+        $rows = $roomStats->map(fn($r) => [$r->room_number, $r->type ?? '', $r->bookings_count])->all();
+
         if ($request->export === 'csv') {
-            return $this->streamCsv('occupancy-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
-                ['Room#', 'Type', 'Bookings'],
-                $roomStats->map(fn($r) => [$r->room_number, $r->type ?? '', $r->bookings_count])
-            );
+            return $this->streamCsv('occupancy-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv', $headers, $rows);
+        }
+        if ($request->export === 'pdf') {
+            return $this->renderReportPdf('Occupancy Report', $from, $to, [
+                'Total Rooms' => $totalRooms,
+                'Total Bookings' => $roomStats->sum('bookings_count'),
+            ], $headers, $rows, [0,0,1], null,
+                'occupancy-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
         }
 
         return view('admin.reports.occupancy', compact('roomStats', 'totalRooms', 'bookingsByType', 'from', 'to'));
@@ -113,20 +129,27 @@ class ReportController extends Controller
             'cancelled'   => $bookings->where('status', 'cancelled')->count(),
         ];
 
+        $headers = ['Booking#', 'Guest', 'Phone', 'Room', 'Check-In', 'Check-Out', 'Status', 'Total'];
+        $rows = $bookings->map(fn($b) => [
+            $b->booking_number,
+            $b->customer->name ?? '',
+            $b->customer->phone ?? '',
+            $b->is_whole_hotel ? 'Whole Hotel' : ($b->room->room_number ?? ''),
+            $b->check_in_date?->format('d/m/Y'),
+            $b->check_out_date?->format('d/m/Y'),
+            $b->status,
+            number_format((float)($b->total_amount ?? 0), 2, '.', ''),
+        ])->all();
+
         if ($request->export === 'csv') {
-            return $this->streamCsv('bookings-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
-                ['Booking#', 'Guest', 'Phone', 'Room', 'Check-In', 'Check-Out', 'Status', 'Total'],
-                $bookings->map(fn($b) => [
-                    $b->booking_number,
-                    $b->customer->name ?? '',
-                    $b->customer->phone ?? '',
-                    $b->is_whole_hotel ? 'Whole Hotel' : ($b->room->room_number ?? ''),
-                    $b->check_in_date?->format('d/m/Y'),
-                    $b->check_out_date?->format('d/m/Y'),
-                    $b->status,
-                    number_format((float)($b->total_amount ?? 0), 2, '.', ''),
-                ])
-            );
+            return $this->streamCsv('bookings-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv', $headers, $rows);
+        }
+        if ($request->export === 'pdf') {
+            $kpis = [];
+            foreach ($statusCounts as $k => $v) $kpis[ucfirst(str_replace('_',' ',$k))] = $v;
+            return $this->renderReportPdf('Bookings Report', $from, $to, $kpis,
+                $headers, $rows, [0,0,0,0,0,0,0,1], null,
+                'bookings-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
         }
 
         return view('admin.reports.bookings', compact('bookings', 'statusCounts', 'from', 'to'));
@@ -530,19 +553,28 @@ class ReportController extends Controller
 
         $categories = InventoryCategory::orderBy('name')->get();
 
+        $headers = ['Item', 'Category', 'Stock', 'Unit', 'Reorder Level', 'Cost Price', 'Stock Value', 'Status'];
+        $rows = $items->map(fn($i) => [
+            $i->name, $i->category->name ?? '',
+            number_format((float)$i->current_stock, 2, '.', ''),
+            $i->unit,
+            number_format((float)$i->reorder_level, 2, '.', ''),
+            number_format((float)$i->cost_price, 2, '.', ''),
+            number_format((float)$i->current_stock * (float)$i->cost_price, 2, '.', ''),
+            $i->isLowStock() ? 'LOW' : 'OK',
+        ])->all();
+
         if ($request->export === 'csv') {
-            return $this->streamCsv('inventory-stock-' . now()->format('Ymd') . '.csv',
-                ['Item', 'Category', 'Stock', 'Unit', 'Reorder Level', 'Cost Price', 'Stock Value', 'Status'],
-                $items->map(fn($i) => [
-                    $i->name, $i->category->name ?? '',
-                    number_format((float)$i->current_stock, 2, '.', ''),
-                    $i->unit,
-                    number_format((float)$i->reorder_level, 2, '.', ''),
-                    number_format((float)$i->cost_price, 2, '.', ''),
-                    number_format((float)$i->current_stock * (float)$i->cost_price, 2, '.', ''),
-                    $i->isLowStock() ? 'LOW' : 'OK',
-                ])
-            );
+            return $this->streamCsv('inventory-stock-' . now()->format('Ymd') . '.csv', $headers, $rows);
+        }
+        if ($request->export === 'pdf') {
+            return $this->renderReportPdf('Inventory Stock Report', null, null, [
+                'Items'       => $totals['count'],
+                'Low Stock'   => $totals['low_count'],
+                'Total Qty'   => number_format($totals['total_qty'], 2),
+                'Stock Value' => '₹' . number_format($totals['total_value'], 2),
+            ], $headers, $rows, [0,0,1,0,1,1,1,0], null,
+                'inventory-stock-' . now()->format('Ymd') . '.pdf');
         }
 
         return view('admin.reports.inventory-stock', compact('items', 'totals', 'categories', 'categoryId', 'onlyLow'));
@@ -574,22 +606,40 @@ class ReportController extends Controller
 
         $items = InventoryItem::orderBy('name')->get(['id', 'name', 'unit']);
 
+        $headers = ['Date', 'Item', 'Category', 'Type', 'Quantity', 'Unit', 'By', 'Notes'];
+        $rows = $movements->map(fn($m) => [
+            Carbon::parse($m->created_at)->format('d/m/Y H:i'),
+            $m->item->name ?? '',
+            $m->item->category->name ?? '',
+            $m->type,
+            number_format((float)$m->quantity, 2, '.', ''),
+            $m->item->unit ?? '',
+            $m->creator->name ?? '',
+            $m->notes ?? '',
+        ])->all();
+
         if ($request->export === 'csv') {
-            return $this->streamCsv('inventory-movements-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
-                ['Date', 'Item', 'Category', 'Type', 'Quantity', 'Unit', 'By', 'Notes'],
-                $movements->map(fn($m) => [
-                    Carbon::parse($m->created_at)->format('d/m/Y H:i'),
-                    $m->item->name ?? '',
-                    $m->item->category->name ?? '',
-                    $m->type,
-                    number_format((float)$m->quantity, 2, '.', ''),
-                    $m->item->unit ?? '',
-                    $m->creator->name ?? '',
-                    $m->notes ?? '',
-                ])
-            );
+            return $this->streamCsv('inventory-movements-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv', $headers, $rows);
+        }
+        if ($request->export === 'pdf') {
+            return $this->renderReportPdf('Inventory Movements Report', $from, $to, [
+                'Stock In'  => number_format($totals['in'], 2),
+                'Stock Out' => number_format($totals['out'], 2),
+                'Adjust'    => number_format($totals['adjust'], 2),
+                'Entries'   => $totals['count'],
+            ], $headers, $rows, [0,0,0,0,1,0,0,0], null,
+                'inventory-movements-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
         }
 
         return view('admin.reports.inventory-movements', compact('movements', 'totals', 'items', 'from', 'to', 'type', 'itemId'));
+    }
+
+    private function renderReportPdf(string $title, $from, $to, array $kpis, array $headers, array $rows, array $numeric = [], ?array $totalsRow = null, string $filename = 'report.pdf')
+    {
+        $hotel  = \App\Models\Hotel::find(session('crm_hotel_id'));
+        $period = ($from && $to) ? ($from->format('d M Y') . ' – ' . $to->format('d M Y')) : null;
+        $pdf = Pdf::loadView('admin.reports._pdf', compact('title', 'hotel', 'period', 'kpis', 'headers', 'rows', 'numeric', 'totalsRow'))
+            ->setPaper('a4', count($headers) > 6 ? 'landscape' : 'portrait');
+        return $pdf->download($filename);
     }
 }

@@ -10,16 +10,16 @@
         <button type="submit" class="btn-primary"><i class="fas fa-filter mr-1"></i>Filter</button>
         <a href="{{ route('reports.occupancy') }}" class="btn-secondary">Reset</a>
         <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{{ route('reports.occupancy', array_merge(request()->only('date_from','date_to'), ['export'=>'pdf'])) }}"
+               style="padding:8px 14px;background:#dc2626;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-file-pdf"></i>PDF
+            </a>
             <a href="{{ route('reports.occupancy', array_merge(request()->only('date_from','date_to'), ['export'=>'csv'])) }}"
                style="padding:8px 14px;background:#16a34a;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                 <i class="fas fa-file-csv"></i>CSV
             </a>
-            <button type="button" onclick="window.print()" style="padding:8px 14px;background:#475569;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-print"></i>Print
-            </button>
         </div>
     </form>
-    <style>@media print{.no-print,.sidebar,.topbar,header,nav{display:none!important;}body,html{background:#fff!important;}}</style>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-bold text-gray-800">Room Booking Count</h3>

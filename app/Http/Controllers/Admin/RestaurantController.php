@@ -126,27 +126,47 @@ class RestaurantController extends Controller
         $directBills     = $bills->where('bill_type', 'direct')->count();
         $roomBills       = $bills->where('bill_type', 'room')->count();
 
+        $tblHeaders = ['Bill#', 'Date', 'Table', 'Type', 'Subtotal', 'Tax', 'Total'];
+        $tblRows = $bills->map(fn($b) => [
+            $b->bill_number ?? $b->id,
+            $b->created_at?->format('d/m/Y H:i'),
+            $b->order?->table?->name ?? '-',
+            ucfirst($b->bill_type ?? ''),
+            number_format((float)$b->subtotal, 2, '.', ''),
+            number_format((float)$b->tax_amount, 2, '.', ''),
+            number_format((float)$b->total, 2, '.', ''),
+        ])->all();
+
         if ($request->export === 'csv') {
             $headers = [
                 'Content-Type'        => 'text/csv; charset=utf-8',
                 'Content-Disposition' => 'attachment; filename="restaurant-sales-' . $from . '-to-' . $to . '.csv"',
             ];
-            return response()->stream(function () use ($bills) {
+            return response()->stream(function () use ($tblHeaders, $tblRows) {
                 $out = fopen('php://output', 'w');
-                fputcsv($out, ['Bill#', 'Date', 'Table', 'Type', 'Subtotal', 'Tax', 'Total']);
-                foreach ($bills as $b) {
-                    fputcsv($out, [
-                        $b->bill_number ?? $b->id,
-                        $b->created_at?->format('d/m/Y H:i'),
-                        $b->order?->table?->name ?? '-',
-                        ucfirst($b->bill_type ?? ''),
-                        number_format((float)$b->subtotal, 2, '.', ''),
-                        number_format((float)$b->tax_amount, 2, '.', ''),
-                        number_format((float)$b->total, 2, '.', ''),
-                    ]);
-                }
+                fputcsv($out, $tblHeaders);
+                foreach ($tblRows as $r) fputcsv($out, $r);
                 fclose($out);
             }, 200, $headers);
+        }
+
+        if ($request->export === 'pdf') {
+            $hotel  = \App\Models\Hotel::find($hotelId);
+            $title  = 'Restaurant Sales Report';
+            $period = \Carbon\Carbon::parse($from)->format('d M Y') . ' – ' . \Carbon\Carbon::parse($to)->format('d M Y');
+            $kpis = [
+                'Total Revenue' => '₹' . number_format($totalRevenue, 2),
+                'Total Tax'     => '₹' . number_format($totalTax, 2),
+                'Direct Bills'  => $directBills,
+                'Room Bills'    => $roomBills,
+            ];
+            $numeric    = [0,0,0,0,1,1,1];
+            $totalsRow  = null;
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports._pdf',
+                ['title'=>$title,'hotel'=>$hotel,'period'=>$period,'kpis'=>$kpis,
+                 'headers'=>$tblHeaders,'rows'=>$tblRows,'numeric'=>$numeric,'totalsRow'=>$totalsRow])
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('restaurant-sales-' . $from . '-to-' . $to . '.pdf');
         }
 
         return view('admin.restaurant.reports', compact(

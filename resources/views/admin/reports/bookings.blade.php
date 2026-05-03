@@ -10,16 +10,16 @@
         <button type="submit" class="btn-primary"><i class="fas fa-filter mr-1"></i>Filter</button>
         <a href="{{ route('reports.bookings') }}" class="btn-secondary">Reset</a>
         <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{{ route('reports.bookings', array_merge(request()->only('date_from','date_to'), ['export'=>'pdf'])) }}"
+               style="padding:8px 14px;background:#dc2626;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-file-pdf"></i>PDF
+            </a>
             <a href="{{ route('reports.bookings', array_merge(request()->only('date_from','date_to'), ['export'=>'csv'])) }}"
                style="padding:8px 14px;background:#16a34a;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                 <i class="fas fa-file-csv"></i>CSV
             </a>
-            <button type="button" onclick="window.print()" style="padding:8px 14px;background:#475569;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-print"></i>Print
-            </button>
         </div>
     </form>
-    <style>@media print{.no-print,.sidebar,.topbar,header,nav{display:none!important;}body,html{background:#fff!important;}}</style>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         @foreach($statusCounts as $status => $count)
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">

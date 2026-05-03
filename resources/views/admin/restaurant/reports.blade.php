@@ -29,15 +29,17 @@
         <button type="submit" class="btn-primary text-sm">Filter</button>
         <a href="{{ route('restaurant.reports') }}" class="btn-secondary text-sm">This Month</a>
         <div style="margin-left:auto;display:flex;gap:8px;">
+            <a href="{{ route('restaurant.reports', array_merge(request()->only('from','to'), ['export'=>'pdf'])) }}"
+               style="background:#dc2626;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
             <a href="{{ route('restaurant.reports', array_merge(request()->only('from','to'), ['export'=>'csv'])) }}"
                style="background:#16a34a;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                 <i class="fas fa-file-csv"></i> CSV
             </a>
-            <button type="button" onclick="window.print()" style="background:#475569;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-print"></i> Print</button>
         </div>
     </div>
 </form>
-<style>@media print{.no-print,.sidebar,.topbar,header,nav{display:none!important;}body,html{background:#fff!important;}}</style>
 
 {{-- Summary Cards --}}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
