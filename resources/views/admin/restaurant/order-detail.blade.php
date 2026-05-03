@@ -182,42 +182,47 @@
 
         {{-- Menu Categories — staff can add more items even on pending guest QR orders --}}
         @if($order->isOpen())
-        <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-            <h3 class="font-bold text-gray-800 mb-4">📋 Menu — add more items</h3>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+                <h3 style="font-weight:800;color:#0f172a;margin:0;font-size:15px;">📋 Menu — add more items</h3>
+                <input type="text" id="menuSearch" placeholder="🔍 Search items…" oninput="searchMenu(this.value)" style="flex:1;max-width:280px;padding:8px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;">
+            </div>
 
             {{-- Category tabs --}}
-            <div class="flex gap-2 flex-wrap mb-4" id="categoryTabs">
-                <button onclick="filterCategory('all')" class="cat-tab active px-3 py-1 rounded-full text-sm border border-gray-300 bg-gray-800 text-white" data-cat="all">All</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;" id="categoryTabs">
+                <button type="button" onclick="filterCategory(event,'all')" class="cat-tab" data-cat="all" style="padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #0f172a;background:#0f172a;color:#fff;">All</button>
                 @foreach($categories as $cat)
                 @if($cat->activeItems->count() > 0)
-                <button onclick="filterCategory({{ $cat->id }})"
-                    class="cat-tab px-3 py-1 rounded-full text-sm border border-gray-300 hover:bg-gray-100"
-                    data-cat="{{ $cat->id }}">{{ $cat->name }}</button>
+                <button type="button" onclick="filterCategory(event,{{ $cat->id }})" class="cat-tab" data-cat="{{ $cat->id }}" style="padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #cbd5e1;background:#fff;color:#1e293b;">{{ $cat->name }}</button>
                 @endif
                 @endforeach
             </div>
 
-            {{-- Menu Items Grid --}}
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="menuGrid">
+            {{-- Menu Items Grid — scrollable so big menus don't blow up the page --}}
+            <div id="menuGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-height:440px;overflow-y:auto;padding:4px;border:1px solid #f1f5f9;border-radius:10px;background:#fafbfc;">
                 @foreach($categories as $cat)
                 @foreach($cat->activeItems as $item)
-                <div class="menu-item border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all"
-                     data-cat="{{ $cat->id }}"
-                     onclick="addToOrder({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}')">
-                    <div class="flex items-start justify-between gap-1">
-                        <span class="text-sm font-medium text-gray-800 leading-tight">{{ $item->name }}</span>
-                        <span class="text-xs">
-                            {{ $item->food_type === 'veg' ? '🟢' : ($item->food_type === 'nonveg' ? '🔴' : '🔵') }}
-                        </span>
+                @php $img = method_exists($item,'imageUrl') ? $item->imageUrl() : null; @endphp
+                <div class="menu-item" data-cat="{{ $cat->id }}" data-name="{{ strtolower($item->name) }}"
+                     onclick="addToOrder({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}')"
+                     style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;transition:all .15s;"
+                     onmouseover="this.style.borderColor='#2563eb';this.style.boxShadow='0 2px 8px rgba(37,99,235,.15)';"
+                     onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';">
+                    <div style="width:100%;height:90px;background:#f1f5f9 url('{{ $img }}') center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:28px;color:#cbd5e1;">
+                        @if(!$img)🍽️@endif
                     </div>
-                    <div class="text-sm font-bold text-blue-600 mt-1">₹{{ number_format($item->price, 2) }}</div>
-                    @if($item->description)
-                    <div class="text-xs text-gray-400 mt-1 truncate">{{ $item->description }}</div>
-                    @endif
+                    <div style="padding:8px 10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:start;gap:4px;">
+                            <span style="font-size:13px;font-weight:600;color:#0f172a;line-height:1.2;">{{ $item->name }}</span>
+                            <span style="font-size:11px;flex-shrink:0;">{{ $item->food_type === 'veg' ? '🟢' : ($item->food_type === 'nonveg' ? '🔴' : '🔵') }}</span>
+                        </div>
+                        <div style="font-size:13px;font-weight:800;color:#2563eb;margin-top:3px;">₹{{ number_format($item->price, 2) }}</div>
+                    </div>
                 </div>
                 @endforeach
                 @endforeach
             </div>
+            <div id="menuEmpty" style="display:none;text-align:center;color:#94a3b8;padding:24px;font-size:13px;">No items match your search.</div>
         </div>
         @endif
 
@@ -445,20 +450,39 @@
 <script>
 let selectedMenuItemId = null;
 
-function filterCategory(catId) {
-    document.querySelectorAll('.cat-tab').forEach(t => {
-        t.classList.remove('bg-gray-800', 'text-white');
-        t.classList.add('border-gray-300');
-    });
-    event.target.classList.add('bg-gray-800', 'text-white');
+let activeCat = 'all';
 
-    document.querySelectorAll('.menu-item').forEach(item => {
-        if (catId === 'all' || item.dataset.cat == catId) {
-            item.style.display = '';
-        } else {
-            item.style.display = 'none';
-        }
+function filterCategory(ev, catId) {
+    activeCat = catId;
+    document.querySelectorAll('.cat-tab').forEach(t => {
+        t.style.background = '#fff';
+        t.style.color = '#1e293b';
+        t.style.borderColor = '#cbd5e1';
+        t.style.fontWeight = '600';
     });
+    if (ev && ev.target) {
+        ev.target.style.background = '#0f172a';
+        ev.target.style.color = '#fff';
+        ev.target.style.borderColor = '#0f172a';
+        ev.target.style.fontWeight = '700';
+    }
+    applyMenuFilters();
+}
+
+function searchMenu() { applyMenuFilters(); }
+
+function applyMenuFilters() {
+    const q = (document.getElementById('menuSearch')?.value || '').trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('.menu-item').forEach(item => {
+        const matchCat = (activeCat === 'all' || item.dataset.cat == activeCat);
+        const matchSearch = !q || (item.dataset.name || '').includes(q);
+        const show = matchCat && matchSearch;
+        item.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    const empty = document.getElementById('menuEmpty');
+    if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
 }
 
 function addToOrder(itemId, name, price, foodType) {
