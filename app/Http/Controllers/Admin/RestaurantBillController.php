@@ -101,8 +101,9 @@ class RestaurantBillController extends Controller
 
         ActivityLogger::log('restaurant_bill_created', 'Restaurant', "Bill {$bill->bill_number} created for order {$order->order_number}");
 
-       return redirect()->route('restaurant.index')
-    ->with('success', "Bill {$bill->bill_number} created. Table is now free. <a href='".route('restaurant.bills.print', $bill->id)."' target='_blank' class='underline font-bold'>Print Bill</a>");
+        return redirect()->route('restaurant.index')
+            ->with('success', "Bill {$bill->bill_number} created. Table is now free.")
+            ->with('print_url', route('restaurant.bills.print', $bill->id));
     }
 
     // Show bill detail

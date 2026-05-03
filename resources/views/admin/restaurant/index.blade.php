@@ -39,7 +39,15 @@
 
 {{-- Flash Messages --}}
 @if(session('success'))
-    <div class="alert-success mb-4">{{ session('success') }}</div>
+    <div class="alert-success mb-4" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="flex:1;min-width:0;">{{ session('success') }}</span>
+        @if(session('print_url'))
+            <a href="{{ session('print_url') }}" target="_blank" rel="noopener"
+               style="display:inline-flex;align-items:center;gap:6px;background:#15803d;color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">
+                <i class="fas fa-print"></i> Print Bill
+            </a>
+        @endif
+    </div>
 @endif
 @if(session('error'))
     <div class="alert-error mb-4">{{ session('error') }}</div>
@@ -126,7 +134,7 @@
     @endphp
     <div class="border-2 rounded-xl p-4 cursor-pointer transition-all relative group"
          style="{{ $cardStyle }}"
-         onclick="handleTableClick({{ $table->id }}, '{{ $table->status }}', {{ $table->activeOrder?->id ?? 'null' }})">
+         onclick="handleTableClick({{ $table->id }}, '{{ $table->status }}', {{ $table->activeOrder?->id ?? 'null' }}, '{{ addslashes($table->name) }}', {{ $table->capacity }})">
 
         {{-- Status dot --}}
         <div class="absolute top-3 right-3 w-3 h-3 rounded-full" style="{{ $dotStyle }}"></div>
@@ -229,15 +237,22 @@
 @endCanDo
 
 <script>
-function handleTableClick(tableId, status, orderId) {
+function handleTableClick(tableId, status, orderId, tableName, tableCapacity) {
     if (status === 'unavailable') return;
-    if (status === 'dirty') return; // needs cleaning first
+
+    // Needs Cleaning → open edit modal so admin can mark Free / change status
+    if (status === 'dirty') {
+        if (document.getElementById('editTableModal') && typeof openEditTable === 'function') {
+            openEditTable(tableId, tableName || '', tableCapacity || 1, 'dirty');
+        }
+        return;
+    }
 
     if (status === 'occupied' && orderId) {
         window.location.href = '{{ url("restaurant/orders") }}/' + orderId;
         return;
     }
-    
+
 
     if (status === 'free') {
         // Create new order
