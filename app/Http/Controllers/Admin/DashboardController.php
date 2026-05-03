@@ -411,7 +411,10 @@ class DashboardController extends Controller
     {
         if (!session('crm_logged_in')) return response()->json([], 401);
 
-        $hotelId = (int) session('crm_hotel_id');
+        // Resolve hotel via HotelContext so Super Admin's hotel-filter view
+        // (crm_sa_hotel_filter) also returns activity, not only crm_hotel_id.
+        $hotelId = app(\App\Services\HotelContext::class)->getHotel()
+            ?? (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
         if (!$hotelId) return response()->json([]);
 
         $actionColors = [
