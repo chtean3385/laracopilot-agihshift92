@@ -417,6 +417,27 @@ Route::middleware('permission:restaurant.view')->prefix('restaurant')->name('res
 });
 
 
+// ── Inventory Management ─────────────────────────────────────────────────────
+Route::middleware('permission:inventory.view')->prefix('inventory')->name('inventory.')->group(function () {
+    Route::get('/',                    [\App\Http\Controllers\Admin\InventoryController::class, 'index']          )->name('index');
+    // Static paths FIRST — before /{id} wildcard to avoid conflict
+    Route::get('/create',              [\App\Http\Controllers\Admin\InventoryController::class, 'create']         )->middleware('permission:inventory.create')->name('create');
+    Route::post('/',                   [\App\Http\Controllers\Admin\InventoryController::class, 'store']          )->middleware('permission:inventory.create')->name('store');
+    Route::get('/categories',          [\App\Http\Controllers\Admin\InventoryController::class, 'categories']     )->name('categories');
+    Route::post('/categories',         [\App\Http\Controllers\Admin\InventoryController::class, 'categoryStore']  )->middleware('permission:inventory.create')->name('categories.store');
+    Route::put('/categories/{id}',     [\App\Http\Controllers\Admin\InventoryController::class, 'categoryUpdate'] )->middleware('permission:inventory.edit')->name('categories.update');
+    Route::delete('/categories/{id}',  [\App\Http\Controllers\Admin\InventoryController::class, 'categoryDestroy'])->middleware('permission:inventory.delete')->name('categories.destroy');
+    // Dynamic /{id} paths after static ones
+    Route::get('/{id}/edit',           [\App\Http\Controllers\Admin\InventoryController::class, 'edit']           )->middleware('permission:inventory.edit')->name('edit');
+    Route::put('/{id}',                [\App\Http\Controllers\Admin\InventoryController::class, 'update']         )->middleware('permission:inventory.edit')->name('update');
+    Route::delete('/{id}',             [\App\Http\Controllers\Admin\InventoryController::class, 'destroy']        )->middleware('permission:inventory.delete')->name('destroy');
+    Route::get('/{id}/movements',      [\App\Http\Controllers\Admin\InventoryController::class, 'movements']      )->name('movements');
+    Route::post('/{id}/adjust',        [\App\Http\Controllers\Admin\InventoryController::class, 'adjust']         )->middleware('permission:inventory.adjust')->name('adjust');
+    Route::post('/{id}/purchase',      [\App\Http\Controllers\Admin\InventoryController::class, 'purchase']       )->middleware('permission:inventory.create')->name('purchase');
+    Route::post('/{id}/usage',         [\App\Http\Controllers\Admin\InventoryController::class, 'usage']          )->middleware('permission:inventory.adjust')->name('usage');
+});
+
+
 // ── Pathik Autofill ─────────────────────────────────────────────────────────
 Route::get( '/pathik',                 [\App\Http\Controllers\Admin\PathikController::class, 'index']           )->name('pathik.index');
 Route::post('/pathik/token/regenerate',[\App\Http\Controllers\Admin\PathikController::class, 'regenerateToken'] )->name('pathik.token.regenerate');

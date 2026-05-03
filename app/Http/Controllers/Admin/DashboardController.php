@@ -103,6 +103,16 @@ class DashboardController extends Controller
         }
 
         try {
+            $lowStockCount = Module::isEnabled('inventory')
+                ? \App\Models\InventoryItem::where('is_active', true)
+                    ->whereRaw('current_stock <= reorder_level AND reorder_level > 0')
+                    ->count()
+                : 0;
+        } catch (\Exception $e) {
+            $lowStockCount = 0;
+        }
+
+        try {
             $totalCustomers    = Customer::count();
             $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
                 ->whereYear('created_at', $today->year)
@@ -392,7 +402,7 @@ class DashboardController extends Controller
             'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
             'websitePendingCount',
             'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys',
-            'dirtyRoomsList', 'showAgenda', 'hotelFull', 'otaPendingCount'
+            'dirtyRoomsList', 'showAgenda', 'hotelFull', 'otaPendingCount', 'lowStockCount'
         ));
     }
 

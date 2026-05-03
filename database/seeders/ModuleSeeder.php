@@ -39,6 +39,7 @@ class ModuleSeeder extends Seeder
     ['slug' => 'booking-widget',      'name' => 'Booking Widget',          'description' => 'Embeddable website booking form. Guests book directly from your hotel website.'],
     ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking',     'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.'],
     ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',      'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.'],
+    ['slug' => 'inventory',           'name' => 'Inventory Management',    'description' => 'Track consumables, food ingredients, and hotel supplies. Monitor stock levels, record purchases and usage, and get low-stock alerts.'],
 ];
 
         foreach ($modules as $m) {

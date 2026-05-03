@@ -861,6 +861,14 @@
 </a>
 @endCanDo
 @endif
+@if(\App\Models\Module::isEnabled('inventory'))
+@canDo('inventory.view')
+<a href="{{ route('inventory.index') }}" class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+    <span class="icon"><i class="fas fa-boxes"></i></span>
+    Inventory
+</a>
+@endCanDo
+@endif
             @php
                 $showFinance = \App\Services\PermissionService::check('payments.view')
                     || \App\Services\PermissionService::check('invoices.view');

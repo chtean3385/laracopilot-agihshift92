@@ -713,6 +713,16 @@
                             <div class="kpi-sub">Pending confirm</div>
                         </a>
                         @endif
+                        @if(\App\Models\Module::isEnabled('inventory') && ($lowStockCount ?? 0) > 0)
+                        <a href="{{ route('inventory.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#dc2626,#b91c1c);position:relative;">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#fff;border-radius:50%;border:2px solid #dc2626;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#dc2626;z-index:2;line-height:1;">{{ $lowStockCount }}</span>
+                            <i class="fas fa-exclamation-triangle kpi-icon"></i>
+                            <div class="kpi-label">Low Stock</div>
+                            <div class="kpi-num" data-count="{{ $lowStockCount ?? 0 }}">{{ $lowStockCount ?? 0 }}</div>
+                            <div class="kpi-sub">Items need restock</div>
+                        </a>
+                        @endif
                         @if(\App\Models\Module::isEnabled('ota_whatsapp_sync'))
                         <a href="{{ route('ota-bookings.index') }}" class="kpi-card kpi-card-sm"
                            style="background:linear-gradient(135deg,#f59e0b,#d97706);position:relative;{{ ($otaPendingCount ?? 0) > 0 ? 'animation:pulse-dirty 1.8s infinite;' : '' }}">
