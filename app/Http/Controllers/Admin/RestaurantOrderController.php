@@ -149,6 +149,29 @@ class RestaurantOrderController extends Controller
         return response()->json(['success' => true, 'order' => $order->fresh()]);
     }
 
+    // Update an item's quantity (used for editing a pending guest QR
+    // order before approval). Recalculates totals.
+    public function updateItemQty(Request $request, $id, $itemId)
+    {
+        $request->validate(['quantity' => 'required|integer|min:1|max:99']);
+
+        $order = RestaurantOrder::findOrFail($id);
+        $item  = RestaurantOrderItem::where('id', $itemId)
+            ->where('order_id', $order->id)
+            ->firstOrFail();
+
+        $item->update([
+            'quantity' => $request->quantity,
+            'subtotal' => round((float) $item->final_price * $request->quantity, 2),
+        ]);
+        $this->recalculateTotals($order);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'order' => $order->fresh()]);
+        }
+        return back()->with('success', 'Quantity updated.');
+    }
+
     // Print KOT — marks order as kotted
     public function printKot($id)
     {
@@ -261,6 +284,17 @@ class RestaurantOrderController extends Controller
                         }
                     }
                 }
+
+                // Mark the order paid + billed-to-room so the manual
+                // Generate Bill flow (RestaurantBillController::store)
+                // refuses to re-post the same charges. Status stays
+                // 'kotted' so KOT print remains available.
+                $order->update([
+                    'payment_status' => 'paid',
+                    'payment_method' => 'room',
+                    'bill_type'      => 'room',
+                    'billed_at'      => now(),
+                ]);
             }
         });
 

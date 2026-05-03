@@ -24,9 +24,15 @@
         <div class="flex gap-2 flex-wrap">
             @if($order->isOpen() && !$order->isPendingApproval())
             <button onclick="printKot()" class="btn-secondary">🖨️ Print KOT</button>
+            @if(!$order->isPaid())
             <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="btn-primary">
                 💳 Generate Bill
             </button>
+            @else
+            <span style="padding:8px 14px;border-radius:8px;background:#dcfce7;color:#15803d;font-weight:700;font-size:13px;">
+                <i class="fas fa-check-circle"></i> Billed to Room
+            </span>
+            @endif
             @endif
             @if($order->isOpen() && !$order->isPendingApproval())
             <form action="{{ route('restaurant.orders.cancel', $order->id) }}" method="POST"
@@ -184,7 +190,17 @@
                                 <div class="text-xs text-gray-400">{{ $item->kot_note }}</div>
                                 @endif
                             </td>
-                            <td class="py-2 text-center">{{ $item->quantity }}</td>
+                            <td class="py-2 text-center">
+                                @if($order->isPendingApproval())
+                                <form action="{{ route('restaurant.orders.items.qty', [$order->id, $item->id]) }}" method="POST" style="display:inline-flex;gap:4px;align-items:center;">
+                                    @csrf @method('PATCH')
+                                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="99" style="width:54px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;text-align:center;font-size:12px;">
+                                    <button type="submit" title="Update quantity" style="padding:3px 7px;background:#0891b2;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;">↻</button>
+                                </form>
+                                @else
+                                {{ $item->quantity }}
+                                @endif
+                            </td>
                             <td class="py-2 text-right">₹{{ number_format($item->final_price, 2) }}</td>
                             <td class="py-2 text-right font-medium">₹{{ number_format($item->subtotal, 2) }}</td>
                             @if($order->isOpen())

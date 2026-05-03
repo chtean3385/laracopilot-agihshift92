@@ -64,8 +64,10 @@ class RestaurantPublicController extends Controller
             ->where('hotel_id', $hotel->id)
             ->where('name', $table)
             ->first();
-        // Locked to this table (use the URL value as the canonical name).
-        return $this->renderMenu($hotel, null, $tableModel ?: $table, 'table', $table);
+        // Unknown table → 404; we don't allow locking the QR to a name
+        // that doesn't exist (otherwise orders would land with table_id=null).
+        abort_unless($tableModel, 404, 'Table not found.');
+        return $this->renderMenu($hotel, null, $tableModel, 'table', $table);
     }
 
     private function renderMenu(Hotel $hotel, ?string $room, RestaurantTable|string|null $table, string $lockMode = 'open', string $lockValue = '')
@@ -149,7 +151,13 @@ class RestaurantPublicController extends Controller
                 ->where('hotel_id', $hotel->id)
                 ->where('name', $data['table_name'])
                 ->first();
-            $tableId = $tbl?->id;
+            // Table-mode orders MUST attach to a real table session.
+            if (!$tbl) {
+                return back()->withErrors([
+                    'table_name' => 'Table "' . $data['table_name'] . '" was not found. Please pick a valid table or scan the QR on your table.',
+                ])->withInput();
+            }
+            $tableId = $tbl->id;
         }
 
         $taxRate = (float) (Setting::withoutGlobalScopes()->where('hotel_id', $hotel->id)->value('food_tax_rate') ?? 5);

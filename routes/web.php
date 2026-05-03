@@ -420,6 +420,7 @@ Route::middleware('permission:restaurant.view')->prefix('restaurant')->name('res
         Route::post('/orders/{id}/cancel', [RestaurantOrderController::class, 'cancel']     )->name('orders.cancel');
         Route::post('/orders/{id}/items',  [RestaurantOrderController::class, 'addItem']    )->name('orders.items.add');
         Route::delete('/orders/{id}/items/{itemId}', [RestaurantOrderController::class, 'removeItem'])->name('orders.items.remove');
+        Route::patch ('/orders/{id}/items/{itemId}', [RestaurantOrderController::class, 'updateItemQty'])->name('orders.items.qty');
         // Guest QR order approval flow
         Route::post('/orders/{id}/approve', [RestaurantOrderController::class, 'approve']  )->name('orders.approve');
         Route::post('/orders/{id}/reject',  [RestaurantOrderController::class, 'reject']   )->name('orders.reject');
