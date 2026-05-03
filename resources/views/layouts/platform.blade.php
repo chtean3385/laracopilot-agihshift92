@@ -223,6 +223,18 @@
             line-height: 1.4;
         }
         .nav-group-toggle .nav-badge + .chev { margin-left: 8px; }
+        .nav-group-children .nav-link .nav-badge {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            min-width: 18px;
+            text-align: center;
+            line-height: 1.4;
+        }
 
         /* ── Top bar ── */
         #topbar {
