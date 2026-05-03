@@ -202,10 +202,28 @@
             </div>
         </div>
 
-        {{-- Footer actions --}}
-        <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+        {{-- Footer actions — contextual to order state --}}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 22px;border-top:1px solid #e2e8f0;background:#f8fafc;flex-wrap:wrap;">
             <button type="button" onclick="closeOrderModal({{ $order->id }})" style="padding:9px 16px;border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Close</button>
-            <a href="{{ route('restaurant.orders.show', $order->id) }}" style="padding:9px 18px;background:#2563eb;color:#fff;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;">Open full page →</a>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                @if($order->isPendingApproval())
+                    <form action="{{ route('restaurant.orders.reject', $order->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Decline this guest order?');">
+                        @csrf
+                        <button type="submit" style="padding:9px 16px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">✕ Decline</button>
+                    </form>
+                    <form action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" style="padding:9px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">✓ Approve &amp; Send to Kitchen</button>
+                    </form>
+                @elseif($order->isOpen())
+                    <a href="{{ route('restaurant.orders.kot.print', $order->id) }}" target="_blank" style="padding:9px 16px;background:#0f172a;color:#fff;border-radius:8px;font-weight:800;font-size:13px;text-decoration:none;">🖨️ Print KOT</a>
+                    @if(!$order->isPaid())
+                    <a href="{{ route('restaurant.orders.show', $order->id) }}" style="padding:9px 16px;background:#2563eb;color:#fff;border-radius:8px;font-weight:800;font-size:13px;text-decoration:none;">💳 Generate Bill</a>
+                    @endif
+                @endif
+                <a href="{{ route('restaurant.orders.show', $order->id) }}" style="padding:9px 14px;border:1px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;">Open full page ↗</a>
+            </div>
         </div>
     </div>
 </div>

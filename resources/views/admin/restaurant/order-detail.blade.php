@@ -180,10 +180,10 @@
         </div>
         @endif
 
-        {{-- Menu Categories — hidden while a guest QR order is awaiting approval --}}
-        @if($order->isOpen() && !$order->isPendingApproval())
+        {{-- Menu Categories — staff can add more items even on pending guest QR orders --}}
+        @if($order->isOpen())
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-            <h3 class="font-bold text-gray-800 mb-4">📋 Menu</h3>
+            <h3 class="font-bold text-gray-800 mb-4">📋 Menu — add more items</h3>
 
             {{-- Category tabs --}}
             <div class="flex gap-2 flex-wrap mb-4" id="categoryTabs">
