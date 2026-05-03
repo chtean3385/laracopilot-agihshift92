@@ -9,12 +9,41 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryService
 {
+    /**
+     * Record a stock movement atomically.
+     *
+     * The item row is locked for update inside the transaction so concurrent
+     * requests cannot overwrite each other's stock change.
+     *
+     * For 'usage' and 'wastage', if the requested quantity exceeds available
+     * stock, an \Exception is thrown — callers should catch and show the user.
+     *
+     * @throws \Exception when usage/wastage quantity exceeds available stock
+     */
     public function recordMovement(InventoryItem $item, string $type, float $qty, array $meta = []): InventoryMovement
     {
         return DB::transaction(function () use ($item, $type, $qty, $meta) {
+            // Lock the row so no other transaction can read/write stock until we commit
+            $fresh = InventoryItem::lockForUpdate()->findOrFail($item->id);
+
+            $newStock = match ($type) {
+                'purchase'   => $fresh->current_stock + $qty,
+                'usage',
+                'wastage'    => (function () use ($fresh, $qty, $type) {
+                    if ($qty > $fresh->current_stock) {
+                        throw new \Exception(
+                            "Cannot record {$type}: requested {$qty} {$fresh->unit} but only {$fresh->current_stock} {$fresh->unit} in stock."
+                        );
+                    }
+                    return $fresh->current_stock - $qty;
+                })(),
+                'adjustment' => $qty,
+                default      => $fresh->current_stock,
+            };
+
             $movement = InventoryMovement::create([
-                'hotel_id'       => $item->hotel_id,
-                'item_id'        => $item->id,
+                'hotel_id'       => $fresh->hotel_id,
+                'item_id'        => $fresh->id,
                 'type'           => $type,
                 'quantity'       => $qty,
                 'notes'          => $meta['notes'] ?? null,
@@ -23,15 +52,7 @@ class InventoryService
                 'created_by'     => $meta['created_by'] ?? null,
             ]);
 
-            $newStock = match ($type) {
-                'purchase'   => $item->current_stock + $qty,
-                'usage',
-                'wastage'    => max(0, $item->current_stock - $qty),
-                'adjustment' => $qty,
-                default      => $item->current_stock,
-            };
-
-            $item->update(['current_stock' => $newStock]);
+            $fresh->update(['current_stock' => $newStock]);
 
             return $movement;
         });

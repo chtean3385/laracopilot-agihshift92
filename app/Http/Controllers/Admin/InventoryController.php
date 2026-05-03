@@ -10,6 +10,7 @@ use App\Models\Module;
 use App\Services\ActivityLogger;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class InventoryController extends Controller
 {
@@ -56,17 +57,21 @@ class InventoryController extends Controller
     public function store(Request $request)
     {
         $this->requireModule();
+        $hotelId = $this->hotelId();
 
         $data = $request->validate([
             'name'          => 'required|string|max:150',
-            'category_id'   => 'nullable|exists:inventory_categories,id',
+            'category_id'   => [
+                'nullable',
+                Rule::exists('inventory_categories', 'id')->where('hotel_id', $hotelId),
+            ],
             'unit'          => 'required|string|max:30',
             'reorder_level' => 'nullable|numeric|min:0',
             'cost_price'    => 'nullable|numeric|min:0',
             'is_active'     => 'nullable|boolean',
         ]);
 
-        $data['hotel_id']      = $this->hotelId();
+        $data['hotel_id']      = $hotelId;
         $data['reorder_level'] = $data['reorder_level'] ?? 0;
         $data['cost_price']    = $data['cost_price'] ?? 0;
         $data['is_active']     = $request->boolean('is_active', true);
@@ -90,12 +95,16 @@ class InventoryController extends Controller
     public function update(Request $request, $id)
     {
         $this->requireModule();
+        $hotelId = $this->hotelId();
 
         $item = InventoryItem::findOrFail($id);
 
         $data = $request->validate([
             'name'          => 'required|string|max:150',
-            'category_id'   => 'nullable|exists:inventory_categories,id',
+            'category_id'   => [
+                'nullable',
+                Rule::exists('inventory_categories', 'id')->where('hotel_id', $hotelId),
+            ],
             'unit'          => 'required|string|max:30',
             'reorder_level' => 'nullable|numeric|min:0',
             'cost_price'    => 'nullable|numeric|min:0',
@@ -168,7 +177,7 @@ class InventoryController extends Controller
         return back()->with('success', "Stock updated: +{$data['quantity']} {$item->unit} added to '{$item->name}'.");
     }
 
-    // ── Usage (deduct stock) ──────────────────────────────────────────────────
+    // ── Usage / Wastage (deduct stock) ────────────────────────────────────────
     public function usage(Request $request, $id)
     {
         $this->requireModule();
@@ -181,10 +190,15 @@ class InventoryController extends Controller
 
         $item    = InventoryItem::findOrFail($id);
         $service = app(InventoryService::class);
-        $service->recordMovement($item, $data['type'], (float) $data['quantity'], [
-            'notes'      => $data['notes'] ?? null,
-            'created_by' => session('crm_user_id'),
-        ]);
+
+        try {
+            $service->recordMovement($item, $data['type'], (float) $data['quantity'], [
+                'notes'      => $data['notes'] ?? null,
+                'created_by' => session('crm_user_id'),
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         $label = $data['type'] === 'wastage' ? 'Wasted' : 'Used';
         ActivityLogger::log('inventory_usage', 'Inventory', "{$label} {$data['quantity']} {$item->unit} of '{$item->name}'");
@@ -239,6 +253,7 @@ class InventoryController extends Controller
     {
         $this->requireModule();
 
+        // Ensure the category belongs to this hotel (BelongsToHotel global scope enforces this)
         $cat  = InventoryCategory::findOrFail($id);
         $data = $request->validate([
             'name'        => 'required|string|max:100',
@@ -255,6 +270,7 @@ class InventoryController extends Controller
     {
         $this->requireModule();
 
+        // BelongsToHotel global scope ensures only this hotel's categories are found
         $cat = InventoryCategory::withCount('items')->findOrFail($id);
 
         if ($cat->items_count > 0) {
