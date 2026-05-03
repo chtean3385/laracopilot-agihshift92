@@ -33,12 +33,14 @@ return new class extends Migration
             }
         });
 
-        // Allow guest orders that arrive without a chosen table.
-        // Project DB is PostgreSQL (Neon) — use PG syntax. Wrap with driver
-        // check so this is at least a clean no-op on other drivers.
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement('ALTER TABLE restaurant_orders ALTER COLUMN table_id DROP NOT NULL');
-        }
+        // Allow guest room-QR orders that don't have a restaurant table.
+        // Driver-portable: emit the right ALTER per database engine.
+        match (DB::getDriverName()) {
+            'pgsql'  => DB::statement('ALTER TABLE restaurant_orders ALTER COLUMN table_id DROP NOT NULL'),
+            'mysql', 'mariadb' => DB::statement('ALTER TABLE restaurant_orders MODIFY table_id BIGINT UNSIGNED NULL'),
+            'sqlite' => null, // SQLite ignores NOT NULL changes via raw ALTER; new inserts with null work in practice.
+            default  => null,
+        };
     }
 
     public function down(): void
@@ -49,12 +51,7 @@ return new class extends Migration
                 'guest_name', 'guest_phone', 'guest_notes', 'cancellation_reason',
             ]);
         });
-
-        // NOTE: We intentionally do NOT restore NOT NULL on table_id here.
-        // Forcing NOT NULL would either error (when null guest-QR rows exist)
-        // or require an unsafe `UPDATE ... SET table_id = 0`, which would
-        // violate the FK to restaurant_tables. The column is left nullable
-        // on rollback, which is safe — no data is destroyed and the schema
-        // is still functional for the previous (staff-only) flow.
+        // table_id is left nullable on rollback — restoring NOT NULL would
+        // either error on existing null rows or require an FK-unsafe back-fill.
     }
 };

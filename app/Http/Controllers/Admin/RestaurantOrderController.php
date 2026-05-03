@@ -197,20 +197,15 @@ class RestaurantOrderController extends Controller
             return back()->with('error', 'This order is not pending approval.');
         }
 
+        // Multi-tenant safety — booking_id / table_id must belong to this hotel.
         $hotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
-        // Multi-tenant safety — booking_id / table_id MUST belong to the
-        // current hotel, otherwise a malicious staff user could cross-link
-        // an order to a record from a different hotel.
         $request->validate([
             'booking_id' => ['nullable', \Illuminate\Validation\Rule::exists('bookings', 'id')->where('hotel_id', $hotelId)],
             'table_id'   => ['nullable', \Illuminate\Validation\Rule::exists('restaurant_tables', 'id')->where('hotel_id', $hotelId)],
         ]);
 
-        // ── Resolve the target booking BEFORE the transaction ──
-        // For a room QR (order has a room_number) we MUST end up with a real
-        // booking. We do not silently downgrade to direct billing — staff
-        // either picks one in the form or we auto-resolve from the room
-        // number; otherwise we block approval.
+        // For a room QR we must end up with a real booking — we never
+        // silently downgrade to direct billing.
         $bookingId = $request->booking_id ?: $order->booking_id;
         if (!$bookingId && $order->room_number) {
             $booking = Booking::where('hotel_id', $hotelId)
@@ -240,9 +235,8 @@ class RestaurantOrderController extends Controller
                 }
             }
 
-            // Approve + send to kitchen. Status stays 'kotted' so the
-            // existing KOT print action remains available even after
-            // room-billing posts the charges below.
+            // Approve + send to kitchen. Status stays 'kotted' so KOT print
+            // remains available even after room-billing posts charges.
             $order->update([
                 'approval_status' => 'approved',
                 'status'          => 'kotted',
@@ -251,12 +245,8 @@ class RestaurantOrderController extends Controller
                 'bill_type'       => $billType,
             ]);
 
-            // Room QR → post each line as a BookingExtraCharge AND bump the
-            // booking total / balance (and invoice if present) so the order
-            // shows on the room invoice immediately. Mirrors FoodOrderService.
-            // Order status is intentionally NOT flipped to 'billed' here —
-            // staff can still print KOT and the room bill is reflected via
-            // the booking's extra charges + balance_due.
+            // Room QR → post each line as a BookingExtraCharge and bump
+            // booking + invoice totals (mirrors FoodOrderService).
             if ($billType === 'room' && $bookingId) {
                 $booking = Booking::with('invoice')->lockForUpdate()->find($bookingId);
                 $order->load('items');
@@ -285,10 +275,8 @@ class RestaurantOrderController extends Controller
                     }
                 }
 
-                // Mark the order paid + billed-to-room so the manual
-                // Generate Bill flow (RestaurantBillController::store)
-                // refuses to re-post the same charges. Status stays
-                // 'kotted' so KOT print remains available.
+                // Mark order paid so RestaurantBillController::store refuses
+                // to re-post the same charges. Status stays 'kotted'.
                 $order->update([
                     'payment_status' => 'paid',
                     'payment_method' => 'room',

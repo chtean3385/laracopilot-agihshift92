@@ -50,7 +50,7 @@
 </head>
 @php
     $tableName = $table instanceof \App\Models\RestaurantTable ? $table->name : ($table ?: null);
-    $mode = $roomNumber ? 'room' : ($tableName ? 'table' : 'direct');
+    $mode = $roomNumber ? 'room' : ($tableName ? 'table' : 'room');
 @endphp
 <body>
     <header>
@@ -138,21 +138,41 @@
 
                 <div class="field">
                     <label>Where are you ordering from?</label>
-                    <select name="mode" id="modeSelect" onchange="onModeChange()">
-                        <option value="room"   {{ $mode==='room'   ? 'selected' : '' }}>🛏️ My hotel room</option>
-                        <option value="table"  {{ $mode==='table'  ? 'selected' : '' }}>🪑 Restaurant table</option>
-                        <option value="direct" {{ $mode==='direct' ? 'selected' : '' }}>🚶 Just walk-in</option>
+                    <select name="mode" id="modeSelect" onchange="onModeChange()" {{ ($roomNumber || $tableName) ? 'disabled' : '' }}>
+                        <option value="room"  {{ $mode==='room'  ? 'selected' : '' }}>🛏️ My hotel room</option>
+                        <option value="table" {{ $mode==='table' ? 'selected' : '' }}>🪑 Restaurant table</option>
                     </select>
                 </div>
 
                 <div class="field" id="roomField" style="{{ $mode==='room' ? '' : 'display:none;' }}">
                     <label>Room Number *</label>
-                    <input type="text" name="room_number" value="{{ $roomNumber }}" maxlength="20" {{ $roomNumber ? 'readonly' : '' }} style="{{ $roomNumber ? 'background:#f1f5f9;' : '' }}">
+                    @if($roomNumber)
+                        <input type="text" name="room_number" value="{{ $roomNumber }}" readonly style="background:#f1f5f9;">
+                    @else
+                        <select name="room_number">
+                            <option value="">— Select your room —</option>
+                            @foreach(($availableRooms ?? collect()) as $rn)
+                                <option value="{{ $rn }}">Room {{ $rn }}</option>
+                            @endforeach
+                        </select>
+                        @if(($availableRooms ?? collect())->isEmpty())
+                            <div style="font-size:11px;color:#dc2626;margin-top:4px;">No checked-in rooms available right now.</div>
+                        @endif
+                    @endif
                 </div>
 
                 <div class="field" id="tableField" style="{{ $mode==='table' ? '' : 'display:none;' }}">
                     <label>Table *</label>
-                    <input type="text" name="table_name" value="{{ $tableName }}" maxlength="50" {{ $tableName ? 'readonly' : '' }} style="{{ $tableName ? 'background:#f1f5f9;' : '' }}">
+                    @if($tableName)
+                        <input type="text" name="table_name" value="{{ $tableName }}" readonly style="background:#f1f5f9;">
+                    @else
+                        <select name="table_name">
+                            <option value="">— Select your table —</option>
+                            @foreach(($availableTables ?? collect()) as $tn)
+                                <option value="{{ $tn }}">{{ $tn }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
 
                 <div class="field">

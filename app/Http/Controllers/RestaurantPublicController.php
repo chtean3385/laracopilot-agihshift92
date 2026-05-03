@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
 use App\Models\Hotel;
 use App\Models\Module;
 use App\Models\RestaurantMenuCategory;
@@ -29,11 +30,8 @@ class RestaurantPublicController extends Controller
         return $hotel;
     }
 
-    /**
-     * Token is bound to the scan context (mode + locked value) so a guest
-     * who scans a room QR cannot switch to "direct" or to another room/table
-     * by tampering with the form.
-     */
+    // Token is bound to the scan context (mode + locked value) so the
+    // mode/value cannot be changed by tampering with the form.
     private function token(string $slug, string $mode = 'open', string $value = ''): string
     {
         return hash_hmac('sha256', 'restaurant:' . $slug . ':' . $mode . ':' . $value, config('app.key'));
@@ -87,16 +85,38 @@ class RestaurantPublicController extends Controller
 
         $setting = Setting::withoutGlobalScopes()->where('hotel_id', $hotel->id)->first();
 
+        // For the unlocked (general) QR page the guest must pick a real
+        // room or a real table — we render dropdowns of valid choices
+        // server-side instead of a free-text field.
+        $availableRooms  = collect();
+        $availableTables = collect();
+        if ($lockMode === 'open') {
+            $availableRooms = Booking::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->where('status', 'checked_in')
+                ->with('room:id,room_number')
+                ->get()
+                ->pluck('room.room_number')
+                ->filter()->unique()->values();
+
+            $availableTables = RestaurantTable::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->orderBy('name')
+                ->pluck('name');
+        }
+
         return view('public.restaurant.show', [
-            'hotel'      => $hotel,
-            'categories' => $categories,
-            'itemsByCat' => $items,
-            'roomNumber' => $room,
-            'table'      => $table,
-            'setting'    => $setting,
-            'token'      => $this->token($hotel->slug, $lockMode, $lockValue),
-            'lockMode'   => $lockMode,   // 'room' | 'table' | 'open'
-            'lockValue'  => $lockValue,  // room number or table name (or '')
+            'hotel'           => $hotel,
+            'categories'      => $categories,
+            'itemsByCat'      => $items,
+            'roomNumber'      => $room,
+            'table'           => $table,
+            'setting'         => $setting,
+            'token'           => $this->token($hotel->slug, $lockMode, $lockValue),
+            'lockMode'        => $lockMode,   // room | table | open
+            'lockValue'       => $lockValue,  // room number or table name (or '')
+            'availableRooms'  => $availableRooms,
+            'availableTables' => $availableTables,
         ]);
     }
 
@@ -111,8 +131,10 @@ class RestaurantPublicController extends Controller
         abort_unless(in_array($lockMode, ['open', 'room', 'table'], true), 419, 'Invalid token.');
         abort_unless($this->verifyToken($request, $slug, $lockMode, $lockValue), 419, 'Invalid token.');
 
+        // Walk-in / direct mode is intentionally not accepted — every
+        // scan-to-order must attach to either a room (booking) or a table.
         $data = $request->validate([
-            'mode'         => 'required|in:room,table,direct',
+            'mode'         => 'required|in:room,table',
             'room_number'  => 'required_if:mode,room|nullable|string|max:20',
             'table_name'   => 'required_if:mode,table|nullable|string|max:50',
             'guest_name'   => 'nullable|string|max:100',
@@ -123,14 +145,27 @@ class RestaurantPublicController extends Controller
             'items.*.qty'  => 'required|integer|min:1|max:99',
         ]);
 
-        // Server-side context enforcement — a room/table QR cannot be
-        // converted into another mode by tampering with the form.
+        // Lock the mode + value when the QR was bound to a context.
         if ($lockMode === 'room') {
             $data['mode']        = 'room';
             $data['room_number'] = $lockValue;
         } elseif ($lockMode === 'table') {
             $data['mode']        = 'table';
             $data['table_name']  = $lockValue;
+        }
+
+        // Validate the chosen room maps to a checked-in booking.
+        if ($data['mode'] === 'room') {
+            $hasBooking = Booking::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->where('status', 'checked_in')
+                ->whereHas('room', fn($q) => $q->where('room_number', $data['room_number']))
+                ->exists();
+            if (!$hasBooking) {
+                return back()->withErrors([
+                    'room_number' => 'Room ' . $data['room_number'] . ' has no active checked-in guest. Please pick a valid room.',
+                ])->withInput();
+            }
         }
 
         $itemIds = collect($data['items'])->pluck('id')->all();
