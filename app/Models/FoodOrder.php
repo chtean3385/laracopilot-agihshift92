@@ -11,7 +11,7 @@ class FoodOrder extends Model
 
     protected $fillable = [
         'hotel_id', 'order_number', 'room_number', 'booking_id',
-        'guest_name', 'guest_notes', 'status', 'total_amount',
+        'guest_name', 'guest_phone', 'guest_notes', 'status', 'total_amount',
         'approved_by', 'approved_at', 'cancellation_reason',
     ];
 

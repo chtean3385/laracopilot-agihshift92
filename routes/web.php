@@ -32,6 +32,9 @@ use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantMenuController;
 use App\Http\Controllers\Admin\RestaurantOrderController;
 use App\Http\Controllers\Admin\RestaurantBillController;
+use App\Http\Controllers\Admin\FoodMenuAdminController;
+use App\Http\Controllers\Admin\FoodOrderController;
+use App\Http\Controllers\FoodMenuPublicController;
 
 // ── Installer (must be first, no auth middleware) ───────────────────────────
 Route::middleware(['not.installed'])->group(function () {
@@ -356,6 +359,12 @@ Route::withoutMiddleware([
     Route::get( '/book/{slug}/confirm/{ref}/ical', [\App\Http\Controllers\PublicBookingController::class, 'ical']      )->name('public.booking.ical');
     // Guest submits UPI UTR
     Route::post('/book/{slug}/payment-ref',  [\App\Http\Controllers\PublicBookingController::class, 'submitPaymentRef'])->name('public.booking.payment_ref');
+
+    // Public Food Menu (QR scan)
+    Route::get( '/menu/{slug}',                        [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show.no-room');
+    Route::get( '/menu/{slug}/order/{number}',         [FoodMenuPublicController::class, 'status'])->name('public.food-menu.status');
+    Route::post('/menu/{slug}/order',                  [FoodMenuPublicController::class, 'order'] )->name('public.food-menu.order');
+    Route::get( '/menu/{slug}/{room}',                 [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show')->where('room', '[A-Za-z0-9_\-]+');
 });
 
 // ── Admin: Booking Widget Settings ──────────────────────────────────────────
@@ -435,6 +444,39 @@ Route::middleware('permission:inventory.view')->prefix('inventory')->name('inven
     Route::post('/{id}/adjust',        [\App\Http\Controllers\Admin\InventoryController::class, 'adjust']         )->middleware('permission:inventory.adjust')->name('adjust');
     Route::post('/{id}/purchase',      [\App\Http\Controllers\Admin\InventoryController::class, 'purchase']       )->middleware('permission:inventory.create')->name('purchase');
     Route::post('/{id}/usage',         [\App\Http\Controllers\Admin\InventoryController::class, 'usage']          )->middleware('permission:inventory.adjust')->name('usage');
+});
+
+
+// ── Food Menu (Admin) ─────────────────────────────────────────────────────────
+Route::middleware('permission:food_menu.manage')->prefix('food-menu')->name('food-menu.')->group(function () {
+    Route::get('/',                    [FoodMenuAdminController::class, 'dashboard']        )->name('dashboard');
+    // Categories
+    Route::get('/categories',          [FoodMenuAdminController::class, 'categories']       )->name('categories');
+    Route::post('/categories',         [FoodMenuAdminController::class, 'categoryStore']    )->name('categories.store');
+    Route::put('/categories/{id}',     [FoodMenuAdminController::class, 'categoryUpdate']   )->name('categories.update');
+    Route::delete('/categories/{id}',  [FoodMenuAdminController::class, 'categoryDestroy']  )->name('categories.destroy');
+    // Items — static paths BEFORE /{id} wildcards
+    Route::get('/items/create',        [FoodMenuAdminController::class, 'itemCreate']       )->name('items.create');
+    Route::post('/items',              [FoodMenuAdminController::class, 'itemStore']        )->name('items.store');
+    Route::get('/qr',                  [FoodMenuAdminController::class, 'qr']               )->name('qr');
+    Route::get('/items/{id}/edit',     [FoodMenuAdminController::class, 'itemEdit']         )->name('items.edit');
+    Route::put('/items/{id}',          [FoodMenuAdminController::class, 'itemUpdate']       )->name('items.update');
+    Route::delete('/items/{id}',       [FoodMenuAdminController::class, 'itemDestroy']      )->name('items.destroy');
+    Route::post('/items/{id}/toggle',  [FoodMenuAdminController::class, 'itemToggle']       )->name('items.toggle');
+});
+
+// ── Food Orders (Admin / Manager / Chef) ─────────────────────────────────────
+Route::middleware('permission:food_menu.orders.view')->prefix('food-orders')->name('food-orders.')->group(function () {
+    Route::get('/',                    [FoodOrderController::class, 'index']                )->name('index');
+    Route::get('/report',              [FoodOrderController::class, 'report']               )->name('report');
+    Route::get('/{id}',                [FoodOrderController::class, 'show']                 )->name('show');
+    Route::get('/{id}/kot',            [FoodOrderController::class, 'kotPrint']             )->name('kot');
+
+    Route::middleware('permission:food_menu.orders.manage')->group(function () {
+        Route::post('/{id}/status',    [FoodOrderController::class, 'status']               )->name('status');
+        Route::post('/{id}/edit-item', [FoodOrderController::class, 'editItem']             )->name('edit-item');
+        Route::post('/{id}/add-item',  [FoodOrderController::class, 'addItem']              )->name('add-item');
+    });
 });
 
 

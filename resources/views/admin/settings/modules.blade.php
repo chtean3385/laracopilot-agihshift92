@@ -20,6 +20,12 @@ $icons = [
     'time-slot-pricing' => ['fas fa-clock',           'linear-gradient(135deg,#7c3aed,#a855f7)', '#7c3aed'],
     'hourly-pricing'    => ['fas fa-hourglass-half',  'linear-gradient(135deg,#0891b2,#0e7490)', '#0891b2'],
     'booking-widget'    => ['fas fa-globe',           'linear-gradient(135deg,#6366f1,#4f46e5)', '#6366f1'],
+    'restaurant'        => ['fas fa-concierge-bell',  'linear-gradient(135deg,#dc2626,#991b1b)', '#dc2626'],
+    'whole-hotel-booking' => ['fas fa-building',      'linear-gradient(135deg,#0d9488,#0f766e)', '#0d9488'],
+    'slot-search-engine'  => ['fas fa-search',        'linear-gradient(135deg,#0284c7,#0369a1)', '#0284c7'],
+    'extra-billing'     => ['fas fa-receipt',         'linear-gradient(135deg,#a855f7,#7c3aed)', '#a855f7'],
+    'inventory'         => ['fas fa-boxes',           'linear-gradient(135deg,#0ea5e9,#0369a1)', '#0ea5e9'],
+    'food-menu'         => ['fas fa-utensils',        'linear-gradient(135deg,#f97316,#ea580c)', '#f97316'],
 ];
 @endphp
 

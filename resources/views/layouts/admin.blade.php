@@ -869,6 +869,29 @@
 </a>
 @endCanDo
 @endif
+@if(\App\Models\Module::isEnabled('food-menu'))
+@canDo('food_menu.manage')
+<a href="{{ route('food-menu.dashboard') }}" class="nav-link {{ request()->routeIs('food-menu.*') ? 'active' : '' }}">
+    <span class="icon"><i class="fas fa-utensils"></i></span>
+    Food Menu
+</a>
+@endCanDo
+@canDo('food_menu.orders.view')
+@php
+    $foodPending = 0;
+    try {
+        $foodPending = \App\Models\FoodOrder::whereIn('status', ['pending','in_progress'])->count();
+    } catch (\Throwable $e) {}
+@endphp
+<a href="{{ route('food-orders.index') }}" class="nav-link {{ request()->routeIs('food-orders.*') ? 'active' : '' }}" style="position:relative;">
+    <span class="icon"><i class="fas fa-receipt"></i></span>
+    Food Orders
+    @if($foodPending > 0)
+    <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center;">{{ $foodPending }}</span>
+    @endif
+</a>
+@endCanDo
+@endif
             @php
                 $showFinance = \App\Services\PermissionService::check('payments.view')
                     || \App\Services\PermissionService::check('invoices.view');

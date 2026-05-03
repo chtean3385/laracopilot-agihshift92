@@ -266,6 +266,52 @@
                 }
                 </style>
 
+                {{-- ══ PENDING FOOD ORDERS ALERT ═══════════════════════════════════ --}}
+                @if(\App\Models\Module::isEnabled('food-menu') && \App\Services\PermissionService::check('food_menu.orders.view'))
+                @php
+                    $pendingFoodOrders = collect();
+                    try {
+                        $pendingFoodOrders = \App\Models\FoodOrder::with('items')
+                            ->where('status', 'pending')
+                            ->orderByDesc('created_at')
+                            ->limit(5)
+                            ->get();
+                    } catch (\Throwable $e) {}
+                @endphp
+                @if($pendingFoodOrders->isNotEmpty())
+                <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:16px;padding:18px 22px;margin-bottom:20px;box-shadow:0 4px 18px rgba(249,115,22,.18);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:42px;height:42px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;display:flex;align-items:center;justify-content:center;animation:pulse 1.6s infinite;">
+                                <i class="fas fa-bell" style="color:#fff;font-size:18px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:16px;font-weight:900;color:#7c2d12;">{{ $pendingFoodOrders->count() }} new food order{{ $pendingFoodOrders->count() === 1 ? '' : 's' }} waiting</div>
+                                <div style="font-size:12px;color:#9a3412;">Review and approve to bill the room.</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('food-orders.index', ['status' => 'pending']) }}" style="padding:9px 16px;background:#fff;color:#ea580c;border:1.5px solid #f97316;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;">View all →</a>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+                        @foreach($pendingFoodOrders as $po)
+                        <a href="{{ route('food-orders.show', $po->id) }}" style="display:block;background:#fff;padding:11px 14px;border-radius:10px;text-decoration:none;color:#1e293b;border:1px solid #fed7aa;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-size:13px;font-weight:800;">{{ $po->order_number }}</span>
+                                <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Room {{ $po->room_number }}</span>
+                            </div>
+                            <div style="font-size:12px;color:#64748b;display:flex;justify-content:space-between;">
+                                <span>{{ $po->items->sum('quantity') }} item(s) · {{ $po->guest_name ?: 'Guest' }}</span>
+                                <span style="font-weight:700;color:#f97316;">₹ {{ number_format((float)$po->total_amount, 2) }}</span>
+                            </div>
+                            <div style="font-size:10px;color:#94a3b8;margin-top:3px;">{{ $po->created_at->diffForHumans() }}</div>
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                <style>@keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }</style>
+                @endif
+                @endif
+
                 {{-- ══ SUSPENSION BANNER ═══════════════════════════════════════════ --}}
                 @if(session('crm_hotel_suspended'))
                 <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-left:5px solid #f43f5e;border-radius:16px;padding:22px 28px;margin-bottom:20px;display:flex;align-items:flex-start;gap:18px;box-shadow:0 8px 32px rgba(244,63,94,.18);">

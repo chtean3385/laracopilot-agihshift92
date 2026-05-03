@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('room_number', 20);
             $table->unsignedBigInteger('booking_id')->nullable()->index();
             $table->string('guest_name')->nullable();
+            $table->string('guest_phone', 30)->nullable();
             $table->text('guest_notes')->nullable();
             $table->enum('status', ['pending', 'in_progress', 'approved', 'cancelled'])->default('pending')->index();
             $table->decimal('total_amount', 10, 2)->default(0);

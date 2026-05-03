@@ -40,6 +40,7 @@ class ModuleSeeder extends Seeder
     ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking',     'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.'],
     ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',      'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.'],
     ['slug' => 'inventory',           'name' => 'Inventory Management',    'description' => 'Track consumables, food ingredients, and hotel supplies. Monitor stock levels, record purchases and usage, and get low-stock alerts.'],
+    ['slug' => 'food-menu',           'name' => 'Food Menu & Ordering',    'description' => 'QR-based in-room food ordering. Guests scan a room QR, browse the menu, and place orders that are billed directly to their room.'],
 ];
 
         foreach ($modules as $m) {
