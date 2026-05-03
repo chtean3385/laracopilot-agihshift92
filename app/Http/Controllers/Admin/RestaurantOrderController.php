@@ -232,7 +232,14 @@ class RestaurantOrderController extends Controller
             );
         }
 
-        DB::transaction(function () use ($order, $request, $hotelId, $bookingId) {
+        DB::transaction(function () use (&$order, $request, $hotelId, $bookingId) {
+            // Re-fetch with row lock so a double-click / concurrent approve
+            // can't pass the pre-check twice and post duplicate room charges.
+            $order = RestaurantOrder::lockForUpdate()->findOrFail($order->id);
+            if ($order->approval_status !== 'pending') {
+                return; // Already handled by the first request — no-op.
+            }
+
             $tableId  = $request->table_id ?: $order->table_id;
             $billType = $bookingId ? 'room' : 'direct';
 

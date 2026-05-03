@@ -1014,26 +1014,37 @@
 @endif
 --}}
             @php
-                $showFinance = \App\Services\PermissionService::check('payments.view')
-                    || \App\Services\PermissionService::check('invoices.view');
+                $finChildren = [
+                    'payments' => \App\Services\PermissionService::check('payments.view'),
+                    'invoices' => \App\Services\PermissionService::check('invoices.view'),
+                ];
+                $hasFinance = collect($finChildren)->contains(true);
+                $finActive  = request()->routeIs('payments.*') || request()->routeIs('invoices.*');
             @endphp
-            @if($showFinance)
+            @if($hasFinance)
             <div class="nav-section">Finance</div>
+            <div class="nav-group {{ $finActive ? 'open' : '' }}" data-group="finance">
+                <button type="button" class="nav-group-toggle {{ $finActive ? 'has-active' : '' }}" onclick="toggleNavGroup(this)">
+                    <span class="icon"><i class="fas fa-wallet"></i></span>
+                    <span>Billing</span>
+                    <i class="fas fa-chevron-right chev"></i>
+                </button>
+                <div class="nav-group-children">
+                    @if($finChildren['payments'])
+                    <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-credit-card"></i></span>
+                        Payments
+                    </a>
+                    @endif
+                    @if($finChildren['invoices'])
+                    <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                        Invoices
+                    </a>
+                    @endif
+                </div>
+            </div>
             @endif
-
-            @canDo('payments.view')
-            <a href="{{ route('payments.index') }}" class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-credit-card"></i></span>
-                Payments
-            </a>
-            @endCanDo
-
-            @canDo('invoices.view')
-            <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
-                <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                Invoices
-            </a>
-            @endCanDo
 
             @canDo('reports.view')
             <div class="nav-section">Analytics</div>
