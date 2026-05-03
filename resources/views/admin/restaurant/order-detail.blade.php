@@ -226,80 +226,9 @@
         </div>
         @endif
 
-        {{-- Order Items --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 class="font-bold text-gray-800 mb-4">🛒 Order Items
-                <span class="text-sm font-normal text-gray-500">({{ $order->items->count() }} items)</span>
-            </h3>
-
-            @if($order->items->isEmpty())
-            <p class="text-gray-400 text-sm text-center py-8">No items added yet. Click menu items above to add.</p>
-            @else
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-2 text-gray-600">Item</th>
-                            <th class="text-center py-2 text-gray-600">Qty</th>
-                            <th class="text-right py-2 text-gray-600">Price</th>
-                            <th class="text-right py-2 text-gray-600">Total</th>
-                            @if($order->isOpen())
-                            <th class="py-2"></th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody id="orderItemsBody">
-                        @foreach($order->items as $item)
-                        <tr class="border-b border-gray-100" id="item-row-{{ $item->id }}">
-                            <td class="py-2">
-                                <div class="font-medium">
-                                    {{ $item->food_type === 'veg' ? '🟢' : ($item->food_type === 'nonveg' ? '🔴' : '🔵') }}
-                                    {{ $item->item_name }}
-                                </div>
-                                @if($item->kot_note)
-                                <div class="text-xs text-gray-400">{{ $item->kot_note }}</div>
-                                @endif
-                            </td>
-                            <td class="py-2 text-center">
-                                @if($order->isPendingApproval())
-                                <form action="{{ route('restaurant.orders.items.qty', [$order->id, $item->id]) }}" method="POST" style="display:inline-flex;gap:4px;align-items:center;">
-                                    @csrf @method('PATCH')
-                                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="99" style="width:54px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;text-align:center;font-size:12px;">
-                                    <button type="submit" title="Update quantity" style="padding:3px 7px;background:#0891b2;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;">↻</button>
-                                </form>
-                                @else
-                                {{ $item->quantity }}
-                                @endif
-                            </td>
-                            <td class="py-2 text-right">₹{{ number_format($item->final_price, 2) }}</td>
-                            <td class="py-2 text-right font-medium">₹{{ number_format($item->subtotal, 2) }}</td>
-                            @if($order->isOpen())
-                            <td class="py-2 text-center">
-                                <button onclick="removeItem({{ $item->id }})" class="text-red-400 hover:text-red-600 text-xs">✕</button>
-                            </td>
-                            @endif
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Totals --}}
-            <div class="mt-4 border-t border-gray-200 pt-4 space-y-1 text-sm">
-                <div class="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span id="subtotalDisplay">₹{{ number_format($order->subtotal, 2) }}</span>
-                </div>
-                <div class="flex justify-between text-gray-600">
-                    <span>GST ({{ $order->tax_rate }}%)</span>
-                    <span id="taxDisplay">₹{{ number_format($order->tax_amount, 2) }}</span>
-                </div>
-                <div class="flex justify-between font-bold text-gray-800 text-base border-t border-gray-200 pt-2 mt-2">
-                    <span>Total</span>
-                    <span id="totalDisplay">₹{{ number_format($order->total, 2) }}</span>
-                </div>
-            </div>
-            @endif
+        {{-- Order Items — swapped in place by AJAX --}}
+        <div id="orderItemsPanel" class="bg-white rounded-xl border border-gray-200 p-4">
+            @include('admin.restaurant._order_items', ['order' => $order])
         </div>
     </div>
 
@@ -495,15 +424,36 @@ function addToOrder(itemId, name, price, foodType) {
     document.getElementById('addItemModal').classList.remove('hidden');
 }
 
+function swapItemsPanel(html) {
+    const panel = document.getElementById('orderItemsPanel');
+    if (panel && html) panel.innerHTML = html;
+}
+
+function flashSaving(msg) {
+    let f = document.getElementById('ajaxFlash');
+    if (!f) {
+        f = document.createElement('div');
+        f.id = 'ajaxFlash';
+        f.style.cssText = 'position:fixed;top:16px;right:16px;background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:9999;transition:opacity .2s;';
+        document.body.appendChild(f);
+    }
+    f.textContent = msg;
+    f.style.opacity = '1';
+    clearTimeout(f._t);
+    f._t = setTimeout(() => { f.style.opacity = '0'; }, 1400);
+}
+
 function confirmAddItem() {
     const qty   = document.getElementById('addItemQty').value;
     const price = document.getElementById('addItemPrice').value;
     const note  = document.getElementById('addItemNote').value;
 
+    flashSaving('Adding…');
     fetch('{{ route("restaurant.orders.items.add", $order->id) }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({
@@ -517,21 +467,49 @@ function confirmAddItem() {
     .then(data => {
         if (data.success) {
             document.getElementById('addItemModal').classList.add('hidden');
-            location.reload();
+            swapItemsPanel(data.items_html);
+            flashSaving('✓ Added');
+        } else {
+            alert(data.message || 'Could not add item.');
+        }
+    })
+    .catch(() => alert('Network error.'));
+}
+
+function updateQty(itemId, qty) {
+    flashSaving('Saving…');
+    fetch('{{ url("restaurant/orders/" . $order->id . "/items") }}/' + itemId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-HTTP-Method-Override': 'PATCH'
+        },
+        body: JSON.stringify({ quantity: qty, _method: 'PATCH' })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            swapItemsPanel(data.items_html);
+            flashSaving('✓ Updated');
         }
     });
 }
 
 function removeItem(itemId) {
     if (!confirm('Remove this item?')) return;
-
+    flashSaving('Removing…');
     fetch('{{ url("restaurant/orders/" . $order->id . "/items") }}/' + itemId, {
         method: 'DELETE',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) location.reload();
+        if (data.success) {
+            swapItemsPanel(data.items_html);
+            flashSaving('✓ Removed');
+        }
     });
 }
 

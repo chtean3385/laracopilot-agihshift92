@@ -132,11 +132,7 @@ class RestaurantOrderController extends Controller
         // Recalculate order totals
         $this->recalculateTotals($order);
 
-        return response()->json([
-            'success'   => true,
-            'item'      => $orderItem,
-            'order'     => $order->fresh(),
-        ]);
+        return $this->itemsJson($order);
     }
 
     // Remove item from order
@@ -146,11 +142,10 @@ class RestaurantOrderController extends Controller
         RestaurantOrderItem::where('id', $itemId)->where('order_id', $order->id)->delete();
         $this->recalculateTotals($order);
 
-        return response()->json(['success' => true, 'order' => $order->fresh()]);
+        return $this->itemsJson($order);
     }
 
-    // Update an item's quantity (used for editing a pending guest QR
-    // order before approval). Recalculates totals.
+    // Update an item's quantity (used for editing a guest QR order). Recalculates totals.
     public function updateItemQty(Request $request, $id, $itemId)
     {
         $request->validate(['quantity' => 'required|integer|min:1|max:99']);
@@ -166,10 +161,24 @@ class RestaurantOrderController extends Controller
         ]);
         $this->recalculateTotals($order);
 
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'order' => $order->fresh()]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return $this->itemsJson($order);
         }
         return back()->with('success', 'Quantity updated.');
+    }
+
+    // Returns JSON with the re-rendered items partial for AJAX swaps.
+    private function itemsJson(RestaurantOrder $order)
+    {
+        $order = $order->fresh(['items', 'table']);
+        $html  = view('admin.restaurant._order_items', ['order' => $order])->render();
+        return response()->json([
+            'success'    => true,
+            'items_html' => $html,
+            'subtotal'   => $order->subtotal,
+            'tax'        => $order->tax_amount,
+            'total'      => $order->total,
+        ]);
     }
 
     // Print KOT — marks order as kotted
