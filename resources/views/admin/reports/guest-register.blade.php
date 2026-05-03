@@ -40,12 +40,8 @@
            style="padding:7px 14px;background:#0891b2;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
             <i class="fas fa-file-csv"></i>CSV
         </a>
-        <button type="button" onclick="window.print()" style="padding:7px 14px;background:#475569;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-            <i class="fas fa-print"></i>Print
-        </button>
     </div>
 </div>
-<style>@media print{.no-print,.sidebar,.topbar,header,nav,form,.btn-primary{display:none!important;}body,html{background:#fff!important;}}</style>
 
 {{-- Stats --}}
 @php

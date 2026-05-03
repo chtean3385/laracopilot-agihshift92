@@ -145,13 +145,14 @@ class ReportController extends Controller
             ->whereIn('status', ['confirmed','checked_in','checked_out']);
 
         if ($search) {
-            $bookingsQuery->where(function ($q) use ($search) {
-                $q->whereHas('customer', fn($c) => $c->where('name', 'like', "%$search%")
-                    ->orWhere('id_number', 'like', "%$search%")
-                    ->orWhere('phone', 'like', "%$search%"))
-                  ->orWhereHas('bookingGuests', fn($g) => $g->where('name', 'like', "%$search%")
-                    ->orWhere('id_number', 'like', "%$search%"))
-                  ->orWhere('booking_number', 'like', "%$search%");
+            $term = '%' . $search . '%';
+            $bookingsQuery->where(function ($q) use ($term) {
+                $q->whereHas('customer', fn($c) => $c->where('name', 'ilike', $term)
+                    ->orWhere('id_number', 'ilike', $term)
+                    ->orWhere('phone', 'ilike', $term))
+                  ->orWhereHas('bookingGuests', fn($g) => $g->where('name', 'ilike', $term)
+                    ->orWhere('id_number', 'ilike', $term))
+                  ->orWhere('booking_number', 'ilike', $term);
             });
         }
 
