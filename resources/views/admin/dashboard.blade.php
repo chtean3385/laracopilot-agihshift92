@@ -269,14 +269,11 @@
                 {{-- ══ PENDING FOOD ORDERS ALERT ═══════════════════════════════════ --}}
                 @if(\App\Models\Module::isEnabled('food-menu') && \App\Services\PermissionService::check('food_menu.orders.view'))
                 @php
-                    $pendingFoodOrders = collect();
-                    try {
-                        $pendingFoodOrders = \App\Models\FoodOrder::with('items')
-                            ->where('status', 'pending')
-                            ->orderByDesc('created_at')
-                            ->limit(5)
-                            ->get();
-                    } catch (\Throwable $e) {}
+                    $pendingFoodOrders = \App\Models\FoodOrder::with('items')
+                        ->where('status', 'pending')
+                        ->orderByDesc('created_at')
+                        ->limit(5)
+                        ->get();
                 @endphp
                 @if($pendingFoodOrders->isNotEmpty())
                 <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:16px;padding:18px 22px;margin-bottom:20px;box-shadow:0 4px 18px rgba(249,115,22,.18);">

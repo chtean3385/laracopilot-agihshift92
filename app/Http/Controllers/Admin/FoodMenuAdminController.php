@@ -12,6 +12,10 @@ use App\Models\Room;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 
 class FoodMenuAdminController extends Controller
 {
@@ -223,6 +227,37 @@ class FoodMenuAdminController extends Controller
 
         $baseUrl = url('/menu/' . $hotel->slug);
 
-        return view('admin.food-menu.qr', compact('hotel', 'rooms', 'baseUrl'));
+        // Pre-render SVG QR codes server-side (Bacon QR Code, no JS needed)
+        $renderer = new ImageRenderer(new RendererStyle(220, 1), new SvgImageBackEnd());
+        $writer   = new Writer($renderer);
+
+        $qrSvgs = [];
+        $qrSvgs['__general__'] = $writer->writeString($baseUrl);
+        foreach ($rooms as $room) {
+            $qrSvgs[$room->id] = $writer->writeString($baseUrl . '/' . rawurlencode($room->room_number));
+        }
+
+        return view('admin.food-menu.qr', compact('hotel', 'rooms', 'baseUrl', 'qrSvgs'));
+    }
+
+    // ── QR Download (single QR as SVG) ────────────────────────────────────────
+    public function qrDownload(Request $request)
+    {
+        $this->requireModule();
+        $hotelId = $this->hotelId();
+        $hotel = Hotel::findOrFail($hotelId);
+
+        $room = $request->input('room');
+        $url  = url('/menu/' . $hotel->slug) . ($room ? '/' . rawurlencode($room) : '');
+
+        $renderer = new ImageRenderer(new RendererStyle(400, 2), new SvgImageBackEnd());
+        $writer   = new Writer($renderer);
+        $svg      = $writer->writeString($url);
+
+        $filename = 'food-menu-qr-' . ($room ?: 'general') . '.svg';
+        return response($svg, 200, [
+            'Content-Type'        => 'image/svg+xml',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }

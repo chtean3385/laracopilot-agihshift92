@@ -878,10 +878,7 @@
 @endCanDo
 @canDo('food_menu.orders.view')
 @php
-    $foodPending = 0;
-    try {
-        $foodPending = \App\Models\FoodOrder::whereIn('status', ['pending','in_progress'])->count();
-    } catch (\Throwable $e) {}
+    $foodPending = \App\Models\FoodOrder::whereIn('status', ['pending','in_progress'])->count();
 @endphp
 <a href="{{ route('food-orders.index') }}" class="nav-link {{ request()->routeIs('food-orders.*') ? 'active' : '' }}" style="position:relative;">
     <span class="icon"><i class="fas fa-receipt"></i></span>

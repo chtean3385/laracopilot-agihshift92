@@ -32,7 +32,7 @@ class FoodOrder extends Model
 
     public function approvedBy()
     {
-        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function statusLabel(): string

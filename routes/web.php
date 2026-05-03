@@ -459,6 +459,7 @@ Route::middleware('permission:food_menu.manage')->prefix('food-menu')->name('foo
     Route::get('/items/create',        [FoodMenuAdminController::class, 'itemCreate']       )->name('items.create');
     Route::post('/items',              [FoodMenuAdminController::class, 'itemStore']        )->name('items.store');
     Route::get('/qr',                  [FoodMenuAdminController::class, 'qr']               )->name('qr');
+    Route::get('/qr/download',         [FoodMenuAdminController::class, 'qrDownload']       )->name('qr.download');
     Route::get('/items/{id}/edit',     [FoodMenuAdminController::class, 'itemEdit']         )->name('items.edit');
     Route::put('/items/{id}',          [FoodMenuAdminController::class, 'itemUpdate']       )->name('items.update');
     Route::delete('/items/{id}',       [FoodMenuAdminController::class, 'itemDestroy']      )->name('items.destroy');
