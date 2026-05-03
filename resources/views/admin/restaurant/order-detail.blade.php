@@ -117,27 +117,31 @@
     </div>
     @endif
 
-    {{-- Action buttons — large + clear --}}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <form action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="display:flex;flex-direction:column;gap:8px;">
+    {{-- Action row — Approve / Reason / Decline all on one line --}}
+    @if(!$order->booking_id && !$order->room_number)
+    <form action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="margin-bottom:10px;">
+        @csrf
+        <select name="booking_id" form="approveForm-{{ $order->id }}" style="width:100%;padding:11px 14px;border:1.5px solid #fdba74;border-radius:10px;background:#fff;font-size:13px;font-weight:600;">
+            <option value="">— Direct payment (no room) —</option>
+            @foreach($bookings as $b)
+            <option value="{{ $b->id }}">{{ $b->booking_number }} · {{ $b->customer?->name }} (Room {{ $b->room?->room_number ?? 'N/A' }})</option>
+            @endforeach
+        </select>
+    </form>
+    @endif
+
+    <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;">
+        <form id="approveForm-{{ $order->id }}" action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="flex:1 1 240px;display:flex;">
             @csrf
-            @if(!$order->booking_id && !$order->room_number)
-            <select name="booking_id" style="padding:11px 14px;border:1.5px solid #fdba74;border-radius:10px;background:#fff;font-size:13px;font-weight:600;">
-                <option value="">— Direct payment (no room) —</option>
-                @foreach($bookings as $b)
-                <option value="{{ $b->id }}">{{ $b->booking_number }} · {{ $b->customer?->name }} (Room {{ $b->room?->room_number ?? 'N/A' }})</option>
-                @endforeach
-            </select>
-            @endif
-            <button type="submit" style="padding:14px 18px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(22,163,74,.3);">
+            <button type="submit" style="flex:1;padding:14px 18px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(22,163,74,.3);white-space:nowrap;">
                 <i class="fas fa-check-circle"></i> Approve &amp; Send to Kitchen
             </button>
         </form>
-        <form action="{{ route('restaurant.orders.reject', $order->id) }}" method="POST" style="display:flex;flex-direction:column;gap:8px;" onsubmit="return confirm('Decline this guest order?');">
+        <form action="{{ route('restaurant.orders.reject', $order->id) }}" method="POST" style="flex:2 1 360px;display:flex;gap:8px;" onsubmit="return confirm('Decline this guest order?');">
             @csrf
-            <input type="text" name="cancellation_reason" placeholder="Reason (optional)" style="padding:11px 14px;border:1.5px solid #fdba74;border-radius:10px;background:#fff;font-size:13px;">
-            <button type="submit" style="padding:14px 18px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(220,38,38,.3);">
-                <i class="fas fa-times-circle"></i> Decline Order
+            <input type="text" name="cancellation_reason" placeholder="Reason (optional)" style="flex:1;padding:11px 14px;border:1.5px solid #fdba74;border-radius:10px;background:#fff;font-size:13px;min-width:120px;">
+            <button type="submit" style="padding:14px 18px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(220,38,38,.3);white-space:nowrap;">
+                <i class="fas fa-times-circle"></i> Decline
             </button>
         </form>
     </div>
