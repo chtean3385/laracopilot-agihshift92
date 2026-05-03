@@ -94,8 +94,8 @@
 
     {{-- LEFT: Menu --}}
     <div class="lg:col-span-2">
-        {{-- Link to Room --}}
-        @if($order->isOpen())
+        {{-- Link to Room (staff orders only — guest QR uses the approve panel above) --}}
+        @if($order->isOpen() && !$order->isPendingApproval() && !$order->isGuestQr())
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
             <div class="flex items-center gap-3 flex-wrap">
                 <span class="text-sm font-medium text-gray-700">🛏️ Link to Room:</span>
@@ -115,8 +115,8 @@
         </div>
         @endif
 
-        {{-- Menu Categories --}}
-        @if($order->isOpen())
+        {{-- Menu Categories — hidden while a guest QR order is awaiting approval --}}
+        @if($order->isOpen() && !$order->isPendingApproval())
         <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
             <h3 class="font-bold text-gray-800 mb-4">📋 Menu</h3>
 
