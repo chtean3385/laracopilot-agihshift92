@@ -163,6 +163,15 @@
                     <span style="background:{{ $imp->status_color }}22;color:{{ $imp->status_color }};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid {{ $imp->status_color }}44;">
                         {{ $imp->status_label }}
                     </span>
+                    @if(($imp->source_channel ?? 'whatsapp') === 'email')
+                    <span style="background:#eff6ff;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid #bfdbfe;">
+                        <i class="fas fa-envelope" style="margin-right:3px;"></i>Email
+                    </span>
+                    @else
+                    <span style="background:#f0fdf4;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid #bbf7d0;">
+                        <i class="fab fa-whatsapp" style="margin-right:3px;"></i>WhatsApp
+                    </span>
+                    @endif
                     @if($imp->booking_ref)
                     <span style="font-size:11px;color:#64748b;font-family:monospace;background:#f8fafc;padding:2px 8px;border-radius:6px;border:1px solid #e2e8f0;">
                         Ref: {{ $imp->booking_ref }}

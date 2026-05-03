@@ -147,6 +147,110 @@ class OtaBookingParserService
         }
     }
 
+    /**
+     * Entry point called from the email webhook.
+     *
+     * Hotel resolution is already done by the webhook controller (via ota_email_sources).
+     * This method handles parsing, duplicate detection, and queue insertion only.
+     * No WhatsApp reply is sent for email-channel imports.
+     *
+     * @param  string       $senderEmail     FROM address of the forwarded email.
+     * @param  string       $subject         Email subject line (used in raw_message storage).
+     * @param  array        $bodyCandidates  One or more body texts tried in order (stripped → plain → HTML-stripped).
+     * @param  OtaSource    $otaSource       Matched/detected OTA source record.
+     * @param  int          $hotelId         Already-resolved hotel ID (from ota_email_sources).
+     */
+    public function handleFromEmail(
+        string $senderEmail,
+        string $subject,
+        array $bodyCandidates,
+        OtaSource $otaSource,
+        int $hotelId
+    ): void {
+        try {
+            if (!$this->moduleEnabled($hotelId)) {
+                Log::info('OtaBookingParser(email): ota_whatsapp_sync module disabled for hotel #' . $hotelId);
+                return;
+            }
+
+            // Try each body candidate in priority order; use the first one that parses.
+            $parsed      = null;
+            $messageBody = '';
+            foreach ($bodyCandidates as $candidate) {
+                $attempt = $this->parse($candidate, $otaSource->message_pattern_key);
+                if ($attempt) {
+                    $parsed      = $attempt;
+                    $messageBody = $candidate;
+                    break;
+                }
+            }
+
+            if (!$parsed) {
+                Log::warning('OtaBookingParser(email): could not parse email body from ' . $senderEmail . ' across ' . count($bodyCandidates) . ' candidate(s)', [
+                    'ota'      => $otaSource->name,
+                    'hotel'    => $hotelId,
+                    'subject'  => $subject,
+                    'previews' => array_map(fn($b) => mb_substr($b, 0, 200), $bodyCandidates),
+                ]);
+                return;
+            }
+
+            $rawMessage = "From: {$senderEmail}\nSubject: {$subject}\n\n{$messageBody}";
+            $bookingRef = $parsed['booking_ref'] ?? null;
+
+            if ($bookingRef && $this->isDuplicate($bookingRef, $hotelId)) {
+                OtaImportedBooking::create([
+                    'hotel_id'       => $hotelId,
+                    'ota_source_id'  => $otaSource->id ?? null,
+                    'raw_message'    => $rawMessage,
+                    'booking_ref'    => $bookingRef,
+                    'ota_name'       => $parsed['ota_label'] ?? $otaSource->name,
+                    'property_name'  => $parsed['property_name'] ?? null,
+                    'matched_by'     => 'email_source',
+                    'source_channel' => 'email',
+                    'status'         => 'duplicate',
+                ]);
+                Log::info('OtaBookingParser(email): duplicate booking ref ' . $bookingRef . ' for hotel #' . $hotelId);
+                return;
+            }
+
+            $import = OtaImportedBooking::create([
+                'hotel_id'        => $hotelId,
+                'ota_source_id'   => $otaSource->id ?? null,
+                'raw_message'     => $rawMessage,
+                'booking_ref'     => $bookingRef,
+                'guest_name'      => $parsed['guest_name']      ?? null,
+                'guest_phone'     => $parsed['guest_phone']      ?? null,
+                'checkin'         => $parsed['checkin']          ?? null,
+                'checkout'        => $parsed['checkout']         ?? null,
+                'room_type'       => $parsed['room_type']        ?? null,
+                'guests_count'    => $parsed['guests_count']     ?? null,
+                'amount'          => $parsed['amount']           ?? null,
+                'special_request' => $parsed['special_request']  ?? null,
+                'ota_name'        => $parsed['ota_label'] ?? $otaSource->name,
+                'property_name'   => $parsed['property_name']    ?? null,
+                'matched_by'      => 'email_source',
+                'source_channel'  => 'email',
+                'status'          => 'pending',
+            ]);
+
+            Log::info('OtaBookingParser(email): new pending import created for hotel #' . $hotelId . ' from ' . $otaSource->name, [
+                'booking_ref' => $bookingRef,
+                'import_id'   => $import->id,
+                'guest'       => $parsed['guest_name'] ?? 'Unknown',
+                'sender'      => $senderEmail,
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('OtaBookingParserService(email) error: ' . $e->getMessage(), [
+                'sender'   => $senderEmail,
+                'hotel_id' => $hotelId,
+                'ota'      => $otaSource->name,
+                'trace'    => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
     // ── Parsers ───────────────────────────────────────────────────────────────
 
     private function parse(string $body, string $patternKey): ?array

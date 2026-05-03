@@ -51,6 +51,9 @@ Route::withoutMiddleware([
 ])->group(function () {
     Route::get('/webhook/whatsapp',  [WhatsAppWebhookController::class, 'verify'] )->name('whatsapp.webhook.verify');
     Route::post('/webhook/whatsapp', [WhatsAppWebhookController::class, 'receive'])->name('whatsapp.webhook.receive');
+
+    // OTA Email Inbound Parse webhook (Mailgun — public, no auth, no CSRF)
+    Route::post('/webhook/ota-email', [\App\Http\Controllers\OtaEmailWebhookController::class, 'receive'])->name('ota-email.webhook.receive');
 });
 
 // ── Root ───────────────────────────────────────────────────────────────────
@@ -535,6 +538,13 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::put('/ota-sources/{otaSource}',                    [\App\Http\Controllers\Platform\OtaSourceController::class, 'update'] )->name('platform.ota-sources.update');
     Route::delete('/ota-sources/{otaSource}',                 [\App\Http\Controllers\Platform\OtaSourceController::class, 'destroy'])->name('platform.ota-sources.destroy');
     Route::post('/ota-sources/{otaSource}/toggle',            [\App\Http\Controllers\Platform\OtaSourceController::class, 'toggle'] )->name('platform.ota-sources.toggle');
+
+    // OTA Email Inbound Sources (per-hotel email address config)
+    Route::get('/ota-email-sources',                              [\App\Http\Controllers\Platform\OtaEmailSourceController::class, 'index']  )->name('platform.ota-email-sources.index');
+    Route::post('/ota-email-sources',                             [\App\Http\Controllers\Platform\OtaEmailSourceController::class, 'store']  )->name('platform.ota-email-sources.store');
+    Route::put('/ota-email-sources/{otaEmailSource}',             [\App\Http\Controllers\Platform\OtaEmailSourceController::class, 'update'] )->name('platform.ota-email-sources.update');
+    Route::delete('/ota-email-sources/{otaEmailSource}',          [\App\Http\Controllers\Platform\OtaEmailSourceController::class, 'destroy'])->name('platform.ota-email-sources.destroy');
+    Route::post('/ota-email-sources/{otaEmailSource}/toggle',     [\App\Http\Controllers\Platform\OtaEmailSourceController::class, 'toggle'] )->name('platform.ota-email-sources.toggle');
 
     // Push Notifications (Platform Admin)
     Route::get('/notifications/settings',  [\App\Http\Controllers\Platform\PushNotificationsController::class, 'settings']    )->name('platform.notifications.settings');

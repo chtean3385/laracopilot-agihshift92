@@ -22,6 +22,8 @@ foreach ([
     'FIREBASE_APP_ID','FIREBASE_VAPID_KEY','FCM_SERVER_KEY','FIREBASE_SERVICE_ACCOUNT_JSON',
     // Mail
     'MAIL_PASSWORD',
+    // Mailgun inbound parse webhook signing key (OTA email ingestion)
+    'MAILGUN_WEBHOOK_SIGNING_KEY',
 ] as $_k) {
     if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
         $_ENV[$_k] = $_SERVER[$_k] = $v;

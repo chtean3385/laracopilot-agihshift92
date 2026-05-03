@@ -27,6 +27,7 @@ class OtaImportedBooking extends Model
         'ota_name',
         'property_name',
         'matched_by',
+        'source_channel',
         'status',
         'booking_id',
     ];

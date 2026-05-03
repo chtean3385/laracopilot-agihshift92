@@ -414,7 +414,12 @@
 
         <a href="{{ route('platform.ota-sources.index') }}" class="nav-link {{ request()->routeIs('platform.ota-sources.*') ? 'active' : '' }}" style="padding-left:36px;">
             <span class="icon"><i class="fas fa-hotel" style="font-size:12px;"></i></span>
-            OTA Sources
+            OTA WA Sources
+        </a>
+
+        <a href="{{ route('platform.ota-email-sources.index') }}" class="nav-link {{ request()->routeIs('platform.ota-email-sources.*') ? 'active' : '' }}" style="padding-left:36px;">
+            <span class="icon"><i class="fas fa-envelope" style="font-size:12px;"></i></span>
+            OTA Email Sources
         </a>
 
         <div class="nav-section">Analytics</div>
