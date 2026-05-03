@@ -37,6 +37,36 @@
         <div class="mt-4 text-orange-500 text-sm font-semibold">View Register <i class="fas fa-arrow-right ml-1"></i></div>
     </a>
 
+    @if(\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.reports'))
+    <a href="{{ route('restaurant.reports') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md" style="background:linear-gradient(135deg,#f87171,#dc2626);">
+            <i class="fas fa-utensils text-white text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 group-hover:text-red-600 transition-colors">Restaurant Sales</h3>
+        <p class="text-gray-400 text-sm mt-1">Bills, food revenue & payment breakdown</p>
+        <div class="mt-4 text-red-500 text-sm font-semibold">View Report <i class="fas fa-arrow-right ml-1"></i></div>
+    </a>
+    @endif
+
+    @if(\App\Models\Module::isEnabled('inventory'))
+    <a href="{{ route('reports.inventory_stock') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md" style="background:linear-gradient(135deg,#fbbf24,#d97706);">
+            <i class="fas fa-boxes text-white text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 group-hover:text-amber-600 transition-colors">Inventory Stock Report</h3>
+        <p class="text-gray-400 text-sm mt-1">Current stock, low-stock alerts & total value</p>
+        <div class="mt-4 text-amber-600 text-sm font-semibold">View Report <i class="fas fa-arrow-right ml-1"></i></div>
+    </a>
+    <a href="{{ route('reports.inventory_movements') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);">
+            <i class="fas fa-exchange-alt text-white text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 group-hover:text-violet-600 transition-colors">Inventory Movements</h3>
+        <p class="text-gray-400 text-sm mt-1">Stock-in, usage & adjustments by date</p>
+        <div class="mt-4 text-violet-600 text-sm font-semibold">View Report <i class="fas fa-arrow-right ml-1"></i></div>
+    </a>
+    @endif
+
     @if(\App\Models\Module::isEnabled('time-slot-pricing'))
     <a href="{{ route('reports.slot_availability') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover group">
         <div class="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-md">

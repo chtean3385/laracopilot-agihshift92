@@ -182,6 +182,8 @@ Route::middleware('permission:reports.view')->group(function () {
     Route::get('/reports/occupancy',       [ReportController::class, 'occupancy']     )->name('reports.occupancy');
     Route::get('/reports/bookings',        [ReportController::class, 'bookings']      )->name('reports.bookings');
     Route::get('/reports/guest-register',  [ReportController::class, 'guestRegister'] )->name('reports.guest_register');
+    Route::get('/reports/inventory-stock',     [ReportController::class, 'inventoryStock']     )->name('reports.inventory_stock');
+    Route::get('/reports/inventory-movements', [ReportController::class, 'inventoryMovements'] )->name('reports.inventory_movements');
 });
 
 // ── Settings ───────────────────────────────────────────────────────────────

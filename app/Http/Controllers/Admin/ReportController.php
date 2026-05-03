@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\BookingGuest;
 use App\Models\Customer;
+use App\Models\InventoryCategory;
+use App\Models\InventoryItem;
+use App\Models\InventoryMovement;
 use App\Models\Payment;
 use App\Models\Room;
 use App\Models\HotelTimeSlot;
@@ -376,5 +379,60 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function inventoryStock(Request $request)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        abort_unless(Module::isEnabled('inventory'), 403, 'Inventory module is not enabled for this hotel.');
+
+        $categoryId = $request->input('category_id');
+        $onlyLow    = (bool) $request->input('low_only');
+
+        $query = InventoryItem::with('category')->where('is_active', true);
+        if ($categoryId) $query->where('category_id', $categoryId);
+        if ($onlyLow)    $query->whereRaw('current_stock <= reorder_level AND reorder_level > 0');
+
+        $items = $query->orderBy('name')->get();
+
+        $totals = [
+            'count'      => $items->count(),
+            'low_count'  => $items->filter(fn($i) => $i->isLowStock())->count(),
+            'total_qty'  => (float) $items->sum('current_stock'),
+            'total_value'=> (float) $items->sum(fn($i) => (float)$i->current_stock * (float)$i->cost_price),
+        ];
+
+        $categories = InventoryCategory::orderBy('name')->get();
+
+        return view('admin.reports.inventory-stock', compact('items', 'totals', 'categories', 'categoryId', 'onlyLow'));
+    }
+
+    public function inventoryMovements(Request $request)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        abort_unless(Module::isEnabled('inventory'), 403, 'Inventory module is not enabled for this hotel.');
+
+        $from = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->startOfMonth();
+        $to   = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::now()->endOfMonth();
+        $type = $request->input('type'); // in / out / adjust / null
+        $itemId = $request->input('item_id');
+
+        $query = InventoryMovement::with(['item.category', 'creator'])
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()]);
+        if ($type)   $query->where('type', $type);
+        if ($itemId) $query->where('item_id', $itemId);
+
+        $movements = $query->orderByDesc('created_at')->limit(2000)->get();
+
+        $totals = [
+            'in'     => (float) $movements->where('type', 'in')->sum('quantity'),
+            'out'    => (float) $movements->where('type', 'out')->sum('quantity'),
+            'adjust' => (float) $movements->where('type', 'adjust')->sum('quantity'),
+            'count'  => $movements->count(),
+        ];
+
+        $items = InventoryItem::orderBy('name')->get(['id', 'name', 'unit']);
+
+        return view('admin.reports.inventory-movements', compact('movements', 'totals', 'items', 'from', 'to', 'type', 'itemId'));
     }
 }
