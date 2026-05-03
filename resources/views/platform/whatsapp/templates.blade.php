@@ -5,13 +5,16 @@
 
 @php
 $eventMeta = [
-    'booking.created'  => ['fas fa-calendar-check', 'linear-gradient(135deg,#06b6d4,#3b82f6)', 'Booking Confirmed'],
-    'checkin.tomorrow' => ['fas fa-bell',            'linear-gradient(135deg,#f59e0b,#d97706)', 'Check-In Reminder'],
-    'checkin.done'     => ['fas fa-door-open',       'linear-gradient(135deg,#10b981,#059669)', 'Arrival Welcome'],
-    'payment.received' => ['fas fa-rupee-sign',      'linear-gradient(135deg,#7c3aed,#6d28d9)', 'Payment Received'],
-    'checkout.done'    => ['fas fa-sign-out-alt',    'linear-gradient(135deg,#0891b2,#0e7490)', 'Check-Out Thank You'],
-    'feedback.request' => ['fas fa-star',            'linear-gradient(135deg,#f97316,#ea580c)', 'Feedback Request'],
+    'booking.created'       => ['fas fa-calendar-check',     'linear-gradient(135deg,#06b6d4,#3b82f6)', 'Booking Confirmed'],
+    'checkin.tomorrow'      => ['fas fa-bell',               'linear-gradient(135deg,#f59e0b,#d97706)', 'Check-In Reminder'],
+    'checkin.done'          => ['fas fa-door-open',          'linear-gradient(135deg,#10b981,#059669)', 'Arrival Welcome'],
+    'payment.received'      => ['fas fa-rupee-sign',         'linear-gradient(135deg,#7c3aed,#6d28d9)', 'Payment Received'],
+    'checkout.done'         => ['fas fa-sign-out-alt',       'linear-gradient(135deg,#0891b2,#0e7490)', 'Check-Out Thank You'],
+    'feedback.request'      => ['fas fa-star',               'linear-gradient(135deg,#f97316,#ea580c)', 'Feedback Request'],
+    'ota_booking_confirmed' => ['fas fa-envelope-open-text', 'linear-gradient(135deg,#0ea5e9,#0284c7)', 'OTA Booking Confirmed'],
+    'ota_booking_conflict'  => ['fas fa-triangle-exclamation','linear-gradient(135deg,#ef4444,#b91c1c)', 'OTA Booking Conflict'],
 ];
+$eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', 'Automation'];
 @endphp
 
 {{-- Header --}}
@@ -107,7 +110,7 @@ $eventMeta = [
     $t = $templates[$event] ?? null;  // primary text template
     // All templates for this event (may include text + PDF for checkout.done)
     $eventTemplates = $standardTemplates->where('trigger_event', $event)->values();
-    [$icon, $grad, $shortLabel] = $eventMeta[$event];
+    [$icon, $grad, $shortLabel] = $eventMeta[$event] ?? $eventMetaDefault;
     $status      = $t ? ($t->approval_status ?? 'pending') : null;
     $metaStatus  = $t?->meta_status ?? 'not_submitted';
     $statusColor = match($status) {

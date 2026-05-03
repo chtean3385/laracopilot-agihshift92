@@ -37,8 +37,11 @@ $eventMeta = [
     'checkin.done'       => ['fas fa-door-open',       'linear-gradient(135deg,#10b981,#059669)', 'Sent when the guest checks in — welcome message'],
     'payment.received'   => ['fas fa-rupee-sign',      'linear-gradient(135deg,#7c3aed,#6d28d9)', 'Sent when a payment is recorded on the booking'],
     'checkout.done'      => ['fas fa-sign-out-alt',    'linear-gradient(135deg,#0891b2,#0e7490)', 'Sent after checkout — thank you + bill summary'],
-    'feedback.request'   => ['fas fa-star',            'linear-gradient(135deg,#f97316,#ea580c)', 'Sent 2 days after checkout requesting a review'],
+    'feedback.request'      => ['fas fa-star',            'linear-gradient(135deg,#f97316,#ea580c)', 'Sent 2 days after checkout requesting a review'],
+    'ota_booking_confirmed' => ['fas fa-envelope-open-text','linear-gradient(135deg,#0ea5e9,#0284c7)', 'Sent when an OTA booking email is parsed and confirmed automatically'],
+    'ota_booking_conflict'  => ['fas fa-triangle-exclamation','linear-gradient(135deg,#ef4444,#b91c1c)', 'Sent when an OTA booking email conflicts with an existing booking and needs review'],
 ];
+$eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', 'Automation'];
 
 $readyCount = 0;
 foreach($allEvents as $event => $label) {
@@ -167,7 +170,7 @@ foreach($allEvents as $event => $label) {
             } else {
                 $dot = '#94a3b8'; $dotLabel = 'Inactive';
             }
-            [$icon, $grad] = $eventMeta[$event];
+            [$icon, $grad] = $eventMeta[$event] ?? $eventMetaDefault;
         @endphp
         <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
             <div style="width:32px;height:32px;background:{{ $grad }};border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -190,7 +193,7 @@ foreach($allEvents as $event => $label) {
     @foreach($allEvents as $event => $label)
     @php
         $t               = $templates[$event] ?? null;
-        [$icon, $grad, $desc] = $eventMeta[$event];
+        [$icon, $grad, $desc] = $eventMeta[$event] ?? $eventMetaDefault;
         $isGlobalFallback   = $t && !empty($t->is_global_fallback);   // platform template shown as fallback
         $isPlatformTemplate = $isGlobalFallback || ($t && in_array($t->template_name, $platformApprovedNames ?? []));
         $approvalStatus  = $isPlatformTemplate ? 'approved' : ($t ? ($t->approval_status ?? 'pending') : null);
