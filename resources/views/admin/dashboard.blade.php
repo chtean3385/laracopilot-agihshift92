@@ -80,35 +80,95 @@
                     padding: 24px;
                     position: relative;
                     overflow: hidden;
-                    box-shadow: 0 4px 20px rgba(0,0,0,.07);
-                    transition: transform .2s, box-shadow .2s;
+                    box-shadow: 0 10px 30px -10px rgba(0,0,0,.25), 0 2px 6px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.18);
+                    transition: transform .35s cubic-bezier(.2,.9,.3,1.4), box-shadow .35s ease, filter .35s ease;
                     text-decoration: none;
                     display: block;
                     cursor: pointer;
+                    isolation: isolate;
+                    backdrop-filter: blur(10px);
                 }
-                .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+                /* Subtle aurora sweep across the card */
+                .kpi-card::before {
+                    content: ""; position: absolute; inset: 0;
+                    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%);
+                    background-size: 220% 100%;
+                    background-position: 200% 0;
+                    transition: background-position .9s ease;
+                    pointer-events: none; z-index: 1;
+                }
+                /* Inner glass border */
+                .kpi-card::after {
+                    content: ""; position: absolute; inset: 1px;
+                    border-radius: inherit;
+                    border: 1px solid rgba(255,255,255,.18);
+                    pointer-events: none; z-index: 1;
+                }
+                .kpi-card:hover {
+                    transform: translateY(-6px) scale(1.025);
+                    box-shadow: 0 22px 45px -12px rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.25);
+                    filter: brightness(1.06) saturate(1.08);
+                }
+                .kpi-card:hover::before { background-position: -100% 0; }
+                .kpi-card:hover .kpi-icon { transform: scale(1.18) rotate(-6deg); opacity: .85; filter: drop-shadow(0 0 8px rgba(255,255,255,.6)); }
+                .kpi-card:hover .kpi-num  { letter-spacing: .5px; text-shadow: 0 4px 18px rgba(255,255,255,.35); }
+
+                /* Animated floating orbs */
                 .kpi-card .kpi-shine {
-                    position: absolute; top: -40px; right: -40px;
-                    width: 130px; height: 130px; border-radius: 50%;
-                    background: rgba(255,255,255,.12);
+                    position: absolute; top: -45px; right: -45px;
+                    width: 140px; height: 140px; border-radius: 50%;
+                    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), rgba(255,255,255,.05) 60%, transparent 70%);
+                    filter: blur(2px);
+                    animation: kpi-orb-1 9s ease-in-out infinite;
+                    z-index: 0;
                 }
                 .kpi-card .kpi-shine2 {
-                    position: absolute; bottom: -30px; left: -20px;
-                    width: 90px; height: 90px; border-radius: 50%;
-                    background: rgba(255,255,255,.08);
+                    position: absolute; bottom: -35px; left: -25px;
+                    width: 100px; height: 100px; border-radius: 50%;
+                    background: radial-gradient(circle at 70% 70%, rgba(255,255,255,.35), rgba(255,255,255,.04) 65%, transparent 75%);
+                    filter: blur(3px);
+                    animation: kpi-orb-2 11s ease-in-out infinite;
+                    z-index: 0;
                 }
-                .kpi-num { font-size: 2.4rem; font-weight: 900; line-height: 1; color: #fff; }
-                .kpi-label { font-size: .78rem; font-weight: 600; color: rgba(255,255,255,.82); margin-top: 4px; }
-                .kpi-sub { font-size: .72rem; color: rgba(255,255,255,.65); margin-top: 6px; }
-                .kpi-icon { font-size: 1.8rem; opacity: .35; position: absolute; top: 18px; right: 20px; color: #fff; }
+
+                .kpi-num   { font-size: 2.4rem; font-weight: 900; line-height: 1; color: #fff; position: relative; z-index: 2; transition: text-shadow .3s ease, letter-spacing .3s ease; text-shadow: 0 2px 10px rgba(0,0,0,.18); }
+                .kpi-label { font-size: .78rem; font-weight: 700; color: rgba(255,255,255,.92); margin-top: 6px; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: .04em; }
+                .kpi-sub   { font-size: .72rem; color: rgba(255,255,255,.78); margin-top: 6px; position: relative; z-index: 2; font-weight: 600; }
+                .kpi-icon  {
+                    font-size: 1.8rem; opacity: .55; position: absolute; top: 16px; right: 18px; color: #fff;
+                    z-index: 2;
+                    transition: transform .35s cubic-bezier(.2,.9,.3,1.4), opacity .35s ease, filter .35s ease;
+                    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
+                }
+                /* Glowing icon halo */
+                .kpi-card .kpi-icon::after {
+                    content: ""; position: absolute; inset: -8px; border-radius: 50%;
+                    background: radial-gradient(circle, rgba(255,255,255,.35), transparent 70%);
+                    opacity: 0; transition: opacity .35s ease; z-index: -1;
+                }
+                .kpi-card:hover .kpi-icon::after { opacity: 1; }
+
                 /* Compact 8-card row */
-                .kpi-card-sm { border-radius: 14px !important; padding: 14px 14px 12px !important; }
-                .kpi-card-sm .kpi-num  { font-size: 1.55rem !important; }
-                .kpi-card-sm .kpi-label{ font-size: .68rem !important; margin-top: 3px !important; }
-                .kpi-card-sm .kpi-sub  { font-size: .62rem !important; margin-top: 4px !important; }
-                .kpi-card-sm .kpi-icon { font-size: 1.3rem !important; top: 10px !important; right: 12px !important; }
-                .kpi-card-sm .kpi-shine  { width: 80px !important; height: 80px !important; top: -25px !important; right: -25px !important; }
-                .kpi-card-sm .kpi-shine2 { width: 60px !important; height: 60px !important; bottom: -18px !important; left: -12px !important; }
+                .kpi-card-sm { border-radius: 16px !important; padding: 14px 14px 14px !important; }
+                .kpi-card-sm .kpi-num  { font-size: 1.7rem !important; font-weight: 900 !important; }
+                .kpi-card-sm .kpi-label{ font-size: .66rem !important; margin-top: 4px !important; letter-spacing: .06em !important; }
+                .kpi-card-sm .kpi-sub  { font-size: .62rem !important; margin-top: 4px !important; opacity: .85; }
+                .kpi-card-sm .kpi-icon { font-size: 1.35rem !important; top: 10px !important; right: 12px !important; }
+                .kpi-card-sm .kpi-shine  { width: 90px !important; height: 90px !important; top: -28px !important; right: -28px !important; }
+                .kpi-card-sm .kpi-shine2 { width: 70px !important; height: 70px !important; bottom: -22px !important; left: -16px !important; }
+                /* Bottom accent bar that grows on hover */
+                .kpi-card-sm::after {
+                    border-bottom: 3px solid rgba(255,255,255,.35);
+                    border-left: 0; border-right: 0; border-top: 0;
+                    inset: auto 14px 6px 14px;
+                    border-radius: 2px;
+                    transform: scaleX(.25); transform-origin: left;
+                    transition: transform .5s cubic-bezier(.2,.9,.3,1.4), border-color .3s ease;
+                }
+                .kpi-card-sm:hover::after { transform: scaleX(1); border-bottom-color: rgba(255,255,255,.7); }
+
+                @keyframes kpi-orb-1  { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-10px,8px) scale(1.08);} }
+                @keyframes kpi-orb-2  { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(8px,-6px) scale(1.12);} }
                 @keyframes pulse-dirty        { 0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.55),0 4px 18px rgba(249,115,22,.3);} 50%{box-shadow:0 0 0 10px rgba(249,115,22,0),0 4px 24px rgba(249,115,22,.5);} }
                 @keyframes dirty-bg-flash     { 0%,100%{background:linear-gradient(135deg,#f97316,#ea580c);} 45%,55%{background:linear-gradient(135deg,#dc2626,#b91c1c);} }
                 @keyframes dirty-icon-shake   { 0%,100%{transform:rotate(0deg);} 15%{transform:rotate(-14deg);} 35%{transform:rotate(12deg);} 55%{transform:rotate(-8deg);} 75%{transform:rotate(6deg);} }
