@@ -18,8 +18,12 @@ class FoodOrderService
      * 2. Create a BookingExtraCharge per order item
      * 3. Deduct inventory ingredients if Inventory module is enabled
      */
+    public array $deductionWarnings = [];
+
     public function approve(FoodOrder $order, int $userId): void
     {
+        $this->deductionWarnings = [];
+
         DB::transaction(function () use ($order, $userId) {
             // Lock the order row
             $order = FoodOrder::lockForUpdate()->findOrFail($order->id);
@@ -110,12 +114,14 @@ class FoodOrderService
                         'created_by' => $order->approved_by,
                     ]);
                 } catch (\Exception $e) {
-                    // Log but do not fail the approval — stock may already be at 0
+                    // Stock may be at 0 / negative — record as a surfaced warning so the
+                    // admin sees it after approval (do not roll back the booking charge).
                     \Illuminate\Support\Facades\Log::warning('FoodOrderService: inventory deduction failed', [
                         'order_id'          => $order->id,
                         'inventory_item_id' => $inventoryItem->id,
                         'error'             => $e->getMessage(),
                     ]);
+                    $this->deductionWarnings[] = $inventoryItem->name . ': ' . $e->getMessage();
                 }
             }
         }

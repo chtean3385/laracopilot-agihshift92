@@ -24,6 +24,7 @@
     </div>
 
     @if(session('success')) <div style="background:#dcfce7;color:#15803d;padding:12px 16px;border-radius:12px;margin-bottom:16px;">{{ session('success') }}</div> @endif
+    @if(session('warning')) <div style="background:#fef3c7;color:#92400e;padding:12px 16px;border-radius:12px;margin-bottom:16px;border:1px solid #fde68a;"><i class="fas fa-exclamation-triangle"></i> {{ session('warning') }}</div> @endif
     @if(session('error'))   <div style="background:#fee2e2;color:#b91c1c;padding:12px 16px;border-radius:12px;margin-bottom:16px;">{{ session('error') }}</div> @endif
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
@@ -86,6 +87,72 @@
                         <td style="padding:12px;text-align:center;"><span style="background:{{ $o->statusColor() }}22;color:{{ $o->statusColor() }};padding:3px 10px;border-radius:8px;font-size:11px;font-weight:700;">{{ $o->statusLabel() }}</span></td>
                         <td style="padding:12px;text-align:center;color:#94a3b8;font-size:12px;">{{ $o->created_at->diffForHumans() }}</td>
                         <td style="padding:12px;text-align:right;"><a href="{{ route('food-orders.show', $o->id) }}" style="color:#f97316;text-decoration:none;font-weight:700;font-size:13px;">View →</a></td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </div>
+
+    {{-- ══ MENU ITEMS MANAGEMENT ═══════════════════════════════════════════ --}}
+    <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h2 style="font-size:18px;font-weight:800;color:#1e293b;margin:0;"><i class="fas fa-list" style="color:#f97316;"></i> Menu Items ({{ $menuItems->count() }})</h2>
+            <a href="{{ route('food-menu.items.create') }}" style="font-size:13px;color:#fff;background:linear-gradient(135deg,#f97316,#ea580c);padding:8px 14px;border-radius:10px;font-weight:700;text-decoration:none;"><i class="fas fa-plus"></i> Add Item</a>
+        </div>
+        @if($menuItems->isEmpty())
+        <div style="padding:40px;text-align:center;color:#94a3b8;">
+            <i class="fas fa-utensils" style="font-size:36px;margin-bottom:10px;"></i>
+            <p style="font-size:14px;margin:0 0 12px;">No menu items yet. Add categories first, then create items.</p>
+            <a href="{{ route('food-menu.categories') }}" style="color:#f97316;font-weight:700;text-decoration:none;">Manage categories →</a>
+        </div>
+        @else
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                <thead>
+                    <tr style="background:#f8fafc;">
+                        <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:700;">Item</th>
+                        <th style="padding:10px 12px;text-align:left;color:#64748b;font-weight:700;">Category</th>
+                        <th style="padding:10px 12px;text-align:right;color:#64748b;font-weight:700;">Price</th>
+                        <th style="padding:10px 12px;text-align:center;color:#64748b;font-weight:700;">Status</th>
+                        <th style="padding:10px 12px;text-align:right;color:#64748b;font-weight:700;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($menuItems as $item)
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:12px;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                @if($item->image)
+                                <img src="{{ $item->imageUrl() }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">
+                                @else
+                                <div style="width:40px;height:40px;background:#fef3c7;border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="color:#f59e0b;"></i></div>
+                                @endif
+                                <div>
+                                    <div style="font-weight:700;color:#1e293b;">{{ $item->name }}</div>
+                                    @if($item->description)<div style="font-size:11px;color:#94a3b8;">{{ \Illuminate\Support\Str::limit($item->description, 50) }}</div>@endif
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:12px;color:#475569;">{{ $item->category?->name ?? '—' }}</td>
+                        <td style="padding:12px;text-align:right;font-weight:700;color:#1e293b;">₹ {{ number_format((float)$item->price, 2) }}</td>
+                        <td style="padding:12px;text-align:center;">
+                            <span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:700;background:{{ $item->is_available ? '#dcfce7' : '#fee2e2' }};color:{{ $item->is_available ? '#15803d' : '#b91c1c' }};">
+                                {{ $item->is_available ? 'Available' : 'Hidden' }}
+                            </span>
+                        </td>
+                        <td style="padding:12px;text-align:right;white-space:nowrap;">
+                            <form action="{{ route('food-menu.items.toggle', $item->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                <button type="submit" style="background:none;border:none;color:#64748b;font-size:13px;font-weight:700;cursor:pointer;padding:4px 8px;">{{ $item->is_available ? 'Hide' : 'Show' }}</button>
+                            </form>
+                            <a href="{{ route('food-menu.items.edit', $item->id) }}" style="color:#f97316;text-decoration:none;font-weight:700;font-size:13px;padding:4px 8px;">Edit</a>
+                            <form action="{{ route('food-menu.items.destroy', $item->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete {{ addslashes($item->name) }}?');">
+                                @csrf @method('DELETE')
+                                <button type="submit" style="background:none;border:none;color:#dc2626;font-size:13px;font-weight:700;cursor:pointer;padding:4px 8px;">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>

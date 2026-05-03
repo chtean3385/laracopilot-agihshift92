@@ -450,6 +450,7 @@ Route::middleware('permission:inventory.view')->prefix('inventory')->name('inven
 // ── Food Menu (Admin) ─────────────────────────────────────────────────────────
 Route::middleware('permission:food_menu.manage')->prefix('food-menu')->name('food-menu.')->group(function () {
     Route::get('/',                    [FoodMenuAdminController::class, 'dashboard']        )->name('dashboard');
+    Route::get('/admin',               [FoodMenuAdminController::class, 'dashboard']        )->name('admin');
     // Categories
     Route::get('/categories',          [FoodMenuAdminController::class, 'categories']       )->name('categories');
     Route::post('/categories',         [FoodMenuAdminController::class, 'categoryStore']    )->name('categories.store');
@@ -460,6 +461,7 @@ Route::middleware('permission:food_menu.manage')->prefix('food-menu')->name('foo
     Route::post('/items',              [FoodMenuAdminController::class, 'itemStore']        )->name('items.store');
     Route::get('/qr',                  [FoodMenuAdminController::class, 'qr']               )->name('qr');
     Route::get('/qr/download',         [FoodMenuAdminController::class, 'qrDownload']       )->name('qr.download');
+    Route::get('/qr/pdf',              [FoodMenuAdminController::class, 'qrPdf']            )->name('qr.pdf');
     Route::get('/items/{id}/edit',     [FoodMenuAdminController::class, 'itemEdit']         )->name('items.edit');
     Route::put('/items/{id}',          [FoodMenuAdminController::class, 'itemUpdate']       )->name('items.update');
     Route::delete('/items/{id}',       [FoodMenuAdminController::class, 'itemDestroy']      )->name('items.destroy');

@@ -16,6 +16,7 @@ use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class FoodMenuAdminController extends Controller
 {
@@ -48,8 +49,14 @@ class FoodMenuAdminController extends Controller
             ->limit(10)
             ->get();
 
+        $menuItems = FoodItem::with('category')
+            ->where('hotel_id', $hotelId)
+            ->orderBy('food_category_id')
+            ->orderBy('name')
+            ->get();
+
         return view('admin.food-menu.dashboard', compact(
-            'todayOrders', 'pendingCount', 'todayRevenue', 'totalItems', 'totalCategories', 'recentOrders'
+            'todayOrders', 'pendingCount', 'todayRevenue', 'totalItems', 'totalCategories', 'recentOrders', 'menuItems'
         ));
     }
 
@@ -238,6 +245,30 @@ class FoodMenuAdminController extends Controller
         }
 
         return view('admin.food-menu.qr', compact('hotel', 'rooms', 'baseUrl', 'qrSvgs'));
+    }
+
+    // ── QR Print PDF (printable single PDF, all rooms) ────────────────────────
+    public function qrPdf()
+    {
+        $this->requireModule();
+        $hotelId = $this->hotelId();
+        $hotel = Hotel::findOrFail($hotelId);
+        $rooms = Room::where('hotel_id', $hotelId)->orderBy('room_number')->get();
+
+        $baseUrl = url('/menu/' . $hotel->slug);
+        // Higher-resolution QR for print (PDF-embeddable SVG)
+        $renderer = new ImageRenderer(new RendererStyle(360, 2), new SvgImageBackEnd());
+        $writer   = new Writer($renderer);
+
+        $qrSvgs = ['__general__' => $writer->writeString($baseUrl)];
+        foreach ($rooms as $room) {
+            $qrSvgs[$room->id] = $writer->writeString($baseUrl . '/' . rawurlencode($room->room_number));
+        }
+
+        $pdf = Pdf::loadView('admin.food-menu.qr-pdf', compact('hotel', 'rooms', 'qrSvgs', 'baseUrl'))
+                  ->setPaper('a4', 'portrait');
+
+        return $pdf->download('food-menu-qr-' . $hotel->slug . '.pdf');
     }
 
     // ── QR Download (single QR as SVG) ────────────────────────────────────────

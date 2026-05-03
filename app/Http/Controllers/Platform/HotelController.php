@@ -178,6 +178,7 @@ class HotelController extends Controller
                 ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking',    'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.', 'is_enabled' => false],
                 ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',     'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.', 'is_enabled' => false],
                 ['slug' => 'ota_whatsapp_sync',   'name' => 'OTA WhatsApp Sync',      'description' => 'Automatically detect and import bookings from OTA WhatsApp confirmation messages (Booking.com, Airbnb, Agoda, MakeMyTrip, Goibibo etc.).', 'is_enabled' => false],
+                ['slug' => 'food-menu',           'name' => 'QR Food Menu',           'description' => 'In-room food ordering via QR code. Guests scan, browse menu, and place orders that staff approve and auto-bill to the room.', 'is_enabled' => false],
             ];
             foreach ($modules as $m) {
                 DB::table('modules')->insert(array_merge($m, [
@@ -392,6 +393,7 @@ class HotelController extends Controller
                 ['slug' => 'booking-widget',      'name' => 'Booking Widget',      'description' => 'Embeddable website booking form. Guests book directly from your hotel website and bookings appear in CRM instantly.', 'is_enabled' => false],
                 ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking', 'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.', 'is_enabled' => false],
                 ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',  'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.', 'is_enabled' => false],
+                ['slug' => 'food-menu',           'name' => 'QR Food Menu',        'description' => 'In-room food ordering via QR code. Guests scan, browse menu, and place orders that staff approve and auto-bill to the room.', 'is_enabled' => false],
             ] as $m) {
                 DB::table('modules')->insert(array_merge($m, ['hotel_id' => $newHotelId, 'created_at' => now(), 'updated_at' => now()]));
             }
@@ -924,6 +926,7 @@ class HotelController extends Controller
             'roles.view', 'roles.edit',
             'users.view', 'users.create', 'users.edit', 'users.delete',
             'whatsapp.send',
+            'food_menu.manage', 'food_menu.orders.view', 'food_menu.orders.manage',
         ];
 
         // Permissions excluded from Admin by default (must be granted explicitly by SaaS admin)
@@ -973,6 +976,9 @@ class HotelController extends Controller
                 'users.view'  => ['View Users','Users',26], 'users.create' => ['Create Users','Users',27],
                 'users.edit'  => ['Edit Users','Users',28],  'users.delete' => ['Delete Users','Users',29],
                 'whatsapp.send' => ['Send WhatsApp Messages','WhatsApp',30],
+                'food_menu.manage'         => ['Manage Food Menu','Food Menu',31],
+                'food_menu.orders.view'    => ['View Food Orders','Food Menu',32],
+                'food_menu.orders.manage'  => ['Approve / Manage Food Orders','Food Menu',33],
             ];
             $now = now();
             foreach ($missingSlugs as $slug) {

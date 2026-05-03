@@ -114,7 +114,16 @@ class FoodOrderController extends Controller
         }
 
         ActivityLogger::log('food_order_approved', 'FoodMenu', "Order #{$order->order_number} approved & billed");
-        return back()->with('success', "Order #{$order->order_number} approved. Charges added to room {$order->room_number}.");
+
+        $msg = "Order #{$order->order_number} approved. Charges added to room {$order->room_number}.";
+        if (! empty($service->deductionWarnings)) {
+            // Surface (don't suppress) inventory issues so admin can correct stock.
+            return back()
+                ->with('success', $msg)
+                ->with('warning', 'Inventory could not be deducted for some ingredients: '
+                    . implode(' | ', $service->deductionWarnings));
+        }
+        return back()->with('success', $msg);
     }
 
     // Edit an order item (qty change) — only allowed before approval
