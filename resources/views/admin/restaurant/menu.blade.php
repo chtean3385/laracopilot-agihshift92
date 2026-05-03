@@ -10,7 +10,10 @@
             <h1 class="text-2xl font-bold text-gray-800 mt-1">📋 Menu Management</h1>
             <p class="text-gray-500 text-sm">Manage categories and menu items</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
+            <a href="{{ route('restaurant.qr.index') }}" class="btn-secondary" style="background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;">
+                <i class="fas fa-qrcode"></i> Print QR Codes
+            </a>
             <button onclick="document.getElementById('addCategoryModal').classList.remove('hidden')" class="btn-secondary">
                 + Add Category
             </button>
@@ -65,6 +68,7 @@
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-100">
+                    <th class="text-left px-4 py-2 text-gray-600" style="width:64px;">Photo</th>
                     <th class="text-left px-4 py-2 text-gray-600">Item</th>
                     <th class="text-center px-4 py-2 text-gray-600">Type</th>
                     <th class="text-right px-4 py-2 text-gray-600">Price</th>
@@ -75,6 +79,13 @@
             <tbody>
                 @foreach($category->items as $item)
                 <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                        @if($item->imageUrl())
+                        <img src="{{ $item->imageUrl() }}" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #e2e8f0;">
+                        @else
+                        <div style="width:48px;height:48px;border-radius:8px;background:#fef2f2;display:flex;align-items:center;justify-content:center;color:#dc2626;border:1px dashed #fecaca;"><i class="fas fa-utensils"></i></div>
+                        @endif
+                    </td>
                     <td class="px-4 py-3">
                         <div class="font-medium text-gray-800">{{ $item->name }}</div>
                         @if($item->description)
@@ -101,7 +112,7 @@
                         </button>
                     </td>
                     <td class="px-4 py-3 text-right">
-                        <button onclick="openEditItem({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}', '{{ addslashes($item->description ?? '') }}', {{ $item->category_id ?? 'null' }})"
+                        <button onclick="openEditItem({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}', '{{ addslashes($item->description ?? '') }}', {{ $item->category_id ?? 'null' }}, '{{ $item->imageUrl() ?? '' }}')"
                             class="text-xs text-blue-600 hover:underline mr-2">Edit</button>
                         <form action="{{ route('restaurant.menu.items.destroy', $item->id) }}" method="POST"
                             class="inline" onsubmit="return confirm('Delete this item?')">
@@ -163,9 +174,15 @@
 <div id="addItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
     <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
         <h3 class="text-lg font-bold mb-4">Add Menu Item</h3>
-        <form action="{{ route('restaurant.menu.items.store') }}" method="POST">
+        <form action="{{ route('restaurant.menu.items.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Item Photo (optional)</label>
+                    <input type="file" name="image" accept="image/*"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2" style="font-size:13px;">
+                    <p class="text-xs text-gray-400 mt-1">JPG, PNG or WebP — max 2 MB</p>
+                </div>
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Item Name <span class="text-red-500">*</span></label>
                     <input type="text" name="name" placeholder="e.g. Paneer Tikka"
@@ -212,9 +229,23 @@
 <div id="editItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
     <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
         <h3 class="text-lg font-bold mb-4">Edit Menu Item</h3>
-        <form id="editItemForm" method="POST">
+        <form id="editItemForm" method="POST" enctype="multipart/form-data">
             @csrf @method('PUT')
             <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="col-span-2" id="editCurrentImageWrap" style="display:none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Photo</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <img id="editCurrentImage" src="" alt="" style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid #e2e8f0;">
+                        <label style="font-size:13px;color:#475569;cursor:pointer;">
+                            <input type="checkbox" name="remove_image" value="1" style="margin-right:6px;"> Remove photo
+                        </label>
+                    </div>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Replace / Add Photo (optional)</label>
+                    <input type="file" name="image" accept="image/*"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2" style="font-size:13px;">
+                </div>
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
                     <input type="text" name="name" id="editItemName"
@@ -266,13 +297,20 @@ function openEditCategory(id, name) {
     document.getElementById('editCategoryModal').classList.remove('hidden');
 }
 
-function openEditItem(id, name, price, foodType, description, categoryId) {
+function openEditItem(id, name, price, foodType, description, categoryId, imageUrl) {
     document.getElementById('editItemName').value = name;
     document.getElementById('editItemPrice').value = price;
     document.getElementById('editItemFoodType').value = foodType;
     document.getElementById('editItemDescription').value = description;
     document.getElementById('editItemCategory').value = categoryId || '';
     document.getElementById('editItemForm').action = '{{ url("restaurant/menu/items") }}/' + id;
+    var wrap = document.getElementById('editCurrentImageWrap');
+    if (imageUrl) {
+        document.getElementById('editCurrentImage').src = imageUrl;
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+    }
     document.getElementById('editItemModal').classList.remove('hidden');
 }
 

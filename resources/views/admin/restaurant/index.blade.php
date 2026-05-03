@@ -14,6 +14,9 @@
             <a href="{{ route('restaurant.menu.index') }}" class="btn-secondary">
                 📋 Manage Menu
             </a>
+            <a href="{{ route('restaurant.qr.index') }}" class="btn-secondary" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">
+                <i class="fas fa-qrcode"></i> QR Codes
+            </a>
             @endCanDo
             @canDo('restaurant.billing')
             <a href="{{ route('restaurant.bills.index') }}" class="btn-secondary">
@@ -41,6 +44,45 @@
 @if(session('error'))
     <div class="alert-error mb-4">{{ session('error') }}</div>
 @endif
+
+{{-- ── Task #111 — Pending Guest QR Orders Banner ── --}}
+@canDo('restaurant.orders')
+@php
+    $pendingGuestOrders = \App\Models\RestaurantOrder::with(['items', 'table'])
+        ->where('source', 'guest_qr')
+        ->where('approval_status', 'pending')
+        ->orderByDesc('created_at')
+        ->get();
+@endphp
+@if($pendingGuestOrders->isNotEmpty())
+<div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:14px;padding:16px 20px;margin-bottom:18px;box-shadow:0 4px 16px rgba(249,115,22,.15);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <i class="fas fa-bell" style="color:#ea580c;font-size:18px;"></i>
+        <strong style="color:#7c2d12;font-size:15px;">{{ $pendingGuestOrders->count() }} guest order{{ $pendingGuestOrders->count() === 1 ? '' : 's' }} waiting for approval</strong>
+        <span style="font-size:12px;color:#9a3412;">— scanned from QR</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+        @foreach($pendingGuestOrders as $po)
+        <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #fed7aa;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <strong style="font-size:13px;color:#1e293b;">{{ $po->order_number }}</strong>
+                @if($po->room_number)
+                    <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Room {{ $po->room_number }}</span>
+                @elseif($po->table)
+                    <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">{{ $po->table->name }}</span>
+                @else
+                    <span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Walk-in</span>
+                @endif
+            </div>
+            <div style="font-size:12px;color:#475569;margin-bottom:6px;">{{ $po->items->sum('quantity') }} item(s) · {{ $po->guest_name ?: 'Guest' }} · ₹{{ number_format((float)$po->total, 2) }}</div>
+            @if($po->guest_phone)<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;"><i class="fas fa-phone"></i> {{ $po->guest_phone }}</div>@endif
+            <a href="{{ route('restaurant.orders.show', $po->id) }}" style="display:inline-block;padding:6px 12px;background:#ea580c;color:#fff;border-radius:6px;text-decoration:none;font-size:12px;font-weight:700;">Review &amp; Approve →</a>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+@endCanDo
 
 {{-- Legend --}}
 <div class="flex gap-4 mb-6 flex-wrap">

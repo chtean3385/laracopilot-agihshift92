@@ -24,6 +24,14 @@ class RestaurantOrder extends Model
         'total',
         'notes',
         'billed_at',
+        // Task #111 — Guest QR / scan-to-order fields
+        'source',              // staff | guest_qr
+        'approval_status',     // null | pending | approved | rejected
+        'room_number',
+        'guest_name',
+        'guest_phone',
+        'guest_notes',
+        'cancellation_reason',
     ];
 
     protected $casts = [
@@ -59,6 +67,16 @@ public function booking()
     public function isOpen(): bool
     {
         return in_array($this->status, ['open', 'kotted', 'served']);
+    }
+
+    public function isGuestQr(): bool
+    {
+        return $this->source === 'guest_qr';
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->approval_status === 'pending';
     }
 
     public function isPaid(): bool

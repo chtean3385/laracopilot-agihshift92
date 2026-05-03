@@ -360,11 +360,22 @@ Route::withoutMiddleware([
     // Guest submits UPI UTR
     Route::post('/book/{slug}/payment-ref',  [\App\Http\Controllers\PublicBookingController::class, 'submitPaymentRef'])->name('public.booking.payment_ref');
 
-    // Public Food Menu (QR scan)
-    Route::get( '/menu/{slug}',                        [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show.no-room');
-    Route::get( '/menu/{slug}/order/{number}',         [FoodMenuPublicController::class, 'status'])->name('public.food-menu.status');
-    Route::post('/menu/{slug}/order',                  [FoodMenuPublicController::class, 'order'] )->name('public.food-menu.order');
-    Route::get( '/menu/{slug}/{room}',                 [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show')->where('room', '[A-Za-z0-9_\-]+');
+    /* ── Task #111 — Standalone Food Menu module is dormant. Routes below
+     *     are kept for reference but commented out. The QR + scan-to-order
+     *     flow now lives in the Restaurant module (/r/{slug}/...).
+     *
+     * Route::get( '/menu/{slug}',                        [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show.no-room');
+     * Route::get( '/menu/{slug}/order/{number}',         [FoodMenuPublicController::class, 'status'])->name('public.food-menu.status');
+     * Route::post('/menu/{slug}/order',                  [FoodMenuPublicController::class, 'order'] )->name('public.food-menu.order');
+     * Route::get( '/menu/{slug}/{room}',                 [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show')->where('room', '[A-Za-z0-9_\-]+');
+     */
+
+    // ── Public Restaurant Menu (QR scan-to-order) — Task #111 ──
+    Route::get( '/r/{slug}',                       [\App\Http\Controllers\RestaurantPublicController::class, 'show']      )->name('public.restaurant.show');
+    Route::get( '/r/{slug}/order/{number}',        [\App\Http\Controllers\RestaurantPublicController::class, 'status']    )->name('public.restaurant.status');
+    Route::post('/r/{slug}/order',                 [\App\Http\Controllers\RestaurantPublicController::class, 'order']     )->name('public.restaurant.order');
+    Route::get( '/r/{slug}/room/{room}',           [\App\Http\Controllers\RestaurantPublicController::class, 'showRoom']  )->name('public.restaurant.show.room')->where('room', '[A-Za-z0-9_\-]+');
+    Route::get( '/r/{slug}/table/{table}',         [\App\Http\Controllers\RestaurantPublicController::class, 'showTable'] )->name('public.restaurant.show.table')->where('table', '[A-Za-z0-9_\- ]+');
 });
 
 // ── Admin: Booking Widget Settings ──────────────────────────────────────────
@@ -409,6 +420,16 @@ Route::middleware('permission:restaurant.view')->prefix('restaurant')->name('res
         Route::post('/orders/{id}/cancel', [RestaurantOrderController::class, 'cancel']     )->name('orders.cancel');
         Route::post('/orders/{id}/items',  [RestaurantOrderController::class, 'addItem']    )->name('orders.items.add');
         Route::delete('/orders/{id}/items/{itemId}', [RestaurantOrderController::class, 'removeItem'])->name('orders.items.remove');
+        // Task #111 — guest QR order approval flow
+        Route::post('/orders/{id}/approve', [RestaurantOrderController::class, 'approve']  )->name('orders.approve');
+        Route::post('/orders/{id}/reject',  [RestaurantOrderController::class, 'reject']   )->name('orders.reject');
+    });
+
+    // Task #111 — QR codes for tables and rooms (Restaurant module)
+    Route::middleware('permission:restaurant.menu')->group(function () {
+        Route::get('/menu/qr',          [\App\Http\Controllers\Admin\RestaurantQrController::class, 'index']   )->name('qr.index');
+        Route::get('/menu/qr/pdf',      [\App\Http\Controllers\Admin\RestaurantQrController::class, 'pdf']     )->name('qr.pdf');
+        Route::get('/menu/qr/download', [\App\Http\Controllers\Admin\RestaurantQrController::class, 'download'])->name('qr.download');
     });
 
     // Billing
@@ -447,40 +468,42 @@ Route::middleware('permission:inventory.view')->prefix('inventory')->name('inven
 });
 
 
-// ── Food Menu (Admin) ─────────────────────────────────────────────────────────
-Route::middleware('permission:food_menu.manage')->prefix('food-menu')->name('food-menu.')->group(function () {
-    Route::get('/',                    [FoodMenuAdminController::class, 'dashboard']        )->name('dashboard');
-    Route::get('/admin',               [FoodMenuAdminController::class, 'dashboard']        )->name('admin');
-    // Categories
-    Route::get('/categories',          [FoodMenuAdminController::class, 'categories']       )->name('categories');
-    Route::post('/categories',         [FoodMenuAdminController::class, 'categoryStore']    )->name('categories.store');
-    Route::put('/categories/{id}',     [FoodMenuAdminController::class, 'categoryUpdate']   )->name('categories.update');
-    Route::delete('/categories/{id}',  [FoodMenuAdminController::class, 'categoryDestroy']  )->name('categories.destroy');
-    // Items — static paths BEFORE /{id} wildcards
-    Route::get('/items/create',        [FoodMenuAdminController::class, 'itemCreate']       )->name('items.create');
-    Route::post('/items',              [FoodMenuAdminController::class, 'itemStore']        )->name('items.store');
-    Route::get('/qr',                  [FoodMenuAdminController::class, 'qr']               )->name('qr');
-    Route::get('/qr/download',         [FoodMenuAdminController::class, 'qrDownload']       )->name('qr.download');
-    Route::get('/qr/pdf',              [FoodMenuAdminController::class, 'qrPdf']            )->name('qr.pdf');
-    Route::get('/items/{id}/edit',     [FoodMenuAdminController::class, 'itemEdit']         )->name('items.edit');
-    Route::put('/items/{id}',          [FoodMenuAdminController::class, 'itemUpdate']       )->name('items.update');
-    Route::delete('/items/{id}',       [FoodMenuAdminController::class, 'itemDestroy']      )->name('items.destroy');
-    Route::post('/items/{id}/toggle',  [FoodMenuAdminController::class, 'itemToggle']       )->name('items.toggle');
-});
-
-// ── Food Orders (Admin / Manager / Chef) ─────────────────────────────────────
-Route::middleware('permission:food_menu.orders.view')->prefix('food-orders')->name('food-orders.')->group(function () {
-    Route::get('/',                    [FoodOrderController::class, 'index']                )->name('index');
-    Route::get('/report',              [FoodOrderController::class, 'report']               )->name('report');
-    Route::get('/{id}',                [FoodOrderController::class, 'show']                 )->name('show');
-    Route::get('/{id}/kot',            [FoodOrderController::class, 'kotPrint']             )->name('kot');
-
-    Route::middleware('permission:food_menu.orders.manage')->group(function () {
-        Route::post('/{id}/status',    [FoodOrderController::class, 'status']               )->name('status');
-        Route::post('/{id}/edit-item', [FoodOrderController::class, 'editItem']             )->name('edit-item');
-        Route::post('/{id}/add-item',  [FoodOrderController::class, 'addItem']              )->name('add-item');
-    });
-});
+/* ── Task #111 — Standalone Food Menu / Food Orders modules are dormant.
+ *     All scan-to-order flow now lives inside the Restaurant module
+ *     (admin: /restaurant/menu/qr  •  guest: /r/{slug}/...).
+ *     Code, controllers, models, tables and permissions are kept intact
+ *     so the module can be re-enabled later without data loss.
+ *
+ * Route::middleware('permission:food_menu.manage')->prefix('food-menu')->name('food-menu.')->group(function () {
+ *     Route::get('/',                    [FoodMenuAdminController::class, 'dashboard']        )->name('dashboard');
+ *     Route::get('/admin',               [FoodMenuAdminController::class, 'dashboard']        )->name('admin');
+ *     Route::get('/categories',          [FoodMenuAdminController::class, 'categories']       )->name('categories');
+ *     Route::post('/categories',         [FoodMenuAdminController::class, 'categoryStore']    )->name('categories.store');
+ *     Route::put('/categories/{id}',     [FoodMenuAdminController::class, 'categoryUpdate']   )->name('categories.update');
+ *     Route::delete('/categories/{id}',  [FoodMenuAdminController::class, 'categoryDestroy']  )->name('categories.destroy');
+ *     Route::get('/items/create',        [FoodMenuAdminController::class, 'itemCreate']       )->name('items.create');
+ *     Route::post('/items',              [FoodMenuAdminController::class, 'itemStore']        )->name('items.store');
+ *     Route::get('/qr',                  [FoodMenuAdminController::class, 'qr']               )->name('qr');
+ *     Route::get('/qr/download',         [FoodMenuAdminController::class, 'qrDownload']       )->name('qr.download');
+ *     Route::get('/qr/pdf',              [FoodMenuAdminController::class, 'qrPdf']            )->name('qr.pdf');
+ *     Route::get('/items/{id}/edit',     [FoodMenuAdminController::class, 'itemEdit']         )->name('items.edit');
+ *     Route::put('/items/{id}',          [FoodMenuAdminController::class, 'itemUpdate']       )->name('items.update');
+ *     Route::delete('/items/{id}',       [FoodMenuAdminController::class, 'itemDestroy']      )->name('items.destroy');
+ *     Route::post('/items/{id}/toggle',  [FoodMenuAdminController::class, 'itemToggle']       )->name('items.toggle');
+ * });
+ *
+ * Route::middleware('permission:food_menu.orders.view')->prefix('food-orders')->name('food-orders.')->group(function () {
+ *     Route::get('/',                    [FoodOrderController::class, 'index']                )->name('index');
+ *     Route::get('/report',              [FoodOrderController::class, 'report']               )->name('report');
+ *     Route::get('/{id}',                [FoodOrderController::class, 'show']                 )->name('show');
+ *     Route::get('/{id}/kot',            [FoodOrderController::class, 'kotPrint']             )->name('kot');
+ *     Route::middleware('permission:food_menu.orders.manage')->group(function () {
+ *         Route::post('/{id}/status',    [FoodOrderController::class, 'status']               )->name('status');
+ *         Route::post('/{id}/edit-item', [FoodOrderController::class, 'editItem']             )->name('edit-item');
+ *         Route::post('/{id}/add-item',  [FoodOrderController::class, 'addItem']              )->name('add-item');
+ *     });
+ * });
+ */
 
 
 // ── Pathik Autofill ─────────────────────────────────────────────────────────

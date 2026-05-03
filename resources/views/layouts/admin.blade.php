@@ -869,6 +869,10 @@
 </a>
 @endCanDo
 @endif
+{{-- Task #111 — Standalone Food Menu module is dormant. QR + scan-to-order
+     now lives inside the Restaurant module sidebar entry above. Block kept
+     commented for reference. --}}
+{{--
 @if(\App\Models\Module::isEnabled('food-menu'))
 @canDo('food_menu.manage')
 <a href="{{ route('food-menu.dashboard') }}" class="nav-link {{ request()->routeIs('food-menu.*') ? 'active' : '' }}">
@@ -889,6 +893,7 @@
 </a>
 @endCanDo
 @endif
+--}}
             @php
                 $showFinance = \App\Services\PermissionService::check('payments.view')
                     || \App\Services\PermissionService::check('invoices.view');

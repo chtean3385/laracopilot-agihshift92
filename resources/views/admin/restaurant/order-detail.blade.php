@@ -8,21 +8,27 @@
         <div>
             <a href="{{ route('restaurant.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Tables</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-1">
-                {{ $order->table->name }} — {{ $order->order_number }}
+                {{ $order->table?->name ?? ($order->room_number ? 'Room ' . $order->room_number : 'Walk-in') }} — {{ $order->order_number }}
             </h1>
             <p class="text-gray-500 text-sm">
                 {!! $order->statusBadge() !!}
+                @if($order->isGuestQr())
+                    <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;"><i class="fas fa-qrcode"></i> Guest QR</span>
+                @endif
+                @if($order->isPendingApproval())
+                    <span style="background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px;">Pending approval</span>
+                @endif
                 <span class="ml-2">Started {{ $order->created_at->diffForHumans() }}</span>
             </p>
         </div>
         <div class="flex gap-2 flex-wrap">
-            @if($order->isOpen())
+            @if($order->isOpen() && !$order->isPendingApproval())
             <button onclick="printKot()" class="btn-secondary">🖨️ Print KOT</button>
             <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="btn-primary">
                 💳 Generate Bill
             </button>
             @endif
-            @if($order->isOpen())
+            @if($order->isOpen() && !$order->isPendingApproval())
             <form action="{{ route('restaurant.orders.cancel', $order->id) }}" method="POST"
                 onsubmit="return confirm('Cancel this order? Table will be freed.')">
                 @csrf
@@ -32,6 +38,44 @@
         </div>
     </div>
 </div>
+
+{{-- ── Task #111 — Guest QR pending approval panel ── --}}
+@if($order->isPendingApproval())
+<div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:14px;padding:18px 22px;margin-bottom:18px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <i class="fas fa-hourglass-half" style="color:#ea580c;font-size:18px;"></i>
+        <strong style="color:#7c2d12;font-size:16px;">Guest QR order — needs your approval</strong>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px;font-size:13px;">
+        @if($order->guest_name)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Guest</div><div style="color:#1e293b;font-weight:600;">{{ $order->guest_name }}</div></div>@endif
+        @if($order->guest_phone)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Phone</div><div style="color:#1e293b;font-weight:600;">{{ $order->guest_phone }}</div></div>@endif
+        @if($order->room_number)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Room</div><div style="color:#1e293b;font-weight:600;">{{ $order->room_number }}</div></div>@endif
+        @if($order->table)<div><div style="color:#9a3412;font-size:11px;font-weight:700;text-transform:uppercase;">Table</div><div style="color:#1e293b;font-weight:600;">{{ $order->table->name }}</div></div>@endif
+    </div>
+    @if($order->guest_notes)
+    <div style="background:#fff;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#475569;"><strong style="color:#7c2d12;">Notes:</strong> {{ $order->guest_notes }}</div>
+    @endif
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <form action="{{ route('restaurant.orders.approve', $order->id) }}" method="POST" style="display:inline;">
+            @csrf
+            @if(!$order->booking_id && !$order->room_number)
+            <select name="booking_id" style="padding:9px 12px;border:1.5px solid #fdba74;border-radius:8px;background:#fff;font-size:13px;">
+                <option value="">— Direct payment —</option>
+                @foreach($bookings as $b)
+                <option value="{{ $b->id }}">{{ $b->booking_number }} · {{ $b->customer?->name }} (Room {{ $b->room?->room_number ?? 'N/A' }})</option>
+                @endforeach
+            </select>
+            @endif
+            <button type="submit" style="padding:10px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;font-size:13px;"><i class="fas fa-check"></i> Approve &amp; Send to Kitchen</button>
+        </form>
+        <form action="{{ route('restaurant.orders.reject', $order->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Decline this guest order?');">
+            @csrf
+            <input type="text" name="cancellation_reason" placeholder="Reason (optional)" style="padding:9px 12px;border:1.5px solid #fdba74;border-radius:8px;background:#fff;font-size:13px;">
+            <button type="submit" style="padding:10px 18px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;font-size:13px;"><i class="fas fa-times"></i> Decline</button>
+        </form>
+    </div>
+</div>
+@endif
 
 @if(session('success'))
     <div class="alert-success mb-4">{{ session('success') }}</div>
@@ -184,7 +228,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-500">Table</span>
-                    <span class="font-medium">{{ $order->table->name }}</span>
+                    <span class="font-medium">{{ $order->table?->name ?? ($order->room_number ? 'Room ' . $order->room_number : 'Walk-in') }}</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-500">Status</span>

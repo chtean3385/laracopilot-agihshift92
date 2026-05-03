@@ -266,16 +266,17 @@
                 }
                 </style>
 
-                {{-- ══ PENDING FOOD ORDERS ALERT ═══════════════════════════════════ --}}
-                @if(\App\Models\Module::isEnabled('food-menu') && \App\Services\PermissionService::check('food_menu.orders.view'))
+                {{-- ══ PENDING GUEST QR ORDERS (Restaurant module) — Task #111 ══════ --}}
+                @if(\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.orders'))
                 @php
-                    $pendingFoodOrders = \App\Models\FoodOrder::with('items')
-                        ->where('status', 'pending')
+                    $pendingGuestOrders = \App\Models\RestaurantOrder::with('items')
+                        ->where('source', 'guest_qr')
+                        ->where('approval_status', 'pending')
                         ->orderByDesc('created_at')
                         ->limit(5)
                         ->get();
                 @endphp
-                @if($pendingFoodOrders->isNotEmpty())
+                @if($pendingGuestOrders->isNotEmpty())
                 <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa);border:2px solid #f97316;border-radius:16px;padding:18px 22px;margin-bottom:20px;box-shadow:0 4px 18px rgba(249,115,22,.18);">
                     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
                         <div style="display:flex;align-items:center;gap:12px;">
@@ -283,22 +284,28 @@
                                 <i class="fas fa-bell" style="color:#fff;font-size:18px;"></i>
                             </div>
                             <div>
-                                <div style="font-size:16px;font-weight:900;color:#7c2d12;">{{ $pendingFoodOrders->count() }} new food order{{ $pendingFoodOrders->count() === 1 ? '' : 's' }} waiting</div>
-                                <div style="font-size:12px;color:#9a3412;">Review and approve to bill the room.</div>
+                                <div style="font-size:16px;font-weight:900;color:#7c2d12;">{{ $pendingGuestOrders->count() }} guest order{{ $pendingGuestOrders->count() === 1 ? '' : 's' }} waiting for approval</div>
+                                <div style="font-size:12px;color:#9a3412;">Scan-to-order from QR — review and approve to send to kitchen.</div>
                             </div>
                         </div>
-                        <a href="{{ route('food-orders.index', ['status' => 'pending']) }}" style="padding:9px 16px;background:#fff;color:#ea580c;border:1.5px solid #f97316;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;">View all →</a>
+                        <a href="{{ route('restaurant.orders.index') }}" style="padding:9px 16px;background:#fff;color:#ea580c;border:1.5px solid #f97316;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;">View all →</a>
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
-                        @foreach($pendingFoodOrders as $po)
-                        <a href="{{ route('food-orders.show', $po->id) }}" style="display:block;background:#fff;padding:11px 14px;border-radius:10px;text-decoration:none;color:#1e293b;border:1px solid #fed7aa;">
+                        @foreach($pendingGuestOrders as $po)
+                        <a href="{{ route('restaurant.orders.show', $po->id) }}" style="display:block;background:#fff;padding:11px 14px;border-radius:10px;text-decoration:none;color:#1e293b;border:1px solid #fed7aa;">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                                 <span style="font-size:13px;font-weight:800;">{{ $po->order_number }}</span>
+                                @if($po->room_number)
                                 <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Room {{ $po->room_number }}</span>
+                                @elseif($po->table_id)
+                                <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Table</span>
+                                @else
+                                <span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">Walk-in</span>
+                                @endif
                             </div>
                             <div style="font-size:12px;color:#64748b;display:flex;justify-content:space-between;">
                                 <span>{{ $po->items->sum('quantity') }} item(s) · {{ $po->guest_name ?: 'Guest' }}</span>
-                                <span style="font-weight:700;color:#f97316;">₹ {{ number_format((float)$po->total_amount, 2) }}</span>
+                                <span style="font-weight:700;color:#f97316;">₹ {{ number_format((float)$po->total, 2) }}</span>
                             </div>
                             <div style="font-size:10px;color:#94a3b8;margin-top:3px;">{{ $po->created_at->diffForHumans() }}</div>
                         </a>

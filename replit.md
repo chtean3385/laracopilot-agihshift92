@@ -1,5 +1,33 @@
 # Hotel CRM — Laravel 12 Multi-Tenant SaaS
 
+## ⚠️ DORMANT MODULE — `food-menu` (Task #111)
+
+The standalone **Food Menu** module (controllers `FoodMenuAdminController`,
+`FoodOrderController`, `FoodMenuPublicController`; tables `food_categories`,
+`food_items`, `food_orders`, `food_order_items`; permissions `food_menu.*`) is
+**dormant**. All scan-to-order functionality lives inside the **Restaurant**
+module instead:
+
+- **Admin print/manage QR codes:** `/restaurant/menu/qr` → table + room QR
+  codes, downloadable as SVG/PNG, printable A4 PDF.
+- **Guest scan-to-order public URLs:**
+  - `/r/{slug}` — pick room or table at the start
+  - `/r/{slug}/room/{room}` — in-room QR (auto-fills room, bills to room)
+  - `/r/{slug}/table/{name}` — table QR (auto-fills table)
+- **Order approval:** guest orders land with `source='guest_qr'` and
+  `approval_status='pending'`. Staff approve/reject from the Restaurant
+  Tables page banner or order detail page.
+- Restaurant menu items now also support **image uploads** (stored under
+  `storage/app/public/restaurant/{hotel_id}/`).
+
+The food-menu code, routes, sidebar entry, dashboard banner, ModuleSeeder row,
+HotelController provisioning row and `food_menu.*` permissions are all
+**commented out** (not deleted) so the module can be re-enabled later. Do not
+add new features to the dormant `food-menu` module — extend the Restaurant
+module instead.
+
+
+
 ## Overview
 Full hotel/resort management CRM built on Laravel 12, fully evolved into a multi-tenant SaaS platform. Features: guest management, rooms, bookings, check-in/out, payments, invoices, reports, RBAC, activity audit logging, WhatsApp messaging, Guest Register (signatures + ID docs), Pathik autofill, OTA Channel Manager, Payment Links, web-based installer, Per-Hotel Backup & Restore, SaaS Analytics Dashboard with Engagement Campaigns, Firebase Push Notifications (web + Android Flutter WebView), Platform Admin SaaS console, **Customisable Dashboard** (per-user widget show/hide + drag-to-reorder + hotel-wide admin defaults), **Live Dashboard** (Today's Agenda modal on login, Live Activity Feed widget auto-polling every 30s, KPI card auto-refresh every 60s, dual-tab notification bell showing platform notifications + hotel activity feed), **OTA WhatsApp Booking Sync** (auto-detect Booking.com / Airbnb / Agoda / MakeMyTrip / Goibibo booking confirmations arriving via WhatsApp → import queue → one-click confirm creates CRM booking with customer & booking number), and **OTA Email Booking Sync** (hotel admins forward OTA confirmation emails to a per-hotel inbound address → Mailgun inbound-parse webhook → same import queue + `source_channel` badge differentiates WhatsApp vs Email sources).
 

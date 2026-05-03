@@ -164,6 +164,90 @@ class RestaurantOrderController extends Controller
         return view('admin.restaurant.kot-print', compact('order'));
     }
 
+    // ── Task #111 — Approve a pending guest QR order ──
+    public function approve(Request $request, $id)
+    {
+        $order = RestaurantOrder::findOrFail($id);
+
+        if (!$order->isPendingApproval()) {
+            return back()->with('error', 'This order is not pending approval.');
+        }
+
+        $hotelId = (int) (session('crm_hotel_id') ?: session('crm_sa_hotel_filter'));
+        // Multi-tenant safety — booking_id / table_id MUST belong to the
+        // current hotel, otherwise a malicious staff user could cross-link
+        // an order to a record from a different hotel.
+        $request->validate([
+            'booking_id' => ['nullable', \Illuminate\Validation\Rule::exists('bookings', 'id')->where('hotel_id', $hotelId)],
+            'table_id'   => ['nullable', \Illuminate\Validation\Rule::exists('restaurant_tables', 'id')->where('hotel_id', $hotelId)],
+        ]);
+
+        DB::transaction(function () use ($order, $request) {
+            $bookingId = $request->booking_id ?: $order->booking_id;
+            $tableId   = $request->table_id   ?: $order->table_id;
+
+            // If guest gave a room number and admin didn't override, try to auto-link
+            // to the currently checked-in booking on that room.
+            if (!$bookingId && $order->room_number) {
+                $booking = Booking::where('status', 'checked_in')
+                    ->whereHas('room', fn($q) => $q->where('room_number', $order->room_number))
+                    ->first();
+                if ($booking) {
+                    $bookingId = $booking->id;
+                }
+            }
+
+            $billType = $bookingId ? 'room' : 'direct';
+
+            // If a table is now attached, mark it occupied (skip if it already
+            // has another active order — staff should handle that manually).
+            if ($tableId) {
+                $tbl = RestaurantTable::find($tableId);
+                if ($tbl && $tbl->status !== 'occupied') {
+                    $tbl->update(['status' => 'occupied']);
+                }
+            }
+
+            $order->update([
+                'approval_status' => 'approved',
+                'status'          => 'kotted',
+                'booking_id'      => $bookingId,
+                'table_id'        => $tableId,
+                'bill_type'       => $billType,
+            ]);
+        });
+
+        ActivityLogger::log('restaurant_order_approved', 'Restaurant', "Guest QR order {$order->order_number} approved");
+
+        return redirect()->route('restaurant.orders.show', $order->id)
+            ->with('success', 'Order approved and sent to kitchen.');
+    }
+
+    // ── Task #111 — Reject a pending guest QR order ──
+    public function reject(Request $request, $id)
+    {
+        $order = RestaurantOrder::findOrFail($id);
+
+        if (!$order->isPendingApproval()) {
+            return back()->with('error', 'This order is not pending approval.');
+        }
+
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:255',
+        ]);
+
+        $order->update([
+            'approval_status'     => 'rejected',
+            'status'              => 'cancelled',
+            'cancellation_reason' => $request->cancellation_reason ?: 'Rejected by staff',
+        ]);
+
+        ActivityLogger::log('restaurant_order_rejected', 'Restaurant', "Guest QR order {$order->order_number} rejected");
+
+        return redirect()->route('restaurant.index')
+            ->with('success', 'Order declined.');
+    }
+
     // Cancel order
     public function cancel($id)
     {
@@ -175,7 +259,9 @@ class RestaurantOrderController extends Controller
 
         DB::transaction(function () use ($order) {
             $order->update(['status' => 'cancelled']);
-            RestaurantTable::where('id', $order->table_id)->update(['status' => 'free']);
+            if ($order->table_id) {
+                RestaurantTable::where('id', $order->table_id)->update(['status' => 'free']);
+            }
         });
 
         ActivityLogger::log('restaurant_order_cancelled', 'Restaurant', "Order {$order->order_number} cancelled");

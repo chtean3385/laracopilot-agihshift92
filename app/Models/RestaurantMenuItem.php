@@ -14,6 +14,7 @@ class RestaurantMenuItem extends Model
         'category_id',
         'name',
         'description',
+        'image_path',
         'price',
         'food_type',
         'is_available',
@@ -28,6 +29,11 @@ class RestaurantMenuItem extends Model
     public function category()
     {
         return $this->belongsTo(RestaurantMenuCategory::class, 'category_id');
+    }
+
+    public function imageUrl(): ?string
+    {
+        return $this->image_path ? asset('storage/' . $this->image_path) : null;
     }
 
     public function foodTypeBadge(): string

@@ -71,10 +71,12 @@ $icons = [
                     <a href="{{ route('whatsapp.setup') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
+                    {{-- Task #111: food-menu Configure removed — module dormant.
                     @elseif($module->is_enabled && $module->slug === 'food-menu')
                     <a href="{{ route('food-menu.dashboard') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
+                    --}}
                     @endif
                 </div>
             </div>
@@ -118,10 +120,12 @@ $icons = [
                     <a href="{{ route('admin.booking-widget.settings') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
+                    {{-- Task #111: food-menu Configure removed — module dormant.
                     @elseif($module->slug === 'food-menu')
                     <a href="{{ route('food-menu.dashboard') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
+                    --}}
                     @endif
                 @endif
             </div>

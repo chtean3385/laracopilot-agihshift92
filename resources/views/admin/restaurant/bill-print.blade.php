@@ -62,7 +62,7 @@
 {{-- Bill Info --}}
 <div class="row"><span>Bill #</span><span class="bold">{{ $bill->bill_number }}</span></div>
 <div class="row"><span>Order #</span><span>{{ $bill->order->order_number }}</span></div>
-<div class="row"><span>Table</span><span>{{ $bill->order->table->name }}</span></div>
+<div class="row"><span>{{ $bill->order->table ? 'Table' : ($bill->order->room_number ? 'Room' : 'Order') }}</span><span>{{ $bill->order->table?->name ?? ($bill->order->room_number ?? $bill->order->order_number) }}</span></div>
 <div class="row"><span>Date</span><span>{{ $bill->created_at->format('d/m/Y h:i A') }}</span></div>
 @if($bill->booking?->customer)
 <div class="row"><span>Guest</span><span>{{ $bill->booking->customer->name }}</span></div>

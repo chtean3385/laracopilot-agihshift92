@@ -28,7 +28,7 @@
     <div class="divider"></div>
 </div>
 
-<div class="bold">Table: {{ $order->table->name }}</div>
+<div class="bold">{{ $order->table ? 'Table: ' . $order->table->name : ($order->room_number ? 'Room: ' . $order->room_number : 'Walk-in') }}</div>
 <div>Order: {{ $order->order_number }}</div>
 <div>Time: {{ $order->created_at->format('d/m/Y h:i A') }}</div>
 
