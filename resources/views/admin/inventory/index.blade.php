@@ -144,15 +144,25 @@
                 <td>
                     <div class="actions-cell">
                         @canDo('inventory.create')
-                        <button class="btn-secondary btn-sm btn-green" onclick="openPurchase({{ $item->id }}, '{{ addslashes($item->name) }}', '{{ $item->unit }}')">
+                        <button class="btn-secondary btn-sm btn-green inv-btn-purchase"
+                            data-name="{{ $item->name }}"
+                            data-unit="{{ $item->unit }}"
+                            data-url="{{ route('inventory.purchase', $item->id) }}">
                             <i class="fas fa-plus-circle"></i> Purchase
                         </button>
                         @endCanDo
                         @canDo('inventory.adjust')
-                        <button class="btn-secondary btn-sm btn-orange" onclick="openUsage({{ $item->id }}, '{{ addslashes($item->name) }}', '{{ $item->unit }}')">
+                        <button class="btn-secondary btn-sm btn-orange inv-btn-usage"
+                            data-name="{{ $item->name }}"
+                            data-unit="{{ $item->unit }}"
+                            data-url="{{ route('inventory.usage', $item->id) }}">
                             <i class="fas fa-minus-circle"></i> Use
                         </button>
-                        <button class="btn-secondary btn-sm btn-blue" onclick="openAdjust({{ $item->id }}, '{{ addslashes($item->name) }}', '{{ $item->unit }}', {{ $item->current_stock }})">
+                        <button class="btn-secondary btn-sm btn-blue inv-btn-adjust"
+                            data-name="{{ $item->name }}"
+                            data-unit="{{ $item->unit }}"
+                            data-stock="{{ $item->current_stock }}"
+                            data-url="{{ route('inventory.adjust', $item->id) }}">
                             <i class="fas fa-sliders-h"></i> Adjust
                         </button>
                         @endCanDo
@@ -165,7 +175,9 @@
                         </a>
                         @endCanDo
                         @canDo('inventory.delete')
-                        <form method="POST" action="{{ route('inventory.destroy', $item->id) }}" onsubmit="return confirm('Delete or deactivate \'{{ addslashes($item->name) }}\'?');" style="display:inline;">
+                        <form method="POST" action="{{ route('inventory.destroy', $item->id) }}"
+                              data-confirm="Delete or deactivate &quot;{{ $item->name }}&quot;?"
+                              class="inv-delete-form" style="display:inline;">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn-secondary btn-sm btn-danger"><i class="fas fa-trash"></i></button>
                         </form>
@@ -253,28 +265,57 @@
 </div>
 
 <script>
-function openPurchase(id, name, unit) {
-    document.getElementById('pm-name').textContent = name;
-    document.getElementById('pm-unit').textContent = '(' + unit + ')';
-    document.getElementById('purchaseForm').action = '/inventory/' + id + '/purchase';
-    document.getElementById('purchaseModal').classList.add('open');
-}
-function openUsage(id, name, unit) {
-    document.getElementById('um-name').textContent = name;
-    document.getElementById('um-unit').textContent = '(' + unit + ')';
-    document.getElementById('usageForm').action = '/inventory/' + id + '/usage';
-    document.getElementById('usageModal').classList.add('open');
-}
-function openAdjust(id, name, unit, current) {
-    document.getElementById('am-name').textContent = name;
-    document.getElementById('am-unit').textContent = '(' + unit + ')';
-    document.getElementById('am-stock').value = current;
-    document.getElementById('adjustForm').action = '/inventory/' + id + '/adjust';
-    document.getElementById('adjustModal').classList.add('open');
-}
 function closeModals() {
     document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('open'));
 }
-document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', function(e){ if(e.target===this) closeModals(); }));
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Purchase buttons
+    document.querySelectorAll('.inv-btn-purchase').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('pm-name').textContent = btn.dataset.name;
+            document.getElementById('pm-unit').textContent = '(' + btn.dataset.unit + ')';
+            document.getElementById('purchaseForm').action  = btn.dataset.url;
+            document.getElementById('purchaseModal').classList.add('open');
+        });
+    });
+
+    // Usage buttons
+    document.querySelectorAll('.inv-btn-usage').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('um-name').textContent = btn.dataset.name;
+            document.getElementById('um-unit').textContent = '(' + btn.dataset.unit + ')';
+            document.getElementById('usageForm').action    = btn.dataset.url;
+            document.getElementById('usageModal').classList.add('open');
+        });
+    });
+
+    // Adjust buttons
+    document.querySelectorAll('.inv-btn-adjust').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('am-name').textContent = btn.dataset.name;
+            document.getElementById('am-unit').textContent = '(' + btn.dataset.unit + ')';
+            document.getElementById('am-stock').value      = btn.dataset.stock;
+            document.getElementById('adjustForm').action   = btn.dataset.url;
+            document.getElementById('adjustModal').classList.add('open');
+        });
+    });
+
+    // Delete forms — confirm from data attribute
+    document.querySelectorAll('.inv-delete-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!window.confirm(form.dataset.confirm)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal-bg').forEach(function (m) {
+        m.addEventListener('click', function (e) {
+            if (e.target === m) closeModals();
+        });
+    });
+});
 </script>
 @endsection
