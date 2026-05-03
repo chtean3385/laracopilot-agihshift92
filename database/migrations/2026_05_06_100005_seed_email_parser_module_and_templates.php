@@ -11,25 +11,30 @@ return new class extends Migration
     {
         $now = now();
 
-        // ── 1. Per-hotel module row ─────────────────────────────────────────────
+        // ── 1. Per-hotel module row (bulk) ──────────────────────────────────────
         if (Schema::hasTable('hotels') && Schema::hasTable('modules')) {
-            $hotelIds = DB::table('hotels')->pluck('id');
-            foreach ($hotelIds as $hotelId) {
-                $exists = DB::table('modules')
-                    ->where('hotel_id', $hotelId)
-                    ->where('slug', 'email-parser')
-                    ->exists();
+            $hotelIds = DB::table('hotels')->pluck('id')->all();
 
-                if (!$exists) {
-                    DB::table('modules')->insert([
-                        'hotel_id'    => $hotelId,
+            if (!empty($hotelIds)) {
+                $existing = DB::table('modules')
+                    ->where('slug', 'email-parser')
+                    ->whereIn('hotel_id', $hotelIds)
+                    ->pluck('hotel_id')->all();
+
+                $missing = array_values(array_diff($hotelIds, $existing));
+                if (!empty($missing)) {
+                    $rows = array_map(fn($hid) => [
+                        'hotel_id'    => $hid,
                         'slug'        => 'email-parser',
                         'name'        => 'OTA Email Parser',
                         'description' => 'Auto-read OTA booking confirmation emails (Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda, Expedia) via IMAP every 5 minutes — auto-creates guests and bookings, detects conflicts.',
                         'is_enabled'  => false,
                         'created_at'  => $now,
                         'updated_at'  => $now,
-                    ]);
+                    ], $missing);
+                    foreach (array_chunk($rows, 500) as $chunk) {
+                        DB::table('modules')->insert($chunk);
+                    }
                 }
             }
         }
@@ -53,28 +58,31 @@ return new class extends Migration
 
             $hasApproval = Schema::hasColumn('whatsapp_templates', 'approval_status');
 
-            foreach ($templates as $t) {
-                $exists = DB::table('whatsapp_templates')
-                    ->whereNull('hotel_id')
-                    ->where('template_name', $t['template_name'])
-                    ->exists();
+            $existingNames = DB::table('whatsapp_templates')
+                ->whereNull('hotel_id')
+                ->whereIn('template_name', array_column($templates, 'template_name'))
+                ->pluck('template_name')->all();
 
-                if (!$exists) {
-                    $row = [
-                        'hotel_id'       => null,
-                        'trigger_event'  => $t['trigger_event'],
-                        'template_name'  => $t['template_name'],
-                        'message_body'   => $t['message_body'],
-                        'variables_hint' => $t['variables_hint'],
-                        'is_active'      => true,
-                        'created_at'     => $now,
-                        'updated_at'     => $now,
-                    ];
-                    if ($hasApproval) {
-                        $row['approval_status'] = 'pending';
-                    }
-                    DB::table('whatsapp_templates')->insert($row);
+            $rows = [];
+            foreach ($templates as $t) {
+                if (in_array($t['template_name'], $existingNames, true)) continue;
+                $row = [
+                    'hotel_id'       => null,
+                    'trigger_event'  => $t['trigger_event'],
+                    'template_name'  => $t['template_name'],
+                    'message_body'   => $t['message_body'],
+                    'variables_hint' => $t['variables_hint'],
+                    'is_active'      => true,
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ];
+                if ($hasApproval) {
+                    $row['approval_status'] = 'pending';
                 }
+                $rows[] = $row;
+            }
+            if (!empty($rows)) {
+                DB::table('whatsapp_templates')->insert($rows);
             }
         }
     }

@@ -9,28 +9,32 @@ return new class extends Migration
     {
         $now = now();
 
-        // 1. Add inventory module for every hotel that doesn't have it yet
-        $hotels = DB::table('hotels')->pluck('id');
-        foreach ($hotels as $hotelId) {
-            $exists = DB::table('modules')
-                ->where('hotel_id', $hotelId)
+        // 1. Add inventory module for every hotel that doesn't have it yet (bulk)
+        $hotelIds = DB::table('hotels')->pluck('id')->all();
+        if (!empty($hotelIds)) {
+            $existing = DB::table('modules')
                 ->where('slug', 'inventory')
-                ->exists();
+                ->whereIn('hotel_id', $hotelIds)
+                ->pluck('hotel_id')->all();
 
-            if (! $exists) {
-                DB::table('modules')->insert([
-                    'hotel_id'    => $hotelId,
+            $missing = array_values(array_diff($hotelIds, $existing));
+            if (!empty($missing)) {
+                $rows = array_map(fn($hid) => [
+                    'hotel_id'    => $hid,
                     'slug'        => 'inventory',
                     'name'        => 'Inventory Management',
                     'description' => 'Track consumables, food ingredients, and hotel supplies. Monitor stock levels, record purchases and usage, and get low-stock alerts.',
                     'is_enabled'  => false,
                     'created_at'  => $now,
                     'updated_at'  => $now,
-                ]);
+                ], $missing);
+                foreach (array_chunk($rows, 500) as $chunk) {
+                    DB::table('modules')->insert($chunk);
+                }
             }
         }
 
-        // 2. Add inventory permissions if they don't exist yet
+        // 2. Add inventory permissions if they don't exist yet (bulk)
         $perms = [
             ['slug' => 'inventory.view',   'label' => 'View Inventory',          'module' => 'Inventory', 'sort_order' => 41],
             ['slug' => 'inventory.create', 'label' => 'Add Inventory Items',     'module' => 'Inventory', 'sort_order' => 42],
@@ -38,32 +42,39 @@ return new class extends Migration
             ['slug' => 'inventory.delete', 'label' => 'Delete Inventory Items',  'module' => 'Inventory', 'sort_order' => 44],
             ['slug' => 'inventory.adjust', 'label' => 'Adjust Stock Levels',     'module' => 'Inventory', 'sort_order' => 45],
         ];
-
-        foreach ($perms as $perm) {
-            if (! DB::table('permissions')->where('slug', $perm['slug'])->exists()) {
-                DB::table('permissions')->insert(array_merge($perm, [
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]));
-            }
+        $permSlugs = array_column($perms, 'slug');
+        $existingPermSlugs = DB::table('permissions')->whereIn('slug', $permSlugs)->pluck('slug')->all();
+        $newPermRows = [];
+        foreach ($perms as $p) {
+            if (in_array($p['slug'], $existingPermSlugs, true)) continue;
+            $newPermRows[] = array_merge($p, ['created_at' => $now, 'updated_at' => $now]);
+        }
+        if (!empty($newPermRows)) {
+            DB::table('permissions')->insert($newPermRows);
         }
 
-        // 3. Grant all inventory permissions to the Admin role for every hotel
-        $permIds   = DB::table('permissions')->where('slug', 'like', 'inventory.%')->pluck('id');
-        $adminRoles = DB::table('roles')->where('name', 'Admin')->pluck('id');
+        // 3. Grant all inventory permissions to the Admin role for every hotel (bulk)
+        $permIds    = DB::table('permissions')->where('slug', 'like', 'inventory.%')->pluck('id')->all();
+        $adminRoles = DB::table('roles')->where('name', 'Admin')->pluck('id')->all();
+        if (!empty($permIds) && !empty($adminRoles)) {
+            $existing = DB::table('role_permissions')
+                ->whereIn('role_id', $adminRoles)
+                ->whereIn('permission_id', $permIds)
+                ->get(['role_id', 'permission_id'])
+                ->map(fn($r) => $r->role_id . ':' . $r->permission_id)
+                ->all();
+            $existingSet = array_flip($existing);
 
-        foreach ($adminRoles as $roleId) {
-            foreach ($permIds as $permId) {
-                $exists = DB::table('role_permissions')
-                    ->where('role_id', $roleId)
-                    ->where('permission_id', $permId)
-                    ->exists();
-
-                if (! $exists) {
-                    DB::table('role_permissions')->insert([
-                        'role_id'       => $roleId,
-                        'permission_id' => $permId,
-                    ]);
+            $rows = [];
+            foreach ($adminRoles as $roleId) {
+                foreach ($permIds as $permId) {
+                    if (isset($existingSet[$roleId . ':' . $permId])) continue;
+                    $rows[] = ['role_id' => $roleId, 'permission_id' => $permId];
+                }
+            }
+            if (!empty($rows)) {
+                foreach (array_chunk($rows, 1000) as $chunk) {
+                    DB::table('role_permissions')->insert($chunk);
                 }
             }
         }

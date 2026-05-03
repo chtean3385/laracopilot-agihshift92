@@ -155,6 +155,19 @@ class SafeMigrate extends Command
 
     private function provisionHotel(int $hotelId, string $hotelName): void
     {
+        // Fast-path: skip fully-provisioned hotels with one cheap query.
+        // A hotel is "fully provisioned" when it has all 3 system roles,
+        // all 5 modules, and at least 5 per-hotel WhatsApp templates.
+        $rolesCount   = DB::table('roles')->where('hotel_id', $hotelId)
+            ->whereIn('name', ['Admin', 'Manager', 'Receptionist'])->count();
+        $modulesCount = DB::table('modules')->where('hotel_id', $hotelId)
+            ->whereIn('slug', ['whatsapp', 'payment_links', 'pathik', 'channel_manager', 'email-parser'])->count();
+        $tplCount     = DB::table('whatsapp_templates')->where('hotel_id', $hotelId)->count();
+        // 7 = number of per-hotel templates defined in $templateDefs below.
+        if ($rolesCount >= 3 && $modulesCount >= 5 && $tplCount >= 7) {
+            return;
+        }
+
         // ── Roles + permissions ──────────────────────────────────────────────────
         // Permissions that must NEVER be auto-granted to any role during provisioning.
         // SaaS admin must explicitly enable these per hotel via the role editor.
