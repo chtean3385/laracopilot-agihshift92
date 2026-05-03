@@ -39,7 +39,10 @@
                 <li>Tap the link &amp; choose your room</li>
                 <li>Add items, place order, enjoy!</li>
             </ol>
-            <a href="{{ route('food-menu.qr.download') }}" class="no-print" style="display:inline-block;padding:6px 12px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:7px;text-decoration:none;font-size:11px;font-weight:700;"><i class="fas fa-download"></i> Download SVG</a>
+            <div class="no-print" style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                <a href="{{ route('food-menu.qr.download') }}" style="display:inline-block;padding:6px 12px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:7px;text-decoration:none;font-size:11px;font-weight:700;"><i class="fas fa-download"></i> SVG</a>
+                <a href="{{ route('food-menu.qr.download', ['format' => 'png']) }}" style="display:inline-block;padding:6px 12px;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:7px;text-decoration:none;font-size:11px;font-weight:700;"><i class="fas fa-download"></i> PNG</a>
+            </div>
         </div>
 
         {{-- Per-room QR cards --}}
@@ -56,7 +59,10 @@
                 <li>Browse the menu &amp; add to cart</li>
                 <li>Enter your name &amp; submit — we'll deliver!</li>
             </ol>
-            <a href="{{ route('food-menu.qr.download', ['room' => $room->room_number]) }}" class="no-print" style="display:inline-block;padding:6px 12px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;text-decoration:none;font-size:11px;font-weight:700;"><i class="fas fa-download"></i> Download SVG</a>
+            <div class="no-print" style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                <a href="{{ route('food-menu.qr.download', ['room' => $room->room_number]) }}" style="display:inline-block;padding:6px 12px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;text-decoration:none;font-size:11px;font-weight:700;"><i class="fas fa-download"></i> SVG</a>
+                <a href="{{ route('food-menu.qr.download', ['room' => $room->room_number, 'format' => 'png']) }}" style="display:inline-block;padding:6px 12px;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:7px;text-decoration:none;font-size:11px;font-weight:700;"><i class="fas fa-download"></i> PNG</a>
+            </div>
         </div>
         @endforeach
     </div>

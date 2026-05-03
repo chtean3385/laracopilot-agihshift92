@@ -124,7 +124,7 @@
                     <tr style="border-bottom:1px solid #f1f5f9;">
                         <td style="padding:12px;">
                             <div style="display:flex;align-items:center;gap:10px;">
-                                @if($item->image)
+                                @if($item->image_path)
                                 <img src="{{ $item->imageUrl() }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">
                                 @else
                                 <div style="width:40px;height:40px;background:#fef3c7;border-radius:8px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="color:#f59e0b;"></i></div>

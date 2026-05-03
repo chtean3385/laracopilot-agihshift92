@@ -51,7 +51,7 @@ class FoodMenuAdminController extends Controller
 
         $menuItems = FoodItem::with('category')
             ->where('hotel_id', $hotelId)
-            ->orderBy('food_category_id')
+            ->orderBy('category_id')
             ->orderBy('name')
             ->get();
 
@@ -271,7 +271,7 @@ class FoodMenuAdminController extends Controller
         return $pdf->download('food-menu-qr-' . $hotel->slug . '.pdf');
     }
 
-    // ── QR Download (single QR as SVG) ────────────────────────────────────────
+    // ── QR Download (single QR as SVG or PNG) ─────────────────────────────────
     public function qrDownload(Request $request)
     {
         $this->requireModule();
@@ -279,7 +279,17 @@ class FoodMenuAdminController extends Controller
         $hotel = Hotel::findOrFail($hotelId);
 
         $room = $request->input('room');
+        $fmt  = $request->input('format', 'svg') === 'png' ? 'png' : 'svg';
         $url  = url('/menu/' . $hotel->slug) . ($room ? '/' . rawurlencode($room) : '');
+
+        if ($fmt === 'png') {
+            $png      = $this->renderQrPng($url, 480, 16);
+            $filename = 'food-menu-qr-' . ($room ?: 'general') . '.png';
+            return response($png, 200, [
+                'Content-Type'        => 'image/png',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        }
 
         $renderer = new ImageRenderer(new RendererStyle(400, 2), new SvgImageBackEnd());
         $writer   = new Writer($renderer);
@@ -290,5 +300,48 @@ class FoodMenuAdminController extends Controller
             'Content-Type'        => 'image/svg+xml',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    /**
+     * Render a QR code to PNG using the BaconQrCode matrix + GD.
+     * Avoids needing the Imagick PHP extension.
+     */
+    private function renderQrPng(string $text, int $size = 480, int $margin = 16): string
+    {
+        $qr      = \BaconQrCode\Encoder\Encoder::encode($text, \BaconQrCode\Common\ErrorCorrectionLevel::M());
+        $matrix  = $qr->getMatrix();
+        $w       = $matrix->getWidth();
+        $h       = $matrix->getHeight();
+        $array   = $matrix->getArray();
+
+        $cell = (int) max(1, floor(($size - 2 * $margin) / max($w, $h)));
+        $imgW = $cell * $w + 2 * $margin;
+        $imgH = $cell * $h + 2 * $margin;
+
+        $img   = imagecreatetruecolor($imgW, $imgH);
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $black = imagecolorallocate($img, 0, 0, 0);
+        imagefilledrectangle($img, 0, 0, $imgW, $imgH, $white);
+
+        for ($y = 0; $y < $h; $y++) {
+            for ($x = 0; $x < $w; $x++) {
+                if ($array[$y][$x] === "\1" || $array[$y][$x] === 1) {
+                    imagefilledrectangle(
+                        $img,
+                        $margin + $x * $cell,
+                        $margin + $y * $cell,
+                        $margin + ($x + 1) * $cell - 1,
+                        $margin + ($y + 1) * $cell - 1,
+                        $black
+                    );
+                }
+            }
+        }
+
+        ob_start();
+        imagepng($img);
+        $png = ob_get_clean();
+        imagedestroy($img);
+        return $png;
     }
 }

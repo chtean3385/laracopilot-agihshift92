@@ -57,7 +57,7 @@ class FoodOrderService
                     BookingExtraCharge::create([
                         'booking_id'  => $booking->id,
                         'name'        => $item->name,
-                        'category'    => 'food',
+                        'category'    => 'Food & Beverage',
                         'quantity'    => $item->quantity,
                         'unit_price'  => $item->price,
                         'total_price' => $totalPrice,
