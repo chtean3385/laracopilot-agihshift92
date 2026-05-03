@@ -11,30 +11,84 @@
         <a href="{{ route('reports.index') }}" style="color:#6366f1;font-size:13px;font-weight:600;text-decoration:none;">← Back to Reports</a>
     </div>
 
-    {{-- KPI cards: ADR / RevPAR / 12m revenue / 12m avg occupancy --}}
+    {{-- Filter + export bar --}}
     @php
-        $rev12m   = array_sum($monthRevenue);
-        $occ12m   = count($monthOccupancy) ? round(array_sum($monthOccupancy) / count($monthOccupancy), 1) : 0;
+        $today    = \Carbon\Carbon::today();
+        $presets  = [
+            'last_30'   => ['Last 30 days',  $today->copy()->subDays(29),                   $today->copy()],
+            'last_90'   => ['Last 90 days',  $today->copy()->subDays(89),                   $today->copy()],
+            'this_mon'  => ['This Month',    $today->copy()->startOfMonth(),                $today->copy()->endOfMonth()],
+            'last_mon'  => ['Last Month',    $today->copy()->subMonthNoOverflow()->startOfMonth(), $today->copy()->subMonthNoOverflow()->endOfMonth()],
+            'ytd'       => ['Year to Date',  $today->copy()->startOfYear(),                 $today->copy()],
+            'last_12m'  => ['Last 12 Months',$today->copy()->startOfMonth()->subMonths(11), $today->copy()->endOfMonth()],
+        ];
+        $curFrom = $from->format('Y-m-d');
+        $curTo   = $to->format('Y-m-d');
+    @endphp
+    <form method="GET" style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:end;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+        <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">From</label>
+            <input type="date" name="date_from" value="{{ $curFrom }}" style="padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">
+        </div>
+        <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">To</label>
+            <input type="date" name="date_to" value="{{ $curTo }}" style="padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">
+        </div>
+        <button type="submit" style="padding:8px 14px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-filter"></i>Apply
+        </button>
+        <a href="{{ route('reports.performance') }}" style="padding:8px 14px;background:#e2e8f0;color:#475569;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">Reset</a>
+
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:6px;">
+            @foreach($presets as $key => $p)
+                @php
+                    $isActive = $curFrom === $p[1]->format('Y-m-d') && $curTo === $p[2]->format('Y-m-d');
+                    $bg       = $isActive ? '#1e293b' : '#f1f5f9';
+                    $color    = $isActive ? '#fff'     : '#475569';
+                @endphp
+                <a href="{{ route('reports.performance', ['date_from' => $p[1]->format('Y-m-d'), 'date_to' => $p[2]->format('Y-m-d')]) }}"
+                   style="padding:6px 10px;background:{{ $bg }};color:{{ $color }};border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+                    {{ $p[0] }}
+                </a>
+            @endforeach
+        </div>
+
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{{ route('reports.performance', ['date_from'=>$curFrom,'date_to'=>$curTo,'export'=>'pdf']) }}"
+               style="padding:8px 14px;background:#dc2626;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-file-pdf"></i>PDF
+            </a>
+            <a href="{{ route('reports.performance', ['date_from'=>$curFrom,'date_to'=>$curTo,'export'=>'csv']) }}"
+               style="padding:8px 14px;background:#16a34a;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-file-csv"></i>CSV
+            </a>
+        </div>
+    </form>
+
+    {{-- KPI cards --}}
+    @php
+        $rev12m = $rev12m ?? array_sum($monthRevenue);
+        $occ12m = $occAvg ?? (count($monthOccupancy) ? round(array_sum($monthOccupancy) / count($monthOccupancy), 1) : 0);
     @endphp
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;"><i class="fas fa-coins" style="color:#fff;font-size:13px;"></i></div>
-                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">12-Month Revenue</div>
+                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Revenue ({{ $periodLabel }})</div>
             </div>
             <div style="font-size:22px;font-weight:900;color:#1e293b;">₹{{ number_format($rev12m) }}</div>
         </div>
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#0284c7);display:flex;align-items:center;justify-content:center;"><i class="fas fa-bed" style="color:#fff;font-size:13px;"></i></div>
-                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Avg Occupancy (12m)</div>
+                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Avg Occupancy</div>
             </div>
             <div style="font-size:22px;font-weight:900;color:#1e293b;">{{ $occ12m }}%</div>
         </div>
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;"><i class="fas fa-tag" style="color:#fff;font-size:13px;"></i></div>
-                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">ADR (30d)</div>
+                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">ADR</div>
             </div>
             <div style="font-size:22px;font-weight:900;color:#1e293b;">₹{{ number_format($adr) }}</div>
             <div style="font-size:11px;color:#94a3b8;margin-top:2px;">{{ $totalRoomNights }} room-nights</div>
@@ -42,7 +96,7 @@
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:center;"><i class="fas fa-chart-line" style="color:#fff;font-size:13px;"></i></div>
-                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">RevPAR (30d)</div>
+                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">RevPAR</div>
             </div>
             <div style="font-size:22px;font-weight:900;color:#1e293b;">₹{{ number_format($revpar) }}</div>
             <div style="font-size:11px;color:#94a3b8;margin-top:2px;">per available room / day</div>
@@ -55,7 +109,7 @@
             <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#10b981,#0ea5e9);display:flex;align-items:center;justify-content:center;"><i class="fas fa-chart-column" style="color:#fff;font-size:13px;"></i></div>
             <div>
                 <div style="font-size:15px;font-weight:800;color:#1e293b;">Monthly Revenue & Occupancy</div>
-                <div style="font-size:12px;color:#94a3b8;">Last 12 months</div>
+                <div style="font-size:12px;color:#94a3b8;">{{ $periodLabel }}</div>
             </div>
         </div>
         <div id="perfMonthlyChart" style="min-height:340px;"></div>
@@ -68,11 +122,11 @@
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f43f5e,#e11d48);display:flex;align-items:center;justify-content:center;"><i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i></div>
                 <div>
                     <div style="font-size:15px;font-weight:800;color:#1e293b;">Bookings by Room Type</div>
-                    <div style="font-size:12px;color:#94a3b8;">Last 90 days</div>
+                    <div style="font-size:12px;color:#94a3b8;">{{ $periodLabel }}</div>
                 </div>
             </div>
             @if(empty($roomTypeData))
-                <div style="padding:48px 0;text-align:center;color:#94a3b8;font-size:13px;">No bookings in the last 90 days.</div>
+                <div style="padding:48px 0;text-align:center;color:#94a3b8;font-size:13px;">No bookings in the selected period.</div>
             @else
                 <div id="perfRoomTypeChart" style="min-height:300px;"></div>
             @endif
@@ -82,7 +136,7 @@
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;"><i class="fas fa-share-nodes" style="color:#fff;font-size:13px;"></i></div>
                 <div>
                     <div style="font-size:15px;font-weight:800;color:#1e293b;">Booking Source Mix</div>
-                    <div style="font-size:12px;color:#94a3b8;">Last 90 days</div>
+                    <div style="font-size:12px;color:#94a3b8;">{{ $periodLabel }}</div>
                 </div>
             </div>
             @if(empty($sourceCounts))
@@ -100,7 +154,7 @@
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#0369a1);display:flex;align-items:center;justify-content:center;"><i class="fas fa-calendar-day" style="color:#fff;font-size:13px;"></i></div>
                 <div>
                     <div style="font-size:15px;font-weight:800;color:#1e293b;">Revenue by Day of Week</div>
-                    <div style="font-size:12px;color:#94a3b8;">Last 90 days · find your strongest days</div>
+                    <div style="font-size:12px;color:#94a3b8;">{{ $periodLabel }} · find your strongest days</div>
                 </div>
             </div>
             <div id="perfDowChart" style="min-height:280px;"></div>
@@ -110,7 +164,7 @@
                 <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;"><i class="fas fa-money-bill-wave" style="color:#fff;font-size:13px;"></i></div>
                 <div>
                     <div style="font-size:15px;font-weight:800;color:#1e293b;">Revenue by Payment Method</div>
-                    <div style="font-size:12px;color:#94a3b8;">Last 90 days</div>
+                    <div style="font-size:12px;color:#94a3b8;">{{ $periodLabel }}</div>
                 </div>
             </div>
             @if(empty($pmAmounts))
@@ -241,7 +295,7 @@
             dataLabels: { enabled:false },
             grid: { borderColor:'#f1f5f9', strokeDashArray:4 },
             tooltip: { y: { formatter: function(v){ return '₹' + Number(v||0).toLocaleString('en-IN'); } } },
-            noData: { text:'No revenue in the last 90 days', style:{ color:'#94a3b8', fontSize:'13px' } },
+            noData: { text:'No revenue in the selected period', style:{ color:'#94a3b8', fontSize:'13px' } },
         }).render();
 
         if (pmAmounts.length){

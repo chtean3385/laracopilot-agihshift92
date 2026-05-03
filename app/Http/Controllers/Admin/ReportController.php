@@ -585,27 +585,55 @@ class ReportController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
 
+        $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
+            'export'    => 'nullable|in:csv,pdf',
+        ]);
+
         $today = Carbon::today();
 
-        // ── Last 12 months: revenue + occupancy ──────────────────────────────
+        // Date range filter — defaults to last 12 months (current behavior)
+        try {
+            $from = $request->date_from
+                ? Carbon::parse($request->date_from)->startOfDay()
+                : $today->copy()->startOfMonth()->subMonths(11);
+            $to   = $request->date_to
+                ? Carbon::parse($request->date_to)->endOfDay()
+                : $today->copy()->endOfMonth();
+        } catch (\Exception $e) {
+            $from = $today->copy()->startOfMonth()->subMonths(11);
+            $to   = $today->copy()->endOfMonth();
+        }
+
+        if ($to->lt($from)) { [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()]; }
+
+        // Cap range at 5 years to keep the per-day occupancy loop bounded
+        if ($from->copy()->diffInDays($to) > 1830) {
+            $from = $to->copy()->subDays(1830)->startOfDay();
+        }
+
+        $totalRooms = max(1, (int) Room::count());
+        $rangeStart = $from->copy()->startOfDay();
+        $rangeEnd   = $to->copy()->endOfDay();
+        $rangeDays  = max(1, $rangeStart->copy()->startOfDay()->diffInDays($rangeEnd->copy()->endOfDay()->addSecond()));
+        $periodLabel = $from->format('d M Y') . ' – ' . $to->format('d M Y');
+
+        // ── Monthly buckets covering the selected range ──────────────────────
         $months = [];
         $monthRevenue = [];
         $monthOccupancy = [];
         $monthBookings = [];
-        $totalRooms = max(1, (int) Room::count());
 
-        $rangeStart = $today->copy()->startOfMonth()->subMonths(11);
-        $rangeEnd   = $today->copy()->endOfMonth();
-
-        // ── Single payments query for 12 months, grouped by month ────────────
+        // Single payments query for the range, grouped by month
         try {
             $allPayments = Payment::where('status', 'completed')
-                ->whereBetween('created_at', [$rangeStart->copy()->startOfDay(), $rangeEnd->copy()->endOfDay()])
+                ->whereBetween('created_at', [$rangeStart, $rangeEnd])
                 ->get(['amount', 'created_at']);
         } catch (\Exception $e) { $allPayments = collect(); }
         $payByMonth = $allPayments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m'));
 
-        // ── Single bookings query overlapping the 12-month window ────────────
+        // Single bookings query overlapping the range
         try {
             $allBookings = Booking::whereIn('status', ['confirmed','checked_in','checked_out'])
                 ->where('check_in_date',  '<=', $rangeEnd->toDateString())
@@ -613,7 +641,7 @@ class ReportController extends Controller
                 ->get(['check_in_date','check_out_date','is_whole_hotel','total_amount','nights']);
         } catch (\Exception $e) { $allBookings = collect(); }
 
-        // Build per-day occupied-room counts across the entire 12-month window
+        // Build per-day occupied-room counts across the window
         $occByDay = [];
         $bkByMonth = [];
         foreach ($allBookings as $b) {
@@ -621,8 +649,8 @@ class ReportController extends Controller
                 $ci = Carbon::parse($b->check_in_date)->startOfDay();
                 $co = Carbon::parse($b->check_out_date)->startOfDay();
             } catch (\Exception $e) { continue; }
-            $start = $ci->greaterThan($rangeStart) ? $ci->copy() : $rangeStart->copy();
-            $end   = $co->lessThan($rangeEnd->copy()->addDay()) ? $co->copy() : $rangeEnd->copy()->addDay();
+            $start = $ci->greaterThan($rangeStart) ? $ci->copy() : $rangeStart->copy()->startOfDay();
+            $end   = $co->lessThan($rangeEnd->copy()->addDay()->startOfDay()) ? $co->copy() : $rangeEnd->copy()->addDay()->startOfDay();
             $cur = $start->copy();
             $add = $b->is_whole_hotel ? $totalRooms : 1;
             while ($cur->lt($end)) {
@@ -630,7 +658,6 @@ class ReportController extends Controller
                 $occByDay[$k] = ($occByDay[$k] ?? 0) + $add;
                 $cur->addDay();
             }
-            // Count booking under each month it overlaps
             $monthCur = $start->copy()->startOfMonth();
             $monthLast = $end->copy()->subDay()->startOfMonth();
             while ($monthCur->lte($monthLast)) {
@@ -640,65 +667,59 @@ class ReportController extends Controller
             }
         }
 
-        for ($i = 11; $i >= 0; $i--) {
-            $m       = $today->copy()->startOfMonth()->subMonths($i);
-            $mStart  = $m->copy()->startOfMonth();
-            $mEnd    = $m->copy()->endOfMonth();
-            $mk      = $m->format('Y-m');
-            $months[] = $m->format('M Y');
+        $mIter = $rangeStart->copy()->startOfMonth();
+        $mLast = $rangeEnd->copy()->startOfMonth();
+        while ($mIter->lte($mLast)) {
+            $mStart = $mIter->copy()->startOfMonth();
+            $mEnd   = $mIter->copy()->endOfMonth();
+            $mk     = $mIter->format('Y-m');
+            $months[] = $mIter->format('M Y');
 
             $monthRevenue[]  = (float) ($payByMonth->get($mk)?->sum('amount') ?? 0);
             $monthBookings[] = (int)   ($bkByMonth[$mk] ?? 0);
 
-            $roomNights = 0; $d = $mStart->copy();
-            while ($d->lte($mEnd)) {
+            // Clip to the selected range
+            $effStart = $mStart->lt($rangeStart) ? $rangeStart->copy()->startOfDay() : $mStart;
+            $effEnd   = $mEnd->gt($rangeEnd)     ? $rangeEnd->copy()->startOfDay()   : $mEnd;
+            $roomNights = 0; $d = $effStart->copy();
+            while ($d->lte($effEnd)) {
                 $roomNights += min($totalRooms, $occByDay[$d->toDateString()] ?? 0);
                 $d->addDay();
             }
-            $denom = $totalRooms * $mStart->daysInMonth;
+            $effDays = max(1, $effStart->diffInDays($effEnd) + 1);
+            $denom = $totalRooms * $effDays;
             $monthOccupancy[] = round(min(100, ($roomNights / max(1,$denom)) * 100), 1);
+
+            $mIter->addMonth();
         }
 
-        // ── ADR / RevPAR (last 30 days) — overlap-prorated ──────────────────
-        $adrFrom  = $today->copy()->subDays(29)->startOfDay();
-        $adrTo    = $today->copy()->endOfDay();
-        $adrDays  = 30;
+        // ── ADR / RevPAR over the selected range — overlap-prorated ─────────
         $totalRoomRevenue = 0.0;
         $totalRoomNights  = 0;
-
-        try {
-            $stayBookings = Booking::whereIn('status', ['confirmed','checked_in','checked_out'])
-                ->where('check_in_date',  '<=', $adrTo->toDateString())
-                ->where('check_out_date', '>',  $adrFrom->toDateString())
-                ->get(['check_in_date','check_out_date','is_whole_hotel','total_amount','nights']);
-        } catch (\Exception $e) { $stayBookings = collect(); }
-
-        foreach ($stayBookings as $b) {
+        foreach ($allBookings as $b) {
             try {
                 $ci = Carbon::parse($b->check_in_date)->startOfDay();
                 $co = Carbon::parse($b->check_out_date)->startOfDay();
             } catch (\Exception $e) { continue; }
             $totalNights = max(1, (int)($b->nights ?: $ci->diffInDays($co)));
-            $overlapStart = $ci->greaterThan($adrFrom) ? $ci : $adrFrom->copy()->startOfDay();
-            $overlapEnd   = $co->lessThan($adrTo->copy()->addDay()->startOfDay()) ? $co : $adrTo->copy()->addDay()->startOfDay();
+            $overlapStart = $ci->greaterThan($rangeStart) ? $ci : $rangeStart->copy()->startOfDay();
+            $overlapEnd   = $co->lessThan($rangeEnd->copy()->addDay()->startOfDay()) ? $co : $rangeEnd->copy()->addDay()->startOfDay();
             $overlap = max(0, $overlapStart->diffInDays($overlapEnd, false));
             if ($overlap <= 0) continue;
             $rooms = $b->is_whole_hotel ? $totalRooms : 1;
-            $totalRoomNights += $overlap * $rooms;
+            $totalRoomNights  += $overlap * $rooms;
             $totalRoomRevenue += ((float)$b->total_amount) * ($overlap / $totalNights);
         }
-
         $adr    = $totalRoomNights > 0 ? round($totalRoomRevenue / $totalRoomNights, 2) : 0;
-        $revpar = $totalRooms > 0     ? round($totalRoomRevenue / ($totalRooms * $adrDays), 2) : 0;
+        $revpar = $totalRooms > 0     ? round($totalRoomRevenue / ($totalRooms * $rangeDays), 2) : 0;
 
-        // ── Last 90d slices ──────────────────────────────────────────────────
-        $sliceFrom = $today->copy()->subDays(89);
-
+        // ── Slices over the selected range ───────────────────────────────────
         // Room-type donut
         try {
             $typeData = Booking::with('room:id,type')
                 ->whereIn('status', ['confirmed','checked_in','checked_out'])
-                ->where('check_in_date', '>=', $sliceFrom->toDateString())
+                ->where('check_in_date', '<=', $rangeEnd->toDateString())
+                ->where('check_out_date', '>', $rangeStart->toDateString())
                 ->get()
                 ->groupBy(fn($b) => $b->room->type ?? 'Whole Hotel')
                 ->map->count()
@@ -711,8 +732,9 @@ class ReportController extends Controller
 
         // Source mix
         try {
-            $sourceData = Booking::where('check_in_date', '>=', $sliceFrom->toDateString())
-                ->whereIn('status', ['confirmed','checked_in','checked_out'])
+            $sourceData = Booking::whereIn('status', ['confirmed','checked_in','checked_out'])
+                ->where('check_in_date', '<=', $rangeEnd->toDateString())
+                ->where('check_out_date', '>', $rangeStart->toDateString())
                 ->get(['source'])
                 ->groupBy(fn($b) => $b->source ?: 'Direct')
                 ->map->count()
@@ -722,10 +744,10 @@ class ReportController extends Controller
         $sourceLabels = $sourceData->keys()->map(fn($k) => ucfirst((string)$k))->all();
         $sourceCounts = $sourceData->values()->all();
 
-        // Day-of-week revenue (last 90d)
+        // Day-of-week revenue
         try {
             $dowPayments = Payment::where('status', 'completed')
-                ->whereBetween('created_at', [$sliceFrom->copy()->startOfDay(), $today->copy()->endOfDay()])
+                ->whereBetween('created_at', [$rangeStart, $rangeEnd])
                 ->get(['amount', 'created_at']);
         } catch (\Exception $e) { $dowPayments = collect(); }
 
@@ -736,10 +758,10 @@ class ReportController extends Controller
             $dowTotals[$idx] += (float) $p->amount;
         }
 
-        // Payment-method breakdown (last 90d)
+        // Payment-method breakdown
         try {
             $pmData = Payment::where('status', 'completed')
-                ->whereBetween('created_at', [$sliceFrom->copy()->startOfDay(), $today->copy()->endOfDay()])
+                ->whereBetween('created_at', [$rangeStart, $rangeEnd])
                 ->get(['amount', 'payment_method'])
                 ->groupBy(fn($p) => strtolower($p->payment_method ?: 'other'))
                 ->map(fn($g) => (float) $g->sum('amount'));
@@ -770,7 +792,7 @@ class ReportController extends Controller
         $avgOcc = count($monthOccupancy) ? array_sum($monthOccupancy) / count($monthOccupancy) : 0;
         if ($avgOcc < 40) {
             $insights[] = ['type'=>'warn','icon'=>'fa-bed','title'=>'Low average occupancy',
-                'msg'=>'Last 12 months avg is '.round($avgOcc,1).'%. Push direct booking discounts and OTA visibility.'];
+                'msg'=>'Period avg is '.round($avgOcc,1).'%. Push direct booking discounts and OTA visibility.'];
         } elseif ($avgOcc >= 75) {
             $insights[] = ['type'=>'good','icon'=>'fa-bed','title'=>'Strong occupancy',
                 'msg'=>'Avg occupancy of '.round($avgOcc,1).'% is excellent. Consider raising weekend/holiday rates to grow ADR.'];
@@ -778,7 +800,7 @@ class ReportController extends Controller
 
         // 3. ADR / RevPAR
         if ($adr > 0) {
-            $insights[] = ['type'=>'info','icon'=>'fa-tag','title'=>'ADR & RevPAR (30d)',
+            $insights[] = ['type'=>'info','icon'=>'fa-tag','title'=>'ADR & RevPAR',
                 'msg'=>'ADR ₹'.number_format($adr).' · RevPAR ₹'.number_format($revpar).'. RevPAR is the truer profitability metric — track it monthly.'];
         }
 
@@ -811,12 +833,56 @@ class ReportController extends Controller
         // 7. Top room type
         if (!empty($roomTypeLabels)) {
             $insights[] = ['type'=>'good','icon'=>'fa-door-open','title'=>'Most-booked room type',
-                'msg'=>$roomTypeLabels[0].' is your top performer (90d). Consider featuring it on your website hero & pricing it as a premium tier.'];
+                'msg'=>$roomTypeLabels[0].' is your top performer for the period. Consider featuring it on your website hero & pricing it as a premium tier.'];
         }
 
         if (empty($insights)) {
             $insights[] = ['type'=>'info','icon'=>'fa-circle-info','title'=>'No data yet',
                 'msg'=>'Once you have a few bookings & payments, this panel will surface improvement ideas.'];
+        }
+
+        // ── Aggregates used by the view & exports ────────────────────────────
+        $rev12m = array_sum($monthRevenue);
+        $occAvg = count($monthOccupancy) ? round(array_sum($monthOccupancy) / count($monthOccupancy), 1) : 0;
+
+        if ($request->export === 'csv') {
+            return $this->exportPerformanceCsv(
+                $from, $to, $rev12m, $occAvg, $adr, $revpar, $totalRoomNights,
+                $months, $monthRevenue, $monthOccupancy, $monthBookings,
+                $roomTypeLabels, $roomTypeData,
+                $sourceLabels, $sourceCounts,
+                $dowLabels, $dowTotals,
+                $pmLabels, $pmAmounts
+            );
+        }
+
+        if ($request->export === 'pdf') {
+            $hotel = \App\Models\Hotel::find(session('crm_hotel_id'));
+            $pdf = Pdf::loadView('admin.reports.performance-pdf', [
+                'hotel'          => $hotel,
+                'from'           => $from,
+                'to'             => $to,
+                'periodLabel'    => $periodLabel,
+                'totalRevenue'   => $rev12m,
+                'avgOccupancy'   => $occAvg,
+                'adr'            => $adr,
+                'revpar'         => $revpar,
+                'totalRoomNights'=> $totalRoomNights,
+                'months'         => $months,
+                'monthRevenue'   => $monthRevenue,
+                'monthOccupancy' => $monthOccupancy,
+                'monthBookings'  => $monthBookings,
+                'roomTypeLabels' => $roomTypeLabels,
+                'roomTypeData'   => $roomTypeData,
+                'sourceLabels'   => $sourceLabels,
+                'sourceCounts'   => $sourceCounts,
+                'dowLabels'      => $dowLabels,
+                'dowTotals'      => $dowTotals,
+                'pmLabels'       => $pmLabels,
+                'pmAmounts'      => $pmAmounts,
+                'insights'       => $insights,
+            ])->setPaper('a4', 'portrait');
+            return $pdf->download('performance-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
         }
 
         return view('admin.reports.performance', compact(
@@ -826,8 +892,80 @@ class ReportController extends Controller
             'sourceLabels', 'sourceCounts',
             'dowLabels', 'dowTotals',
             'pmLabels', 'pmAmounts',
-            'insights'
+            'insights', 'from', 'to', 'periodLabel', 'rev12m', 'occAvg'
         ));
+    }
+
+    private function exportPerformanceCsv(
+        $from, $to, $totalRevenue, $avgOccupancy, $adr, $revpar, $totalRoomNights,
+        $months, $monthRevenue, $monthOccupancy, $monthBookings,
+        $roomTypeLabels, $roomTypeData,
+        $sourceLabels, $sourceCounts,
+        $dowLabels, $dowTotals,
+        $pmLabels, $pmAmounts
+    ) {
+        $filename = 'performance-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        $callback = function () use (
+            $from, $to, $totalRevenue, $avgOccupancy, $adr, $revpar, $totalRoomNights,
+            $months, $monthRevenue, $monthOccupancy, $monthBookings,
+            $roomTypeLabels, $roomTypeData,
+            $sourceLabels, $sourceCounts,
+            $dowLabels, $dowTotals,
+            $pmLabels, $pmAmounts
+        ) {
+            $out = fopen('php://output', 'w');
+
+            fputcsv($out, ['Performance Analysis Report']);
+            fputcsv($out, ['Period', $from->format('d M Y') . ' to ' . $to->format('d M Y')]);
+            fputcsv($out, ['Generated', now()->format('d M Y H:i')]);
+            fputcsv($out, []);
+
+            fputcsv($out, ['Key Metrics']);
+            fputcsv($out, ['Total Revenue', number_format((float)$totalRevenue, 2, '.', '')]);
+            fputcsv($out, ['Average Occupancy %', $avgOccupancy]);
+            fputcsv($out, ['ADR', number_format((float)$adr, 2, '.', '')]);
+            fputcsv($out, ['RevPAR', number_format((float)$revpar, 2, '.', '')]);
+            fputcsv($out, ['Total Room Nights', $totalRoomNights]);
+            fputcsv($out, []);
+
+            fputcsv($out, ['Monthly Trend']);
+            fputcsv($out, ['Month', 'Revenue', 'Occupancy %', 'Bookings']);
+            foreach ($months as $i => $m) {
+                fputcsv($out, [
+                    $m,
+                    number_format((float)($monthRevenue[$i] ?? 0), 2, '.', ''),
+                    $monthOccupancy[$i] ?? 0,
+                    $monthBookings[$i] ?? 0,
+                ]);
+            }
+            fputcsv($out, []);
+
+            fputcsv($out, ['Bookings by Room Type']);
+            fputcsv($out, ['Room Type', 'Bookings']);
+            foreach ($roomTypeLabels as $i => $l) fputcsv($out, [$l, $roomTypeData[$i] ?? 0]);
+            fputcsv($out, []);
+
+            fputcsv($out, ['Booking Source Mix']);
+            fputcsv($out, ['Source', 'Bookings']);
+            foreach ($sourceLabels as $i => $l) fputcsv($out, [$l, $sourceCounts[$i] ?? 0]);
+            fputcsv($out, []);
+
+            fputcsv($out, ['Revenue by Day of Week']);
+            fputcsv($out, ['Day', 'Revenue']);
+            foreach ($dowLabels as $i => $l) fputcsv($out, [$l, number_format((float)($dowTotals[$i] ?? 0), 2, '.', '')]);
+            fputcsv($out, []);
+
+            fputcsv($out, ['Revenue by Payment Method']);
+            fputcsv($out, ['Method', 'Revenue']);
+            foreach ($pmLabels as $i => $l) fputcsv($out, [$l, number_format((float)($pmAmounts[$i] ?? 0), 2, '.', '')]);
+
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
     }
 
     public function inventoryMovements(Request $request)
