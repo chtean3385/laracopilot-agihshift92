@@ -37,7 +37,13 @@
     </div>
     <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">Filter</button>
     <a href="{{ route('reports.inventory_movements') }}" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;text-decoration:none;">Reset</a>
-    <button type="button" onclick="window.print()" style="background:#0ea5e9;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;margin-left:auto;"><i class="fas fa-print"></i> Print</button>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+        <a href="{{ route('reports.inventory_movements', array_merge(request()->only('date_from','date_to','type','item_id'), ['export'=>'csv'])) }}"
+           style="background:#16a34a;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-file-csv"></i> CSV
+        </a>
+        <button type="button" onclick="window.print()" style="background:#475569;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;"><i class="fas fa-print"></i> Print</button>
+    </div>
 </form>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px;">

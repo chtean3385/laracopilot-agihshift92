@@ -14,7 +14,7 @@
 </div>
 
 {{-- Date Filter --}}
-<form method="GET" class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+<form method="GET" class="bg-white rounded-xl border border-gray-200 p-4 mb-6 no-print">
     <div class="flex gap-3 flex-wrap items-end">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
@@ -28,8 +28,16 @@
         </div>
         <button type="submit" class="btn-primary text-sm">Filter</button>
         <a href="{{ route('restaurant.reports') }}" class="btn-secondary text-sm">This Month</a>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+            <a href="{{ route('restaurant.reports', array_merge(request()->only('from','to'), ['export'=>'csv'])) }}"
+               style="background:#16a34a;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-file-csv"></i> CSV
+            </a>
+            <button type="button" onclick="window.print()" style="background:#475569;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-print"></i> Print</button>
+        </div>
     </div>
 </form>
+<style>@media print{.no-print,.sidebar,.topbar,header,nav{display:none!important;}body,html{background:#fff!important;}}</style>
 
 {{-- Summary Cards --}}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

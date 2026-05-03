@@ -14,6 +14,7 @@ use App\Models\Room;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
 use App\Services\SlotConflictService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -32,7 +33,7 @@ class ReportController extends Controller
         $to       = $request->date_to   ? Carbon::parse($request->date_to)   : Carbon::now()->endOfMonth();
         $payments = Payment::with(['booking.customer', 'booking.room'])
             ->where('status', 'completed')
-            ->whereBetween('created_at', [$from, $to])
+            ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->orderBy('created_at', 'desc')->get();
         $totalRevenue = $payments->sum('amount');
         $cashRevenue  = $payments->where('payment_method', 'cash')->sum('amount');
@@ -40,6 +41,21 @@ class ReportController extends Controller
         $upiRevenue   = $payments->where('payment_method', 'upi')->sum('amount');
         $dailyRevenue = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m-d'))
             ->map(fn($g) => $g->sum('amount'));
+
+        if ($request->export === 'csv') {
+            return $this->streamCsv('revenue-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
+                ['Date', 'Booking#', 'Guest', 'Room', 'Method', 'Amount'],
+                $payments->map(fn($p) => [
+                    Carbon::parse($p->created_at)->format('d/m/Y H:i'),
+                    $p->booking->booking_number ?? '',
+                    $p->booking->customer->name ?? '',
+                    $p->booking->room->room_number ?? '',
+                    ucfirst($p->payment_method ?? ''),
+                    number_format((float)$p->amount, 2, '.', ''),
+                ])
+            );
+        }
+
         return view('admin.reports.revenue', compact('payments', 'totalRevenue', 'cashRevenue', 'cardRevenue', 'upiRevenue', 'dailyRevenue', 'from', 'to'));
     }
 
@@ -71,6 +87,14 @@ class ReportController extends Controller
         $roomStats      = Room::withCount(['bookings' => $periodFilter])->get();
         $bookingsByType = Booking::with('room')->where($periodFilter)->get()
             ->groupBy('room.type')->map(fn($g) => $g->count());
+
+        if ($request->export === 'csv') {
+            return $this->streamCsv('occupancy-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
+                ['Room#', 'Type', 'Bookings'],
+                $roomStats->map(fn($r) => [$r->room_number, $r->type ?? '', $r->bookings_count])
+            );
+        }
+
         return view('admin.reports.occupancy', compact('roomStats', 'totalRooms', 'bookingsByType', 'from', 'to'));
     }
 
@@ -88,6 +112,23 @@ class ReportController extends Controller
             'checked_out' => $bookings->where('status', 'checked_out')->count(),
             'cancelled'   => $bookings->where('status', 'cancelled')->count(),
         ];
+
+        if ($request->export === 'csv') {
+            return $this->streamCsv('bookings-report-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
+                ['Booking#', 'Guest', 'Phone', 'Room', 'Check-In', 'Check-Out', 'Status', 'Total'],
+                $bookings->map(fn($b) => [
+                    $b->booking_number,
+                    $b->customer->name ?? '',
+                    $b->customer->phone ?? '',
+                    $b->is_whole_hotel ? 'Whole Hotel' : ($b->room->room_number ?? ''),
+                    $b->check_in_date?->format('d/m/Y'),
+                    $b->check_out_date?->format('d/m/Y'),
+                    $b->status,
+                    number_format((float)($b->total_amount ?? 0), 2, '.', ''),
+                ])
+            );
+        }
+
         return view('admin.reports.bookings', compact('bookings', 'statusCounts', 'from', 'to'));
     }
 
@@ -119,8 +160,92 @@ class ReportController extends Controller
         if ($request->export === 'csv') {
             return $this->exportGuestRegisterCsv($bookings, $from, $to);
         }
+        if ($request->export === 'excel') {
+            return $this->exportGuestRegisterExcel($bookings, $from, $to);
+        }
+        if ($request->export === 'pdf') {
+            $hotel = \App\Models\Hotel::find(session('crm_hotel_id'));
+            $pdf = Pdf::loadView('admin.reports.guest-register-pdf',
+                compact('bookings', 'from', 'to', 'search', 'hotel'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('guest-register-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.pdf');
+        }
 
         return view('admin.reports.guest-register', compact('bookings', 'from', 'to', 'search'));
+    }
+
+    private function exportGuestRegisterExcel($bookings, $from, $to)
+    {
+        $headers = [
+            'Content-Type'        => 'application/vnd.ms-excel; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="guest-register-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.xls"',
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+        ];
+
+        $callback = function () use ($bookings, $from, $to) {
+            echo "<html><head><meta charset='utf-8'></head><body>";
+            echo "<h2>Guest Register — " . e($from->format('d M Y')) . " to " . e($to->format('d M Y')) . "</h2>";
+            echo "<table border='1' cellspacing='0' cellpadding='4'>";
+            echo "<tr style='background:#e0f2fe;font-weight:bold;'>"
+                . "<th>Booking#</th><th>Room</th><th>Check-In</th><th>Check-Out</th>"
+                . "<th>Guest Name</th><th>Relation</th><th>Age</th><th>Gender</th>"
+                . "<th>Nationality</th><th>ID Type</th><th>ID Number</th>"
+                . "<th>Has Signature</th><th>Has ID Document</th></tr>";
+            foreach ($bookings as $booking) {
+                $primary = $booking->customer;
+                $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '');
+                echo "<tr>"
+                    . "<td>" . e($booking->booking_number) . "</td>"
+                    . "<td>" . e($roomLabel) . "</td>"
+                    . "<td>" . e($booking->check_in_date?->format('d/m/Y')) . "</td>"
+                    . "<td>" . e($booking->check_out_date?->format('d/m/Y')) . "</td>"
+                    . "<td>" . e($primary->name ?? '') . "</td>"
+                    . "<td>Primary Guest</td>"
+                    . "<td>" . e($primary->age ?? '') . "</td>"
+                    . "<td></td>"
+                    . "<td>" . e($primary->nationality ?? 'Indian') . "</td>"
+                    . "<td>" . e($primary->id_type ?? '') . "</td>"
+                    . "<td>" . e($primary->id_number ?? '') . "</td>"
+                    . "<td>" . ($primary?->signature ? 'Yes' : 'No') . "</td>"
+                    . "<td>" . (($primary && $primary->documents->isNotEmpty()) ? 'Yes' : 'No') . "</td>"
+                    . "</tr>";
+                foreach ($booking->bookingGuests as $g) {
+                    echo "<tr>"
+                        . "<td>" . e($booking->booking_number) . "</td>"
+                        . "<td>" . e($roomLabel) . "</td>"
+                        . "<td>" . e($booking->check_in_date?->format('d/m/Y')) . "</td>"
+                        . "<td>" . e($booking->check_out_date?->format('d/m/Y')) . "</td>"
+                        . "<td>" . e($g->name) . "</td>"
+                        . "<td>" . e($g->relation ?? '') . "</td>"
+                        . "<td>" . e($g->age ?? '') . "</td>"
+                        . "<td>" . e($g->gender ? ucfirst($g->gender) : '') . "</td>"
+                        . "<td>" . e($g->nationality ?? 'Indian') . "</td>"
+                        . "<td>" . e(BookingGuest::idTypes()[$g->id_type] ?? $g->id_type ?? '') . "</td>"
+                        . "<td>" . e($g->id_number ?? '') . "</td>"
+                        . "<td>" . ($g->signature ? 'Yes' : 'No') . "</td>"
+                        . "<td>" . ($g->id_document_path ? 'Yes' : 'No') . "</td>"
+                        . "</tr>";
+                }
+            }
+            echo "</table></body></html>";
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
+    private function streamCsv(string $filename, array $headerRow, $rows)
+    {
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        $callback = function () use ($headerRow, $rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $headerRow);
+            foreach ($rows as $r) fputcsv($out, $r);
+            fclose($out);
+        };
+        return response()->stream($callback, 200, $headers);
     }
 
     public function slotAvailability(Request $request)
@@ -404,6 +529,21 @@ class ReportController extends Controller
 
         $categories = InventoryCategory::orderBy('name')->get();
 
+        if ($request->export === 'csv') {
+            return $this->streamCsv('inventory-stock-' . now()->format('Ymd') . '.csv',
+                ['Item', 'Category', 'Stock', 'Unit', 'Reorder Level', 'Cost Price', 'Stock Value', 'Status'],
+                $items->map(fn($i) => [
+                    $i->name, $i->category->name ?? '',
+                    number_format((float)$i->current_stock, 2, '.', ''),
+                    $i->unit,
+                    number_format((float)$i->reorder_level, 2, '.', ''),
+                    number_format((float)$i->cost_price, 2, '.', ''),
+                    number_format((float)$i->current_stock * (float)$i->cost_price, 2, '.', ''),
+                    $i->isLowStock() ? 'LOW' : 'OK',
+                ])
+            );
+        }
+
         return view('admin.reports.inventory-stock', compact('items', 'totals', 'categories', 'categoryId', 'onlyLow'));
     }
 
@@ -432,6 +572,22 @@ class ReportController extends Controller
         ];
 
         $items = InventoryItem::orderBy('name')->get(['id', 'name', 'unit']);
+
+        if ($request->export === 'csv') {
+            return $this->streamCsv('inventory-movements-' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.csv',
+                ['Date', 'Item', 'Category', 'Type', 'Quantity', 'Unit', 'By', 'Notes'],
+                $movements->map(fn($m) => [
+                    Carbon::parse($m->created_at)->format('d/m/Y H:i'),
+                    $m->item->name ?? '',
+                    $m->item->category->name ?? '',
+                    $m->type,
+                    number_format((float)$m->quantity, 2, '.', ''),
+                    $m->item->unit ?? '',
+                    $m->creator->name ?? '',
+                    $m->notes ?? '',
+                ])
+            );
+        }
 
         return view('admin.reports.inventory-movements', compact('movements', 'totals', 'items', 'from', 'to', 'type', 'itemId'));
     }

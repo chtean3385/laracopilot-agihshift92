@@ -126,6 +126,29 @@ class RestaurantController extends Controller
         $directBills     = $bills->where('bill_type', 'direct')->count();
         $roomBills       = $bills->where('bill_type', 'room')->count();
 
+        if ($request->export === 'csv') {
+            $headers = [
+                'Content-Type'        => 'text/csv; charset=utf-8',
+                'Content-Disposition' => 'attachment; filename="restaurant-sales-' . $from . '-to-' . $to . '.csv"',
+            ];
+            return response()->stream(function () use ($bills) {
+                $out = fopen('php://output', 'w');
+                fputcsv($out, ['Bill#', 'Date', 'Table', 'Type', 'Subtotal', 'Tax', 'Total']);
+                foreach ($bills as $b) {
+                    fputcsv($out, [
+                        $b->bill_number ?? $b->id,
+                        $b->created_at?->format('d/m/Y H:i'),
+                        $b->order?->table?->name ?? '-',
+                        ucfirst($b->bill_type ?? ''),
+                        number_format((float)$b->subtotal, 2, '.', ''),
+                        number_format((float)$b->tax_amount, 2, '.', ''),
+                        number_format((float)$b->total, 2, '.', ''),
+                    ]);
+                }
+                fclose($out);
+            }, 200, $headers);
+        }
+
         return view('admin.restaurant.reports', compact(
             'bills', 'totalRevenue', 'totalTax', 'directBills', 'roomBills', 'from', 'to'
         ));

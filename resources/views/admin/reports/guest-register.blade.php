@@ -24,12 +24,28 @@
         <button type="submit" style="padding:8px 18px;background:#0891b2;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
             <i class="fas fa-search" style="margin-right:5px;"></i>Search
         </button>
-        <a href="{{ route('reports.guest_register', array_merge(request()->only('date_from','date_to','search'), ['export'=>'csv'])) }}"
-           style="padding:8px 18px;background:#16a34a;color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-            <i class="fas fa-download"></i>Download CSV
-        </a>
     </form>
+    <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:12px;">
+        <span style="font-size:12px;color:#64748b;font-weight:600;align-self:center;">Export:</span>
+        @php $exportArgs = request()->only('date_from','date_to','search'); @endphp
+        <a href="{{ route('reports.guest_register', array_merge($exportArgs, ['export'=>'pdf'])) }}"
+           style="padding:7px 14px;background:#dc2626;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-file-pdf"></i>PDF (Police Format)
+        </a>
+        <a href="{{ route('reports.guest_register', array_merge($exportArgs, ['export'=>'excel'])) }}"
+           style="padding:7px 14px;background:#16a34a;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-file-excel"></i>Excel
+        </a>
+        <a href="{{ route('reports.guest_register', array_merge($exportArgs, ['export'=>'csv'])) }}"
+           style="padding:7px 14px;background:#0891b2;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-file-csv"></i>CSV
+        </a>
+        <button type="button" onclick="window.print()" style="padding:7px 14px;background:#475569;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fas fa-print"></i>Print
+        </button>
+    </div>
 </div>
+<style>@media print{.no-print,.sidebar,.topbar,header,nav,form,.btn-primary{display:none!important;}body,html{background:#fff!important;}}</style>
 
 {{-- Stats --}}
 @php
