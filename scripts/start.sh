@@ -5,12 +5,11 @@ echo "[start.sh] Starting Laravel application on port 5000..."
 echo "[start.sh] APP_ENV=${APP_ENV:-not set}"
 echo "[start.sh] PHP version: $(php -r 'echo PHP_VERSION;')"
 
-# Clear any stale bootstrap config cache that may have been built with wrong env
-if [ "${APP_ENV}" = "production" ]; then
-    echo "[start.sh] Production: clearing and rebuilding config cache..."
-    php artisan config:clear 2>&1 || true
-    php artisan config:cache 2>&1 || true
-fi
+# NOTE: Do NOT run `config:clear` / `config:cache` here.
+# Autoscale containers have a read-only filesystem (only /tmp is writable),
+# so writing to bootstrap/cache/* fails and can corrupt the prebuilt cache.
+# The build phase already runs `php artisan optimize`, so config is cached
+# at image build time with the correct production env.
 
 echo "[start.sh] Verifying app can bootstrap..."
 php artisan --version 2>&1
