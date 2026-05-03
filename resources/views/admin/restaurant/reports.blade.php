@@ -6,7 +6,7 @@
 <div class="content-header">
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
-            <a href="{{ route('restaurant.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Tables</a>
+            <a href="{{ route('reports.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Reports</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-1">📊 Restaurant Reports</h1>
             <p class="text-gray-500 text-sm">Revenue and billing summary</p>
         </div>
