@@ -921,14 +921,17 @@
                             <div>
                                 <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Total</div>
                                 <div id="rtTotal" style="font-size:18px;font-weight:900;color:#10b981;margin-top:2px;">₹0</div>
+                                <div id="rtTotalDelta" class="rt-delta" style="font-size:11px;font-weight:700;margin-top:3px;color:#94a3b8;">—</div>
                             </div>
                             <div>
                                 <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Avg / Period</div>
                                 <div id="rtAvg" style="font-size:18px;font-weight:900;color:#0ea5e9;margin-top:2px;">₹0</div>
+                                <div id="rtAvgDelta" class="rt-delta" style="font-size:11px;font-weight:700;margin-top:3px;color:#94a3b8;">—</div>
                             </div>
                             <div>
                                 <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Peak</div>
                                 <div id="rtPeak" style="font-size:18px;font-weight:900;color:#7c3aed;margin-top:2px;">₹0</div>
+                                <div id="rtPeakDelta" class="rt-delta" style="font-size:11px;font-weight:700;margin-top:3px;color:#94a3b8;">—</div>
                             </div>
                         </div>
 
@@ -962,22 +965,29 @@
                             }, 100);
                         }
 
-                        function renderRevenue(labels, data){
+                        function renderRevenue(labels, data, prevData){
+                            var hasPrev = Array.isArray(prevData) && prevData.some(function(v){ return Number(v) > 0; });
+                            var series = [{ name: 'Current', type: 'area', data: data }];
+                            if (hasPrev) series.push({ name: 'Prior period', type: 'line', data: prevData });
                             var opts = {
-                                chart: { type: 'area', height: 280, toolbar: { show: false }, animations: { speed: 400 }, fontFamily: 'Inter, sans-serif' },
-                                series: [{ name: 'Revenue', data: data }],
+                                chart: { type: 'line', height: 280, toolbar: { show: false }, animations: { speed: 400 }, fontFamily: 'Inter, sans-serif' },
+                                series: series,
                                 xaxis: { categories: labels, labels: { style: { fontSize: '11px', colors: '#64748b' } }, axisBorder:{show:false}, axisTicks:{show:false} },
                                 yaxis: { labels: { formatter: fmtINR, style: { fontSize: '11px', colors: '#64748b' } } },
-                                stroke: { curve: 'smooth', width: 3 },
-                                colors: ['#10b981'],
-                                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0,90,100] } },
+                                stroke: { curve: 'smooth', width: hasPrev ? [3,2] : [3], dashArray: hasPrev ? [0,5] : [0] },
+                                colors: hasPrev ? ['#10b981', '#94a3b8'] : ['#10b981'],
+                                fill: hasPrev
+                                    ? { type: ['gradient','solid'], gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops:[0,90,100] }, opacity: [1, 0] }
+                                    : { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0,90,100] } },
                                 dataLabels: { enabled: false },
                                 grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+                                legend: { show: hasPrev, position: 'top', horizontalAlign: 'right', fontSize: '11px', markers: { width: 10, height: 10 } },
                                 tooltip: { y: { formatter: function(v){ return '₹' + Number(v||0).toLocaleString('en-IN'); } } },
                                 noData: { text: 'No revenue in this period', style: { color:'#94a3b8', fontSize:'13px' } },
                             };
-                            if (revChart) { revChart.updateOptions(opts, true, true); }
-                            else { revChart = new ApexCharts(document.querySelector('#rtRevenueChart'), opts); revChart.render(); }
+                            if (revChart) { revChart.destroy(); revChart = null; }
+                            revChart = new ApexCharts(document.querySelector('#rtRevenueChart'), opts);
+                            revChart.render();
                         }
 
                         function renderOccupancy(labels, data){
@@ -1011,6 +1021,31 @@
                             loadRT();
                         };
 
+                        function rangeLabel(range){
+                            return ({ '7d':'prior 7d', '30d':'prior 30d', '90d':'prior 90d', '12m':'prior 12m' })[range] || 'prior period';
+                        }
+
+                        function setDelta(elId, deltaPct, prevValue){
+                            var el = document.getElementById(elId);
+                            if (!el) return;
+                            if (deltaPct === null || typeof deltaPct === 'undefined') {
+                                el.innerHTML =
+                                    '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;background:#ecfdf5;color:#10b981;font-size:11px;font-weight:800;">▲ New</span>' +
+                                    '<span style="color:#94a3b8;font-weight:600;margin-left:6px;">vs ' + rangeLabel(currentRange) + ' (₹0)</span>';
+                                return;
+                            }
+                            var up = deltaPct > 0, down = deltaPct < 0;
+                            var color = up ? '#10b981' : (down ? '#ef4444' : '#64748b');
+                            var bg    = up ? '#ecfdf5' : (down ? '#fef2f2' : '#f1f5f9');
+                            var arrow = up ? '▲' : (down ? '▼' : '■');
+                            var sign  = up ? '+' : '';
+                            el.innerHTML =
+                                '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:6px;background:' + bg + ';color:' + color + ';font-size:11px;font-weight:800;">' +
+                                    arrow + ' ' + sign + deltaPct.toFixed(1) + '%' +
+                                '</span>' +
+                                '<span style="color:#94a3b8;font-weight:600;margin-left:6px;">vs ' + rangeLabel(currentRange) + ' (' + fmtINR(prevValue) + ')</span>';
+                        }
+
                         function loadRT(){
                             loading = true;
                             fetch(endpoint + '?range=' + currentRange, { credentials: 'same-origin' })
@@ -1021,8 +1056,11 @@
                                     document.getElementById('rtTotal').innerText = fmtINR(d.total);
                                     document.getElementById('rtAvg').innerText   = fmtINR(d.avg);
                                     document.getElementById('rtPeak').innerText  = fmtINR(d.peak);
+                                    setDelta('rtTotalDelta', d.delta_total, d.prev_total);
+                                    setDelta('rtAvgDelta',   d.delta_avg,   d.prev_avg);
+                                    setDelta('rtPeakDelta',  d.delta_peak,  d.prev_peak);
                                     ensureApex(function(){
-                                        renderRevenue(d.labels, d.revenue);
+                                        renderRevenue(d.labels, d.revenue, d.prev_revenue);
                                         renderOccupancy(d.labels, d.occupancy);
                                     });
                                 })

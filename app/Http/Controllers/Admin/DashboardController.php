@@ -478,12 +478,30 @@ class DashboardController extends Controller
                 $from = $today->copy()->subDays(6); $to = $today->copy(); $step = 'day';
         }
 
+        // Previous comparable period (same length immediately preceding $from)
+        if ($step === 'month') {
+            $prevTo   = $from->copy()->subDay()->endOfMonth();
+            $prevFrom = $from->copy()->subMonths(12)->startOfMonth();
+        } else {
+            $periodDays = $from->diffInDays($to) + 1; // inclusive
+            $prevTo     = $from->copy()->subDay();
+            $prevFrom   = $prevTo->copy()->subDays($periodDays - 1);
+        }
+
         try {
             $payments = Payment::where('status', 'completed')
                 ->whereBetween('created_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
                 ->get(['amount', 'created_at']);
         } catch (\Exception $e) {
             $payments = collect();
+        }
+
+        try {
+            $prevPayments = Payment::where('status', 'completed')
+                ->whereBetween('created_at', [$prevFrom->copy()->startOfDay(), $prevTo->copy()->endOfDay()])
+                ->get(['amount', 'created_at']);
+        } catch (\Exception $e) {
+            $prevPayments = collect();
         }
 
         $totalRooms = max(1, (int) Room::count());
@@ -516,15 +534,21 @@ class DashboardController extends Controller
 
         $labels = [];
         $revenue = [];
+        $prevRevenue = [];
         $occupancy = [];
 
         if ($step === 'month') {
-            $g = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m'));
+            $g  = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m'));
+            $pg = $prevPayments->groupBy(fn($p) => Carbon::parse($p->created_at)->format('Y-m'));
             $cur = $from->copy();
+            $pcur = $prevFrom->copy();
             while ($cur <= $to) {
                 $k = $cur->format('Y-m');
+                $pk = $pcur->format('Y-m');
                 $labels[] = $cur->format('M Y');
                 $revenue[] = (float) ($g->get($k)?->sum('amount') ?? 0);
+                $prevRevenue[] = (float) ($pg->get($pk)?->sum('amount') ?? 0);
+                $pcur->addMonth();
                 // Sum room-nights across days in this month, divide by (rooms × days_in_month)
                 $monthStart = $cur->copy()->startOfMonth();
                 $monthEnd   = $cur->copy()->endOfMonth();
@@ -538,15 +562,20 @@ class DashboardController extends Controller
                 $cur->addMonth();
             }
         } else {
-            $g = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->toDateString());
-            $cur = $from->copy();
+            $g  = $payments->groupBy(fn($p) => Carbon::parse($p->created_at)->toDateString());
+            $pg = $prevPayments->groupBy(fn($p) => Carbon::parse($p->created_at)->toDateString());
+            $cur  = $from->copy();
+            $pcur = $prevFrom->copy();
             while ($cur <= $to) {
-                $k = $cur->toDateString();
+                $k  = $cur->toDateString();
+                $pk = $pcur->toDateString();
                 $labels[] = $cur->format('d M');
                 $revenue[] = (float) ($g->get($k)?->sum('amount') ?? 0);
+                $prevRevenue[] = (float) ($pg->get($pk)?->sum('amount') ?? 0);
                 $occRooms = min($totalRooms, $occByDay[$k] ?? 0);
                 $occupancy[] = round(min(100, ($occRooms / $totalRooms) * 100), 1);
                 $cur->addDay();
+                $pcur->addDay();
             }
         }
 
@@ -554,16 +583,34 @@ class DashboardController extends Controller
         $avg   = count($revenue) ? $total / count($revenue) : 0;
         $peak  = count($revenue) ? max($revenue) : 0;
 
+        $prevTotal = array_sum($prevRevenue);
+        $prevAvg   = count($prevRevenue) ? $prevTotal / count($prevRevenue) : 0;
+        $prevPeak  = count($prevRevenue) ? max($prevRevenue) : 0;
+
+        $pctDelta = function ($cur, $prev) {
+            if ($prev <= 0) return $cur > 0 ? null : 0.0; // null = N/A (no baseline)
+            return round((($cur - $prev) / $prev) * 100, 1);
+        };
+
         return response()->json([
-            'range'     => $range,
-            'labels'    => $labels,
-            'revenue'   => $revenue,
-            'occupancy' => $occupancy,
-            'total'     => $total,
-            'avg'       => $avg,
-            'peak'      => $peak,
-            'from'      => $from->toDateString(),
-            'to'        => $to->toDateString(),
+            'range'        => $range,
+            'labels'       => $labels,
+            'revenue'      => $revenue,
+            'prev_revenue' => $prevRevenue,
+            'occupancy'    => $occupancy,
+            'total'        => $total,
+            'avg'          => $avg,
+            'peak'         => $peak,
+            'prev_total'   => $prevTotal,
+            'prev_avg'     => $prevAvg,
+            'prev_peak'    => $prevPeak,
+            'delta_total'  => $pctDelta($total, $prevTotal),
+            'delta_avg'    => $pctDelta($avg,   $prevAvg),
+            'delta_peak'   => $pctDelta($peak,  $prevPeak),
+            'from'         => $from->toDateString(),
+            'to'           => $to->toDateString(),
+            'prev_from'    => $prevFrom->toDateString(),
+            'prev_to'      => $prevTo->toDateString(),
         ]);
     }
 
