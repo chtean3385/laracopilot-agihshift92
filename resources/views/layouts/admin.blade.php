@@ -1066,15 +1066,19 @@
                     'booking-widget'     => \App\Models\Module::isEnabled('booking-widget'),
                     'pathik'             => \App\Models\Module::isEnabled('pathik'),
                     'time-slots'         => \App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing'),
+                    'email-parser'       => \App\Models\Module::isEnabled('email-parser'),
                 ];
                 $hasAutomation = collect($autoChildren)->contains(true);
                 $otaNavCount   = $autoChildren['ota_whatsapp_sync']
                     ? \App\Models\OtaImportedBooking::pendingCountForHotel((int) session('crm_hotel_id'))
                     : 0;
+                $emailConflictCount = $autoChildren['email-parser']
+                    ? \App\Models\OtaBookingConflict::unresolvedCountForHotel((int) session('crm_hotel_id'))
+                    : 0;
                 $autoActive = request()->routeIs('whatsapp.*') || request()->routeIs('payment_links.*')
                     || request()->routeIs('channel_manager.*') || request()->routeIs('ota-bookings.*')
                     || request()->routeIs('admin.booking-widget.*') || request()->routeIs('pathik.*')
-                    || request()->routeIs('time-slots.*');
+                    || request()->routeIs('time-slots.*') || request()->routeIs('email-parser.*');
             @endphp
             @if($hasAutomation)
             <div class="nav-section">Automation</div>
@@ -1131,6 +1135,15 @@
                     <a href="{{ route('time-slots.index') }}" class="nav-link {{ request()->routeIs('time-slots.*') ? 'active' : '' }}">
                         <span class="icon"><i class="fas fa-clock"></i></span>
                         Time Slots &amp; Add-Ons
+                    </a>
+                    @endif
+                    @if($autoChildren['email-parser'])
+                    <a href="{{ route('email-parser.config') }}" class="nav-link {{ request()->routeIs('email-parser.*') ? 'active' : '' }}" style="position:relative;">
+                        <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                        OTA Email Parser
+                        @if($emailConflictCount > 0)
+                        <span class="nav-badge">{{ $emailConflictCount }}</span>
+                        @endif
                     </a>
                     @endif
                 </div>

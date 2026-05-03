@@ -645,6 +645,19 @@ class BookingController extends Controller
         $booking->update($updateData);
         $newStatus = $validated['status'];
 
+        // OTA conflict resolution: when an admin assigns/changes a room on a
+        // booking that came in with ota_conflict=true, mark the conflict cleared
+        // and resolve any open ota_booking_conflicts row.
+        if ($booking->ota_conflict && $newRoomId) {
+            $booking->update(['ota_conflict' => false]);
+            \App\Models\OtaBookingConflict::where('booking_id', $booking->id)
+                ->where('resolved', false)
+                ->update([
+                    'resolved'    => true,
+                    'resolved_at' => now(),
+                ]);
+        }
+
         // Room occupancy: only track for per_night rooms
         if ($oldRoomId !== $newRoomId) {
             $oldRoom = Room::find($oldRoomId);

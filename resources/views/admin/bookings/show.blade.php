@@ -166,19 +166,19 @@
                     </div>
                     @elseif($booking->room)
                     <div class="text-4xl font-black text-gray-800 mb-1">{{ $booking->room?->room_number }}</div>
-                    <span class="badge-{{ $booking->room->type_color }}">{{ ucfirst($booking->room->type) }}</span>
+                    <span class="badge-{{ $booking->room?->type_color }}">{{ ucfirst($booking->room?->type ?? '') }}</span>
                     <div class="mt-4 space-y-2">
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">Floor</span><span class="font-medium">{{ $booking->room->floor }}</span></div>
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">View</span><span class="font-medium">{{ $booking->room->view }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Floor</span><span class="font-medium">{{ $booking->room?->floor }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">View</span><span class="font-medium">{{ $booking->room?->view }}</span></div>
                         @if($pType === 'per_slot' && $booking->timeSlot)
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Slot Price</span><span class="font-bold text-violet-600">₹{{ number_format($booking->timeSlot->base_price) }}</span></div>
                         @elseif($pType === 'per_hour')
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Hour</span><span class="font-bold text-amber-600">₹{{ number_format($booking->room->hourly_rate ?? 0) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Hour</span><span class="font-bold text-amber-600">₹{{ number_format($booking->room?->hourly_rate ?? 0) }}</span></div>
                         @else
                         @if($booking->price_overridden)
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Custom Total</span><span class="font-bold text-amber-600">₹{{ number_format($booking->total_amount) }} <span class="text-xs font-normal text-amber-500">(custom)</span></span></div>
                         @else
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room->price_per_night) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room?->price_per_night ?? 0) }}</span></div>
                         @endif
                         @endif
                     </div>

@@ -178,6 +178,7 @@ class HotelController extends Controller
                 ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking',    'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.', 'is_enabled' => false],
                 ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',     'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.', 'is_enabled' => false],
                 ['slug' => 'ota_whatsapp_sync',   'name' => 'OTA WhatsApp Sync',      'description' => 'Automatically detect and import bookings from OTA WhatsApp confirmation messages (Booking.com, Airbnb, Agoda, MakeMyTrip, Goibibo etc.).', 'is_enabled' => false],
+                ['slug' => 'email-parser',        'name' => 'OTA Email Parser',       'description' => 'Auto-read OTA booking confirmation emails (Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda, Expedia) via IMAP every 5 minutes — auto-creates guests and bookings, detects conflicts.', 'is_enabled' => false],
                 // Dormant: standalone Food Menu module — superseded by Restaurant QR.
                 // ['slug' => 'food-menu',           'name' => 'QR Food Menu',           'description' => 'In-room food ordering via QR code. Guests scan, browse menu, and place orders that staff approve and auto-bill to the room.', 'is_enabled' => false],
             ];
@@ -394,6 +395,8 @@ class HotelController extends Controller
                 ['slug' => 'booking-widget',      'name' => 'Booking Widget',      'description' => 'Embeddable website booking form. Guests book directly from your hotel website and bookings appear in CRM instantly.', 'is_enabled' => false],
                 ['slug' => 'whole-hotel-booking', 'name' => 'Whole Hotel Booking', 'description' => 'Allow booking the entire hotel at once — all rooms are blocked and the calendar shows a whole-hotel banner.', 'is_enabled' => false],
                 ['slug' => 'slot-search-engine',  'name' => 'Slot Search Engine',  'description' => 'Full-screen multi-filter search for slot availability across date ranges, slot types, rooms, and booking status.', 'is_enabled' => false],
+                ['slug' => 'ota_whatsapp_sync',   'name' => 'OTA WhatsApp Sync',   'description' => 'Automatically detect and import bookings from OTA WhatsApp confirmation messages (Booking.com, Airbnb, Agoda, MakeMyTrip, Goibibo etc.).', 'is_enabled' => false],
+                ['slug' => 'email-parser',        'name' => 'OTA Email Parser',    'description' => 'Auto-read OTA booking confirmation emails (Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda, Expedia) via IMAP every 5 minutes — auto-creates guests and bookings, detects conflicts.', 'is_enabled' => false],
                 // Dormant: standalone Food Menu module — superseded by Restaurant QR.
                 // ['slug' => 'food-menu',           'name' => 'QR Food Menu',        'description' => 'In-room food ordering via QR code. Guests scan, browse menu, and place orders that staff approve and auto-bill to the room.', 'is_enabled' => false],
             ] as $m) {

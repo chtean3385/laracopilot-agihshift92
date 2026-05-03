@@ -26,6 +26,7 @@ $icons = [
     'extra-billing'     => ['fas fa-receipt',         'linear-gradient(135deg,#a855f7,#7c3aed)', '#a855f7'],
     'inventory'         => ['fas fa-boxes',           'linear-gradient(135deg,#0ea5e9,#0369a1)', '#0ea5e9'],
     'food-menu'         => ['fas fa-utensils',        'linear-gradient(135deg,#f97316,#ea580c)', '#f97316'],
+    'email-parser'      => ['fas fa-envelope-open-text','linear-gradient(135deg,#0d9488,#0f766e)', '#0d9488'],
 ];
 @endphp
 
@@ -114,6 +115,10 @@ $icons = [
                     </a>
                     @elseif($module->slug === 'booking-widget')
                     <a href="{{ route('admin.booking-widget.settings') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
+                        <i class="fas fa-cog" style="font-size:11px;"></i> Configure
+                    </a>
+                    @elseif($module->slug === 'email-parser')
+                    <a href="{{ route('email-parser.config') }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#f8fafc;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;">
                         <i class="fas fa-cog" style="font-size:11px;"></i> Configure
                     </a>
                     @endif

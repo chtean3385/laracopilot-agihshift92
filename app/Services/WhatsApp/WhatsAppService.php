@@ -407,6 +407,68 @@ class WhatsAppService
     }
 
     /**
+     * Send a notification to a hotel-scoped phone using an APPROVED WhatsApp template
+     * (hotel-scoped first, then the global platform template) identified by trigger_event.
+     * If no approved template exists, the call is logged and skipped — plain-text is never
+     * sent in its place.
+     *
+     * @param  int    $hotelId
+     * @param  string $toPhone
+     * @param  string $event   trigger_event (matches whatsapp_templates.trigger_event)
+     * @param  array  $params  positional params for {{1}}…{{n}}
+     * @return bool
+     */
+    public static function sendTemplateForHotel(int $hotelId, string $toPhone, string $event, array $params): bool
+    {
+        static::$lastError = '';
+
+        $config = WhatsAppConfig::withoutGlobalScopes()
+            ->where('hotel_id', $hotelId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$config) {
+            static::setLastError('No active WhatsApp config for hotel #' . $hotelId);
+            return false;
+        }
+
+        $provider = static::providerForConfig($config);
+        if (!$provider) {
+            return false;
+        }
+
+        $candidates = [
+            WhatsAppTemplate::withoutGlobalScopes()
+                ->where('hotel_id', $hotelId)
+                ->where('trigger_event', $event)
+                ->where('is_active', true)
+                ->first(),
+            WhatsAppTemplate::globalForEvent($event),
+        ];
+
+        $template = null;
+        foreach ($candidates as $cand) {
+            if ($cand
+                && ($cand->approval_status ?? null) === 'approved'
+                && !empty($cand->template_name)) {
+                $template = $cand;
+                break;
+            }
+        }
+
+        if (!$template) {
+            Log::info('WhatsAppService::sendTemplateForHotel skipped: no approved template', [
+                'event'    => $event,
+                'hotel_id' => $hotelId,
+            ]);
+            static::setLastError('No approved WhatsApp template for event ' . $event);
+            return false;
+        }
+
+        return $provider->sendTemplate($toPhone, $template->template_name, $params);
+    }
+
+    /**
      * Send a plain-text reply identified by the Meta phone_number_id of the RECEIVING number.
      * Used for fallback OTA replies when no hotel has been resolved yet.
      */

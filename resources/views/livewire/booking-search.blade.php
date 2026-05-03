@@ -279,9 +279,9 @@
                             @elseif($booking->room)
                             <div class="lv-room-pill">
                                 <span class="lv-room-pill-label">RM</span>
-                                <span class="lv-room-pill-num">{{ $booking->room->room_number }}</span>
+                                <span class="lv-room-pill-num">{{ $booking->room?->room_number }}</span>
                             </div>
-                            <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room->type) }}</div>
+                            <div class="lv-secondary" style="margin-top:4px;">{{ ucfirst($booking->room?->type ?? '') }}</div>
                             @else
                             <div class="lv-room-pill" style="background:#fef3c7;color:#92400e;">
                                 <span class="lv-room-pill-label">RM</span>

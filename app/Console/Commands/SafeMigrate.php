@@ -221,6 +221,7 @@ class SafeMigrate extends Command
             ['slug' => 'payment_links',   'name' => 'Payment Links',        'description' => 'Generate UPI QR codes and Razorpay payment links from invoices and bookings.'],
             ['slug' => 'pathik',          'name' => 'Pathik Autofill',      'description' => 'Auto-fill Gujarat Pathik portal with guest data from the CRM via Chrome extension.'],
             ['slug' => 'channel_manager', 'name' => 'OTA Channel Manager',  'description' => 'Sync room availability and rates with OTA platforms like eZee, STAAH, SiteMinder.'],
+            ['slug' => 'email-parser',    'name' => 'OTA Email Parser',     'description' => 'Auto-read OTA booking confirmation emails (Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda, Expedia) via IMAP every 5 minutes — auto-creates guests and bookings, detects conflicts.'],
         ];
         foreach ($moduleDefs as $m) {
             $exists = DB::table('modules')->where('hotel_id', $hotelId)->where('slug', $m['slug'])->exists();

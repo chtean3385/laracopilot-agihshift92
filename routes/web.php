@@ -307,6 +307,15 @@ Route::get('/payment-links/upi-config',                       [PaymentLinksContr
 Route::post('/payment-links/booking/{id}/razorpay',           [PaymentLinksController::class, 'razorpayForBooking'])->name('payment_links.booking.razorpay');
 Route::get('/payment-links/razorpay/webhook',                 [PaymentLinksController::class, 'razorpayWebhook'] )->name('payment_links.razorpay.webhook')->withoutMiddleware(['web']);
 
+// ── OTA Email Parser ──────────────────────────────────────────────────────
+Route::get('/email-parser/config',                  [\App\Http\Controllers\Admin\EmailParserController::class, 'index']           )->name('email-parser.config');
+Route::post('/email-parser/config',                 [\App\Http\Controllers\Admin\EmailParserController::class, 'saveConfig']      )->name('email-parser.config.save');
+Route::post('/email-parser/test-connection',        [\App\Http\Controllers\Admin\EmailParserController::class, 'testConnection'] )->name('email-parser.test-connection');
+Route::post('/email-parser/toggle-active',          [\App\Http\Controllers\Admin\EmailParserController::class, 'toggleActive']   )->name('email-parser.toggle-active');
+Route::get('/email-parser/logs',                    [\App\Http\Controllers\Admin\EmailParserController::class, 'logs']            )->name('email-parser.logs');
+Route::get('/email-parser/conflicts',               [\App\Http\Controllers\Admin\EmailParserController::class, 'conflicts']       )->name('email-parser.conflicts');
+Route::post('/email-parser/conflicts/{id}/resolve', [\App\Http\Controllers\Admin\EmailParserController::class, 'resolveConflict'])->name('email-parser.conflicts.resolve');
+
 // ── OTA WhatsApp Sync — Import Queue ───────────────────────────────────────
 Route::get('/ota-bookings',                   [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.index');
 Route::get('/ota-bookings/history',           [\App\Http\Controllers\Admin\OtaBookingController::class, 'history'])->name('ota-bookings.history');

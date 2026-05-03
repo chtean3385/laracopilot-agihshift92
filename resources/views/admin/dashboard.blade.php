@@ -685,6 +685,48 @@
                         }
                     @endphp
 
+                    @php
+                        $epEnabled = \App\Models\Module::isEnabled('email-parser');
+                        $epHotelId = (int) session('crm_hotel_id');
+                        $epConflicts = $epEnabled
+                            ? \App\Models\OtaBookingConflict::unresolvedCountForHotel($epHotelId)
+                            : 0;
+                        $epNewToday = $epEnabled
+                            ? \App\Models\Booking::where('hotel_id', $epHotelId)
+                                ->whereNotNull('external_booking_id')
+                                ->whereDate('created_at', today())
+                                ->count()
+                            : 0;
+                    @endphp
+                    @if($epEnabled && ($epConflicts > 0 || $epNewToday > 0))
+                    <div data-widget="ota-email-conflicts" class="db-widget-wrap" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
+                        @if($epConflicts > 0)
+                        <a href="{{ route('email-parser.conflicts') }}" style="flex:1;min-width:260px;display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fed7aa;border-radius:14px;text-decoration:none;color:#9a3412;">
+                            <div style="width:42px;height:42px;background:linear-gradient(135deg,#ea580c,#c2410c);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-triangle-exclamation" style="color:#fff;font-size:18px;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:800;font-size:14px;">{{ $epConflicts }} OTA booking conflict{{ $epConflicts === 1 ? '' : 's' }} need attention</div>
+                                <div style="font-size:12px;opacity:.85;">Bookings imported from email need a room assigned manually.</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        @endif
+                        @if($epNewToday > 0)
+                        <a href="{{ route('email-parser.logs') }}" style="flex:1;min-width:260px;display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid #a7f3d0;border-radius:14px;text-decoration:none;color:#065f46;">
+                            <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-envelope-open-text" style="color:#fff;font-size:18px;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:800;font-size:14px;">{{ $epNewToday }} new OTA booking{{ $epNewToday === 1 ? '' : 's' }} imported today</div>
+                                <div style="font-size:12px;opacity:.85;">Auto-created from your connected inbox.</div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        @endif
+                    </div>
+                    @endif
+
                     {{-- KPI Stats — single compact row of 8 cards --}}
                     <div data-widget="kpi-row-1" class="db-widget-wrap">
                     <div class="kpi-grid kpi-grid-8" style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
