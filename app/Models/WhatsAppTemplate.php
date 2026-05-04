@@ -92,8 +92,9 @@ class WhatsAppTemplate extends Model
             'payment.received'   => 'Payment Received',
             'checkout.done'      => 'Check-Out Thank You + Bill',
             'feedback.request'   => 'Feedback Request (2 Days After Stay)',
-            'ota_booking_confirmed' => 'OTA Booking Confirmed (Email Parser)',
-            'ota_booking_conflict'  => 'OTA Booking Conflict (Email Parser)',
+            'ota_booking_confirmed'  => 'OTA Booking Confirmed (Email Parser)',
+            'ota_booking_conflict'   => 'OTA Booking Conflict (Email Parser)',
+            'booking.alert.owner'    => 'New Booking — Owner Alert (Internal)',
         ];
     }
 

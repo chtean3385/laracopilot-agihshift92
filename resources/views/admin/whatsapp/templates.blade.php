@@ -40,6 +40,7 @@ $eventMeta = [
     'feedback.request'      => ['fas fa-star',            'linear-gradient(135deg,#f97316,#ea580c)', 'Sent 2 days after checkout requesting a review'],
     'ota_booking_confirmed' => ['fas fa-envelope-open-text','linear-gradient(135deg,#0ea5e9,#0284c7)', 'Sent when an OTA booking email is parsed and confirmed automatically'],
     'ota_booking_conflict'  => ['fas fa-triangle-exclamation','linear-gradient(135deg,#ef4444,#b91c1c)', 'Sent when an OTA booking email conflicts with an existing booking and needs review'],
+    'booking.alert.owner'   => ['fas fa-bell',               'linear-gradient(135deg,#7c3aed,#5b21b6)', 'Sent to owner/partner phones whenever a new booking is created'],
 ];
 $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', 'Automation'];
 

@@ -469,6 +469,80 @@ class WhatsAppService
     }
 
     /**
+     * Send a booking alert to all owner/partner phones configured on the hotel's WhatsApp config.
+     * Uses the approved Meta template 'booking_alert_owner' (trigger_event: booking.alert.owner).
+     * Silently skips if notify_on_booking is off, no phones configured, or no approved template.
+     */
+    public static function sendOwnerAlert(Booking $booking): void
+    {
+        try {
+            $config = WhatsAppConfig::withoutGlobalScopes()
+                ->where('hotel_id', $booking->hotel_id)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$config || !$config->notify_on_booking) {
+                return;
+            }
+
+            $phones = $config->getNotifyPhoneList();
+            if (empty($phones)) {
+                return;
+            }
+
+            $provider = static::providerForConfig($config);
+            if (!$provider) {
+                Log::info('WhatsApp sendOwnerAlert: no provider', ['hotel_id' => $booking->hotel_id]);
+                return;
+            }
+
+            // Find template — hotel-specific first, then global platform template
+            $template = WhatsAppTemplate::withoutGlobalScopes()
+                ->where('hotel_id', $booking->hotel_id)
+                ->where('trigger_event', 'booking.alert.owner')
+                ->where('is_active', true)
+                ->where('approval_status', 'approved')
+                ->first()
+                ?? WhatsAppTemplate::withoutGlobalScopes()
+                    ->whereNull('hotel_id')
+                    ->where('trigger_event', 'booking.alert.owner')
+                    ->where('is_active', true)
+                    ->where('approval_status', 'approved')
+                    ->first();
+
+            if (!$template) {
+                Log::info('WhatsApp sendOwnerAlert: no approved template for booking.alert.owner', [
+                    'hotel_id' => $booking->hotel_id,
+                ]);
+                return;
+            }
+
+            $booking->loadMissing(['customer', 'room', 'invoice']);
+            $vars     = MessageBuilder::buildVars($booking);
+            $varNames = $template->extractVariableNames();
+            $params   = array_map(fn($name) => $vars[$name] ?? '', $varNames);
+
+            foreach ($phones as $raw) {
+                $phone = PhoneHelper::forWhatsApp($raw);
+                if (!$phone) {
+                    continue;
+                }
+                $sent = $provider->sendTemplate($phone, $template->template_name, $params);
+                Log::info('WhatsApp sendOwnerAlert ' . ($sent ? 'sent' : 'failed'), [
+                    'hotel_id'   => $booking->hotel_id,
+                    'booking_id' => $booking->id,
+                    'phone'      => $phone,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp sendOwnerAlert exception: ' . $e->getMessage(), [
+                'hotel_id'   => $booking->hotel_id ?? null,
+                'booking_id' => $booking->id ?? null,
+            ]);
+        }
+    }
+
+    /**
      * Send a plain-text reply identified by the Meta phone_number_id of the RECEIVING number.
      * Used for fallback OTA replies when no hotel has been resolved yet.
      */

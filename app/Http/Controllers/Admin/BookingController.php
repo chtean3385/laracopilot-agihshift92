@@ -431,6 +431,7 @@ class BookingController extends Controller
         $customer = Customer::find($bookingData['customer_id']);
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Room ' . $room->room_number . ' (' . $pricingType . ')');
         WhatsAppService::sendForEvent('booking.created', $booking);
+        WhatsAppService::sendOwnerAlert($booking);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Booking created! #' . $booking->booking_number);
     }
 
@@ -828,6 +829,7 @@ class BookingController extends Controller
             $customer  = Customer::find($bookingData['customer_id']);
             ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa' . $slotLabel . ' (' . $allRooms->count() . ' rooms)');
             WhatsAppService::sendForEvent('booking.created', $booking);
+            WhatsAppService::sendOwnerAlert($booking);
             return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
         }
 
@@ -917,6 +919,7 @@ class BookingController extends Controller
         $customer = Customer::find($bookingData['customer_id']);
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa (' . $allRooms->count() . ' rooms)');
         WhatsAppService::sendForEvent('booking.created', $booking);
+        WhatsAppService::sendOwnerAlert($booking);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
     }
 

@@ -30,6 +30,8 @@ class WhatsAppConfig extends Model
         'business_account_id',
         'waba_id',
         'test_phone',
+        'notify_on_booking',
+        'notify_phones',
         'is_active',
         'mode',
         'setup_step',
@@ -42,7 +44,14 @@ class WhatsAppConfig extends Model
         'setup_completed'         => 'boolean',
         'setup_step'              => 'integer',
         'use_platform_templates'  => 'boolean',
+        'notify_on_booking'       => 'boolean',
+        'notify_phones'           => 'array',
     ];
+
+    public function getNotifyPhoneList(): array
+    {
+        return array_values(array_filter((array) ($this->notify_phones ?? [])));
+    }
 
     public static function active(): ?static
     {

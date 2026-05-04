@@ -194,6 +194,107 @@ $isManagedPending = ($setupMode === 'managed' && !$config->setup_completed && $c
     });
     </script>
     @endif
+
+    {{-- ── Owner Booking Alerts ───────────────────────────────────────────── --}}
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;margin-top:24px;">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-bell" style="color:#fff;font-size:18px;"></i>
+            </div>
+            <div>
+                <h3 style="font-size:16px;font-weight:700;color:#111827;margin:0 0 2px;">Owner Booking Alerts</h3>
+                <p style="font-size:13px;color:#6b7280;margin:0;">Send a WhatsApp notification to owner / partner phones whenever a new booking is created.</p>
+            </div>
+        </div>
+
+        @if(session('success') && str_contains(session('success'), 'alert'))
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:16px;color:#166534;font-size:13px;font-weight:600;">
+            <i class="fas fa-check-circle" style="margin-right:6px;"></i>{{ session('success') }}
+        </div>
+        @endif
+
+        <form method="POST" action="{{ route('whatsapp.setup.save-notify-phones') }}" id="ownerAlertForm">
+            @csrf
+
+            {{-- Toggle --}}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:18px;">
+                <div>
+                    <p style="font-size:14px;font-weight:600;color:#374151;margin:0 0 2px;">Enable owner alerts</p>
+                    <p style="font-size:12px;color:#6b7280;margin:0;">Uses the <code style="font-size:11px;background:#f3f4f6;padding:2px 5px;border-radius:4px;">booking_alert_owner</code> Meta template (must be approved in Meta first).</p>
+                </div>
+                <label style="position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;">
+                    <input type="checkbox" name="notify_on_booking" value="1" id="notifyToggle"
+                        {{ $config->notify_on_booking ? 'checked' : '' }}
+                        style="opacity:0;width:0;height:0;" onchange="document.getElementById('ownerAlertForm').submit();">
+                    <span onclick="document.getElementById('notifyToggle').click()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:{{ $config->notify_on_booking ? '#7c3aed' : '#d1d5db' }};border-radius:26px;transition:.3s;">
+                        <span style="position:absolute;height:20px;width:20px;left:{{ $config->notify_on_booking ? '22px' : '3px' }};bottom:3px;background:#fff;border-radius:50%;transition:.3s;"></span>
+                    </span>
+                </label>
+            </div>
+
+            {{-- Phone list --}}
+            <div id="phonesSection" style="{{ $config->notify_on_booking ? '' : 'opacity:.5;pointer-events:none;' }}">
+                <p style="font-size:13px;font-weight:600;color:#374151;margin:0 0 10px;">Alert phone numbers <span style="font-weight:400;color:#9ca3af;">(with country code, e.g. 919876543210)</span></p>
+                <div id="phoneList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                    @forelse($config->getNotifyPhoneList() as $ph)
+                    <div class="phone-row" style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" name="notify_phones[]" value="{{ $ph }}"
+                            placeholder="e.g. 919876543210"
+                            style="flex:1;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;">
+                        <button type="button" onclick="removePhone(this)" style="width:34px;height:34px;background:#fee2e2;border:none;border-radius:8px;color:#dc2626;cursor:pointer;font-size:15px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    @empty
+                    <div class="phone-row" style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" name="notify_phones[]" value=""
+                            placeholder="e.g. 919876543210"
+                            style="flex:1;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;">
+                        <button type="button" onclick="removePhone(this)" style="width:34px;height:34px;background:#fee2e2;border:none;border-radius:8px;color:#dc2626;cursor:pointer;font-size:15px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    @endforelse
+                </div>
+                <button type="button" onclick="addPhone()" style="padding:8px 14px;background:#f3f4f6;border:1px dashed #9ca3af;border-radius:8px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;">
+                    <i class="fas fa-plus" style="margin-right:5px;color:#7c3aed;"></i>Add another number
+                </button>
+            </div>
+
+            <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
+                <button type="submit" style="padding:10px 22px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;">
+                    <i class="fas fa-save" style="margin-right:6px;"></i>Save Alert Settings
+                </button>
+                <span style="font-size:12px;color:#9ca3af;">Numbers without a 24-hr session need the template approved in Meta.</span>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    // Keep phonesSection opacity in sync with toggle (before form submit)
+    document.getElementById('notifyToggle').addEventListener('change', function() {
+        document.getElementById('phonesSection').style.opacity = this.checked ? '1' : '0.5';
+        document.getElementById('phonesSection').style.pointerEvents = this.checked ? '' : 'none';
+    });
+
+    function addPhone() {
+        const row = document.createElement('div');
+        row.className = 'phone-row';
+        row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+        row.innerHTML = `<input type="text" name="notify_phones[]" placeholder="e.g. 919876543210" style="flex:1;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;">
+            <button type="button" onclick="removePhone(this)" style="width:34px;height:34px;background:#fee2e2;border:none;border-radius:8px;color:#dc2626;cursor:pointer;font-size:15px;"><i class="fas fa-times"></i></button>`;
+        document.getElementById('phoneList').appendChild(row);
+    }
+
+    function removePhone(btn) {
+        const rows = document.querySelectorAll('.phone-row');
+        if (rows.length === 1) {
+            btn.closest('.phone-row').querySelector('input').value = '';
+            return;
+        }
+        btn.closest('.phone-row').remove();
+    }
+    </script>
 </div>
 
 @elseif($inProgress)

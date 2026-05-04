@@ -270,4 +270,28 @@ class WhatsAppSetupController extends Controller
 
         return redirect()->route('whatsapp.setup')->with('success', 'WhatsApp setup has been reset. You can start fresh.');
     }
+
+    public function saveNotifyPhones(\Illuminate\Http\Request $request)
+    {
+        $config = WhatsAppConfig::first();
+        if (!$config) {
+            return back()->with('error', 'No WhatsApp configuration found.');
+        }
+
+        $enabled = $request->boolean('notify_on_booking');
+
+        // Collect non-empty phone entries from the submitted array
+        $phones = collect($request->input('notify_phones', []))
+            ->map(fn($p) => trim($p))
+            ->filter(fn($p) => $p !== '')
+            ->values()
+            ->all();
+
+        $config->update([
+            'notify_on_booking' => $enabled,
+            'notify_phones'     => $phones,
+        ]);
+
+        return back()->with('success', 'Owner alert settings saved.');
+    }
 }

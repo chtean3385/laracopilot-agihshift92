@@ -13,6 +13,7 @@ $eventMeta = [
     'feedback.request'      => ['fas fa-star',               'linear-gradient(135deg,#f97316,#ea580c)', 'Feedback Request'],
     'ota_booking_confirmed' => ['fas fa-envelope-open-text', 'linear-gradient(135deg,#0ea5e9,#0284c7)', 'OTA Booking Confirmed'],
     'ota_booking_conflict'  => ['fas fa-triangle-exclamation','linear-gradient(135deg,#ef4444,#b91c1c)', 'OTA Booking Conflict'],
+    'booking.alert.owner'   => ['fas fa-bell',               'linear-gradient(135deg,#7c3aed,#5b21b6)', 'New Booking — Owner Alert'],
 ];
 $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', 'Automation'];
 @endphp
