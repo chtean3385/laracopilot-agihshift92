@@ -42,13 +42,13 @@ class RoleController extends Controller
 
     private function buildPermissions(): \Illuminate\Support\Collection
     {
-        $isSuperAdmin       = session('crm_user_role') === 'Super Admin';
-        $restaurantEnabled  = $this->isRestaurantEnabled();
+        $isSuperAdmin      = session('crm_user_role') === 'Super Admin';
+        $restaurantEnabled = $isSuperAdmin || $this->isRestaurantEnabled();
 
         return Permission::orderBy('sort_order')->get()
             ->filter(function ($perm) use ($isSuperAdmin, $restaurantEnabled) {
-                if ($perm->module === 'Restaurant' && !$restaurantEnabled) return false;
-                if ($perm->module === 'Danger Zone'  && !$isSuperAdmin)    return false;
+                if ($perm->module === 'Restaurant'  && !$restaurantEnabled) return false;
+                if ($perm->module === 'Danger Zone' && !$isSuperAdmin)      return false;
                 return true;
             })
             ->groupBy('module');
@@ -56,7 +56,8 @@ class RoleController extends Controller
 
     private function getPreservedPermissionIds(Role $role): array
     {
-        if ($this->isRestaurantEnabled()) return [];
+        $isSuperAdmin = session('crm_user_role') === 'Super Admin';
+        if ($isSuperAdmin || $this->isRestaurantEnabled()) return [];
 
         return $role->permissions()
             ->where('module', 'Restaurant')

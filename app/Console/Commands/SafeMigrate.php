@@ -157,14 +157,14 @@ class SafeMigrate extends Command
     {
         // Fast-path: skip fully-provisioned hotels with one cheap query.
         // A hotel is "fully provisioned" when it has all 3 system roles,
-        // all 5 modules, and at least 5 per-hotel WhatsApp templates.
+        // all 6 modules, and at least 7 per-hotel WhatsApp templates.
         $rolesCount   = DB::table('roles')->where('hotel_id', $hotelId)
             ->whereIn('name', ['Admin', 'Manager', 'Receptionist'])->count();
         $modulesCount = DB::table('modules')->where('hotel_id', $hotelId)
-            ->whereIn('slug', ['whatsapp', 'payment_links', 'pathik', 'channel_manager', 'email-parser'])->count();
+            ->whereIn('slug', ['whatsapp', 'payment_links', 'pathik', 'channel_manager', 'email-parser', 'restaurant'])->count();
         $tplCount     = DB::table('whatsapp_templates')->where('hotel_id', $hotelId)->count();
         // 7 = number of per-hotel templates defined in $templateDefs below.
-        if ($rolesCount >= 3 && $modulesCount >= 5 && $tplCount >= 7) {
+        if ($rolesCount >= 3 && $modulesCount >= 6 && $tplCount >= 7) {
             return;
         }
 
@@ -230,11 +230,12 @@ class SafeMigrate extends Command
 
         // ── Modules ──────────────────────────────────────────────────────────────
         $moduleDefs = [
-            ['slug' => 'whatsapp',        'name' => 'WhatsApp Automation',  'description' => 'Send automated WhatsApp messages on booking, check-in reminders, and check-out.'],
-            ['slug' => 'payment_links',   'name' => 'Payment Links',        'description' => 'Generate UPI QR codes and Razorpay payment links from invoices and bookings.'],
-            ['slug' => 'pathik',          'name' => 'Pathik Autofill',      'description' => 'Auto-fill Gujarat Pathik portal with guest data from the CRM via Chrome extension.'],
-            ['slug' => 'channel_manager', 'name' => 'OTA Channel Manager',  'description' => 'Sync room availability and rates with OTA platforms like eZee, STAAH, SiteMinder.'],
-            ['slug' => 'email-parser',    'name' => 'OTA Email Parser',     'description' => 'Auto-read OTA booking confirmation emails (Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda, Expedia) via IMAP every 5 minutes — auto-creates guests and bookings, detects conflicts.'],
+            ['slug' => 'whatsapp',        'name' => 'WhatsApp Automation',      'description' => 'Send automated WhatsApp messages on booking, check-in reminders, and check-out.'],
+            ['slug' => 'payment_links',   'name' => 'Payment Links',            'description' => 'Generate UPI QR codes and Razorpay payment links from invoices and bookings.'],
+            ['slug' => 'pathik',          'name' => 'Pathik Autofill',          'description' => 'Auto-fill Gujarat Pathik portal with guest data from the CRM via Chrome extension.'],
+            ['slug' => 'channel_manager', 'name' => 'OTA Channel Manager',      'description' => 'Sync room availability and rates with OTA platforms like eZee, STAAH, SiteMinder.'],
+            ['slug' => 'email-parser',    'name' => 'OTA Email Parser',         'description' => 'Auto-read OTA booking confirmation emails (Booking.com, Airbnb, MakeMyTrip, Goibibo, Agoda, Expedia) via IMAP every 5 minutes — auto-creates guests and bookings, detects conflicts.'],
+            ['slug' => 'restaurant',      'name' => 'Restaurant Management',    'description' => 'Manage restaurant tables, menu, orders, KOT printing and billing. Charge directly or add to guest room bill.'],
         ];
         foreach ($moduleDefs as $m) {
             $exists = DB::table('modules')->where('hotel_id', $hotelId)->where('slug', $m['slug'])->exists();

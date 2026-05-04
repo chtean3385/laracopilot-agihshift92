@@ -47,7 +47,6 @@ $icons = [
 
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
             @foreach($hotelModules as $module)
-            @continue($module->slug === 'food-menu')
             @php [$icon, $grad, $color] = $icons[$module->slug] ?? ['fas fa-puzzle-piece', 'linear-gradient(135deg,#64748b,#334155)', '#64748b']; @endphp
             <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:2px solid {{ $module->is_enabled ? $color.'33' : '#f1f5f9' }};transition:border-color .2s;position:relative;overflow:hidden;">
                 <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:{{ $module->is_enabled ? $color.'15' : '#f8fafc' }};"></div>
@@ -86,7 +85,6 @@ $icons = [
     {{-- Regular hotel-scoped view --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
         @foreach($modules as $module)
-        @continue($module->slug === 'food-menu')
         @php [$icon, $grad, $color] = $icons[$module->slug] ?? ['fas fa-puzzle-piece', 'linear-gradient(135deg,#64748b,#334155)', '#64748b']; @endphp
         <div style="background:#fff;border-radius:20px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:2px solid {{ $module->is_enabled ? $color.'33' : '#f1f5f9' }};transition:border-color .2s;position:relative;overflow:hidden;">
             <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:{{ $module->is_enabled ? $color.'15' : '#f8fafc' }};"></div>
