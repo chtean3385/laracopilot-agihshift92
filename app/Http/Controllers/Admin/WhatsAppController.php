@@ -51,9 +51,12 @@ class WhatsAppController extends Controller
         $platform    = PlatformWhatsAppSetting::instance();
         $canEdit     = $isSaasAdmin || !$isBasicPlan;
 
-        // Managed hotels default to using platform templates (true if column is null too)
-        $usePlatformTemplates = $config && $config->isManagedMode()
-            && ($config->use_platform_templates || $config->use_platform_templates === null);
+        // Shared-mode and managed hotels both use the platform's WABA, so both get global templates.
+        // Managed hotels can additionally override per-event with hotel-specific copies.
+        $usePlatformTemplates = $config && (
+            $config->isSharedMode()
+            || ($config->isManagedMode() && ($config->use_platform_templates || $config->use_platform_templates === null))
+        );
 
         // Load global (platform) templates — keyed by trigger_event for easy lookup
         $globalTemplates = WhatsAppTemplate::withoutGlobalScopes()
