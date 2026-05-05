@@ -273,7 +273,7 @@ class WhatsAppSetupController extends Controller
 
     public function saveNotifyPhones(\Illuminate\Http\Request $request)
     {
-        $hotelId = session('hotel_id');
+        $hotelId = app(HotelContext::class)->getHotel();
         if (!$hotelId) {
             return back()->with('error', 'No hotel selected.');
         }
