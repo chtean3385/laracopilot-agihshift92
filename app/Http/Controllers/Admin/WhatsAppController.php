@@ -106,11 +106,26 @@ class WhatsAppController extends Controller
             $allTemplates = $merged->merge($hotelOnly)
                 ->sortBy('has_document_attachment')->sortBy('id');
         } else {
-            $allTemplates = WhatsAppTemplate::withoutGlobalScopes()
+            // Own-number hotel: hotel-specific templates take priority.
+            // For events with NO hotel-specific template, fall back to global platform templates
+            // so OTA / Owner-Alert events are always covered even when "Use Platform Templates" is OFF.
+            $hotelTemplates = WhatsAppTemplate::withoutGlobalScopes()
                 ->where('hotel_id', $hotelId)
-                ->orderBy('has_document_attachment')
-                ->orderBy('id')
                 ->get();
+
+            $hotelEventKeys = $hotelTemplates->pluck('trigger_event')->unique()->all();
+
+            $globalFallbacks = collect();
+            foreach ($globalTemplates as $event => $eventGlobal) {
+                if (in_array($event, $hotelEventKeys)) continue; // hotel has own template for this event
+                foreach ($eventGlobal as $gT) {
+                    $gT->is_global_fallback = true;
+                    $globalFallbacks->push($gT);
+                }
+            }
+
+            $allTemplates = $hotelTemplates->merge($globalFallbacks)
+                ->sortBy('has_document_attachment')->sortBy('id');
         }
 
         // Primary (text-only) template per event

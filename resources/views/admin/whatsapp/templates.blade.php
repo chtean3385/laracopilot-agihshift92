@@ -47,7 +47,12 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
 $readyCount = 0;
 foreach($allEvents as $event => $label) {
     $t = $templates[$event] ?? null;
-    if ($t && $t->is_active && ($t->approval_status ?? 'pending') === 'approved' && $providerConnected) {
+    if (!$t || !$providerConnected) continue;
+    $isGF      = !empty($t->is_global_fallback);
+    $isPlat    = in_array($t->template_name, $platformApprovedNames ?? []);
+    $tmplApproved = $isGF || $isPlat || ($t->approval_status ?? 'pending') === 'approved';
+    $tmplActive   = $t->is_active || ($isGF && $tmplApproved); // global fallbacks are always active when approved
+    if ($tmplApproved && $tmplActive) {
         $readyCount++;
     }
 }
@@ -159,9 +164,11 @@ foreach($allEvents as $event => $label) {
         @foreach($allEvents as $event => $label)
         @php
             $t = $templates[$event] ?? null;
-            $isPlatTmpl = $t && in_array($t->template_name, $platformApprovedNames ?? []);
-            $approved   = $t && ($isPlatTmpl || ($t->approval_status ?? 'pending') === 'approved');
-            $active     = $t && $t->is_active;
+            $isPlatTmpl       = $t && in_array($t->template_name, $platformApprovedNames ?? []);
+            $isGlobalFallback = $t && !empty($t->is_global_fallback);
+            $approved   = $t && ($isPlatTmpl || $isGlobalFallback || ($t->approval_status ?? 'pending') === 'approved');
+            // Platform/global fallback templates are considered active when approved — hotels can't disable them individually
+            $active     = $t && ($t->is_active || ($isGlobalFallback && $approved));
             if ($t && $approved && $active && $providerConnected) {
                 $dot = '#22c55e'; $dotLabel = 'Ready';
             } elseif ($t && $active && $providerConnected && !$approved) {
@@ -246,7 +253,13 @@ foreach($allEvents as $event => $label) {
 
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;">
                 @if($t)
-                    {{-- Toggle: available to all plans --}}
+                    @if($isGlobalFallback)
+                    {{-- Platform fallback: always active when approved. Hotel cannot toggle globally managed templates. --}}
+                    <span title="Managed by platform — always active when approved" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:24px;border-radius:24px;background:#dcfce7;flex-shrink:0;">
+                        <i class="fas fa-lock" style="font-size:11px;color:#15803d;"></i>
+                    </span>
+                    @else
+                    {{-- Hotel-specific template: toggleable --}}
                     <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;" title="{{ $t->is_active ? 'Active — click to deactivate' : 'Inactive — click to activate' }}">
                         <input type="checkbox" {{ $t->is_active ? 'checked' : '' }}
                             onchange="toggleTemplate({{ $t->id }}, this)"
@@ -254,6 +267,7 @@ foreach($allEvents as $event => $label) {
                         <span id="track-{{ $t->id }}" style="position:absolute;inset:0;border-radius:24px;background:{{ $t->is_active ? '#25d366' : '#e2e8f0' }};transition:background .2s;"></span>
                         <span id="thumb-{{ $t->id }}" style="position:absolute;left:{{ $t->is_active ? '22px' : '2px' }};top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;"></span>
                     </label>
+                    @endif
 
                     @if($canEdit)
                     @if($isGlobalFallback)
