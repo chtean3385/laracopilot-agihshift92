@@ -398,7 +398,14 @@ class WhatsAppController extends Controller
                     default    => 'pending',
                 };
 
-                $synced += WhatsAppTemplate::where('template_name', $name)->update(['approval_status' => $mapped]);
+                $update = ['approval_status' => $mapped];
+                if ($mapped === 'approved') {
+                    $update['is_active'] = true;
+                } elseif ($mapped === 'rejected') {
+                    $update['is_active'] = false;
+                }
+
+                $synced += WhatsAppTemplate::where('template_name', $name)->update($update);
             }
 
             return back()->with('success', "Synced {$synced} template(s) from WATI. Approval statuses updated.");
@@ -477,11 +484,21 @@ class WhatsAppController extends Controller
                     default    => 'pending',
                 };
 
-                $tmpl->update([
+                $updateData = [
                     'approval_status'  => $newStatus,
                     'meta_status'      => $newStatus === 'approved' ? 'approved' : 'submitted',
                     'meta_template_id' => $meta['id'] ?? $tmpl->meta_template_id,
-                ]);
+                ];
+
+                // Auto-activate when Meta approves; auto-deactivate when rejected.
+                // Admin can manually deactivate approved ones if needed.
+                if ($newStatus === 'approved') {
+                    $updateData['is_active'] = true;
+                } elseif ($newStatus === 'rejected') {
+                    $updateData['is_active'] = false;
+                }
+
+                $tmpl->update($updateData);
                 $updated++;
             }
 
