@@ -7,223 +7,216 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
-  :root {
-    --navy: #0f172a;
-    --navy2: #1e293b;
-    --gold: #d97706;
-    --gold-light: #fbbf24;
-    --cream: #fafaf9;
-    --white: #ffffff;
-    --slate: #64748b;
-    --text: #1e293b;
-    --border: #e2e8f0;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; color: var(--text); font-size: 14px; line-height: 1.6; }
+  :root { --navy:#0f172a; --navy2:#1e293b; --gold:#d97706; --gold-light:#fbbf24; --cream:#fafaf9; --white:#ffffff; --slate:#64748b; --text:#1e293b; --border:#e2e8f0; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:#f1f5f9; color:var(--text); font-size:14px; line-height:1.6; }
 
-  .slide { width: 297mm; min-height: 210mm; background: var(--white); margin: 0 auto 18px; position: relative; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,.14); page-break-after: always; page-break-inside: avoid; }
+  .slide { width:297mm; min-height:210mm; background:var(--white); margin:0 auto 18px; position:relative; overflow:hidden; box-shadow:0 4px 32px rgba(0,0,0,.14); page-break-after:always; page-break-inside:avoid; }
 
   /* COVER */
-  .cover { background: linear-gradient(145deg, #0f172a 0%, #1e3a5f 60%, #0f2744 100%); min-height: 210mm; display: flex; flex-direction: column; justify-content: center; padding: 20mm 22mm; position: relative; }
-  .cover::before { content: ''; position: absolute; top: -60px; right: -60px; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(217,119,6,.25) 0%, transparent 70%); }
-  .cover::after { content: ''; position: absolute; bottom: -40px; left: 40%; width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, rgba(251,191,36,.12) 0%, transparent 70%); }
-  .cover-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(217,119,6,.2); border: 1px solid rgba(217,119,6,.4); border-radius: 40px; padding: 6px 18px; color: var(--gold-light); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 24px; width: fit-content; }
-  .cover h1 { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 900; color: var(--white); line-height: 1.1; margin-bottom: 10px; }
-  .cover h1 span { color: var(--gold-light); }
-  .cover .cover-sub { font-size: 18px; color: rgba(255,255,255,.7); font-weight: 400; margin-bottom: 36px; max-width: 520px; }
-  .cover-divider { width: 60px; height: 3px; background: var(--gold); border-radius: 2px; margin-bottom: 32px; }
-  .cover-meta { display: flex; gap: 32px; flex-wrap: wrap; }
-  .cover-meta-item { display: flex; flex-direction: column; }
-  .cover-meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.45); margin-bottom: 3px; }
-  .cover-meta-item .value { font-size: 14px; font-weight: 600; color: rgba(255,255,255,.9); }
-  .cover-logo-area { position: absolute; top: 20mm; right: 22mm; text-align: right; }
-  .cover-logo-area .co-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--gold-light); }
-  .cover-logo-area .co-tag { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 3px; }
-  .cover-bottom-stripe { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%); }
+  .cover { background:linear-gradient(145deg,#0f172a 0%,#1e3a5f 60%,#0f2744 100%); min-height:210mm; display:flex; flex-direction:column; justify-content:center; padding:20mm 22mm; position:relative; }
+  .cover::before { content:''; position:absolute; top:-60px; right:-60px; width:340px; height:340px; border-radius:50%; background:radial-gradient(circle,rgba(217,119,6,.25) 0%,transparent 70%); }
+  .cover::after { content:''; position:absolute; bottom:-40px; left:40%; width:250px; height:250px; border-radius:50%; background:radial-gradient(circle,rgba(251,191,36,.12) 0%,transparent 70%); }
+  .cover-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(217,119,6,.2); border:1px solid rgba(217,119,6,.4); border-radius:40px; padding:6px 18px; color:var(--gold-light); font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:24px; width:fit-content; }
+  .cover h1 { font-family:'Playfair Display',serif; font-size:52px; font-weight:900; color:var(--white); line-height:1.1; margin-bottom:10px; }
+  .cover h1 span { color:var(--gold-light); }
+  .cover .cover-sub { font-size:18px; color:rgba(255,255,255,.7); font-weight:400; margin-bottom:36px; max-width:520px; }
+  .cover-divider { width:60px; height:3px; background:var(--gold); border-radius:2px; margin-bottom:32px; }
+  .cover-meta { display:flex; gap:32px; flex-wrap:wrap; }
+  .cover-meta-item { display:flex; flex-direction:column; }
+  .cover-meta-item .label { font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.45); margin-bottom:3px; }
+  .cover-meta-item .value { font-size:14px; font-weight:600; color:rgba(255,255,255,.9); }
+  .cover-logo-area { position:absolute; top:20mm; right:22mm; text-align:right; }
+  .cover-logo-area .co-name { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--gold-light); }
+  .cover-logo-area .co-tag { font-size:11px; color:rgba(255,255,255,.5); margin-top:3px; }
+  .cover-bottom-stripe { position:absolute; bottom:0; left:0; right:0; height:6px; background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%); }
 
-  /* SECTION HEADER */
-  .section-header { background: linear-gradient(135deg, var(--navy) 0%, #1e3a5f 100%); padding: 14mm 22mm 10mm; position: relative; overflow: hidden; }
-  .section-header::after { content: ''; position: absolute; top: -60px; right: -30px; width: 200px; height: 200px; border-radius: 50%; background: rgba(217,119,6,.15); }
-  .section-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(217,119,6,.2); border: 1px solid rgba(217,119,6,.35); border-radius: 20px; padding: 4px 14px; font-size: 10px; font-weight: 700; color: var(--gold-light); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; }
-  .section-header h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--white); line-height: 1.2; }
-  .section-header p { color: rgba(255,255,255,.65); font-size: 12.5px; margin-top: 6px; max-width: 560px; }
-  .gold-bar { width: 40px; height: 3px; background: var(--gold); border-radius: 2px; margin: 8px 0 10px; }
+  /* HEADER */
+  .section-header { background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 100%); padding:13mm 22mm 9mm; position:relative; overflow:hidden; }
+  .section-header::after { content:''; position:absolute; top:-60px; right:-30px; width:200px; height:200px; border-radius:50%; background:rgba(217,119,6,.15); }
+  .section-tag { display:inline-flex; align-items:center; gap:6px; background:rgba(217,119,6,.2); border:1px solid rgba(217,119,6,.35); border-radius:20px; padding:4px 14px; font-size:10px; font-weight:700; color:var(--gold-light); letter-spacing:.12em; text-transform:uppercase; margin-bottom:9px; }
+  .section-header h2 { font-family:'Playfair Display',serif; font-size:27px; font-weight:700; color:var(--white); line-height:1.2; }
+  .section-header p { color:rgba(255,255,255,.65); font-size:12px; margin-top:5px; max-width:560px; }
+  .gold-bar { width:40px; height:3px; background:var(--gold); border-radius:2px; margin:7px 0 9px; }
 
-  /* BODY */
-  .slide-body { padding: 9mm 22mm 10mm; }
+  .slide-body { padding:8mm 22mm 9mm; }
 
   /* CARDS */
-  .card-grid { display: grid; gap: 12px; }
-  .card-grid-2 { grid-template-columns: 1fr 1fr; }
-  .card-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-  .card { background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; position: relative; }
-  .card-accent { border-left: 3.5px solid var(--gold); }
-  .card-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--white); margin-bottom: 10px; flex-shrink: 0; }
-  .card h3 { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
-  .card p { font-size: 11.5px; color: var(--slate); line-height: 1.5; }
-  .card ul { margin-top: 7px; padding-left: 0; list-style: none; }
-  .card ul li { font-size: 11.5px; color: var(--slate); padding: 2px 0 2px 14px; position: relative; }
-  .card ul li::before { content: '✓'; position: absolute; left: 0; color: var(--gold); font-weight: 700; font-size: 10px; }
+  .card-grid { display:grid; gap:11px; }
+  .card-grid-2 { grid-template-columns:1fr 1fr; }
+  .card-grid-3 { grid-template-columns:1fr 1fr 1fr; }
+  .card { background:var(--cream); border:1px solid var(--border); border-radius:12px; padding:15px 17px; }
+  .card-accent { border-left:3.5px solid var(--gold); }
+  .card-icon { width:35px; height:35px; background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--white); margin-bottom:9px; }
+  .card h3 { font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+  .card p { font-size:11px; color:var(--slate); line-height:1.5; }
+  .card ul { margin-top:6px; padding-left:0; list-style:none; }
+  .card ul li { font-size:11px; color:var(--slate); padding:2px 0 2px 13px; position:relative; }
+  .card ul li::before { content:'✓'; position:absolute; left:0; color:var(--gold); font-weight:700; font-size:10px; }
 
   /* PROBLEM */
-  .problem-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .problem-card { background: #fff5f5; border: 1px solid #fecaca; border-radius: 12px; padding: 18px; text-align: center; }
-  .problem-icon { font-size: 26px; margin-bottom: 9px; }
-  .problem-card h4 { font-size: 12.5px; font-weight: 700; color: #b91c1c; margin-bottom: 5px; }
-  .problem-card p { font-size: 11px; color: #7f1d1d; line-height: 1.5; }
+  .problem-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:11px; }
+  .problem-card { background:#fff5f5; border:1px solid #fecaca; border-radius:12px; padding:17px; text-align:center; }
+  .problem-icon { font-size:24px; margin-bottom:8px; }
+  .problem-card h4 { font-size:12px; font-weight:700; color:#b91c1c; margin-bottom:4px; }
+  .problem-card p { font-size:10.5px; color:#7f1d1d; line-height:1.5; }
 
-  /* PRICING */
-  .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .plan-card { border-radius: 14px; padding: 20px 14px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-  .plan-basic { background: #f8fafc; border: 1.5px solid #cbd5e1; }
-  .plan-standard { background: #f0f9ff; border: 1.5px solid #7dd3fc; }
-  .plan-premium { background: #f5f3ff; border: 2px solid #7c3aed; }
-  .plan-proai { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); border: 1.5px solid var(--gold); }
-  .plan-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; border-radius: 20px; padding: 3px 10px; width: fit-content; margin-bottom: 10px; }
-  .plan-basic .plan-badge { background: #e2e8f0; color: #475569; }
-  .plan-standard .plan-badge { background: #bae6fd; color: #0369a1; }
-  .plan-premium .plan-badge { background: #ede9fe; color: #5b21b6; }
-  .plan-proai .plan-badge { background: rgba(217,119,6,.25); color: var(--gold-light); border: 1px solid rgba(217,119,6,.4); }
-  .plan-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 2px; }
-  .plan-basic .plan-name { color: var(--navy); }
-  .plan-standard .plan-name { color: #0369a1; }
-  .plan-premium .plan-name { color: #5b21b6; }
-  .plan-proai .plan-name { color: var(--gold-light); }
-  .plan-price { font-size: 26px; font-weight: 700; margin: 8px 0 2px; }
-  .plan-basic .plan-price { color: var(--navy); }
-  .plan-standard .plan-price { color: #0369a1; }
-  .plan-premium .plan-price { color: #5b21b6; }
-  .plan-proai .plan-price { color: var(--white); }
-  .plan-cycle { font-size: 10.5px; color: var(--slate); margin-bottom: 12px; }
-  .plan-proai .plan-cycle { color: rgba(255,255,255,.55); }
-  .plan-limits { font-size: 10.5px; font-weight: 600; padding: 5px 9px; border-radius: 7px; margin-bottom: 12px; text-align: center; }
-  .plan-basic .plan-limits { background: #f1f5f9; color: #475569; }
-  .plan-standard .plan-limits { background: #e0f2fe; color: #0369a1; }
-  .plan-premium .plan-limits { background: #ede9fe; color: #5b21b6; }
-  .plan-proai .plan-limits { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); }
-  .plan-features { list-style: none; padding: 0; flex: 1; }
-  .plan-features li { font-size: 11px; padding: 3.5px 0 3.5px 16px; position: relative; border-bottom: 1px solid rgba(0,0,0,.05); }
-  .plan-basic .plan-features li { color: var(--slate); }
-  .plan-standard .plan-features li { color: #0369a1; }
-  .plan-premium .plan-features li { color: #5b21b6; }
-  .plan-proai .plan-features li { color: rgba(255,255,255,.8); border-bottom-color: rgba(255,255,255,.08); }
-  .plan-features li::before { content: '✓'; position: absolute; left: 0; font-weight: 700; font-size: 10px; }
-  .plan-basic .plan-features li::before { color: #64748b; }
-  .plan-standard .plan-features li::before { color: #0ea5e9; }
-  .plan-premium .plan-features li::before { color: #7c3aed; }
-  .plan-proai .plan-features li::before { color: var(--gold); }
-  .plan-popular { position: absolute; top: 10px; right: 10px; background: #7c3aed; color: #fff; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; padding: 3px 8px; border-radius: 20px; }
-
-  /* SCREENSHOTS */
-  .screenshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .screenshot-item { border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); box-shadow: 0 3px 16px rgba(0,0,0,.08); }
-  .screenshot-item img { width: 100%; height: 118px; object-fit: cover; object-position: top center; display: block; }
-  .screenshot-caption { padding: 7px 12px; font-size: 11px; font-weight: 600; color: var(--navy); background: var(--cream); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
-  .screenshot-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
-
-  /* USP */
-  .usp-list { display: flex; flex-direction: column; gap: 10px; }
-  .usp-row { display: flex; align-items: flex-start; gap: 13px; background: var(--cream); border: 1px solid var(--border); border-radius: 11px; padding: 13px 16px; }
-  .usp-num { width: 30px; height: 30px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); border-radius: 8px; color: var(--white); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .usp-text h4 { font-size: 12.5px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
-  .usp-text p { font-size: 11.5px; color: var(--slate); }
-
-  /* CTA */
-  .cta-slide { background: linear-gradient(145deg, #0f172a 0%, #1e3a5f 100%); min-height: 210mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 18mm 22mm; position: relative; overflow: hidden; }
-  .cta-slide::before { content: ''; position: absolute; top: -80px; left: -80px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(217,119,6,.2) 0%, transparent 70%); }
-  .cta-slide::after { content: ''; position: absolute; bottom: -60px; right: -40px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(251,191,36,.12) 0%, transparent 70%); }
-  .cta-slide h2 { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; color: var(--white); line-height: 1.2; margin-bottom: 10px; position: relative; z-index: 1; }
-  .cta-slide h2 span { color: var(--gold-light); }
-  .cta-sub { font-size: 14px; color: rgba(255,255,255,.65); margin-bottom: 30px; max-width: 480px; position: relative; z-index: 1; }
-  .cta-contacts { display: flex; flex-direction: column; gap: 10px; position: relative; z-index: 1; width: 100%; max-width: 440px; }
-  .cta-contact-row { display: flex; align-items: center; gap: 13px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 11px; padding: 11px 18px; text-align: left; }
-  .cta-contact-icon { width: 34px; height: 34px; background: rgba(217,119,6,.25); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-  .cta-contact-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); margin-bottom: 1px; }
-  .cta-contact-val { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,.9); }
-  .cta-gold-line { width: 50px; height: 3px; background: var(--gold); border-radius: 2px; margin: 14px auto 22px; position: relative; z-index: 1; }
-  .cta-bottom-stripe { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%); }
-
-  /* TOP BAR & FOOTER */
-  .top-bar { height: 5px; background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%); }
-  .slide-footer { position: absolute; bottom: 0; left: 0; right: 0; height: 26px; background: var(--navy); display: flex; align-items: center; justify-content: space-between; padding: 0 22mm; }
-  .slide-footer span { font-size: 9px; color: rgba(255,255,255,.4); letter-spacing: .06em; }
-  .slide-footer .gold-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
-
-  /* STAT STRIP */
-  .stat-strip { display: flex; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; margin: 12px 0; }
-  .stat-item { flex: 1; padding: 12px 14px; text-align: center; border-right: 1px solid var(--border); }
-  .stat-item:last-child { border-right: none; }
-  .stat-num { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--gold); display: block; }
-  .stat-label { font-size: 10.5px; color: var(--slate); font-weight: 500; }
+  /* STAT */
+  .stat-strip { display:flex; border:1.5px solid var(--border); border-radius:11px; overflow:hidden; margin:10px 0; }
+  .stat-item { flex:1; padding:11px 13px; text-align:center; border-right:1px solid var(--border); }
+  .stat-item:last-child { border-right:none; }
+  .stat-num { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--gold); display:block; }
+  .stat-label { font-size:10px; color:var(--slate); font-weight:500; }
 
   /* OVERVIEW ROW */
-  .overview-row { display: flex; gap: 12px; align-items: stretch; }
-  .overview-main { flex: 1.2; background: linear-gradient(135deg, var(--navy) 0%, #1e3a5f 100%); border-radius: 14px; padding: 20px 18px; color: var(--white); }
-  .overview-main h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
-  .overview-main p { font-size: 11.5px; color: rgba(255,255,255,.65); line-height: 1.6; }
-  .overview-main ul { list-style: none; padding: 0; margin-top: 10px; }
-  .overview-main ul li { font-size: 11.5px; color: rgba(255,255,255,.8); padding: 3px 0 3px 14px; position: relative; }
-  .overview-main ul li::before { content: '→'; position: absolute; left: 0; color: var(--gold); font-size: 10px; }
-  .overview-side { display: flex; flex-direction: column; gap: 9px; flex: 1; }
-  .overview-side-card { background: var(--cream); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 11px; }
-  .overview-side-card .oi { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--white); flex-shrink: 0; }
-  .overview-side-card h4 { font-size: 12px; font-weight: 700; color: var(--navy); }
-  .overview-side-card p { font-size: 11px; color: var(--slate); margin-top: 1px; }
-
-  /* STEPS */
-  .steps-row { display: flex; gap: 12px; }
-  .step-card { flex: 1; background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 18px 16px; text-align: center; position: relative; }
-  .step-num { width: 38px; height: 38px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); border-radius: 50%; color: var(--white); font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-  .step-card h3 { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-  .step-card p { font-size: 11.5px; color: var(--slate); line-height: 1.5; }
-  .step-arrow { position: absolute; top: 50%; right: -8px; transform: translateY(-50%); color: var(--gold); font-size: 18px; font-weight: 700; z-index: 2; }
+  .overview-row { display:flex; gap:11px; align-items:stretch; }
+  .overview-main { flex:1.2; background:linear-gradient(135deg,var(--navy) 0%,#1e3a5f 100%); border-radius:13px; padding:18px 16px; }
+  .overview-main h3 { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; color:var(--white); margin-bottom:7px; }
+  .overview-main p { font-size:11px; color:rgba(255,255,255,.65); line-height:1.6; }
+  .overview-main ul { list-style:none; padding:0; margin-top:9px; }
+  .overview-main ul li { font-size:11px; color:rgba(255,255,255,.8); padding:3px 0 3px 13px; position:relative; }
+  .overview-main ul li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:10px; }
+  .overview-side { display:flex; flex-direction:column; gap:8px; flex:1; }
+  .overview-side-card { background:var(--cream); border:1px solid var(--border); border-radius:9px; padding:11px 13px; display:flex; align-items:center; gap:10px; }
+  .overview-side-card .oi { width:30px; height:30px; border-radius:8px; background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--white); flex-shrink:0; }
+  .overview-side-card h4 { font-size:11.5px; font-weight:700; color:var(--navy); }
+  .overview-side-card p { font-size:10.5px; color:var(--slate); margin-top:1px; }
 
   /* REPORTS */
-  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .metric-bar { background: var(--cream); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-  .metric-bar h4 { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-  .bar-label { font-size: 10.5px; color: var(--slate); width: 90px; flex-shrink: 0; }
-  .bar-track { flex: 1; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%); }
-  .bar-val { font-size: 10.5px; font-weight: 600; color: var(--navy); width: 36px; text-align: right; flex-shrink: 0; }
+  .report-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; }
+  .metric-bar { background:var(--cream); border:1px solid var(--border); border-radius:10px; padding:13px 15px; }
+  .metric-bar h4 { font-size:11.5px; font-weight:700; color:var(--navy); margin-bottom:9px; }
+  .bar-row { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+  .bar-label { font-size:10px; color:var(--slate); width:88px; flex-shrink:0; }
+  .bar-track { flex:1; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%); }
+  .bar-val { font-size:10px; font-weight:600; color:var(--navy); width:34px; text-align:right; flex-shrink:0; }
 
-  /* SCREEN WRAPPER */
-  .page-wrap { max-width: 960px; margin: 24px auto; padding: 0 12px; }
-  .deck-header { text-align: center; padding: 20px 0 14px; }
-  .deck-header strong { color: var(--navy); font-size: 16px; display: block; margin-bottom: 4px; font-family: 'Playfair Display', serif; }
-  .deck-header small { font-size: 12px; color: var(--slate); }
-  .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; border: none; border-radius: 10px; padding: 10px 22px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; }
-  .btn-dark { background: var(--navy); color: var(--white); }
-  .btn-dark:hover { background: #1e3a5f; }
-  .btn-gold { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); color: var(--white); }
-  .btn-gold:hover { opacity: .92; }
+  /* PRICING */
+  .pricing-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .plan-card { border-radius:13px; padding:19px 13px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+  .plan-basic { background:#f8fafc; border:1.5px solid #cbd5e1; }
+  .plan-standard { background:#f0f9ff; border:1.5px solid #7dd3fc; }
+  .plan-premium { background:#f5f3ff; border:2px solid #7c3aed; }
+  .plan-proai { background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%); border:1.5px solid var(--gold); }
+  .plan-badge { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; border-radius:20px; padding:3px 10px; width:fit-content; margin-bottom:9px; }
+  .plan-basic .plan-badge { background:#e2e8f0; color:#475569; }
+  .plan-standard .plan-badge { background:#bae6fd; color:#0369a1; }
+  .plan-premium .plan-badge { background:#ede9fe; color:#5b21b6; }
+  .plan-proai .plan-badge { background:rgba(217,119,6,.25); color:var(--gold-light); border:1px solid rgba(217,119,6,.4); }
+  .plan-name { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:2px; }
+  .plan-basic .plan-name { color:var(--navy); }
+  .plan-standard .plan-name { color:#0369a1; }
+  .plan-premium .plan-name { color:#5b21b6; }
+  .plan-proai .plan-name { color:var(--gold-light); }
+  .plan-price { font-size:25px; font-weight:700; margin:7px 0 2px; }
+  .plan-basic .plan-price { color:var(--navy); }
+  .plan-standard .plan-price { color:#0369a1; }
+  .plan-premium .plan-price { color:#5b21b6; }
+  .plan-proai .plan-price { color:var(--white); }
+  .plan-cycle { font-size:10px; color:var(--slate); margin-bottom:11px; }
+  .plan-proai .plan-cycle { color:rgba(255,255,255,.55); }
+  .plan-limits { font-size:10px; font-weight:600; padding:5px 8px; border-radius:6px; margin-bottom:11px; text-align:center; }
+  .plan-basic .plan-limits { background:#f1f5f9; color:#475569; }
+  .plan-standard .plan-limits { background:#e0f2fe; color:#0369a1; }
+  .plan-premium .plan-limits { background:#ede9fe; color:#5b21b6; }
+  .plan-proai .plan-limits { background:rgba(255,255,255,.1); color:rgba(255,255,255,.85); }
+  .plan-features { list-style:none; padding:0; flex:1; }
+  .plan-features li { font-size:10.5px; padding:3px 0 3px 15px; position:relative; border-bottom:1px solid rgba(0,0,0,.05); }
+  .plan-basic .plan-features li { color:var(--slate); }
+  .plan-standard .plan-features li { color:#0369a1; }
+  .plan-premium .plan-features li { color:#5b21b6; }
+  .plan-proai .plan-features li { color:rgba(255,255,255,.8); border-bottom-color:rgba(255,255,255,.08); }
+  .plan-features li::before { content:'✓'; position:absolute; left:0; font-weight:700; font-size:10px; }
+  .plan-basic .plan-features li::before { color:#64748b; }
+  .plan-standard .plan-features li::before { color:#0ea5e9; }
+  .plan-premium .plan-features li::before { color:#7c3aed; }
+  .plan-proai .plan-features li::before { color:var(--gold); }
+  .plan-popular { position:absolute; top:10px; right:10px; background:#7c3aed; color:#fff; font-size:8.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; padding:3px 8px; border-radius:20px; }
 
+  /* USP */
+  .usp-list { display:flex; flex-direction:column; gap:9px; }
+  .usp-row { display:flex; align-items:flex-start; gap:12px; background:var(--cream); border:1px solid var(--border); border-radius:10px; padding:12px 15px; }
+  .usp-num { width:29px; height:29px; background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%); border-radius:7px; color:var(--white); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .usp-text h4 { font-size:12px; font-weight:700; color:var(--navy); margin-bottom:2px; }
+  .usp-text p { font-size:11px; color:var(--slate); }
+
+  /* SCREENSHOTS SLIDE */
+  .screenshots-2x2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .screenshot-panel { border-radius:12px; overflow:hidden; border:1.5px solid var(--border); box-shadow:0 3px 16px rgba(0,0,0,.09); display:flex; flex-direction:column; }
+  .screenshot-panel img { width:100%; height:130px; object-fit:cover; object-position:top left; display:block; }
+  .screenshot-caption-bar { padding:8px 14px; font-size:11px; font-weight:700; color:var(--navy); background:var(--cream); border-top:1px solid var(--border); display:flex; align-items:center; gap:7px; }
+  .caption-dot { width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+  .dashboard-panel { background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%); min-height:130px; display:flex; flex-direction:column; padding:14px 16px; }
+  .dashboard-title { font-size:11px; font-weight:700; color:rgba(255,255,255,.8); margin-bottom:10px; }
+  .kpi-row { display:flex; gap:8px; margin-bottom:8px; }
+  .kpi-card { flex:1; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.12); border-radius:7px; padding:7px 10px; }
+  .kpi-num { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; color:var(--gold-light); display:block; }
+  .kpi-label { font-size:9px; color:rgba(255,255,255,.55); margin-top:1px; }
+  .occ-row { display:flex; gap:6px; align-items:center; }
+  .occ-label { font-size:9.5px; color:rgba(255,255,255,.6); width:70px; }
+  .occ-track { flex:1; height:5px; background:rgba(255,255,255,.15); border-radius:3px; overflow:hidden; }
+  .occ-fill { height:100%; background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%); border-radius:3px; }
+  .occ-pct { font-size:9.5px; color:var(--gold-light); font-weight:600; width:26px; text-align:right; }
+
+  /* STEPS */
+  .steps-row { display:flex; gap:11px; }
+  .step-card { flex:1; background:var(--cream); border:1px solid var(--border); border-radius:11px; padding:16px 14px; text-align:center; position:relative; }
+  .step-num { width:36px; height:36px; background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%); border-radius:50%; color:var(--white); font-family:'Playfair Display',serif; font-size:17px; font-weight:700; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
+  .step-card h3 { font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:5px; }
+  .step-card p { font-size:11px; color:var(--slate); line-height:1.5; }
+  .step-arrow { position:absolute; top:50%; right:-7px; transform:translateY(-50%); color:var(--gold); font-size:18px; font-weight:700; z-index:2; }
+
+  /* CTA */
+  .cta-slide { background:linear-gradient(145deg,#0f172a 0%,#1e3a5f 100%); min-height:210mm; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18mm 22mm; position:relative; overflow:hidden; }
+  .cta-slide::before { content:''; position:absolute; top:-80px; left:-80px; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(217,119,6,.2) 0%,transparent 70%); }
+  .cta-slide::after { content:''; position:absolute; bottom:-60px; right:-40px; width:260px; height:260px; border-radius:50%; background:radial-gradient(circle,rgba(251,191,36,.12) 0%,transparent 70%); }
+  .cta-slide h2 { font-family:'Playfair Display',serif; font-size:37px; font-weight:700; color:var(--white); line-height:1.2; margin-bottom:9px; position:relative; z-index:1; }
+  .cta-slide h2 span { color:var(--gold-light); }
+  .cta-sub { font-size:14px; color:rgba(255,255,255,.65); margin-bottom:28px; max-width:480px; position:relative; z-index:1; }
+  .cta-contacts { display:flex; flex-direction:column; gap:9px; position:relative; z-index:1; width:100%; max-width:430px; }
+  .cta-contact-row { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 17px; text-align:left; }
+  .cta-contact-icon { width:32px; height:32px; background:rgba(217,119,6,.25); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .cta-contact-label { font-size:9.5px; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.4); margin-bottom:1px; }
+  .cta-contact-val { font-size:12px; font-weight:600; color:rgba(255,255,255,.9); }
+  .cta-gold-line { width:48px; height:3px; background:var(--gold); border-radius:2px; margin:13px auto 20px; position:relative; z-index:1; }
+  .cta-bottom-stripe { position:absolute; bottom:0; left:0; right:0; height:6px; background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%); }
+
+  .top-bar { height:5px; background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%); }
+  .slide-footer { position:absolute; bottom:0; left:0; right:0; height:25px; background:var(--navy); display:flex; align-items:center; justify-content:space-between; padding:0 22mm; }
+  .slide-footer span { font-size:8.5px; color:rgba(255,255,255,.4); letter-spacing:.06em; }
+  .slide-footer .gold-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); }
+
+  /* PAGE WRAP */
+  .page-wrap { max-width:960px; margin:24px auto; padding:0 12px; }
+  .deck-header { text-align:center; padding:18px 0 12px; }
+  .deck-header strong { color:var(--navy); font-size:16px; display:block; margin-bottom:4px; font-family:'Playfair Display',serif; }
+  .deck-header small { font-size:12px; color:var(--slate); }
+  .btn-row { display:flex; gap:10px; justify-content:center; margin-top:10px; }
+  .btn { display:inline-flex; align-items:center; gap:8px; border:none; border-radius:10px; padding:10px 22px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; text-decoration:none; }
+  .btn-dark { background:var(--navy); color:var(--white); }
+  .btn-gold { background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%); color:var(--white); }
   @media print {
-    body { background: #fff; }
-    .slide { margin: 0; box-shadow: none; page-break-after: always; page-break-inside: avoid; width: 100%; }
-    .deck-header, .btn-row { display: none; }
-    .page-wrap { margin: 0; padding: 0; max-width: none; }
-    @page { size: A4 landscape; margin: 0; }
+    body { background:#fff; }
+    .slide { margin:0; box-shadow:none; page-break-after:always; page-break-inside:avoid; width:100%; }
+    .deck-header,.btn-row { display:none; }
+    .page-wrap { margin:0; padding:0; max-width:none; }
+    @page { size:A4 landscape; margin:0; }
   }
 </style>
 </head>
 <body>
-
 <div class="page-wrap">
   <div class="deck-header">
     <strong>Dreams Technology — Hotel & Resort CRM Proposal</strong>
-    <small>14-slide client proposal deck &middot; Confidential</small>
+    <small>13-slide client proposal &middot; Yearly pricing only &middot; Confidential</small>
     <div class="btn-row">
       <button class="btn btn-dark" onclick="window.print()">&#128438; Save as PDF</button>
-      <button class="btn btn-gold" onclick="exportPptx()">&#128190; Download PPTX</button>
+      <button class="btn btn-gold" id="pptxBtn" onclick="exportPptx()">&#128190; Download PPTX</button>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 01 — COVER
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 01 — COVER ══════════ -->
   <div class="slide" id="s1">
     <div class="cover">
       <div class="cover-logo-area">
@@ -244,9 +237,7 @@
     <div class="cover-bottom-stripe"></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 02 — THE CHALLENGE
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 02 — THE CHALLENGE ══════════ -->
   <div class="slide" id="s2">
     <div class="top-bar"></div>
     <div class="section-header">
@@ -255,46 +246,20 @@
       <div class="gold-bar"></div>
       <p>Hotels and resorts today juggle registers, spreadsheets, WhatsApp groups, and disconnected apps — resulting in missed bookings, billing errors, and unhappy guests.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="problem-grid">
-        <div class="problem-card">
-          <div class="problem-icon">📋</div>
-          <h4>Manual Booking Errors</h4>
-          <p>Double bookings and missed reservations due to manual registers and WhatsApp messages.</p>
-        </div>
-        <div class="problem-card">
-          <div class="problem-icon">💸</div>
-          <h4>Revenue Leakage</h4>
-          <p>Uncharged extras, unbilled room service, and no real-time view of daily collections.</p>
-        </div>
-        <div class="problem-card">
-          <div class="problem-icon">📱</div>
-          <h4>No Guest Communication</h4>
-          <p>Zero automated follow-ups, no WhatsApp confirmations, and no feedback collection.</p>
-        </div>
-        <div class="problem-card">
-          <div class="problem-icon">🧾</div>
-          <h4>Fragmented Finance</h4>
-          <p>Invoices generated manually, payments tracked on paper, no consolidated reports.</p>
-        </div>
-        <div class="problem-card">
-          <div class="problem-icon">🏨</div>
-          <h4>OTA Chaos</h4>
-          <p>Booking.com and MakeMyTrip reservations arrive by email — manually entered, error-prone.</p>
-        </div>
-        <div class="problem-card">
-          <div class="problem-icon">📊</div>
-          <h4>No Data Visibility</h4>
-          <p>Owners have no dashboard to monitor occupancy, revenue trends, or room performance.</p>
-        </div>
+        <div class="problem-card"><div class="problem-icon">📋</div><h4>Manual Booking Errors</h4><p>Double bookings and missed reservations due to manual registers and WhatsApp messages.</p></div>
+        <div class="problem-card"><div class="problem-icon">💸</div><h4>Revenue Leakage</h4><p>Uncharged extras, unbilled room service, and no real-time view of daily collections.</p></div>
+        <div class="problem-card"><div class="problem-icon">📱</div><h4>No Guest Communication</h4><p>Zero automated follow-ups, no WhatsApp confirmations, and no feedback collection.</p></div>
+        <div class="problem-card"><div class="problem-icon">🧾</div><h4>Fragmented Finance</h4><p>Invoices generated manually, payments tracked on paper, no consolidated reports.</p></div>
+        <div class="problem-card"><div class="problem-icon">🏨</div><h4>OTA Chaos</h4><p>Booking.com and MakeMyTrip reservations arrive by email — manually entered, error-prone.</p></div>
+        <div class="problem-card"><div class="problem-icon">📊</div><h4>No Data Visibility</h4><p>Owners have no dashboard to monitor occupancy, revenue trends, or room performance.</p></div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 2</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 2 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 03 — SOLUTION OVERVIEW
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 03 — SOLUTION OVERVIEW ══════════ -->
   <div class="slide" id="s3">
     <div class="top-bar"></div>
     <div class="section-header">
@@ -303,7 +268,7 @@
       <div class="gold-bar"></div>
       <p>Dreams Technology CRM is a complete SaaS platform purpose-built for hotels and resorts — live in minutes, no hardware required.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="stat-strip">
         <div class="stat-item"><span class="stat-num">9+</span><span class="stat-label">WhatsApp Automations</span></div>
         <div class="stat-item"><span class="stat-num">100%</span><span class="stat-label">Cloud Based</span></div>
@@ -314,7 +279,7 @@
       <div class="overview-row">
         <div class="overview-main">
           <h3>Complete Hotel Management Suite</h3>
-          <p>From the moment a guest books to checkout — and everything between — Dreams Technology CRM handles it all in one unified platform.</p>
+          <p>From the moment a guest books to the moment they check out — Dreams Technology CRM handles it all in one unified platform.</p>
           <ul>
             <li>Rooms, Bookings, Check-In & Check-Out</li>
             <li>WhatsApp automation — 9 event triggers</li>
@@ -332,12 +297,10 @@
         </div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 3</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 3 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 04 — FRONT DESK MODULE
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 04 — MODULE: FRONT DESK ══════════ -->
   <div class="slide" id="s4">
     <div class="top-bar"></div>
     <div class="section-header">
@@ -346,22 +309,20 @@
       <div class="gold-bar"></div>
       <p>Everything your reception team needs — from managing room availability to seamless check-in and checkout.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="card-grid card-grid-3">
-        <div class="card card-accent"><div class="card-icon">👥</div><h3>Guest Management</h3><p>Complete guest profiles with booking history, ID records, and contact details. Staff can verify identity at check-in.</p><ul><li>Guest profile & ID verification</li><li>Full booking history</li><li>Search by ID or name</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">📅</div><h3>Bookings</h3><p>Create and manage reservations with per-night, per-slot, or hourly pricing. Prevents double-bookings automatically.</p><ul><li>Multi-pricing type support</li><li>OTA booking auto-import</li><li>Booking widget for website</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🛎️</div><h3>Room Management</h3><p>Real-time room status: Available, Occupied, Needs Cleaning, Maintenance. Housekeeping workflow built in.</p><ul><li>Live status dashboard</li><li>Mark available after housekeeping</li><li>Room type & amenity tracking</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">✅</div><h3>Check-In</h3><p>Streamlined check-in flow with guest ID, room assignment, and instant WhatsApp welcome message.</p><ul><li>Fast check-in workflow</li><li>Auto WhatsApp welcome</li><li>Signature capture</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🚪</div><h3>Check-Out</h3><p>Checkout with full billing summary, balance collection, invoice generation, and automated feedback request.</p><ul><li>Outstanding balance settlement</li><li>GST invoice generation</li><li>Auto feedback WhatsApp</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🍴</div><h3>Food Billing</h3><p>In-room food and extra billing — add charges directly to an active booking for consolidated checkout.</p><ul><li>Add charges to booking tab</li><li>Consolidated at checkout</li><li>Reduces billing errors</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">👥</div><h3>Guest Management</h3><p>Complete guest profiles with booking history, ID records and contact details. Staff verify identity at check-in.</p><ul><li>Guest profile & ID verification</li><li>Full booking history</li><li>Search by name or ID</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">📅</div><h3>Bookings</h3><p>Reservations with per-night, per-slot or hourly pricing. Prevents double-bookings automatically.</p><ul><li>Multi-pricing type support</li><li>OTA booking auto-import</li><li>Website booking widget</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🛎️</div><h3>Room Management</h3><p>Real-time room status: Available, Occupied, Needs Cleaning, Maintenance. Housekeeping workflow built in.</p><ul><li>Live status dashboard</li><li>Mark available post-housekeeping</li><li>Room type & amenity tracking</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">✅</div><h3>Check-In</h3><p>Streamlined check-in with guest ID, room assignment, signature capture, and instant WhatsApp welcome.</p><ul><li>Fast check-in workflow</li><li>Auto WhatsApp welcome</li><li>Digital signature capture</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🚪</div><h3>Check-Out</h3><p>Checkout with full billing summary, balance collection, GST invoice generation, and automated feedback request.</p><ul><li>Outstanding balance settlement</li><li>GST invoice generation</li><li>Auto feedback WhatsApp (2 days later)</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🍴</div><h3>Food Billing</h3><p>In-room food and extra billing — add charges to an active booking tab for consolidated checkout.</p><ul><li>Add charges to booking</li><li>Consolidated at checkout</li><li>Reduces billing errors</li></ul></div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 4</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 4 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 05 — RESTAURANT & BILLING
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 05 — MODULE: RESTAURANT & FINANCE ══════════ -->
   <div class="slide" id="s5">
     <div class="top-bar"></div>
     <div class="section-header">
@@ -370,20 +331,18 @@
       <div class="gold-bar"></div>
       <p>Complete digital restaurant operation and financial management — payments, GST invoices, and reports all in one place.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="card-grid card-grid-2">
-        <div class="card card-accent"><div class="card-icon">🍽️</div><h3>Restaurant Module</h3><p>Full in-house restaurant management with live table map, digital menu, and QR code ordering.</p><ul><li>Live table status map</li><li>Digital menu with categories</li><li>QR codes for guest self-ordering</li><li>Order management & kitchen queue</li><li>Restaurant bills & reports</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">💳</div><h3>Payments & Invoices</h3><p>Track all payments, generate GST-compliant invoices, and send UPI payment links via WhatsApp.</p><ul><li>Payment recording & history</li><li>Professional GST invoice PDF</li><li>UPI / QR payment links</li><li>Outstanding balance tracking</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">📦</div><h3>Inventory Management</h3><p>Track hotel inventory — stock levels, movements, and replenishment alerts to avoid shortages.</p><ul><li>Stock level tracking</li><li>In/out movement logs</li><li>Inventory reports by category</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🧾</div><h3>GST-Ready Tax Invoices</h3><p>Auto-generated tax invoices with CGST/SGST breakdown, booking reference, and balance due — printable or shareable by WhatsApp.</p><ul><li>CGST & SGST split</li><li>Booking reference on invoice</li><li>PDF download or print</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🍽️</div><h3>Restaurant Module</h3><p>Full in-house restaurant management with live table map, digital menu, and QR code guest self-ordering.</p><ul><li>Live table status map</li><li>Digital menu with categories</li><li>QR code per-table for guest ordering</li><li>Order management & kitchen queue</li><li>Restaurant bills & reports</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">💳</div><h3>Payments & Invoices</h3><p>Track all payments, generate GST-compliant invoices, and send UPI / QR payment links via WhatsApp.</p><ul><li>Payment recording & history</li><li>Professional GST invoice PDF</li><li>UPI / QR payment links</li><li>Outstanding balance tracking</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">📦</div><h3>Inventory Management</h3><p>Track hotel inventory — stock levels, movements, and replenishment alerts to avoid shortages.</p><ul><li>Stock level tracking</li><li>In/out movement logs</li><li>Category-wise inventory reports</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🧾</div><h3>GST-Ready Tax Invoices</h3><p>Auto-generated tax invoices with CGST/SGST breakdown, booking reference, and balance due — printable or sent via WhatsApp.</p><ul><li>CGST & SGST split</li><li>Booking reference on invoice</li><li>PDF download or WhatsApp share</li></ul></div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 5</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 5 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 06 — WHATSAPP & OTA
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 06 — MODULE: WHATSAPP & OTA ══════════ -->
   <div class="slide" id="s6">
     <div class="top-bar"></div>
     <div class="section-header">
@@ -392,22 +351,20 @@
       <div class="gold-bar"></div>
       <p>Automate guest communication and centralise all OTA reservations — no manual re-entry, no missed messages.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="card-grid card-grid-3">
-        <div class="card card-accent"><div class="card-icon">💬</div><h3>WhatsApp Automation</h3><p>9 pre-approved templates fire automatically at each stage of the guest journey.</p><ul><li>Booking confirmation</li><li>Check-in reminder (day before)</li><li>Arrival welcome message</li><li>Payment received receipt</li><li>Check-out thank you</li><li>Feedback request (2 days later)</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🏨</div><h3>OTA Integration</h3><p>Email parser reads OTA reservation emails and creates bookings automatically — zero manual entry.</p><ul><li>Auto-import from OTA emails</li><li>WhatsApp alert on new OTA booking</li><li>Conflict detection & resolution</li><li>OTA import queue management</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🌐</div><h3>Booking Widget</h3><p>Embeddable booking form for your hotel's own website — let guests book directly without OTA commissions.</p><ul><li>One-line embed on any site</li><li>Real-time room availability</li><li>Reduces OTA dependency</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">📢</div><h3>Owner Alerts</h3><p>Instant WhatsApp alert to owner / partner phones whenever a new booking is confirmed anywhere.</p><ul><li>Configurable recipient numbers</li><li>Booking details in message</li><li>Never miss a reservation</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">💰</div><h3>Payment Links</h3><p>Generate and send UPI / QR payment links to guests via WhatsApp for advance or deposit collection.</p><ul><li>Instant QR code generation</li><li>Send via WhatsApp</li><li>Advance & deposit support</li></ul></div>
-        <div class="card card-accent"><div class="card-icon">🤖</div><h3>Pathik AI Autofill</h3><p>AI-powered guest autofill — scan an ID card and have guest details populated automatically at check-in.</p><ul><li>ID card scan-to-fill</li><li>Faster check-in</li><li>Available on Premium & Pro AI</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">💬</div><h3>WhatsApp Automation</h3><p>9 pre-approved message templates fire automatically at each stage of the guest journey.</p><ul><li>Booking confirmation</li><li>Check-in reminder (day before)</li><li>Arrival welcome</li><li>Payment received receipt</li><li>Check-out thank you</li><li>Feedback request (2 days later)</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🏨</div><h3>OTA Integration</h3><p>Email parser reads OTA reservation emails and creates bookings automatically — zero manual entry.</p><ul><li>Auto-import from OTA emails</li><li>WhatsApp alert on new OTA booking</li><li>Conflict detection & resolution queue</li><li>OTA import queue management</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🌐</div><h3>Booking Widget</h3><p>Embeddable booking form for your hotel website — direct bookings without OTA commissions.</p><ul><li>One-line embed on any site</li><li>Real-time room availability</li><li>Reduces OTA dependency</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">📢</div><h3>Owner Alerts</h3><p>Instant WhatsApp to owner / partner phones whenever a new booking is confirmed anywhere.</p><ul><li>Configurable recipient numbers</li><li>Full booking details in message</li><li>Never miss a reservation</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">💰</div><h3>Payment Links</h3><p>Generate UPI / QR payment links and send via WhatsApp for advance or deposit collection.</p><ul><li>Instant QR code generation</li><li>Send via WhatsApp</li><li>Advance & deposit support</li></ul></div>
+        <div class="card card-accent"><div class="card-icon">🤖</div><h3>Pathik AI Autofill</h3><p>AI-powered guest autofill — scan an ID card and have details populated automatically at check-in.</p><ul><li>ID card scan-to-fill</li><li>Faster check-in</li><li>Available on Premium & Pro AI</li></ul></div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 6</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 6 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 07 — REPORTS & ANALYTICS
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 07 — REPORTS & ANALYTICS ══════════ -->
   <div class="slide" id="s7">
     <div class="top-bar"></div>
     <div class="section-header">
@@ -416,150 +373,37 @@
       <div class="gold-bar"></div>
       <p>Real-time data across every department — so owners and managers can make decisions with confidence, not guesswork.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="report-grid">
         <div class="metric-bar">
-          <h4>Occupancy by Room Type (Example)</h4>
+          <h4>Occupancy by Room Type (Illustrative)</h4>
           <div class="bar-row"><span class="bar-label">Deluxe</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">88%</span></div>
           <div class="bar-row"><span class="bar-label">Standard</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="bar-val">72%</span></div>
           <div class="bar-row"><span class="bar-label">Suite</span><div class="bar-track"><div class="bar-fill" style="width:61%"></div></div><span class="bar-val">61%</span></div>
           <div class="bar-row"><span class="bar-label">Cottage</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">45%</span></div>
         </div>
         <div class="metric-bar">
-          <h4>Booking Source Breakdown (Example)</h4>
+          <h4>Booking Source Breakdown (Illustrative)</h4>
           <div class="bar-row"><span class="bar-label">Direct</span><div class="bar-track"><div class="bar-fill" style="width:48%"></div></div><span class="bar-val">48%</span></div>
           <div class="bar-row"><span class="bar-label">Booking.com</span><div class="bar-track"><div class="bar-fill" style="width:33%"></div></div><span class="bar-val">33%</span></div>
           <div class="bar-row"><span class="bar-label">MakeMyTrip</span><div class="bar-track"><div class="bar-fill" style="width:14%"></div></div><span class="bar-val">14%</span></div>
           <div class="bar-row"><span class="bar-label">Walk-In</span><div class="bar-track"><div class="bar-fill" style="width:5%"></div></div><span class="bar-val">5%</span></div>
         </div>
-        <div class="card card-accent" style="border-radius:10px;">
+        <div class="card card-accent">
           <h3>Revenue Reports</h3>
-          <ul>
-            <li>Daily, weekly & monthly collections</li>
-            <li>Revenue by room type & booking source</li>
-            <li>Outstanding payments tracking</li>
-            <li>Average Daily Rate (ADR) trend</li>
-            <li>RevPAR analysis</li>
-          </ul>
+          <ul><li>Daily, weekly & monthly collections</li><li>Revenue by room type & booking source</li><li>Outstanding payments tracking</li><li>Average Daily Rate (ADR) trend</li><li>RevPAR analysis</li></ul>
         </div>
-        <div class="card card-accent" style="border-radius:10px;">
+        <div class="card card-accent">
           <h3>Operational Reports</h3>
-          <ul>
-            <li>Occupancy rate by date range</li>
-            <li>Check-in / check-out logs</li>
-            <li>Housekeeping status history</li>
-            <li>Restaurant orders & revenue</li>
-            <li>Export to PDF / CSV</li>
-          </ul>
+          <ul><li>Occupancy rate by date range</li><li>Check-in / check-out logs</li><li>Housekeeping status history</li><li>Restaurant orders & revenue</li><li>Export to PDF / CSV</li></ul>
         </div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 7</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 7 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 08 — SCREENSHOTS: WHATSAPP
-  ═══════════════════════════════════ -->
+  <!-- ══════════ SLIDE 08 — PRICING ══════════ -->
   <div class="slide" id="s8">
-    <div class="top-bar"></div>
-    <div class="section-header">
-      <div class="section-tag">CRM in Action</div>
-      <h2>WhatsApp Automation — Live on Production</h2>
-      <div class="gold-bar"></div>
-      <p>Real screenshots from resort.dreamstechnology.in — the WhatsApp automation dashboard as used by properties today.</p>
-    </div>
-    <div class="slide-body" style="padding-bottom:30px;">
-      <div class="screenshot-grid">
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-whatsapp.png" alt="WhatsApp Automation Status" style="height:138px; object-position: top left;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Automation Status — 4 of 9 automations active for this property</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-whatsapp-full.png" alt="WhatsApp Automation Full View" style="height:138px; object-position: top left;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Platform Templates — Pre-approved, OTA & Owner Alert templates ready</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-whatsapp2.png" alt="WhatsApp OTA Templates" style="height:138px; object-position: top left;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>OTA Booking Confirmed & Conflict templates — fully approved & live</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-whatsapp.png" alt="WhatsApp Message Template Detail" style="height:138px; object-position: 0 60%;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Booking Confirmed template — message preview with dynamic guest fields</div>
-        </div>
-      </div>
-    </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 8</span></div>
-  </div>
-
-  <!-- ═══════════════════════════════════
-       SLIDE 09 — SCREENSHOTS: OPERATIONS
-  ═══════════════════════════════════ -->
-  <div class="slide" id="s9">
-    <div class="top-bar"></div>
-    <div class="section-header">
-      <div class="section-tag">CRM in Action</div>
-      <h2>Front Desk Operations — Live on Production</h2>
-      <div class="gold-bar"></div>
-      <p>Real screenshots showing the full booking lifecycle — room management, booking details, check-in, checkout, and invoice generation.</p>
-    </div>
-    <div class="slide-body" style="padding-bottom:30px;">
-      <div class="screenshot-grid">
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-rooms.png" alt="Room Management" style="height:138px; object-position: top left;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Room Management — Live housekeeping & availability status</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-booking-detail.jpg" alt="Booking Detail" style="height:138px; object-position: top center;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Booking Details — Guest info, room, billing summary & payment history</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-checkin.jpg" alt="Check-In Process" style="height:138px; object-position: top center;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Process Check-In — Guest details, room assignment, signature capture</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-invoice.jpg" alt="Tax Invoice" style="height:138px; object-position: top center;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Tax Invoice — GST-compliant invoice with CGST/SGST split, auto-generated</div>
-        </div>
-      </div>
-    </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 9</span></div>
-  </div>
-
-  <!-- ═══════════════════════════════════
-       SLIDE 10 — SCREENSHOTS: CHECKOUT & INVOICE
-  ═══════════════════════════════════ -->
-  <div class="slide" id="s10">
-    <div class="top-bar"></div>
-    <div class="section-header">
-      <div class="section-tag">CRM in Action</div>
-      <h2>Billing & Checkout — Seamless End-to-End</h2>
-      <div class="gold-bar"></div>
-      <p>From balance settlement at checkout to professional invoice PDF — the complete billing workflow in one platform.</p>
-    </div>
-    <div class="slide-body" style="padding-bottom:30px;">
-      <div class="screenshot-grid" style="grid-template-columns: 1fr 1fr; gap:14px; align-items:start;">
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-checkout.jpg" alt="Check-Out Process" style="height:155px; object-position: top center;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>Process Check-Out — Bill summary, final payment & invoice generation</div>
-        </div>
-        <div class="screenshot-item">
-          <img src="proposal-assets/crm-invoice.jpg" alt="Tax Invoice PDF" style="height:155px; object-position: top center;">
-          <div class="screenshot-caption"><div class="screenshot-dot"></div>GST Tax Invoice — Auto-generated PDF with CGST/SGST, downloadable</div>
-        </div>
-      </div>
-      <div class="card-grid card-grid-3" style="margin-top:14px;">
-        <div class="card card-accent"><div class="card-icon">💵</div><h3>Consolidated Billing</h3><p>Room charges, food billing, extras — all consolidated at checkout into one invoice with full payment history.</p></div>
-        <div class="card card-accent"><div class="card-icon">🧾</div><h3>GST Compliance</h3><p>Auto-calculated CGST & SGST, invoice number series, tax summary — ready for CA/auditor submission.</p></div>
-        <div class="card card-accent"><div class="card-icon">📲</div><h3>WhatsApp Invoice</h3><p>Send invoice PDF directly to guest's WhatsApp number at checkout — paperless, instant, professional.</p></div>
-      </div>
-    </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 10</span></div>
-  </div>
-
-  <!-- ═══════════════════════════════════
-       SLIDE 11 — PRICING
-  ═══════════════════════════════════ -->
-  <div class="slide" id="s11">
     <div class="top-bar"></div>
     <div class="section-header">
       <div class="section-tag">Pricing</div>
@@ -567,7 +411,7 @@
       <div class="gold-bar"></div>
       <p>One yearly subscription. No hidden charges. No per-booking fees. Cancel anytime.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="pricing-grid">
         <div class="plan-card plan-basic">
           <div class="plan-badge">Basic</div>
@@ -576,13 +420,7 @@
           <div class="plan-cycle">per year &nbsp;&middot;&nbsp; billed annually</div>
           <div class="plan-limits">Up to 10 rooms &nbsp;&middot;&nbsp; 3 users</div>
           <ul class="plan-features">
-            <li>Guest management</li>
-            <li>Room management</li>
-            <li>Bookings & check-in/out</li>
-            <li>Invoicing & payments</li>
-            <li>WhatsApp messaging</li>
-            <li>Basic reports</li>
-            <li>Activity audit log</li>
+            <li>Guest management</li><li>Room management</li><li>Bookings & check-in/out</li><li>Invoicing & payments</li><li>WhatsApp messaging</li><li>Basic reports</li><li>Activity audit log</li>
           </ul>
         </div>
         <div class="plan-card plan-standard">
@@ -592,11 +430,7 @@
           <div class="plan-cycle">per year &nbsp;&middot;&nbsp; billed annually</div>
           <div class="plan-limits">Up to 25 rooms &nbsp;&middot;&nbsp; 5 users</div>
           <ul class="plan-features">
-            <li>Everything in Basic</li>
-            <li>WhatsApp Automation (9 events)</li>
-            <li>Payment Links (UPI/QR)</li>
-            <li>Advanced reports</li>
-            <li>Email support</li>
+            <li>Everything in Basic</li><li>WhatsApp Automation (9 events)</li><li>Payment Links (UPI / QR)</li><li>Advanced reports</li><li>Email support</li>
           </ul>
         </div>
         <div class="plan-card plan-premium" style="position:relative;">
@@ -607,12 +441,7 @@
           <div class="plan-cycle">per year &nbsp;&middot;&nbsp; billed annually</div>
           <div class="plan-limits">Up to 50 rooms &nbsp;&middot;&nbsp; 10 users</div>
           <ul class="plan-features">
-            <li>Everything in Standard</li>
-            <li>OTA Channel Manager</li>
-            <li>Pathik AI guest autofill</li>
-            <li>Restaurant module</li>
-            <li>Priority support</li>
-            <li>Custom branding</li>
+            <li>Everything in Standard</li><li>OTA Channel Manager</li><li>Pathik AI guest autofill</li><li>Restaurant module</li><li>Priority support</li><li>Custom branding</li>
           </ul>
         </div>
         <div class="plan-card plan-proai">
@@ -622,24 +451,17 @@
           <div class="plan-cycle">per year &nbsp;&middot;&nbsp; billed annually</div>
           <div class="plan-limits">Unlimited rooms &nbsp;&middot;&nbsp; Unlimited users</div>
           <ul class="plan-features">
-            <li>Everything in Premium</li>
-            <li>AI-powered analytics</li>
-            <li>Dedicated account manager</li>
-            <li>SLA guarantee</li>
-            <li>White-label branding</li>
-            <li>Multi-property support</li>
+            <li>Everything in Premium</li><li>AI-powered analytics</li><li>Dedicated account manager</li><li>SLA guarantee</li><li>White-label branding</li><li>Multi-property support</li>
           </ul>
         </div>
       </div>
-      <p style="margin-top:12px; font-size:10.5px; color:#94a3b8; text-align:center;">All plans include a free trial period. Custom pricing available for multi-property groups.</p>
+      <p style="margin-top:10px; font-size:10px; color:#94a3b8; text-align:center;">All plans include a free trial period. Custom pricing available for multi-property groups.</p>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 11</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 8 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 12 — WHY CHOOSE US
-  ═══════════════════════════════════ -->
-  <div class="slide" id="s12">
+  <!-- ══════════ SLIDE 09 — WHY CHOOSE US ══════════ -->
+  <div class="slide" id="s9">
     <div class="top-bar"></div>
     <div class="section-header">
       <div class="section-tag">Why Us</div>
@@ -647,42 +469,119 @@
       <div class="gold-bar"></div>
       <p>Built specifically for Indian hospitality — not a generic tool repurposed for hotels.</p>
     </div>
-    <div class="slide-body" style="padding-bottom:30px;">
+    <div class="slide-body" style="padding-bottom:28px;">
       <div class="usp-list">
-        <div class="usp-row"><div class="usp-num">01</div><div class="usp-text"><h4>Purpose-Built for Indian Hotels & Resorts</h4><p>Designed for how Indian properties operate — INR billing, WhatsApp-first communication, Booking.com and MakeMyTrip OTA integrations, and familiar workflows your team will adopt instantly.</p></div></div>
-        <div class="usp-row"><div class="usp-num">02</div><div class="usp-text"><h4>Live in Under 5 Minutes — No Hardware Required</h4><p>100% cloud-based. Works on any device — laptop, tablet, or phone. No installation, no server, no IT team. Your staff can start from day one with minimal training.</p></div></div>
-        <div class="usp-row"><div class="usp-num">03</div><div class="usp-text"><h4>WhatsApp Automation Included — At No Extra Cost</h4><p>9 automated WhatsApp messages — booking confirmation, check-in reminder, welcome, payment receipt, checkout, and feedback — fire automatically. No extra integration charges.</p></div></div>
-        <div class="usp-row"><div class="usp-num">04</div><div class="usp-text"><h4>Flat Annual Pricing — No Per-Booking Fees</h4><p>OTAs charge 15-20% per booking. Our flat yearly subscription keeps costs fixed no matter how many bookings you take. Your growth does not cost more.</p></div></div>
-        <div class="usp-row"><div class="usp-num">05</div><div class="usp-text"><h4>Role-Based Access — Secure for Your Entire Team</h4><p>Front desk, restaurant managers, accountants, and owners each see only what they need. Secure, organised, and fully audit-logged for accountability.</p></div></div>
+        <div class="usp-row"><div class="usp-num">01</div><div class="usp-text"><h4>Purpose-Built for Indian Hotels & Resorts</h4><p>Designed for how Indian properties operate — INR billing, WhatsApp-first communication, Booking.com & MakeMyTrip integrations, and familiar workflows your staff adopts instantly.</p></div></div>
+        <div class="usp-row"><div class="usp-num">02</div><div class="usp-text"><h4>Live in Under 5 Minutes — No Hardware Required</h4><p>100% cloud-based. Works on any device — laptop, tablet, or phone. No installation, no server, no IT team. Your staff can start from day one with zero training overhead.</p></div></div>
+        <div class="usp-row"><div class="usp-num">03</div><div class="usp-text"><h4>WhatsApp Automation Included — At No Extra Cost</h4><p>9 automated WhatsApp messages fire automatically — booking confirmation, check-in reminder, arrival welcome, payment receipt, checkout, and 2-day-post-stay feedback request.</p></div></div>
+        <div class="usp-row"><div class="usp-num">04</div><div class="usp-text"><h4>Flat Annual Pricing — No Per-Booking Fees</h4><p>OTAs charge 15–20% per booking. Our flat yearly subscription keeps costs fixed no matter how many bookings you take. Your growth does not cost more.</p></div></div>
+        <div class="usp-row"><div class="usp-num">05</div><div class="usp-text"><h4>Role-Based Access — Secure for Your Entire Team</h4><p>Front desk, restaurant managers, accountants, and owners each see only what they need. Fully secure, organised, and audit-logged for accountability.</p></div></div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 12</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 9 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 13 — GETTING STARTED
-  ═══════════════════════════════════ -->
-  <div class="slide" id="s13">
+  <!-- ══════════ SLIDE 10 — REAL SCREENSHOTS (2×2) ══════════ -->
+  <div class="slide" id="s10">
+    <div class="top-bar"></div>
+    <div class="section-header">
+      <div class="section-tag">CRM in Action</div>
+      <h2>Real Screenshots from the Live Platform</h2>
+      <div class="gold-bar"></div>
+      <p>Actual screens from resort.dreamstechnology.in — as used by hotels every day in production.</p>
+    </div>
+    <div class="slide-body" style="padding-bottom:28px;">
+      <div class="screenshots-2x2">
+
+        <!-- TOP-LEFT: Live Dashboard -->
+        <div class="screenshot-panel">
+          <div class="dashboard-panel">
+            <div class="dashboard-title">Dashboard — Today's Overview</div>
+            <div class="kpi-row">
+              <div class="kpi-card"><span class="kpi-num">18</span><span class="kpi-label">Occupied Rooms</span></div>
+              <div class="kpi-card"><span class="kpi-num">&#8377;42k</span><span class="kpi-label">Today's Revenue</span></div>
+              <div class="kpi-card"><span class="kpi-num">5</span><span class="kpi-label">Check-Ins Today</span></div>
+            </div>
+            <div class="occ-row" style="margin-bottom:5px;"><span class="occ-label">Occupancy</span><div class="occ-track"><div class="occ-fill" style="width:78%"></div></div><span class="occ-pct">78%</span></div>
+            <div class="occ-row"><span class="occ-label">Revenue MTD</span><div class="occ-track"><div class="occ-fill" style="width:62%"></div></div><span class="occ-pct">62%</span></div>
+          </div>
+          <div class="screenshot-caption-bar"><div class="caption-dot"></div>Live Dashboard — Real-time KPIs for today's hotel performance</div>
+        </div>
+
+        <!-- TOP-RIGHT: Room Management -->
+        <div class="screenshot-panel">
+          <img src="proposal-assets/crm-rooms.png" alt="Room Management">
+          <div class="screenshot-caption-bar"><div class="caption-dot"></div>Room Management — Live housekeeping & availability status per room</div>
+        </div>
+
+        <!-- BOTTOM-LEFT: Bookings & Check-In -->
+        <div class="screenshot-panel">
+          <img src="proposal-assets/crm-booking-detail.jpg" alt="Booking Detail">
+          <div class="screenshot-caption-bar"><div class="caption-dot"></div>Bookings & Check-In — Guest info, room, billing summary & payment history</div>
+        </div>
+
+        <!-- BOTTOM-RIGHT: WhatsApp Automation -->
+        <div class="screenshot-panel">
+          <img src="proposal-assets/crm-whatsapp.png" alt="WhatsApp Automation">
+          <div class="screenshot-caption-bar"><div class="caption-dot"></div>WhatsApp Automation — Booking Confirmed, Check-In Reminder, Arrival Welcome and 6 more</div>
+        </div>
+
+      </div>
+    </div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 10 OF 13</span></div>
+  </div>
+
+  <!-- ══════════ SLIDE 11 — BILLING & CHECKOUT SCREENSHOTS ══════════ -->
+  <div class="slide" id="s11">
+    <div class="top-bar"></div>
+    <div class="section-header">
+      <div class="section-tag">CRM in Action</div>
+      <h2>Billing, Checkout & GST Invoice — Live Screens</h2>
+      <div class="gold-bar"></div>
+      <p>The complete end-to-end billing workflow — from checkout to GST-compliant tax invoice — as seen on the live platform.</p>
+    </div>
+    <div class="slide-body" style="padding-bottom:28px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:13px;">
+        <div class="screenshot-panel">
+          <img src="proposal-assets/crm-checkin.jpg" alt="Process Check-In" style="height:140px; object-fit:cover; object-position:top center;">
+          <div class="screenshot-caption-bar"><div class="caption-dot"></div>Process Check-In — Guest details, room, signature & payment at check-in</div>
+        </div>
+        <div class="screenshot-panel">
+          <img src="proposal-assets/crm-checkout.jpg" alt="Process Check-Out" style="height:140px; object-fit:cover; object-position:top center;">
+          <div class="screenshot-caption-bar"><div class="caption-dot"></div>Process Check-Out — Bill summary, final payment & invoice generation in one step</div>
+        </div>
+      </div>
+      <div class="card-grid card-grid-3">
+        <div class="card card-accent"><div class="card-icon">💵</div><h3>Consolidated Billing</h3><p>Room, food extras, and additional charges all consolidated into one checkout bill with full payment history.</p></div>
+        <div class="card card-accent"><div class="card-icon">🧾</div><h3>GST Compliance</h3><p>Auto-calculated CGST & SGST split, invoice number series, tax summary — ready for auditor submission.</p></div>
+        <div class="card card-accent"><div class="card-icon">📲</div><h3>WhatsApp Invoice</h3><p>Send the invoice PDF directly to the guest's WhatsApp at checkout — paperless, instant, professional.</p></div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 11 OF 13</span></div>
+  </div>
+
+  <!-- ══════════ SLIDE 12 — GETTING STARTED ══════════ -->
+  <div class="slide" id="s12">
     <div class="top-bar"></div>
     <div class="section-header">
       <div class="section-tag">Getting Started</div>
       <h2>Up and Running in 3 Simple Steps</h2>
       <div class="gold-bar"></div>
-      <p>No technical expertise needed. Our onboarding team handles the setup — your staff can start within hours.</p>
+      <p>No technical expertise needed. Our onboarding team handles the setup — your staff can start within hours of signing up.</p>
     </div>
-    <div class="slide-body" style="padding-bottom: 28px;">
-      <div class="steps-row" style="margin-bottom: 18px; position: relative;">
+    <div class="slide-body" style="padding-bottom:28px;">
+      <div class="steps-row" style="margin-bottom:16px; position:relative;">
         <div class="step-card">
           <div class="step-num">1</div>
           <h3>Sign Up & Configure</h3>
-          <p>Create your hotel profile, add your rooms and room types, and configure your pricing. Takes less than 15 minutes with our guided setup wizard.</p>
-          <div class="step-arrow">&#8250;</div>
+          <p>Create your hotel profile, add rooms and room types, and configure pricing. Takes less than 15 minutes with our guided wizard.</p>
+          <div class="step-arrow">›</div>
         </div>
         <div class="step-card">
           <div class="step-num">2</div>
           <h3>Connect WhatsApp & OTAs</h3>
-          <p>Connect your WhatsApp Business number to enable automated messaging. Link your OTA email to auto-import reservations from Booking.com, MakeMyTrip, and more.</p>
-          <div class="step-arrow">&#8250;</div>
+          <p>Link your WhatsApp Business number for automated messaging. Connect your OTA email to auto-import reservations from Booking.com, MakeMyTrip and more.</p>
+          <div class="step-arrow">›</div>
         </div>
         <div class="step-card">
           <div class="step-num">3</div>
@@ -691,54 +590,26 @@
         </div>
       </div>
       <div class="card-grid card-grid-3">
-        <div class="card" style="text-align:center; padding:14px;">
-          <div style="font-size:22px; margin-bottom:8px;">🆓</div>
-          <h3>Free Trial Available</h3>
-          <p style="font-size:11px;">Try the full platform before committing. No credit card required.</p>
-        </div>
-        <div class="card" style="text-align:center; padding:14px;">
-          <div style="font-size:22px; margin-bottom:8px;">🤝</div>
-          <h3>Onboarding Support</h3>
-          <p style="font-size:11px;">Our team assists with setup, data migration, and staff training.</p>
-        </div>
-        <div class="card" style="text-align:center; padding:14px;">
-          <div style="font-size:22px; margin-bottom:8px;">📞</div>
-          <h3>Ongoing Support</h3>
-          <p style="font-size:11px;">WhatsApp and email support included. Priority support on Premium & Pro AI.</p>
-        </div>
+        <div class="card" style="text-align:center; padding:13px;"><div style="font-size:20px; margin-bottom:7px;">🆓</div><h3>Free Trial</h3><p style="font-size:10.5px;">Try the full platform before committing. No credit card required.</p></div>
+        <div class="card" style="text-align:center; padding:13px;"><div style="font-size:20px; margin-bottom:7px;">🤝</div><h3>Onboarding Support</h3><p style="font-size:10.5px;">Our team assists with setup, data migration, and staff training.</p></div>
+        <div class="card" style="text-align:center; padding:13px;"><div style="font-size:20px; margin-bottom:7px;">📞</div><h3>Ongoing Support</h3><p style="font-size:10.5px;">WhatsApp and email support included. Priority support on Premium & Pro AI.</p></div>
       </div>
     </div>
-    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>CONFIDENTIAL PROPOSAL — SLIDE 13</span></div>
+    <div class="slide-footer"><span>DREAMS TECHNOLOGY</span><div class="gold-dot"></div><span>SLIDE 12 OF 13</span></div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       SLIDE 14 — CONTACT / CTA
-  ═══════════════════════════════════ -->
-  <div class="slide" id="s14">
+  <!-- ══════════ SLIDE 13 — CONTACT / CTA ══════════ -->
+  <div class="slide" id="s13">
     <div class="cta-slide">
-      <div style="position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;background:rgba(217,119,6,.2);border:1px solid rgba(217,119,6,.4);border-radius:40px;padding:6px 18px;color:#fbbf24;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;">
-        Get Started Today
-      </div>
+      <div style="position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;background:rgba(217,119,6,.2);border:1px solid rgba(217,119,6,.4);border-radius:40px;padding:6px 18px;color:#fbbf24;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;">Get Started Today</div>
       <h2>Ready to Transform<br>Your <span>Hotel Operations?</span></h2>
       <div class="cta-gold-line"></div>
       <p class="cta-sub">Join hotels and resorts already running on Dreams Technology CRM. Start your free trial today — no credit card required.</p>
       <div class="cta-contacts">
-        <div class="cta-contact-row">
-          <div class="cta-contact-icon">📞</div>
-          <div><div class="cta-contact-label">Phone / WhatsApp</div><div class="cta-contact-val">+91 97252 25519</div></div>
-        </div>
-        <div class="cta-contact-row">
-          <div class="cta-contact-icon">✉️</div>
-          <div><div class="cta-contact-label">Email</div><div class="cta-contact-val">sales@dreamstechnology.in</div></div>
-        </div>
-        <div class="cta-contact-row">
-          <div class="cta-contact-icon">🌐</div>
-          <div><div class="cta-contact-label">Platform / Live Demo</div><div class="cta-contact-val">resort.dreamstechnology.in</div></div>
-        </div>
-        <div class="cta-contact-row">
-          <div class="cta-contact-icon">💻</div>
-          <div><div class="cta-contact-label">Company Website</div><div class="cta-contact-val">www.dreams-technology.com</div></div>
-        </div>
+        <div class="cta-contact-row"><div class="cta-contact-icon">📞</div><div><div class="cta-contact-label">Phone / WhatsApp</div><div class="cta-contact-val">+91 97252 25519</div></div></div>
+        <div class="cta-contact-row"><div class="cta-contact-icon">✉️</div><div><div class="cta-contact-label">Email</div><div class="cta-contact-val">sales@dreamstechnology.in</div></div></div>
+        <div class="cta-contact-row"><div class="cta-contact-icon">🌐</div><div><div class="cta-contact-label">Platform / Live Demo</div><div class="cta-contact-val">resort.dreamstechnology.in</div></div></div>
+        <div class="cta-contact-row"><div class="cta-contact-icon">💻</div><div><div class="cta-contact-label">Company Website</div><div class="cta-contact-val">www.dreams-technology.com</div></div></div>
       </div>
     </div>
     <div class="cta-bottom-stripe"></div>
@@ -748,163 +619,292 @@
 
 <script>
 async function exportPptx() {
-  const btn = document.querySelector('.btn-gold');
-  btn.textContent = 'Generating PPTX...';
+  const btn = document.getElementById('pptxBtn');
+  btn.textContent = 'Generating...';
   btn.disabled = true;
 
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_WIDE';
   pptx.author = 'Dreams Technology';
-  pptx.company = 'Dreams Technology';
-  pptx.subject = 'Hotel & Resort CRM Proposal';
-  pptx.title = 'Dreams Technology CRM Proposal';
+  pptx.title = 'Dreams Technology — Hotel & Resort CRM Proposal';
 
-  const NAVY = '0f172a';
-  const NAVY2 = '1e3a5f';
-  const GOLD = 'd97706';
-  const GOLD_LIGHT = 'fbbf24';
-  const WHITE = 'ffffff';
-  const SLATE = '64748b';
-  const CREAM = 'fafaf9';
+  const NAVY = '0f172a'; const NAVY2 = '1e3a5f'; const GOLD = 'd97706';
+  const GOLD_L = 'fbbf24'; const WHITE = 'ffffff'; const SLATE = '64748b';
+  const CREAM = 'fafaf9'; const BORDER = 'e2e8f0';
 
-  function navySlide(pptx, title, subtitle, tag) {
-    const slide = pptx.addSlide();
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { type: 'gradient', stops: [{ color: NAVY, position: 0 }, { color: NAVY2, position: 100 }] } });
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.08, fill: { color: GOLD } });
-    slide.addText(tag, { x: 0.5, y: 0.5, w: 3, h: 0.3, fontSize: 9, bold: true, color: GOLD_LIGHT, align: 'left' });
-    slide.addText(title, { x: 0.5, y: 0.9, w: 12, h: 0.9, fontSize: 28, bold: true, color: WHITE, fontFace: 'Palatino Linotype' });
-    slide.addShape(pptx.ShapeType.rect, { x: 0.5, y: 1.85, w: 0.55, h: 0.05, fill: { color: GOLD } });
-    slide.addText(subtitle, { x: 0.5, y: 2.0, w: 11, h: 0.45, fontSize: 12, color: 'a0b0c8', wrap: true });
-    slide.addText('DREAMS TECHNOLOGY', { x: 0.5, y: 7.0, fontSize: 8, color: '475569' });
-    return slide;
+  function footer(slide, num) {
+    slide.addShape(pptx.ShapeType.rect, { x:0, y:7.3, w:'100%', h:0.2, fill:{color:NAVY} });
+    slide.addText('DREAMS TECHNOLOGY', { x:0.5, y:7.34, fontSize:7, color:'475569' });
+    slide.addText('SLIDE '+num+' OF 13', { x:12, y:7.34, fontSize:7, color:'475569', align:'right', w:1 });
   }
-
-  // SLIDE 1: Cover
-  {
-    const slide = pptx.addSlide();
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { type: 'gradient', stops: [{ color: NAVY, position: 0 }, { color: '1e3a5f', position: 100 }] } });
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 7.42, w: '100%', h: 0.08, fill: { color: GOLD } });
-    slide.addText('OFFICIAL PROPOSAL', { x: 0.6, y: 1.2, w: 3, h: 0.3, fontSize: 10, bold: true, color: GOLD_LIGHT });
-    slide.addText('All-in-One Hotel &\nResort CRM', { x: 0.6, y: 1.7, w: 9, h: 1.8, fontSize: 44, bold: true, color: WHITE, fontFace: 'Palatino Linotype', lineSpacingMultiple: 1.1 });
-    slide.addShape(pptx.ShapeType.rect, { x: 0.6, y: 3.7, w: 0.7, h: 0.06, fill: { color: GOLD } });
-    slide.addText('Streamline every operation — from front desk to finance —\nin a single cloud-based platform built for modern hospitality.', { x: 0.6, y: 3.85, w: 9, h: 0.8, fontSize: 14, color: 'b0c4d8', wrap: true });
-    slide.addText('Prepared by: Dreams Technology   |   resort.dreamstechnology.in   |   +91 97252 25519   |   May 2026', { x: 0.6, y: 5.3, w: 12, h: 0.3, fontSize: 10, color: '7090a8' });
-    slide.addText('Dreams Technology', { x: 9.5, y: 0.5, w: 3, h: 0.4, fontSize: 16, bold: true, color: GOLD_LIGHT, fontFace: 'Palatino Linotype', align: 'right' });
-    slide.addText('Hospitality SaaS Platform', { x: 9.5, y: 0.9, w: 3, h: 0.25, fontSize: 9, color: '7090a8', align: 'right' });
+  function topBar(slide) {
+    slide.addShape(pptx.ShapeType.rect, { x:0, y:0, w:'100%', h:0.07, fill:{color:GOLD} });
   }
-
-  // SLIDE 2: Challenge
-  {
-    const slide = navySlide(pptx, 'Running a Hotel is Complex.\nMost Tools Make It Harder.', 'Hotels today juggle spreadsheets, WhatsApp groups, and disconnected apps — resulting in missed bookings, billing errors, and unhappy guests.', 'THE PROBLEM');
-    const problems = [
-      ['Manual Booking Errors', 'Double bookings and missed reservations due to manual registers.'],
-      ['Revenue Leakage', 'Uncharged extras, unbilled room service, no real-time view.'],
-      ['No Guest Communication', 'Zero automated follow-ups, no WhatsApp confirmations.'],
-      ['Fragmented Finance', 'Invoices manual, payments on paper, no consolidated reports.'],
-      ['OTA Chaos', 'OTA reservations entered manually, error-prone.'],
-      ['No Data Visibility', 'Owners have no dashboard for occupancy or revenue trends.'],
-    ];
-    const cols = 3; const rows = 2;
-    problems.forEach((p, i) => {
-      const col = i % cols; const row = Math.floor(i / cols);
-      const x = 0.4 + col * 4.3; const y = 2.6 + row * 2.1;
-      slide.addShape(pptx.ShapeType.rect, { x, y, w: 4.0, h: 1.8, fill: { color: 'fff5f5' }, line: { color: 'fecaca', width: 1 }, rectRadius: 0.1 });
-      slide.addText(p[0], { x: x + 0.15, y: y + 0.15, w: 3.7, h: 0.35, fontSize: 12, bold: true, color: 'b91c1c' });
-      slide.addText(p[1], { x: x + 0.15, y: y + 0.5, w: 3.7, h: 1.1, fontSize: 10.5, color: '7f1d1d', wrap: true });
+  function sectionHeader(slide, tag, title, subtitle) {
+    slide.addShape(pptx.ShapeType.rect, { x:0, y:0, w:'100%', h:2.5, fill:{type:'gradient', stops:[{color:NAVY,position:0},{color:NAVY2,position:100}]} });
+    topBar(slide);
+    slide.addText(tag, { x:0.5, y:0.35, fontSize:9, bold:true, color:GOLD_L, charSpacing:2 });
+    slide.addText(title, { x:0.5, y:0.65, w:12, h:0.95, fontSize:24, bold:true, color:WHITE, fontFace:'Palatino Linotype', wrap:true });
+    slide.addShape(pptx.ShapeType.rect, { x:0.5, y:1.66, w:0.55, h:0.05, fill:{color:GOLD} });
+    slide.addText(subtitle, { x:0.5, y:1.78, w:11, h:0.6, fontSize:10.5, color:'a0b0c8', wrap:true });
+  }
+  function card3(slide, items, startY) {
+    items.forEach((item, i) => {
+      const x = 0.4 + i * 4.35;
+      slide.addShape(pptx.ShapeType.rect, { x, y:startY, w:4.1, h:3.9, fill:{color:CREAM}, line:{color:BORDER,width:1}, rectRadius:0.1 });
+      slide.addShape(pptx.ShapeType.rect, { x, y:startY, w:0.05, h:3.9, fill:{color:GOLD} });
+      slide.addText(item[0], { x:x+0.2, y:startY+0.2, w:3.7, h:0.35, fontSize:12, bold:true, color:NAVY });
+      slide.addText(item[1], { x:x+0.2, y:startY+0.6, w:3.7, h:3.0, fontSize:10, color:SLATE, wrap:true, bullet:{type:'bullet', characterCode:'2713', indent:4} });
     });
   }
 
-  // SLIDE 3: Solution Overview
+  /* SLIDE 1: Cover */
   {
-    const slide = navySlide(pptx, 'One Platform. Every Hotel Operation.', 'Dreams Technology CRM is a complete SaaS platform purpose-built for hotels and resorts — live in minutes.', 'THE SOLUTION');
-    const stats = [['9+','WhatsApp Automations'],['100%','Cloud Based'],['4','Flexible Plans'],['24/7','Always Online'],['5 min','Setup Time']];
-    stats.forEach((s, i) => {
-      const x = 0.4 + i * 2.58;
-      slide.addShape(pptx.ShapeType.rect, { x, y: 2.6, w: 2.3, h: 1.0, fill: { color: '1a2a3f' }, line: { color: '2a4060', width: 1 }, rectRadius: 0.08 });
-      slide.addText(s[0], { x, y: 2.65, w: 2.3, h: 0.5, fontSize: 22, bold: true, color: GOLD_LIGHT, align: 'center', fontFace: 'Palatino Linotype' });
-      slide.addText(s[1], { x, y: 3.15, w: 2.3, h: 0.4, fontSize: 9.5, color: '94a3b8', align: 'center' });
-    });
-    const features = ['Rooms, Bookings, Check-In & Check-Out','WhatsApp automation — 9 event triggers','OTA email parser — auto-imports reservations','Restaurant, QR menus & food billing','Payment links, GST invoices & finance reports','Role-based access for your entire team'];
-    slide.addShape(pptx.ShapeType.rect, { x: 0.4, y: 3.8, w: 6.8, h: 3.3, fill: { type: 'gradient', stops: [{ color: NAVY, position: 0 }, { color: NAVY2, position: 100 }] }, line: { color: '2a4060', width: 1 }, rectRadius: 0.12 });
-    slide.addText('Complete Hotel Management Suite', { x: 0.6, y: 3.95, w: 6.4, h: 0.45, fontSize: 16, bold: true, color: WHITE, fontFace: 'Palatino Linotype' });
-    features.forEach((f, i) => {
-      slide.addText('\u2192  ' + f, { x: 0.7, y: 4.55 + i * 0.38, w: 6.2, h: 0.35, fontSize: 10.5, color: 'b0c4d8' });
-    });
-    const modules = [['🏨 Front Desk','Rooms, bookings, check-in, checkout'],['🍽️ Restaurant','Digital menu, QR ordering, bills'],['💬 WhatsApp','9 auto templates across guest journey'],['📊 Analytics','Revenue, occupancy, booking sources']];
-    modules.forEach((m, i) => {
-      const y = 3.8 + i * 0.85;
-      slide.addShape(pptx.ShapeType.rect, { x: 7.5, y, w: 5.0, h: 0.75, fill: { color: CREAM }, line: { color: 'e2e8f0', width: 1 }, rectRadius: 0.08 });
-      slide.addText(m[0], { x: 7.65, y: y + 0.07, w: 4.7, h: 0.28, fontSize: 11, bold: true, color: NAVY });
-      slide.addText(m[1], { x: 7.65, y: y + 0.37, w: 4.7, h: 0.28, fontSize: 10, color: SLATE });
-    });
+    const s = pptx.addSlide();
+    s.addShape(pptx.ShapeType.rect, {x:0,y:0,w:'100%',h:'100%', fill:{type:'gradient',stops:[{color:NAVY,position:0},{color:NAVY2,position:100}]}});
+    s.addShape(pptx.ShapeType.rect, {x:0,y:7.42,w:'100%',h:0.08, fill:{color:GOLD}});
+    s.addText('OFFICIAL PROPOSAL', {x:0.6,y:1.1,w:3,h:0.3,fontSize:10,bold:true,color:GOLD_L});
+    s.addText('All-in-One Hotel &\nResort CRM', {x:0.6,y:1.5,w:10,h:2.0,fontSize:44,bold:true,color:WHITE,fontFace:'Palatino Linotype',lineSpacingMultiple:1.15});
+    s.addShape(pptx.ShapeType.rect, {x:0.6,y:3.7,w:0.7,h:0.06,fill:{color:GOLD}});
+    s.addText('Streamline every operation — from front desk to finance — in a single cloud-based platform built for modern hospitality.', {x:0.6,y:3.85,w:9,h:0.8,fontSize:14,color:'b0c4d8',wrap:true});
+    s.addText('Prepared by: Dreams Technology   |   resort.dreamstechnology.in   |   +91 97252 25519   |   May 2026', {x:0.6,y:5.2,w:12,h:0.3,fontSize:10,color:'7090a8'});
+    s.addText('Dreams Technology', {x:9.5,y:0.5,w:3,h:0.4,fontSize:16,bold:true,color:GOLD_L,fontFace:'Palatino Linotype',align:'right'});
+    s.addText('Hospitality SaaS Platform', {x:9.5,y:0.9,w:3,h:0.25,fontSize:9,color:'7090a8',align:'right'});
   }
 
-  // SLIDE 4: Pricing
+  /* SLIDE 2: The Challenge */
   {
-    const slide = navySlide(pptx, 'Simple, Transparent Annual Pricing', 'One yearly subscription. No hidden charges. No per-booking fees.', 'PRICING');
+    const s = pptx.addSlide();
+    sectionHeader(s, 'THE PROBLEM', 'Running a Hotel is Complex. Most Tools Make It Harder.', 'Hotels today juggle spreadsheets, WhatsApp groups and disconnected apps — resulting in missed bookings, billing errors and unhappy guests.');
+    const problems = [['Manual Booking Errors','Double bookings and missed reservations due to manual registers and WhatsApp messages.'],['Revenue Leakage','Uncharged extras, unbilled room service and no real-time view of daily collections.'],['No Guest Communication','Zero automated follow-ups, no WhatsApp confirmations and no feedback collection.'],['Fragmented Finance','Invoices generated manually, payments tracked on paper, no consolidated reports.'],['OTA Chaos','Booking.com and MakeMyTrip reservations arrive by email — manually entered, error-prone.'],['No Data Visibility','Owners have no dashboard to monitor occupancy, revenue trends or room performance.']];
+    problems.forEach((p,i) => {
+      const col = i%3; const row = Math.floor(i/3);
+      const x=0.4+col*4.3; const y=2.7+row*2.2;
+      s.addShape(pptx.ShapeType.rect, {x,y,w:4.0,h:2.0,fill:{color:'fff5f5'},line:{color:'fecaca',width:1},rectRadius:0.1});
+      s.addText(p[0], {x:x+0.15,y:y+0.15,w:3.7,h:0.35,fontSize:11.5,bold:true,color:'b91c1c'});
+      s.addText(p[1], {x:x+0.15,y:y+0.55,w:3.7,h:1.2,fontSize:10,color:'7f1d1d',wrap:true});
+    });
+    footer(s, 2);
+  }
+
+  /* SLIDE 3: Solution Overview */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'THE SOLUTION', 'One Platform. Every Hotel Operation.', 'Dreams Technology CRM is a complete SaaS platform purpose-built for hotels and resorts — live in minutes, no hardware required.');
+    const stats=[['9+','WhatsApp Automations'],['100%','Cloud Based'],['4','Flexible Plans'],['24/7','Always Online'],['5 min','Setup Time']];
+    stats.forEach((st,i) => {
+      const x=0.4+i*2.58;
+      s.addShape(pptx.ShapeType.rect, {x,y:2.65,w:2.3,h:1.0,fill:{color:'1a2a3f'},line:{color:'2a4060',width:1},rectRadius:0.08});
+      s.addText(st[0], {x,y:2.7,w:2.3,h:0.5,fontSize:22,bold:true,color:GOLD_L,align:'center',fontFace:'Palatino Linotype'});
+      s.addText(st[1], {x,y:3.2,w:2.3,h:0.4,fontSize:9,color:'94a3b8',align:'center'});
+    });
+    const features=['Rooms, Bookings, Check-In & Check-Out','WhatsApp automation — 9 event triggers','OTA email parser — auto-imports reservations','Restaurant, QR menus & food billing','Payment links, GST invoices & finance reports','Role-based access for your entire team'];
+    s.addShape(pptx.ShapeType.rect, {x:0.4,y:3.85,w:6.8,h:3.35,fill:{type:'gradient',stops:[{color:NAVY,position:0},{color:NAVY2,position:100}]},line:{color:'2a4060',width:1},rectRadius:0.1});
+    s.addText('Complete Hotel Management Suite', {x:0.6,y:4.0,w:6.4,h:0.45,fontSize:15,bold:true,color:WHITE,fontFace:'Palatino Linotype'});
+    features.forEach((f,i) => s.addText('→  '+f, {x:0.7,y:4.55+i*0.38,w:6.2,h:0.35,fontSize:10.5,color:'b0c4d8'}));
+    const mods=[['Front Desk','Rooms, bookings, check-in, checkout'],['Restaurant','Digital menu, QR ordering, bills'],['WhatsApp','9 auto templates across guest journey'],['Analytics','Revenue, occupancy, booking sources']];
+    mods.forEach((m,i) => {
+      const y=3.85+i*0.87;
+      s.addShape(pptx.ShapeType.rect, {x:7.5,y,w:5.0,h:0.77,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.08});
+      s.addText(m[0], {x:7.65,y:y+0.07,w:4.7,h:0.28,fontSize:11,bold:true,color:NAVY});
+      s.addText(m[1], {x:7.65,y:y+0.38,w:4.7,h:0.28,fontSize:10,color:SLATE});
+    });
+    footer(s, 3);
+  }
+
+  /* SLIDE 4: Front Desk Module */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'MODULE 01', 'Guest Management & Front Desk Operations', 'Everything your reception team needs — from room availability to seamless check-in and checkout.');
+    card3(s, [
+      ['Guests & Bookings', 'Complete guest profiles with ID verification and booking history\nPer-night, hourly or slot pricing\nOTA booking auto-import\nWebsite booking widget'],
+      ['Rooms & Check-In', 'Real-time room status: Available / Occupied / Cleaning / Maintenance\nFast check-in workflow with digital signature\nAuto WhatsApp welcome message on check-in'],
+      ['Check-Out & Food Billing', 'Outstanding balance settlement at checkout\nGST invoice auto-generation\nAuto feedback WhatsApp 2 days after stay\nIn-room food charges added to booking tab'],
+    ], 2.65);
+    footer(s, 4);
+  }
+
+  /* SLIDE 5: Restaurant & Finance */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'MODULE 02', 'Restaurant, Finance & Billing', 'Complete digital restaurant operation and financial management — payments, GST invoices and reports all in one place.');
+    const cards = [['Restaurant Module','Live table status map\nDigital menu with categories\nQR code per table for guest self-ordering\nOrder management & kitchen queue\nRestaurant bills & revenue reports'],['Payments & Invoices','Payment recording & history\nProfessional GST invoice PDF generation\nUPI / QR payment links via WhatsApp\nOutstanding balance tracking'],['Inventory Management','Stock level tracking\nIn/out movement logs\nCategory-wise inventory reports\nReplenishment alerts'],['GST Tax Invoices','CGST & SGST auto-split\nBooking reference on every invoice\nPDF download or WhatsApp share\nAudit-ready for CA submission']];
+    cards.forEach((c,i) => {
+      const x=0.4+(i%2)*6.6; const y=2.65+Math.floor(i/2)*2.2;
+      s.addShape(pptx.ShapeType.rect, {x,y,w:6.2,h:2.0,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.1});
+      s.addShape(pptx.ShapeType.rect, {x,y,w:0.05,h:2.0,fill:{color:GOLD}});
+      s.addText(c[0], {x:x+0.2,y:y+0.15,w:5.8,h:0.32,fontSize:12,bold:true,color:NAVY});
+      s.addText(c[1], {x:x+0.2,y:y+0.52,w:5.8,h:1.35,fontSize:10,color:SLATE,wrap:true,bullet:{type:'bullet',characterCode:'2713',indent:4}});
+    });
+    footer(s, 5);
+  }
+
+  /* SLIDE 6: WhatsApp & OTA */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'MODULE 03', 'WhatsApp Automation, OTA & Channel Manager', 'Automate guest communication and centralise all OTA reservations — no manual re-entry, no missed messages.');
+    card3(s, [
+      ['WhatsApp Automation','9 pre-approved templates at each guest journey stage\nBooking confirmation\nCheck-in reminder (day before)\nArrival welcome message\nPayment received receipt\nCheck-out thank you\nFeedback request (2 days later)'],
+      ['OTA Integration','Auto-import from OTA emails (Booking.com, MakeMyTrip)\nWhatsApp owner alert on new OTA booking\nConflict detection & resolution queue\nOTA import queue management'],
+      ['Booking Widget & Owner Alerts','Embeddable booking form for your hotel website\nReal-time room availability — no OTA commissions\nInstant WhatsApp alert to owner on new booking\nConfigurable owner / partner phone numbers'],
+    ], 2.65);
+    footer(s, 6);
+  }
+
+  /* SLIDE 7: Reports & Analytics */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'MODULE 04', 'Reports, Analytics & Business Intelligence', 'Real-time data across every department — so owners and managers can make decisions with confidence.');
+    const metricCards = [['Revenue Reports','Daily, weekly & monthly revenue collections\nRevenue by room type & booking source\nOutstanding payments tracking\nAverage Daily Rate (ADR) trend\nRevPAR analysis'],['Occupancy Reports','Occupancy rate by date range\nCheck-in / check-out logs\nHousekeeping status history\nRestaurant orders & revenue\nExport to PDF / CSV']];
+    metricCards.forEach((c,i) => {
+      const x=0.4+i*6.6;
+      s.addShape(pptx.ShapeType.rect, {x,y:2.65,w:6.2,h:4.5,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.1});
+      s.addShape(pptx.ShapeType.rect, {x,y:2.65,w:0.05,h:4.5,fill:{color:GOLD}});
+      s.addText(c[0], {x:x+0.2,y:2.8,w:5.8,h:0.35,fontSize:13,bold:true,color:NAVY});
+      s.addText(c[1], {x:x+0.2,y:3.25,w:5.8,h:3.7,fontSize:10.5,color:SLATE,wrap:true,bullet:{type:'bullet',characterCode:'2713',indent:4}});
+    });
+    footer(s, 7);
+  }
+
+  /* SLIDE 8: Pricing */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'PRICING', 'Simple, Transparent Annual Pricing', 'One yearly subscription. No hidden charges. No per-booking fees. Cancel anytime.');
     const plans = [
-      { name: 'Basic', price: '\u20b95,999', limits: 'Up to 10 rooms \u00b7 3 users', color: 'f8fafc', border: 'cbd5e1', nameCol: NAVY, priceCol: NAVY, features: ['Guest management','Room management','Bookings & check-in/out','Invoicing & payments','WhatsApp messaging','Basic reports'] },
-      { name: 'Standard', price: '\u20b97,999', limits: 'Up to 25 rooms \u00b7 5 users', color: 'f0f9ff', border: '7dd3fc', nameCol: '0369a1', priceCol: '0369a1', features: ['Everything in Basic','WhatsApp Automation (9)','Payment Links (UPI/QR)','Advanced reports','Email support'] },
-      { name: 'Premium', price: '\u20b911,999', limits: 'Up to 50 rooms \u00b7 10 users', color: 'f5f3ff', border: '7c3aed', nameCol: '5b21b6', priceCol: '5b21b6', popular: true, features: ['Everything in Standard','OTA Channel Manager','Pathik AI autofill','Restaurant module','Priority support','Custom branding'] },
-      { name: 'Pro AI', price: '\u20b919,999', limits: 'Unlimited rooms \u00b7 Unlimited users', color: NAVY, border: GOLD, nameCol: GOLD_LIGHT, priceCol: WHITE, dark: true, features: ['Everything in Premium','AI-powered analytics','Dedicated account mgr','SLA guarantee','White-label branding','Multi-property support'] },
+      {name:'Basic',price:'\u20b95,999',limits:'Up to 10 rooms \u00b7 3 users',color:'f8fafc',border:'cbd5e1',nc:NAVY,pc:NAVY,features:['Guest management','Room management','Bookings & check-in/out','Invoicing & payments','WhatsApp messaging','Basic reports']},
+      {name:'Standard',price:'\u20b97,999',limits:'Up to 25 rooms \u00b7 5 users',color:'f0f9ff',border:'7dd3fc',nc:'0369a1',pc:'0369a1',features:['Everything in Basic','WhatsApp Automation (9)','Payment Links (UPI/QR)','Advanced reports','Email support']},
+      {name:'Premium',price:'\u20b911,999',limits:'Up to 50 rooms \u00b7 10 users',color:'f5f3ff',border:'7c3aed',nc:'5b21b6',pc:'5b21b6',popular:true,features:['Everything in Standard','OTA Channel Manager','Pathik AI autofill','Restaurant module','Priority support']},
+      {name:'Pro AI',price:'\u20b919,999',limits:'Unlimited rooms \u00b7 Unlimited users',color:NAVY,border:GOLD,nc:GOLD_L,pc:WHITE,dark:true,features:['Everything in Premium','AI-powered analytics','Dedicated account manager','SLA guarantee','White-label branding']},
     ];
-    plans.forEach((plan, i) => {
-      const x = 0.35 + i * 3.22; const y = 2.6;
-      slide.addShape(pptx.ShapeType.rect, { x, y, w: 3.0, h: 4.55, fill: { color: plan.color }, line: { color: plan.border, width: plan.popular ? 2 : 1 }, rectRadius: 0.12 });
-      slide.addText(plan.name, { x, y: y + 0.2, w: 3.0, h: 0.38, fontSize: 17, bold: true, color: plan.nameCol, align: 'center', fontFace: 'Palatino Linotype' });
-      slide.addText(plan.price, { x, y: y + 0.65, w: 3.0, h: 0.55, fontSize: 26, bold: true, color: plan.priceCol, align: 'center' });
-      slide.addText('per year', { x, y: y + 1.22, w: 3.0, h: 0.28, fontSize: 10, color: plan.dark ? 'a0b0c8' : SLATE, align: 'center' });
-      slide.addShape(pptx.ShapeType.rect, { x: x + 0.25, y: y + 1.55, w: 2.5, h: 0.32, fill: { color: plan.dark ? '1e2d42' : 'e2e8f0' }, rectRadius: 0.05 });
-      slide.addText(plan.limits, { x: x + 0.25, y: y + 1.55, w: 2.5, h: 0.32, fontSize: 9.5, bold: true, color: plan.dark ? 'b0c4d8' : '475569', align: 'center' });
-      plan.features.forEach((f, fi) => {
-        slide.addText('\u2713  ' + f, { x: x + 0.15, y: y + 2.05 + fi * 0.37, w: 2.7, h: 0.33, fontSize: 10, color: plan.dark ? 'c0d4e8' : '475569' });
-      });
-      if (plan.popular) slide.addText('MOST POPULAR', { x: x + 1.5, y, w: 1.5, h: 0.3, fontSize: 8, bold: true, color: WHITE, align: 'right', fill: { color: '7c3aed' } });
+    plans.forEach((pl,i) => {
+      const x=0.35+i*3.22; const y=2.6;
+      s.addShape(pptx.ShapeType.rect, {x,y,w:3.0,h:4.7,fill:{color:pl.color},line:{color:pl.border,width:pl.popular?2:1},rectRadius:0.12});
+      s.addText(pl.name, {x,y:y+0.15,w:3.0,h:0.4,fontSize:17,bold:true,color:pl.nc,align:'center',fontFace:'Palatino Linotype'});
+      s.addText(pl.price, {x,y:y+0.6,w:3.0,h:0.55,fontSize:26,bold:true,color:pl.pc,align:'center'});
+      s.addText('per year', {x,y:y+1.18,w:3.0,h:0.28,fontSize:9.5,color:pl.dark?'a0b0c8':SLATE,align:'center'});
+      s.addShape(pptx.ShapeType.rect, {x:x+0.25,y:y+1.5,w:2.5,h:0.32,fill:{color:pl.dark?'1e2d42':'e2e8f0'},rectRadius:0.05});
+      s.addText(pl.limits, {x:x+0.25,y:y+1.5,w:2.5,h:0.32,fontSize:9,bold:true,color:pl.dark?'b0c4d8':'475569',align:'center'});
+      pl.features.forEach((f,fi) => s.addText('\u2713  '+f, {x:x+0.15,y:y+2.0+fi*0.42,w:2.7,h:0.38,fontSize:9.5,color:pl.dark?'c0d4e8':'475569'}));
+      if(pl.popular) s.addText('MOST POPULAR', {x:x+1.55,y:y+0.02,w:1.4,h:0.28,fontSize:7.5,bold:true,color:WHITE,align:'center',fill:{color:'7c3aed'}});
     });
-    slide.addText('All plans include a free trial. Custom pricing for multi-property groups.', { x: 0.5, y: 7.22, w: 12.5, h: 0.25, fontSize: 9.5, color: '94a3b8', align: 'center' });
+    s.addText('All plans include a free trial. Custom pricing for multi-property groups.', {x:0.5,y:7.35,w:12.5,h:0.2,fontSize:9,color:'94a3b8',align:'center'});
+    footer(s, 8);
   }
 
-  // SLIDE 5: Why Choose Us
+  /* SLIDE 9: Why Choose Us */
   {
-    const slide = navySlide(pptx, 'Why Hotels Choose Dreams Technology', 'Built specifically for Indian hospitality — not a generic tool repurposed for hotels.', 'WHY US');
-    const usps = [
-      ['01', 'Purpose-Built for Indian Hotels & Resorts', 'Designed for how Indian properties operate — INR billing, WhatsApp-first, Booking.com & MakeMyTrip integrations, and familiar workflows.'],
-      ['02', 'Live in Under 5 Minutes — No Hardware Required', '100% cloud-based. Works on any device. No installation, no server, no IT team. Staff can start from day one.'],
-      ['03', 'WhatsApp Automation Included — At No Extra Cost', '9 automated WhatsApp messages fire automatically — booking confirmation, check-in, welcome, payment receipt, checkout, and feedback.'],
-      ['04', 'Flat Annual Pricing — No Per-Booking Fees', 'OTAs charge 15-20% per booking. Our flat yearly subscription keeps costs fixed no matter how many bookings you take.'],
-      ['05', 'Role-Based Access — Secure for Your Entire Team', 'Front desk, restaurant managers, accountants, and owners each see only what they need. Secure, organised, fully audit-logged.'],
-    ];
-    usps.forEach((u, i) => {
-      const y = 2.6 + i * 0.94;
-      slide.addShape(pptx.ShapeType.rect, { x: 0.4, y, w: 12.2, h: 0.84, fill: { color: CREAM }, line: { color: 'e2e8f0', width: 1 }, rectRadius: 0.08 });
-      slide.addShape(pptx.ShapeType.rect, { x: 0.4, y, w: 0.42, h: 0.84, fill: { type: 'gradient', stops: [{ color: GOLD, position: 0 }, { color: GOLD_LIGHT, position: 100 }] }, rectRadius: 0.04 });
-      slide.addText(u[0], { x: 0.4, y, w: 0.42, h: 0.84, fontSize: 13, bold: true, color: WHITE, align: 'center' });
-      slide.addText(u[1], { x: 1.0, y: y + 0.08, w: 8.5, h: 0.3, fontSize: 12, bold: true, color: NAVY });
-      slide.addText(u[2], { x: 1.0, y: y + 0.42, w: 11.4, h: 0.35, fontSize: 10.5, color: SLATE, wrap: true });
+    const s = pptx.addSlide();
+    sectionHeader(s, 'WHY US', 'Why Hotels Choose Dreams Technology', 'Built specifically for Indian hospitality — not a generic tool repurposed for hotels.');
+    const usps=[['01','Purpose-Built for Indian Hotels & Resorts','Designed for how Indian properties operate — INR billing, WhatsApp-first, Booking.com & MakeMyTrip integrations and familiar workflows your staff adopts instantly.'],['02','Live in Under 5 Minutes — No Hardware','100% cloud-based. Works on any device — laptop, tablet or phone. No installation, no server, no IT team. Your staff can start the same day.'],['03','WhatsApp Automation — At No Extra Cost','9 automated WhatsApp messages fire automatically — booking confirmation, check-in reminder, welcome, payment receipt, checkout and feedback request.'],['04','Flat Annual Pricing — No Per-Booking Fees','OTAs charge 15–20% per booking. Our flat yearly subscription keeps costs fixed no matter how many bookings you take.'],['05','Role-Based Access — Secure for Your Team','Front desk, restaurant managers, accountants and owners each see only what they need. Fully secure, organised and audit-logged.']];
+    usps.forEach((u,i) => {
+      const y=2.62+i*0.95;
+      s.addShape(pptx.ShapeType.rect, {x:0.4,y,w:12.2,h:0.85,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.08});
+      s.addShape(pptx.ShapeType.rect, {x:0.4,y,w:0.42,h:0.85,fill:{type:'gradient',stops:[{color:GOLD,position:0},{color:GOLD_L,position:100}]},rectRadius:0.04});
+      s.addText(u[0], {x:0.4,y,w:0.42,h:0.85,fontSize:13,bold:true,color:WHITE,align:'center'});
+      s.addText(u[1], {x:1.0,y:y+0.08,w:8.5,h:0.3,fontSize:11.5,bold:true,color:NAVY});
+      s.addText(u[2], {x:1.0,y:y+0.43,w:11.4,h:0.35,fontSize:10,color:SLATE,wrap:true});
     });
+    footer(s, 9);
   }
 
-  // SLIDE 6: Contact CTA
+  /* SLIDE 10: Real Screenshots 2x2 */
   {
-    const slide = pptx.addSlide();
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { type: 'gradient', stops: [{ color: NAVY, position: 0 }, { color: '1e3a5f', position: 100 }] } });
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 7.42, w: '100%', h: 0.08, fill: { color: GOLD } });
-    slide.addText('GET STARTED TODAY', { x: 4.5, y: 1.0, w: 4.5, h: 0.35, fontSize: 10, bold: true, color: GOLD_LIGHT, align: 'center' });
-    slide.addText('Ready to Transform Your\nHotel Operations?', { x: 1.5, y: 1.45, w: 10.5, h: 1.6, fontSize: 36, bold: true, color: WHITE, align: 'center', fontFace: 'Palatino Linotype', lineSpacingMultiple: 1.15 });
-    slide.addShape(pptx.ShapeType.rect, { x: 6.35, y: 3.1, w: 0.8, h: 0.06, fill: { color: GOLD } });
-    slide.addText('Join hotels and resorts already running on Dreams Technology CRM.\nStart your free trial today — no credit card required.', { x: 1.5, y: 3.25, w: 10.5, h: 0.7, fontSize: 13, color: 'a0b4c8', align: 'center', wrap: true });
-    const contacts = [['Phone / WhatsApp', '+91 97252 25519'], ['Email', 'sales@dreamstechnology.in'], ['Platform / Live Demo', 'resort.dreamstechnology.in'], ['Company Website', 'www.dreams-technology.com']];
-    contacts.forEach((c, i) => {
-      const x = i < 2 ? 1.5 : 7.0; const y = 4.2 + (i % 2) * 1.1;
-      slide.addShape(pptx.ShapeType.rect, { x, y, w: 5.2, h: 0.9, fill: { color: '1a2a3f' }, line: { color: '2a4060', width: 1 }, rectRadius: 0.08 });
-      slide.addText(c[0], { x: x + 0.15, y: y + 0.1, w: 4.9, h: 0.25, fontSize: 9, color: '7090a8' });
-      slide.addText(c[1], { x: x + 0.15, y: y + 0.4, w: 4.9, h: 0.32, fontSize: 12, bold: true, color: WHITE });
+    const s = pptx.addSlide();
+    sectionHeader(s, 'CRM IN ACTION', 'Real Screenshots from the Live Platform', 'Actual screens from resort.dreamstechnology.in — as used by hotels every day in production.');
+    const panels = [
+      {label:'Live Dashboard — Real-time KPIs for today\'s hotel performance', dark:true},
+      {label:'Room Management — Live housekeeping & availability status per room', img:'proposal-assets/crm-rooms.png'},
+      {label:'Bookings & Check-In — Guest info, room, billing summary & payment history', img:'proposal-assets/crm-booking-detail.jpg'},
+      {label:'WhatsApp Automation — Booking Confirmed, Check-In Reminder, Arrival Welcome and 6 more', img:'proposal-assets/crm-whatsapp.png'},
+    ];
+    panels.forEach((p,i) => {
+      const col=i%2; const row=Math.floor(i/2);
+      const x=0.4+col*6.6; const y=2.65+row*2.45;
+      if(p.img) {
+        s.addImage({path:p.img, x, y, w:6.2, h:2.15});
+      } else {
+        s.addShape(pptx.ShapeType.rect, {x,y,w:6.2,h:2.15,fill:{type:'gradient',stops:[{color:NAVY,position:0},{color:NAVY2,position:100}]},rectRadius:0.1});
+        s.addText('Dashboard — Today\'s Overview', {x:x+0.2,y:y+0.15,w:5.8,h:0.3,fontSize:11,bold:true,color:WHITE});
+        const kpis=[['18','Occupied'],['₹42k','Revenue'],['5','Check-Ins']];
+        kpis.forEach((k,ki) => {
+          const kx=x+0.2+ki*1.95;
+          s.addShape(pptx.ShapeType.rect, {x:kx,y:y+0.55,w:1.75,h:0.75,fill:{color:'1a2a3f'},line:{color:'2a4060',width:1},rectRadius:0.07});
+          s.addText(k[0], {x:kx,y:y+0.6,w:1.75,h:0.38,fontSize:18,bold:true,color:GOLD_L,align:'center',fontFace:'Palatino Linotype'});
+          s.addText(k[1], {x:kx,y:y+0.98,w:1.75,h:0.25,fontSize:8.5,color:'94a3b8',align:'center'});
+        });
+        s.addShape(pptx.ShapeType.rect, {x:x+0.2,y:y+1.45,w:5.8,h:0.07,fill:{color:'1a2a3f'}});
+        s.addShape(pptx.ShapeType.rect, {x:x+0.2,y:y+1.45,w:4.53,h:0.07,fill:{color:GOLD}});
+        s.addText('Occupancy 78%', {x:x+0.2,y:y+1.6,w:5.8,h:0.25,fontSize:8.5,color:'94a3b8'});
+      }
+      s.addShape(pptx.ShapeType.rect, {x,y:y+2.15,w:6.2,h:0.3,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.04});
+      s.addShape(pptx.ShapeType.rect, {x:x+0.15,y:y+2.22,w:0.08,h:0.08,fill:{color:GOLD}});
+      s.addText(p.label, {x:x+0.35,y:y+2.17,w:5.7,h:0.28,fontSize:9,bold:true,color:NAVY});
+    });
+    footer(s, 10);
+  }
+
+  /* SLIDE 11: Billing & Checkout */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'CRM IN ACTION', 'Billing, Checkout & GST Invoice — Live Screens', 'The complete end-to-end billing workflow — from checkout to GST-compliant tax invoice.');
+    s.addImage({path:'proposal-assets/crm-checkin.jpg', x:0.4, y:2.65, w:6.1, h:2.4});
+    s.addImage({path:'proposal-assets/crm-checkout.jpg', x:6.9, y:2.65, w:5.7, h:2.4});
+    const billingCards=[['Consolidated Billing','Room, food extras and additional charges all consolidated into one checkout bill with full payment history.'],['GST Compliance','Auto-calculated CGST & SGST, invoice number series, tax summary — ready for CA/auditor submission.'],['WhatsApp Invoice','Send invoice PDF directly to guest\'s WhatsApp at checkout — paperless, instant, professional.']];
+    billingCards.forEach((c,i) => {
+      const x=0.4+i*4.3;
+      s.addShape(pptx.ShapeType.rect, {x,y:5.2,w:4.05,h:1.95,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.09});
+      s.addShape(pptx.ShapeType.rect, {x,y:5.2,w:0.05,h:1.95,fill:{color:GOLD}});
+      s.addText(c[0], {x:x+0.2,y:5.35,w:3.7,h:0.3,fontSize:11.5,bold:true,color:NAVY});
+      s.addText(c[1], {x:x+0.2,y:5.72,w:3.7,h:1.2,fontSize:10,color:SLATE,wrap:true});
+    });
+    footer(s, 11);
+  }
+
+  /* SLIDE 12: Getting Started */
+  {
+    const s = pptx.addSlide();
+    sectionHeader(s, 'GETTING STARTED', 'Up and Running in 3 Simple Steps', 'No technical expertise needed. Our onboarding team handles setup — your staff can start within hours of signing up.');
+    const steps=[['1','Sign Up & Configure','Create your hotel profile, add rooms and configure pricing. Takes less than 15 minutes with our guided setup wizard.'],['2','Connect WhatsApp & OTAs','Link WhatsApp Business for automated messaging. Connect OTA email to auto-import Booking.com and MakeMyTrip reservations.'],['3','Go Live & Manage','Invite your team with role-based access. Accept bookings, manage rooms and automate guest communication from day one.']];
+    steps.forEach((st,i) => {
+      const x=0.4+i*4.3;
+      s.addShape(pptx.ShapeType.rect, {x,y:2.65,w:4.05,h:2.8,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.1});
+      s.addShape(pptx.ShapeType.rect, {x:x+1.55,y:2.75,w:0.95,h:0.95,fill:{type:'gradient',stops:[{color:GOLD,position:0},{color:GOLD_L,position:100}]}});
+      s.addText(st[0], {x:x+1.55,y:2.75,w:0.95,h:0.95,fontSize:22,bold:true,color:WHITE,align:'center',fontFace:'Palatino Linotype'});
+      s.addText(st[1], {x:x+0.2,y:3.82,w:3.65,h:0.32,fontSize:12,bold:true,color:NAVY});
+      s.addText(st[2], {x:x+0.2,y:4.2,w:3.65,h:1.15,fontSize:10,color:SLATE,wrap:true});
+      if(i<2) s.addText('›', {x:x+4.05,y:3.95,w:0.3,h:0.5,fontSize:24,bold:true,color:GOLD,align:'center'});
+    });
+    const support=[['Free Trial','Try the full platform before committing. No credit card required.'],['Onboarding Support','Our team assists with setup, data migration and staff training.'],['Ongoing Support','WhatsApp and email support included. Priority support on Premium & Pro AI.']];
+    support.forEach((c,i) => {
+      const x=0.4+i*4.3;
+      s.addShape(pptx.ShapeType.rect, {x,y:5.6,w:4.05,h:1.5,fill:{color:CREAM},line:{color:BORDER,width:1},rectRadius:0.09});
+      s.addText(c[0], {x:x+0.2,y:5.73,w:3.7,h:0.3,fontSize:11.5,bold:true,color:NAVY});
+      s.addText(c[1], {x:x+0.2,y:6.1,w:3.7,h:0.85,fontSize:10,color:SLATE,wrap:true});
+    });
+    footer(s, 12);
+  }
+
+  /* SLIDE 13: Contact / CTA */
+  {
+    const s = pptx.addSlide();
+    s.addShape(pptx.ShapeType.rect, {x:0,y:0,w:'100%',h:'100%', fill:{type:'gradient',stops:[{color:NAVY,position:0},{color:NAVY2,position:100}]}});
+    s.addShape(pptx.ShapeType.rect, {x:0,y:7.42,w:'100%',h:0.08, fill:{color:GOLD}});
+    s.addText('GET STARTED TODAY', {x:4.5,y:0.8,w:4.5,h:0.35,fontSize:10,bold:true,color:GOLD_L,align:'center',charSpacing:2});
+    s.addText('Ready to Transform Your\nHotel Operations?', {x:1.5,y:1.25,w:10.5,h:1.7,fontSize:36,bold:true,color:WHITE,align:'center',fontFace:'Palatino Linotype',lineSpacingMultiple:1.15});
+    s.addShape(pptx.ShapeType.rect, {x:6.35,y:3.05,w:0.8,h:0.06,fill:{color:GOLD}});
+    s.addText('Join hotels and resorts already running on Dreams Technology CRM. Start your free trial today — no credit card required.', {x:1.5,y:3.18,w:10.5,h:0.65,fontSize:13,color:'a0b4c8',align:'center',wrap:true});
+    const contacts=[['Phone / WhatsApp','+91 97252 25519'],['Email','sales@dreamstechnology.in'],['Platform / Live Demo','resort.dreamstechnology.in'],['Company Website','www.dreams-technology.com']];
+    contacts.forEach((c,i) => {
+      const x=i<2?1.5:7.0; const y=4.0+(i%2)*1.1;
+      s.addShape(pptx.ShapeType.rect, {x,y,w:5.2,h:0.9,fill:{color:'1a2a3f'},line:{color:'2a4060',width:1},rectRadius:0.08});
+      s.addText(c[0], {x:x+0.15,y:y+0.1,w:4.9,h:0.25,fontSize:9,color:'7090a8'});
+      s.addText(c[1], {x:x+0.15,y:y+0.4,w:4.9,h:0.32,fontSize:12,bold:true,color:WHITE});
     });
   }
 
   await pptx.writeFile({ fileName: 'Dreams-Technology-Hotel-CRM-Proposal.pptx' });
-  btn.textContent = '✓ Downloaded!';
-  setTimeout(() => { btn.textContent = '💾 Download PPTX'; btn.disabled = false; }, 3000);
+  btn.textContent = '\u2713 Downloaded!';
+  setTimeout(() => { btn.textContent = '\uD83D\uDCBE Download PPTX'; btn.disabled = false; }, 3000);
 }
 </script>
 </body>
