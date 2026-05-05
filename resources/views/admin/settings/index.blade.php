@@ -123,11 +123,11 @@
             {{-- Invoice Print Style --}}
             <div class="mt-8 pt-6 border-t border-gray-100">
                 <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-file-invoice text-violet-500 mr-2"></i>Invoice Print Style</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('modern')">
                         <input type="radio" name="invoice_style" value="modern" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'checked' : '' }}>
                         <div>
-                            <div class="font-bold text-gray-700 text-sm">Modern (Current)</div>
+                            <div class="font-bold text-gray-700 text-sm">Modern</div>
                             <div class="text-xs text-gray-400 mt-0.5">Clean card layout with dark header. Works for all hotels.</div>
                         </div>
                     </label>
@@ -136,6 +136,13 @@
                         <div>
                             <div class="font-bold text-gray-700 text-sm">GST Tax Invoice</div>
                             <div class="text-xs text-gray-400 mt-0.5">Formal Indian GST format with CGST/SGST split, HSN codes, bank details &amp; advance summary.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'compact' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('compact')">
+                        <input type="radio" name="invoice_style" value="compact" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'compact' ? 'checked' : '' }}>
+                        <div>
+                            <div class="font-bold text-gray-700 text-sm">Compact (Classic)</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Old-style dense format — all details in bordered tables, no colors. Ideal for dot-matrix or narrow printers.</div>
                         </div>
                     </label>
                 </div>

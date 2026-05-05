@@ -9,9 +9,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         @media print {
+            @page { size: A4; margin: 0; }
             .no-print { display: none !important; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; margin: 0; padding: 0; background: #fff; }
             .page-wrap { box-shadow: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; }
+            .logo-badge { display: none !important; }
+            .outer-table { border-left: none !important; border-right: none !important; }
+            .outer-table td:first-child, .outer-table th:first-child { border-left: none !important; }
+            .outer-table td:last-child, .outer-table th:last-child { border-right: none !important; }
+            .max-w-4xl { max-width: 100% !important; }
+            .px-2 { padding-left: 0 !important; padding-right: 0 !important; }
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; background: #f4f5f7; }
         table { border-collapse: collapse; width: 100%; }
@@ -150,20 +157,20 @@
         $hasLogo       = $s && $s->logo && file_exists(public_path('storage/' . $s->logo));
         $logoUrl       = $hasLogo ? asset('storage/' . $s->logo) : null;
     @endphp
-    <div style="border-bottom:2px solid #111;">
+    <div>
         <table class="no-border inv-header-table" style="width:100%;">
             <tr>
                 <td style="width:65%;vertical-align:top;padding:14px 16px;">
                     <div style="display:flex;align-items:center;gap:14px;">
 
-                        {{-- Logo or initials badge --}}
+                        {{-- Logo or initials badge (hidden in print) --}}
                         @if($hasLogo)
-                        <div style="flex-shrink:0;width:72px;height:72px;border-radius:10px;border:1.5px solid #d1d5db;padding:4px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                        <div class="logo-badge" style="flex-shrink:0;width:72px;height:72px;border-radius:10px;border:1.5px solid #d1d5db;padding:4px;background:#fff;display:flex;align-items:center;justify-content:center;">
                             <img src="{{ $logoUrl }}" alt="{{ $hotelName }} Logo"
                                  style="max-width:100%;max-height:100%;object-fit:contain;">
                         </div>
                         @else
-                        <div style="flex-shrink:0;width:72px;height:72px;border-radius:10px;border:2px solid #1e293b;background:#1e293b;display:flex;align-items:center;justify-content:center;">
+                        <div class="logo-badge" style="flex-shrink:0;width:72px;height:72px;border-radius:10px;border:2px solid #1e293b;background:#1e293b;display:flex;align-items:center;justify-content:center;">
                             <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:1px;line-height:1;">{{ $initials }}</span>
                         </div>
                         @endif
@@ -207,7 +214,7 @@
 
     {{-- ══ GUEST + ROOM DETAILS ══ --}}
     <div style="padding:0 16px;" class="table-scroll">
-        <table style="width:100%;margin-top:0;border-left:none;border-right:none;min-width:480px;">
+        <table class="outer-table" style="width:100%;margin-top:0;border-left:none;border-right:none;min-width:480px;">
             <thead>
                 <tr style="background:#1e293b;color:#fff;">
                     <th colspan="4" style="padding:5px 8px;font-size:11px;letter-spacing:.5px;border-color:#1e293b;">GUEST DETAILS</th>

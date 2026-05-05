@@ -55,7 +55,11 @@ class InvoiceController extends Controller
         $settings = Setting::where('hotel_id', $invoice->booking?->hotel_id ?? session('crm_hotel_id'))->first();
 
         $style = $settings->invoice_style ?? 'modern';
-        $view  = $style === 'gst' ? 'admin.invoices.print-gst' : 'admin.invoices.print';
+        $view  = match($style) {
+            'gst'     => 'admin.invoices.print-gst',
+            'compact' => 'admin.invoices.print-compact',
+            default   => 'admin.invoices.print',
+        };
 
         return view($view, compact('invoice', 'settings'));
     }
