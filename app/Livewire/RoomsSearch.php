@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Room;
 use App\Services\ActivityLogger;
+use App\Services\HotelContext;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -38,7 +39,7 @@ class RoomsSearch extends Component
     // Used when the booking was deleted externally or the checkout was never recorded.
     public function forceAvailable(int $roomId): void
     {
-        $hotelId = (int) session('crm_hotel_id');
+        $hotelId = app(HotelContext::class)->getHotel()?->id;
         $room    = Room::where('id', $roomId)->where('hotel_id', $hotelId)->first();
 
         if (!$room || $room->status !== 'occupied') {
@@ -54,7 +55,7 @@ class RoomsSearch extends Component
     // Mark a dirty room as available after housekeeping is done.
     public function markAvailable(int $roomId): void
     {
-        $hotelId = (int) session('crm_hotel_id');
+        $hotelId = app(HotelContext::class)->getHotel()?->id;
         $room    = Room::where('id', $roomId)->where('hotel_id', $hotelId)->first();
 
         if (!$room || $room->status !== 'dirty') {
