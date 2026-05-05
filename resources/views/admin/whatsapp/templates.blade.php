@@ -122,12 +122,10 @@ foreach($allEvents as $event => $label) {
             </button>
             @endif
             @if($canEdit)
-            @if(!($usePlatformTemplates ?? false))
             <button onclick="syncFromMeta(this)"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;">
                 <i class="fas fa-sync-alt"></i> Sync from Meta
             </button>
-            @endif
             <a href="{{ route('whatsapp.template.create') }}"
                 style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:11px;font-size:13px;font-weight:700;text-decoration:none;">
                 <i class="fas fa-plus"></i> Add Template
