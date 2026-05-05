@@ -704,3 +704,7 @@ All these must be set in Replit Secrets (production environment):
 3. Open Platform Admin → Message Templates — templates show correct Approved status ✅
 4. Open Platform Admin → Hotels → click WA button on any hotel — modal shows 2 templates, send works ✅
 5. Open Hotel CRM → `/login` — hotel staff login works ✅
+
+### 6. After every publish — log it
+Record the checkpoint SHA, date, and what changed in **`published_updates.md`** (root of repo).
+Keep `replit.md` for architecture/conventions; keep `published_updates.md` for the publish history.
