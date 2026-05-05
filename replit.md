@@ -705,6 +705,9 @@ All these must be set in Replit Secrets (production environment):
 4. Open Platform Admin → Hotels → click WA button on any hotel — modal shows 2 templates, send works ✅
 5. Open Hotel CRM → `/login` — hotel staff login works ✅
 
+### 7. After every deploy — verify deployment config is registered (MANDATORY)
+After any session that touches `.replit` or deployment settings, call `deployConfig()` to re-register the run/build commands with Replit's deployment service. The `.replit` file alone is not enough — the platform can lose the config between deploys. If the user ever reports "No run command configured" or port errors, call `deployConfig()` immediately without waiting for more details.
+
 ### 6. After every publish — log it (MANDATORY — no reminder needed)
 Record the checkpoint SHA, date, and what changed in **`published_updates.md`** (root of repo).
 This must be the **very last action** of any session that includes a deploy or checkpoint — update the log AFTER the final checkpoint SHA is known, not before.

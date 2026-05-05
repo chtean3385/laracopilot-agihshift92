@@ -20,6 +20,18 @@ See `replit.md` → "Deployment Checklist" for pre-publish steps.
 
 ---
 
+## 2026-05-05 — Deployment run command re-registered
+
+- **Checkpoint:** `43128628c14493543d63440c2a902aae2dba6118`
+- **Published by:** agent
+- **URL:** resort.dreamstechnology.in
+- **What changed:**
+  - Deployment config re-registered directly with Replit's deployment service via `deployConfig()`. The run command (`bash scripts/start.sh`) and build command were already correct in `.replit` but the platform was not picking them up, causing "No run command configured" errors on every deploy.
+- **Smoke tested:** `deployConfig()` returned success, deployment confirmed live with `hasSuccessfulBuild: true`.
+- **Notes:** If this error recurs on a future deploy, immediately call `deployConfig()` to re-register — do not wait for user to report it.
+
+---
+
 ## 2026-05-05 — Logo persists across deploys + Invoice fixes
 
 - **Checkpoint:** `5d8538a4e7d790862edab6e318cc1721341d49f7`
