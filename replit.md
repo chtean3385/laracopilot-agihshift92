@@ -705,6 +705,7 @@ All these must be set in Replit Secrets (production environment):
 4. Open Platform Admin → Hotels → click WA button on any hotel — modal shows 2 templates, send works ✅
 5. Open Hotel CRM → `/login` — hotel staff login works ✅
 
-### 6. After every publish — log it
+### 6. After every publish — log it (MANDATORY — no reminder needed)
 Record the checkpoint SHA, date, and what changed in **`published_updates.md`** (root of repo).
+This must be the **very last action** of any session that includes a deploy or checkpoint — update the log AFTER the final checkpoint SHA is known, not before.
 Keep `replit.md` for architecture/conventions; keep `published_updates.md` for the publish history.

@@ -22,7 +22,7 @@ See `replit.md` → "Deployment Checklist" for pre-publish steps.
 
 ## 2026-05-05 — Logo persists across deploys + Invoice fixes
 
-- **Checkpoint:** `ca8f7da727732f16c1044bffcbede960c512b3dc`
+- **Checkpoint:** `5d8538a4e7d790862edab6e318cc1721341d49f7`
 - **Published by:** agent
 - **URL:** resort.dreamstechnology.in
 - **What changed:**
