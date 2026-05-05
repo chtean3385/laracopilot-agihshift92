@@ -39,7 +39,7 @@ class RoomsSearch extends Component
     // Used when the booking was deleted externally or the checkout was never recorded.
     public function forceAvailable(int $roomId): void
     {
-        $hotelId = app(HotelContext::class)->getHotel()?->id;
+        $hotelId = app(HotelContext::class)->getHotel();
         $room    = Room::where('id', $roomId)->where('hotel_id', $hotelId)->first();
 
         if (!$room || $room->status !== 'occupied') {
@@ -55,7 +55,7 @@ class RoomsSearch extends Component
     // Mark a dirty room as available after housekeeping is done.
     public function markAvailable(int $roomId): void
     {
-        $hotelId = app(HotelContext::class)->getHotel()?->id;
+        $hotelId = app(HotelContext::class)->getHotel();
         $room    = Room::where('id', $roomId)->where('hotel_id', $hotelId)->first();
 
         if (!$room || $room->status !== 'dirty') {
