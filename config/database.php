@@ -85,9 +85,9 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            // NEON_DATABASE_URL takes priority (full Neon connection string including password).
-            // Falls back to DATABASE_URL (Replit-managed internal DB) for local dev.
-            'url' => env('NEON_DATABASE_URL', env('DATABASE_URL', getenv('DATABASE_URL') ?: null)),
+            // DATABASE_URL is auto-provided by Replit's Production Database (includes password).
+            // In dev it points to the local DB; in prod it points to the Neon production DB.
+            'url' => env('DATABASE_URL', getenv('DATABASE_URL') ?: null),
             'host' => env('DB_HOST', getenv('PGHOST') ?: '127.0.0.1'),
             'port' => env('DB_PORT', getenv('PGPORT') ?: '5432'),
             'database' => env('DB_DATABASE', getenv('PGDATABASE') ?: 'laravel'),
