@@ -181,6 +181,7 @@ body{font-family:'DM Sans',sans-serif;background:#f1f5f9;color:var(--text);font-
 .cta-stripe{position:absolute;bottom:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--gold),var(--gold-light))}
 
 @media print{
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
   body{background:#fff}
   .slide{margin:0;box-shadow:none;page-break-after:always;page-break-inside:avoid;width:100%}
   .deck-header,.btn-row{display:none}
