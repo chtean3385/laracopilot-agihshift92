@@ -451,7 +451,7 @@ class WhatsAppController extends Controller
             $resp = Http::timeout(20)
                 ->withToken($platform->saas_token)
                 ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
-                    'fields' => 'name,status,id',
+                    'fields' => 'name,status,id,components',
                     'limit'  => 200,
                 ]);
 
@@ -465,18 +465,25 @@ class WhatsAppController extends Controller
             $hotel     = Hotel::find($hotelId);
             $hotelSlug = $hotel ? trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($hotel->slug ?: $hotel->name)), '_') : '';
 
-            $dbTemplates = WhatsAppTemplate::where('hotel_id', $hotelId)->get();
+            // Load ALL db templates — global (null) + this hotel's own rows
+            $dbTemplates = WhatsAppTemplate::withoutGlobalScopes()
+                ->where(fn($q) => $q->whereNull('hotel_id')->orWhere('hotel_id', $hotelId))
+                ->get();
+
+            // Track which Meta template names we've already matched in the DB
+            $matchedMetaNames = [];
 
             $updated = 0;
             foreach ($dbTemplates as $tmpl) {
                 if (!$tmpl->template_name) continue;
                 $baseName = strtolower(trim(preg_replace('/[^a-z0-9]+/', '_', $tmpl->template_name), '_'));
-                // Try with hotel slug appended first (submitted name), then fall back to base name
                 $key  = ($hotelSlug && !str_ends_with($baseName, '_' . $hotelSlug))
                     ? $baseName . '_' . $hotelSlug
                     : $baseName;
                 $meta = $metaTemplates->get($key) ?? $metaTemplates->get($baseName);
                 if (!$meta) continue;
+
+                $matchedMetaNames[] = strtolower($meta['name']);
 
                 $newStatus = match(strtolower($meta['status'])) {
                     'approved' => 'approved',
@@ -490,8 +497,6 @@ class WhatsAppController extends Controller
                     'meta_template_id' => $meta['id'] ?? $tmpl->meta_template_id,
                 ];
 
-                // Auto-activate when Meta approves; auto-deactivate when rejected.
-                // Admin can manually deactivate approved ones if needed.
                 if ($newStatus === 'approved') {
                     $updateData['is_active'] = true;
                 } elseif ($newStatus === 'rejected') {
@@ -502,7 +507,71 @@ class WhatsAppController extends Controller
                 $updated++;
             }
 
-            return response()->json(['success' => true, 'updated' => $updated, 'message' => "Synced {$updated} template(s) from Meta."]);
+            // ── Import newly approved Meta templates not yet in DB ─────────────
+            // Name-pattern → trigger_event mapping (most specific first)
+            $nameEventMap = [
+                'booking_alert_owner'    => 'booking.alert.owner',
+                'owner_alert'            => 'booking.alert.owner',
+                'ota_booking_confirmed'  => 'ota_booking_confirmed',
+                'ota_booking_conflict'   => 'ota_booking_conflict',
+                'ota_confirmed'          => 'ota_booking_confirmed',
+                'ota_conflict'           => 'ota_booking_conflict',
+                'website_booking'        => 'website.booking.received',
+                'booking_confirm'        => 'booking.created',
+                'booking_created'        => 'booking.created',
+                'new_booking'            => 'booking.created',
+                'check_in_reminder'      => 'checkin.tomorrow',
+                'checkin_reminder'       => 'checkin.tomorrow',
+                'arrival_welcome'        => 'checkin.done',
+                'checkin_done'           => 'checkin.done',
+                'check_out'              => 'checkout.done',
+                'checkout'               => 'checkout.done',
+                'feedback'               => 'feedback.request',
+                'payment_receipt'        => 'payment.received',
+                'payment_received'       => 'payment.received',
+            ];
+
+            $imported = 0;
+            foreach ($metaTemplates as $metaName => $meta) {
+                if (in_array($metaName, $matchedMetaNames)) continue;
+                $status = strtolower($meta['status'] ?? '');
+                if ($status !== 'approved') continue;
+
+                // Guess trigger_event from template name
+                $triggerEvent = $metaName; // default: use raw name
+                foreach ($nameEventMap as $pattern => $event) {
+                    if (str_contains($metaName, $pattern)) {
+                        $triggerEvent = $event;
+                        break;
+                    }
+                }
+
+                // Extract body text from components if available
+                $bodyText = '';
+                foreach (($meta['components'] ?? []) as $comp) {
+                    if (strtolower($comp['type'] ?? '') === 'body') {
+                        $bodyText = $comp['text'] ?? '';
+                        break;
+                    }
+                }
+
+                WhatsAppTemplate::withoutGlobalScopes()->create([
+                    'hotel_id'         => null,
+                    'name'             => ucwords(str_replace('_', ' ', $meta['name'])),
+                    'template_name'    => $meta['name'],
+                    'trigger_event'    => $triggerEvent,
+                    'message_body'     => $bodyText,
+                    'approval_status'  => 'approved',
+                    'meta_status'      => 'approved',
+                    'meta_template_id' => $meta['id'] ?? null,
+                    'is_active'        => true,
+                ]);
+                $imported++;
+            }
+
+            $total = $updated + $imported;
+            $msg   = "Synced {$updated} existing + imported {$imported} new template(s) from Meta.";
+            return response()->json(['success' => true, 'updated' => $total, 'message' => $msg]);
         } catch (\Throwable $e) {
             Log::error('Hotel WhatsApp syncFromMeta error: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
