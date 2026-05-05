@@ -476,9 +476,10 @@ class WhatsAppService
     public static function sendOwnerAlert(Booking $booking): void
     {
         try {
+            // Find hotel's WA config regardless of is_active — owner alert phones can be
+            // configured even on hotels using the platform's shared number (not own WABA).
             $config = WhatsAppConfig::withoutGlobalScopes()
                 ->where('hotel_id', $booking->hotel_id)
-                ->where('is_active', true)
                 ->first();
 
             if (!$config || !$config->notify_on_booking) {
@@ -490,9 +491,25 @@ class WhatsAppService
                 return;
             }
 
-            $provider = static::providerForConfig($config);
+            // Prefer hotel's own active provider; fall back to platform's shared WABA.
+            $provider = null;
+            if ($config->is_active) {
+                $provider = static::providerForConfig($config);
+            }
             if (!$provider) {
-                Log::info('WhatsApp sendOwnerAlert: no provider', ['hotel_id' => $booking->hotel_id]);
+                $platform = PlatformWhatsAppSetting::instance();
+                if ($platform && $platform->is_saas_active) {
+                    $sharedConfig = new WhatsAppConfig([
+                        'provider'        => 'meta',
+                        'api_key'         => $platform->saas_token,
+                        'phone_number_id' => $platform->saas_phone_number_id,
+                        'mode'            => 'shared',
+                    ]);
+                    $provider = new \App\Services\WhatsApp\Providers\MetaProvider($sharedConfig);
+                }
+            }
+            if (!$provider) {
+                Log::info('WhatsApp sendOwnerAlert: no provider available', ['hotel_id' => $booking->hotel_id]);
                 return;
             }
 

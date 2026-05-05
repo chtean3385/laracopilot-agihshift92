@@ -273,14 +273,28 @@ class WhatsAppSetupController extends Controller
 
     public function saveNotifyPhones(\Illuminate\Http\Request $request)
     {
-        $config = WhatsAppConfig::first();
+        $hotelId = session('hotel_id');
+        if (!$hotelId) {
+            return back()->with('error', 'No hotel selected.');
+        }
+
+        // Create config if it doesn't exist yet (e.g. hotel hasn't finished WhatsApp setup)
+        $config = WhatsAppConfig::withoutGlobalScopes()
+            ->where('hotel_id', $hotelId)
+            ->first();
+
         if (!$config) {
-            return back()->with('error', 'No WhatsApp configuration found.');
+            $config = WhatsAppConfig::create([
+                'hotel_id'        => $hotelId,
+                'mode'            => 'shared',
+                'is_active'       => false,
+                'setup_step'      => 0,
+                'setup_completed' => false,
+            ]);
         }
 
         $enabled = $request->boolean('notify_on_booking');
 
-        // Collect non-empty phone entries from the submitted array
         $phones = collect($request->input('notify_phones', []))
             ->map(fn($p) => trim($p))
             ->filter(fn($p) => $p !== '')
