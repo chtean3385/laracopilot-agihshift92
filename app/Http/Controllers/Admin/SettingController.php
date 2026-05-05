@@ -68,6 +68,10 @@ class SettingController extends Controller
             $file     = $request->file('logo');
             $fileName = 'resort_logo_' . time() . '.' . $file->getClientOriginalExtension();
             $data['logo'] = $file->storeAs('logos', $fileName, 'public');
+
+            // Also store as base64 in the database so the logo survives deployments.
+            // The logo_url accessor on Setting returns this data URI on every request.
+            $data['logo_data'] = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         if ($settings->exists) {

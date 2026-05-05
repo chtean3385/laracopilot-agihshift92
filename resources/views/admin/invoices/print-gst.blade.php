@@ -154,8 +154,8 @@
         $hotelName     = $s->resort_name ?? 'Resort';
         $initials      = implode('', array_map(fn($w) => strtoupper($w[0]), array_filter(explode(' ', $hotelName))));
         $initials      = substr($initials, 0, 3);
-        $hasLogo       = $s && $s->logo && file_exists(public_path('storage/' . $s->logo));
-        $logoUrl       = $hasLogo ? asset('storage/' . $s->logo) : null;
+        $logoUrl       = $s?->logo_url;
+        $hasLogo       = !empty($logoUrl);
     @endphp
     <div>
         <table class="no-border inv-header-table" style="width:100%;">
@@ -472,8 +472,8 @@
             </div>
             <div style="text-align:center;">
                 <div style="font-size:11px;color:#374151;margin-bottom:4px;">For <strong>{{ $s->resort_name ?? 'Resort' }}</strong></div>
-                @if($s && $s->logo && file_exists(public_path('storage/'.$s->logo)))
-                <img src="{{ asset('storage/'.$s->logo) }}" alt="Logo" style="height:36px;object-fit:contain;margin:0 auto;display:block;">
+                @if($s && $s->logo_url)
+                <img src="{{ $s->logo_url }}" alt="Logo" style="height:36px;object-fit:contain;margin:0 auto;display:block;">
                 @endif
                 <div style="border-top:1px solid #555;margin-top:28px;padding-top:4px;font-size:11px;font-weight:600;min-width:160px;">
                     Authorised Signatory

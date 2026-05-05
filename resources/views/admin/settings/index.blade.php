@@ -36,15 +36,15 @@
                 <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-image text-cyan-500 mr-2"></i>Resort Logo</h4>
                 <div class="flex items-start gap-6">
                     <div class="flex-shrink-0">
-                        @if($settings->logo && file_exists(public_path('storage/' . $settings->logo)))
-                            <img src="{{ asset('storage/' . $settings->logo) }}" alt="Resort Logo"
+                        @if($settings->logo_url)
+                            <img src="{{ $settings->logo_url }}" alt="Resort Logo"
                                  class="w-24 h-24 object-contain rounded-2xl border border-gray-200 bg-gray-50 p-2">
                         @else
                             <div class="w-24 h-24 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center">
                                 <i class="fas fa-umbrella-beach text-white text-3xl"></i>
                             </div>
                         @endif
-                        @if($settings->logo)
+                        @if($settings->logo_url)
                         <p class="text-xs text-center text-gray-400 mt-1">Current logo</p>
                         @else
                         <p class="text-xs text-center text-gray-400 mt-1">No logo set</p>

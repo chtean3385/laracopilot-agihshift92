@@ -20,6 +20,21 @@ See `replit.md` → "Deployment Checklist" for pre-publish steps.
 
 ---
 
+## 2026-05-05 — Logo persists across deploys + Invoice fixes
+
+- **Checkpoint:** `ca8f7da727732f16c1044bffcbede960c512b3dc`
+- **Published by:** agent
+- **URL:** resort.dreamstechnology.in
+- **What changed:**
+  - **Logo now survives every deploy** — added `logo_data` (LONGTEXT) column to `settings` table; on upload the image is base64-encoded and stored in the DB. `Setting::logo_url` accessor returns DB data URI first, falls back to storage file. All 8 view locations updated to use `logo_url`.
+  - **GST Invoice print fixes** — browser title/URL stripped from PDF (`@page { margin:0 }`), logo badge hidden in print, header separator line removed, outer table borders cleaned up.
+  - **Compact (Classic) invoice style** — new `print-compact.blade.php` matching the old-style bordered-table format (image 4). Selectable under Settings → Invoice Print Style (now 3 options: Modern / GST / Compact).
+  - **Mark Available bug fixed** — `RoomsSearch.php` `forceAvailable` + `markAvailable` were calling `getHotel()?->id` on an int; fixed to `getHotel()`.
+- **Smoke tested:** migration ran (`logo_data` column added), views updated, app running.
+- **Notes:** After next deploy, user must re-upload logo once — it will then be permanent.
+
+---
+
 ## 2026-05-05 — Client Proposal PDF + PPTX (Task #122)
 
 - **Checkpoint:** `9cce1eb8fb12fa41337424f421810dd469be2515`

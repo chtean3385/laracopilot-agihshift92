@@ -101,8 +101,8 @@
     $hsnRoom = $s->hsn_room ?? '996311';
     $hsnFood = $s->hsn_food ?? '996331';
     $hotelName = $s->resort_name ?? 'Hotel';
-    $hasLogo   = $s && $s->logo && file_exists(public_path('storage/' . $s->logo));
-    $logoUrl   = $hasLogo ? asset('storage/' . $s->logo) : null;
+    $logoUrl   = $s?->logo_url;
+    $hasLogo   = !empty($logoUrl);
     $initials  = implode('', array_map(fn($w) => strtoupper($w[0]), array_filter(explode(' ', $hotelName))));
     $initials  = substr($initials, 0, 3);
 @endphp

@@ -52,9 +52,9 @@
         <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-4 sm:px-8 sm:py-6 text-white">
             <div class="flex items-start justify-between flex-wrap gap-3">
                 <div class="flex items-center gap-4">
-                    @if($settings && $settings->logo && file_exists(public_path('storage/' . $settings->logo)))
+                    @if($settings && $settings->logo_url)
                     <div class="w-14 h-14 bg-white rounded-xl flex items-center justify-center p-1 flex-shrink-0">
-                        <img src="{{ asset('storage/' . $settings->logo) }}" alt="Logo" class="max-w-full max-h-full object-contain">
+                        <img src="{{ $settings->logo_url }}" alt="Logo" class="max-w-full max-h-full object-contain">
                     </div>
                     @endif
                     <div>

@@ -15,8 +15,8 @@
 <body>
     <div style="width:100%;max-width:420px;">
         <div style="text-align:center;margin-bottom:32px;">
-            @if($settings && $settings->logo)
-            <img src="{{ asset('storage/' . $settings->logo) }}" alt="{{ $settings->resort_name }}"
+            @if($settings && $settings->logo_url)
+            <img src="{{ $settings->logo_url }}" alt="{{ $settings->resort_name }}"
                 style="width:72px;height:72px;border-radius:20px;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,.4);margin-bottom:16px;">
             @else
             <img src="/hotel-crm-logo.png" alt="Hotel CRM"
