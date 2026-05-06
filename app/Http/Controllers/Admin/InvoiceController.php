@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Setting;
 use App\Services\ActivityLogger;
 use App\Services\PermissionService;
@@ -158,6 +159,30 @@ class InvoiceController extends Controller
                 'balance_due'    => $balance,
                 'payment_status' => $request->status,
             ]);
+
+            // Sync payment records: if the invoice paid_amount changed, create an
+            // adjustment payment for the delta so the payments table stays accurate.
+            $booking        = $invoice->booking;
+            $existingPaid   = $booking->payments()->where('status', 'completed')->sum('amount');
+            $delta          = round($paid - $existingPaid, 2);
+
+            if (abs($delta) >= 1) {
+                $hotelName = session('crm_hotel_name', 'HOT');
+                $prefix    = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $hotelName), 0, 3));
+                $txnId     = $prefix . '-TXN-' . strtoupper(substr(uniqid(), -8));
+
+                Payment::create([
+                    'hotel_id'       => $booking->hotel_id,
+                    'booking_id'     => $booking->id,
+                    'customer_id'    => $booking->customer_id,
+                    'amount'         => abs($delta),
+                    'payment_method' => 'cash',
+                    'payment_type'   => $delta > 0 ? 'adjustment' : 'refund',
+                    'status'         => 'completed',
+                    'transaction_id' => $txnId,
+                    'notes'          => ($delta > 0 ? 'Additional payment' : 'Refund/reduction') . ' via invoice edit — ' . $invoice->invoice_number,
+                ]);
+            }
         }
 
         ActivityLogger::log('Updated', 'Invoice', 'Edited invoice ' . $invoice->invoice_number . ' — total ₹' . number_format($total, 2) . ', paid ₹' . number_format($paid, 2));
