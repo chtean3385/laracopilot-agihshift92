@@ -172,10 +172,16 @@
                            min="0" step="0.01" placeholder="Leave blank to calculate at check-out">
                     <p class="text-xs text-amber-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Set a fixed total to override hourly billing, or leave blank to calculate at check-out.</p>
                     @else
-                    <input type="number" name="custom_total" value="{{ old('custom_total', $booking->total_amount) }}"
+                    <input type="number" name="custom_total" value="{{ old('custom_total', $booking->price_overridden ? $booking->total_amount : '') }}"
                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                           min="0" step="0.01">
-                    <p class="text-xs text-gray-400 mt-1">Edit to override the calculated price.</p>
+                           min="0" step="0.01" placeholder="{{ $booking->price_overridden ? '' : 'Leave blank to use room rate' }}">
+                    <p class="text-xs text-gray-400 mt-1">
+                        @if($booking->price_overridden)
+                            <i class="fas fa-pen text-amber-500 mr-1"></i>Custom price active — edit to change, clear to revert to room rate.
+                        @else
+                            Edit to override the room rate (₹{{ number_format($booking->room?->price_per_night ?? 0) }}/night). Leave blank to use standard rate.
+                        @endif
+                    </p>
                     @endif
                 </div>
                 <div>

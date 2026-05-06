@@ -635,9 +635,17 @@ class BookingController extends Controller
         $calculatedTotal = $updateData['total_amount'];
         $advAmt          = (float) ($updateData['advance_payment'] ?? $advancePayment);
         if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
+            // A new custom price was explicitly submitted
             $updateData['total_amount']     = $customTotal;
             $updateData['balance_due']      = max(0, $customTotal - $advAmt);
             $updateData['payment_status']   = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
+            $updateData['price_overridden'] = true;
+        } elseif ($customTotal <= 0 && $booking->price_overridden) {
+            // No new custom total submitted but booking already has a custom price — preserve it exactly
+            $existingTotal = (float) $booking->total_amount;
+            $updateData['total_amount']     = $existingTotal;
+            $updateData['balance_due']      = max(0, $existingTotal - $advAmt);
+            $updateData['payment_status']   = $advAmt >= $existingTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
             $updateData['price_overridden'] = true;
         } else {
             $updateData['price_overridden'] = false;
