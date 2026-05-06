@@ -317,7 +317,7 @@
                             <div class="flex items-center gap-3 pt-1 border-t border-violet-50">
                                 <i class="fas fa-pen text-violet-300 text-xs"></i>
                                 <span class="text-xs text-gray-400">Override price:</span>
-                                <input type="number" id="slotCustomTotalInput" step="0.01" min="0"
+                                <input type="number" id="slotCustomTotalInput" step="1" min="0"
                                        class="flex-1 text-sm font-bold text-violet-600 bg-transparent border-b border-dashed border-violet-300 focus:outline-none focus:border-violet-500 py-0.5 text-center"
                                        placeholder="Enter custom total to override">
                                 <button type="button" id="resetSlotTotalBtn" onclick="resetSlotCustomTotal()"
@@ -368,7 +368,7 @@
                             </div>
                             <div class="flex items-center gap-3">
                                 <label class="text-sm font-semibold text-gray-600 whitespace-nowrap">Custom Total (₹)</label>
-                                <input type="number" id="hourCustomTotalInput" step="0.01" min="0"
+                                <input type="number" id="hourCustomTotalInput" step="1" min="0"
                                        class="form-input flex-1 text-amber-700 font-bold"
                                        placeholder="Leave blank to calculate at check-out">
                                 <button type="button" id="resetHourTotalBtn" onclick="resetHourCustomTotal()"
@@ -454,7 +454,7 @@
                         </div>
                         <div>
                             <div class="text-sm text-gray-500">Total Amount</div>
-                            <input type="number" id="customTotalInput" name="custom_total" step="0.01" min="0"
+                            <input type="number" id="customTotalInput" name="custom_total" step="1" min="0"
                                    value="{{ old('custom_total') }}"
                                    class="text-2xl font-bold text-cyan-600 bg-transparent border-b-2 border-dashed border-cyan-300 w-full text-center focus:outline-none focus:border-cyan-500 py-0.5"
                                    placeholder="—">
@@ -729,10 +729,10 @@
         // Sync to the slot custom override input (unless user manually overrode)
         if (!window._slotCustomTotalDirty) {
             const slotCustom = document.getElementById('slotCustomTotalInput');
-            if (slotCustom) slotCustom.value = total > 0 ? total.toFixed(2) : '';
+            if (slotCustom) slotCustom.value = total > 0 ? Math.round(total) : '';
             // Also sync to the submittable hidden input
             const hiddenInp = document.getElementById('customTotalInput');
-            if (hiddenInp) hiddenInp.value = total > 0 ? total.toFixed(2) : '';
+            if (hiddenInp) hiddenInp.value = total > 0 ? Math.round(total) : '';
         }
         const btn = document.getElementById('resetSlotTotalBtn');
         if (btn) btn.classList.toggle('hidden', !window._slotCustomTotalDirty);
@@ -858,7 +858,7 @@
         const inp = document.getElementById('customTotalInput');
         const btn = document.getElementById('resetTotalBtn');
         if (!window._customTotalDirty && inp) {
-            inp.value = val > 0 ? val.toFixed(2) : '';
+            inp.value = val > 0 ? Math.round(val) : '';
         }
         if (btn) btn.classList.toggle('hidden', !window._customTotalDirty);
     }
@@ -1005,7 +1005,7 @@
             const opt   = sel.options[sel.selectedIndex];
             const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
             const inp   = document.getElementById('customTotalInput');
-            if (inp && !inp._whUserEdited && price > 0) inp.value = price.toFixed(2);
+            if (inp && !inp._whUserEdited && price > 0) inp.value = Math.round(price);
         }
     }
 
