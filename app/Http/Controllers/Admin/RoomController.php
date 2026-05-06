@@ -59,7 +59,7 @@ class RoomController extends Controller
         $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())],
-            'type'           => 'required|in:standard,deluxe,suite,villa,penthouse,cottage,bhk',
+            'type'           => 'required|in:standard,deluxe,non-ac,suite,villa,penthouse,cottage,bhk',
             'capacity'       => 'required|integer|min:1|max:50',
             'price_per_night'=> $priceRequired,
             'hourly_rate'    => 'nullable|numeric|min:0',
@@ -124,7 +124,7 @@ class RoomController extends Controller
         $priceRequired = $pricingType === 'per_night' ? 'required|numeric|min:0' : 'nullable|numeric|min:0';
         $validated = $request->validate([
             'room_number'    => ['required', 'string', Rule::unique('rooms', 'room_number')->where('hotel_id', app(HotelContext::class)->getHotel())->ignore($id)],
-            'type'           => 'required|in:standard,deluxe,suite,villa,penthouse,cottage,bhk',
+            'type'           => 'required|in:standard,deluxe,non-ac,suite,villa,penthouse,cottage,bhk',
             'capacity'       => 'required|integer|min:1|max:50',
             'price_per_night'=> $priceRequired,
             'hourly_rate'    => 'nullable|numeric|min:0',
