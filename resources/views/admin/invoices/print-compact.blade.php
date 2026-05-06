@@ -48,7 +48,7 @@
 
     $nights     = (int)($b->nights ?? 1);
     $priceNight = (float)($room->price_per_night ?? 0);
-    $roomBase   = $nights * $priceNight;
+    $isWH       = (bool)($b->is_whole_hotel ?? false);
 
     $extraCharges = $b->extraCharges ?? collect();
     $extraFood    = 0;
@@ -57,9 +57,19 @@
         if (in_array($ec->category, ['food','drink'])) $extraFood += (float)$ec->total_price;
         else $extraService += (float)$ec->total_price;
     }
-    if ($b->meal_cost) $extraFood += (float)$b->meal_cost;
-    $extraBedBase = $b->extra_beds ? (float)($b->extra_bed_cost ?? 0) : 0;
-    $extraService += $extraBedBase;
+
+    if ($isWH || ($b->price_overridden ?? false)) {
+        // Custom price covers room + meal + extra bed; only separately-billed extra charges are outside it
+        $extraChargesTableTotal = $extraFood + $extraService;
+        $roomBase   = max(0, (float)$b->total_amount - $extraChargesTableTotal);
+        $priceNight = $roomBase;  // effective rate for display
+        $extraBedBase = 0;
+    } else {
+        if ($b->meal_cost) $extraFood += (float)$b->meal_cost;
+        $extraBedBase = $b->extra_beds ? (float)($b->extra_bed_cost ?? 0) : 0;
+        $extraService += $extraBedBase;
+        $roomBase = $nights * $priceNight;
+    }
 
     $roomTotal   = $roomBase + $extraService;
     $roomCgst    = round($roomTotal * $cgstRate / 100, 2);

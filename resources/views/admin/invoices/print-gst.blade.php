@@ -76,7 +76,7 @@
 
     $nights     = (int)($b->nights ?? 1);
     $priceNight = (float)($room->price_per_night ?? 0);
-    $roomBase   = $nights * $priceNight;
+    $isWH       = (bool)($b->is_whole_hotel ?? false);
 
     // Extra charges: food category → food tax, others → room tax
     $extraCharges = $b->extraCharges ?? collect();
@@ -90,13 +90,24 @@
         }
     }
 
-    // Meal plan charges from booking
-    $mealBase = 0;
-    if ($b->meal_cost) $mealBase = (float)$b->meal_cost;
-    $extraFood += $mealBase;
+    if ($isWH || ($b->price_overridden ?? false)) {
+        // Custom price covers room + meal + extra bed; only separately-billed extra charges are outside it
+        $extraChargesTableTotal = $extraFood + $extraService;
+        $roomBase   = max(0, (float)$b->total_amount - $extraChargesTableTotal);
+        $priceNight = $roomBase;  // effective rate for line-item display
+        $mealBase   = 0;
+        $extraBedBase = 0;
+    } else {
+        // Standard pricing: tariff × nights, with meal and extra bed added separately
+        $mealBase = 0;
+        if ($b->meal_cost) $mealBase = (float)$b->meal_cost;
+        $extraFood += $mealBase;
 
-    $extraBedBase = $b->extra_beds ? (float)($b->extra_bed_cost ?? 0) : 0;
-    $extraService += $extraBedBase;
+        $extraBedBase = $b->extra_beds ? (float)($b->extra_bed_cost ?? 0) : 0;
+        $extraService += $extraBedBase;
+
+        $roomBase = $nights * $priceNight;
+    }
 
     // Room line: base + service charges together taxed at room rate
     $roomTotal     = $roomBase + $extraService;
