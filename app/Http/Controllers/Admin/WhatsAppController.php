@@ -290,20 +290,21 @@ class WhatsAppController extends Controller
             return '{{' . $varMap[$m[1]] . '}}';
         }, $body);
 
-        // Meta rule: no variable at the start or end of ANY line
-        $varPattern = '/^\s*\{\{\d+\}\}|^\{\{\d+\}\}/m';   // starts a line
-        $varEndPat  = '/\{\{\d+\}\}\s*$/m';                  // ends a line
-        $badLines   = [];
-        foreach (explode("\n", $metaBody) as $i => $line) {
-            $trimLine = trim($line);
-            if (preg_match('/^\{\{\d+\}\}/', $trimLine) || preg_match('/\{\{\d+\}\}$/', $trimLine)) {
-                $badLines[] = 'Line ' . ($i + 1) . ': "' . $line . '"';
-            }
+        // Meta rule: no variable at the very start of the first line or very end of the last line
+        $nonEmptyLines = array_values(array_filter(explode("\n", $metaBody), fn($l) => trim($l) !== ''));
+        $firstLine     = isset($nonEmptyLines[0])  ? trim($nonEmptyLines[0])  : '';
+        $lastLine      = isset($nonEmptyLines[count($nonEmptyLines) - 1]) ? trim($nonEmptyLines[count($nonEmptyLines) - 1]) : '';
+        $errors        = [];
+        if (preg_match('/^\{\{\d+\}\}/', $firstLine)) {
+            $errors[] = 'The first line cannot start with a variable — add text before it.';
         }
-        if (!empty($badLines)) {
+        if (preg_match('/\{\{\d+\}\}$/', $lastLine)) {
+            $errors[] = 'The last line cannot end with a variable — add text after it.';
+        }
+        if (!empty($errors)) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Meta rejects variables at the start or end of a line. Fix these line(s) in your template — add text before/after the variable: ' . implode('; ', $badLines),
+                'error'   => 'Meta rejects variables at the very start or end of the template body. ' . implode(' ', $errors),
             ]);
         }
 
