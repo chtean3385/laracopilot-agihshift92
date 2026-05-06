@@ -85,11 +85,9 @@
     $totalSgst      = $roomSgst + $foodSgst;
     $totalWithTax   = $totalBeforeTax + $totalCgst + $totalSgst;
     $roundOff       = round($totalWithTax) - $totalWithTax;
-    $grandTotal     = round($totalWithTax);
-
-    $payments    = $b->payments ?? collect();
-    $advancePaid = $payments->where('status','completed')->sum('amount');
-    $balanceDue  = max(0, $grandTotal - $advancePaid);
+    $grandTotal     = (int) $invoice->total_amount;
+    $advancePaid    = (float) $invoice->paid_amount;
+    $balanceDue     = max(0, $grandTotal - $advancePaid);
 
     if (!function_exists('cmpNumberToWords')) {
         function cmpNumberToWords($n) {

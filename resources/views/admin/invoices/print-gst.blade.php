@@ -126,11 +126,8 @@
     $totalWithTax   = $totalBeforeTax + $totalCgst + $totalSgst;
 
     $roundOff      = round($totalWithTax) - $totalWithTax;
-    $grandTotal    = round($totalWithTax);
-
-    // Advance payments from booking
-    $payments      = $b->payments ?? collect();
-    $advancePaid   = $payments->where('status','completed')->sum('amount');
+    $grandTotal    = (int) $invoice->total_amount;
+    $advancePaid   = (float) $invoice->paid_amount;
     $balanceDue    = max(0, $grandTotal - $advancePaid);
 
     // Amount in words helper
