@@ -62,7 +62,8 @@
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Balance Due</span>
                     @php
-                        $coRoomPT = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+                        $coRoomPT  = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+                        $coTaxRate = $taxRateMap[$booking->hotel_id] ?? 0;
                         if ($coRoomPT !== 'per_hour') {
                             $coExtraCharges = $booking->extraCharges->sum('total_price');
                             if ($booking->price_overridden || $booking->is_whole_hotel) {
@@ -75,11 +76,11 @@
                                               + (float)($booking->meal_cost ?? 0)
                                               + (float)($booking->extra_bed_cost ?? 0);
                             }
-                            $coTrueBase  = $coBase + $coExtraCharges;
-                            $coGst       = round($coTrueBase * ($taxRate / 100), 2);
+                            $coTrueBase   = $coBase + $coExtraCharges;
+                            $coGst        = round($coTrueBase * ($coTaxRate / 100), 2);
                             $coGrandTotal = $coTrueBase + $coGst;
-                            $coPaid      = $booking->payments->where('status', 'completed')->sum('amount');
-                            $coBalance   = max(0, $coGrandTotal - $coPaid);
+                            $coPaid       = $booking->payments->where('status', 'completed')->sum('amount');
+                            $coBalance    = max(0, $coGrandTotal - $coPaid);
                         }
                     @endphp
                     @if($coRoomPT === 'per_hour')

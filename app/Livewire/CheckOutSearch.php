@@ -41,11 +41,15 @@ class CheckOutSearch extends Component
 
         $pendingCheckouts = $query->paginate(12);
 
-        $hotelId  = session('crm_hotel_id');
-        $settings = Setting::where('hotel_id', $hotelId)->first();
-        $taxRate  = ($settings && !empty($settings->gst_number) && $settings->tax_rate > 0)
-                    ? (float) $settings->tax_rate : 0;
+        // Build a per-hotel tax-rate map so the card shows the correct GST-inclusive balance
+        // even when a super-admin is viewing bookings that span multiple hotels.
+        $hotelIds    = $pendingCheckouts->pluck('hotel_id')->unique()->filter()->values();
+        $settingsMap = Setting::whereIn('hotel_id', $hotelIds)->get()->keyBy('hotel_id');
+        $taxRateMap  = $hotelIds->mapWithKeys(function ($hid) use ($settingsMap) {
+            $s = $settingsMap->get($hid);
+            return [$hid => ($s && !empty($s->gst_number) && $s->tax_rate > 0) ? (float) $s->tax_rate : 0];
+        })->toArray();
 
-        return view('livewire.check-out-search', compact('pendingCheckouts', 'taxRate'));
+        return view('livewire.check-out-search', compact('pendingCheckouts', 'taxRateMap'));
     }
 }
