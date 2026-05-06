@@ -318,7 +318,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="form-label">Final Payment (₹){{ $taxRate > 0 ? ' incl. GST' : '' }}</label>
-                    <input type="number" name="final_payment" value="{{ $gstBalanceDue }}" min="0" step="0.01" class="form-input" id="finalPaymentInput">
+                    <input type="number" name="final_payment" value="{{ round($gstBalanceDue) }}" min="0" step="1" class="form-input" id="finalPaymentInput">
                     <p style="font-size:12px;color:#94a3b8;margin-top:4px;">Pre-filled with balance due{{ $taxRate > 0 ? ' (incl. ' . $taxRate . '% GST)' : '' }}. Adjust if needed.</p>
                 </div>
                 <div>
@@ -517,7 +517,7 @@ function recalcAndSetPayment(nights) {
     var totalPaid = {{ $totalPaid }};
     var balance   = Math.max(0, grand - totalPaid);
     var payEl     = document.getElementById('finalPaymentInput');
-    if (payEl) payEl.value = balance.toFixed(2);
+    if (payEl) payEl.value = Math.round(balance);
     var nightEl = document.getElementById('nightsDisplay');
     if (nightEl) nightEl.textContent = nights;
 }
@@ -685,7 +685,7 @@ function showCoUpiQr() {
                 document.getElementById('coUpiQrBody').innerHTML = '<p style="color:#ef4444;font-weight:600;padding:16px 0;">' + cfg.error + '</p>';
                 return;
             }
-            var amt    = parseFloat(_coUpiBalance).toFixed(2);
+            var amt    = Math.round(parseFloat(_coUpiBalance));
             var note   = 'Checkout ' + _coBookingNum;
             var upiUrl = 'upi://pay?pa=' + encodeURIComponent(cfg.upi_id)
                        + '&pn=' + encodeURIComponent(cfg.upi_name)
@@ -799,7 +799,7 @@ function recalcHourlyTotal() {
     var gst      = _taxRate > 0 ? Math.round(roomCost * (_taxRate / 100) * 100) / 100 : 0;
     var grand    = roomCost + gst;
     if (totalEl) totalEl.textContent = '₹' + roomCost.toLocaleString('en-IN');
-    if (payEl) payEl.value = grand.toFixed(2);
+    if (payEl) payEl.value = Math.round(grand);
 }
 
 var overrideEl = document.getElementById('overrideHours');
