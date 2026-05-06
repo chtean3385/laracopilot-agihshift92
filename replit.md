@@ -70,3 +70,13 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **PostgreSQL Documentation:** `https://www.postgresql.org/docs/`
 - **WhatsApp Business Platform API:** `https://developers.facebook.com/docs/whatsapp/`
 - **Firebase Documentation:** `https://firebase.google.com/docs`
+
+## Release History
+
+| Date | Version | Checkpoint | What Changed |
+|------|---------|------------|--------------|
+| 2026-05-05 | v1.0.0 | `9cce1eb8` | Client proposal PDF + PPTX export |
+| 2026-05-05 | v1.0.1 | `5d8538a4` | Logo persists across deploys (base64 in DB); GST invoice print fixes; Compact invoice style; Mark Available bug fix |
+| 2026-05-05 | v1.0.2 | `43128628` | Deployment run command re-registered with Replit platform |
+| 2026-05-05 | v1.0.3 | `c2eff7fe` | Room type Non-AC fix — was silently rejected by validation on save |
+| 2026-05-06 | v1.0.4 | `0cd8824c` | Release history added to replit.md; deploy logging procedure enforced |
