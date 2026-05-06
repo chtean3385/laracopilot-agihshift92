@@ -53,6 +53,7 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **Coding style:** I prefer well-commented, maintainable code following Laravel conventions.
 - **Interaction:** Ask before making major changes to existing code or database schemas.
 - **Context:** Always consider the multi-tenant architecture and security implications for both hotel staff and platform administrators.
+- **MANDATORY — Release log (no reminder will be given):** After every production push, append a new row to the `## Release History` table at the bottom of this file. Format: `| YYYY-MM-DD | vX.Y.Z | \`short-sha\` | What changed |`. Increment the patch version each deploy. Do this as the very last step, after the checkpoint SHA is known.
 
 ## Gotchas
 - **Deployment `publicDir`:** Never set `publicDir` in `.replit`'s `[deployment]` block, as it breaks the Laravel web server.
