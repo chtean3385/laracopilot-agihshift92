@@ -117,16 +117,18 @@
 
         @php
         $variables = [
-            '{{guest_name}}'    => 'Guest full name',
-            '{{hotel_name}}'    => 'Resort/hotel name',
-            '{{room_number}}'   => 'Room number',
-            '{{room_type}}'     => 'Room type (e.g. Deluxe)',
-            '{{check_in_date}}' => 'Check-in date',
-            '{{check_out_date}}'=> 'Check-out date',
-            '{{booking_number}}'=> 'Booking reference',
-            '{{total_amount}}'  => 'Total bill amount (₹)',
-            '{{balance_due}}'   => 'Remaining balance (₹)',
-            '{{invoice_number}}'=> 'Invoice number',
+            '{{guest_name}}'           => 'Guest full name',
+            '{{hotel_name}}'           => 'Resort/hotel name',
+            '{{room_number}}'          => 'Room number',
+            '{{room_type}}'            => 'Room type (e.g. Deluxe)',
+            '{{check_in_date}}'        => 'Check-in date',
+            '{{check_out_date}}'       => 'Check-out date',
+            '{{booking_number}}'       => 'Booking reference',
+            '{{total_amount}}'         => 'Total bill amount (₹)',
+            '{{balance_due}}'          => 'Remaining balance (₹)',
+            '{{invoice_number}}'       => 'Invoice number',
+            '{{hotel_contact_number}}' => 'Hotel contact / 2nd number',
+            '{{hotel_location}}'       => 'Google Maps link',
         ];
         @endphp
 
