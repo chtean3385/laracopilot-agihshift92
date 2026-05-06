@@ -210,19 +210,24 @@ class CheckOutController extends Controller
         $extraChargesTotal = $booking->extraCharges->sum('total_price');
         $pricingTypeProc   = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
         if ($pricingTypeProc === 'per_night' && !$booking->is_whole_hotel) {
-            $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
-            $checkoutDateProc = Carbon::parse($booking->check_out_date)->startOfDay();
-            $nightsProc = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
-            // override_nights is set for both early checkout (fewer nights) and overstay (more nights)
-            if ($request->filled('override_nights') && (int)$request->override_nights >= 1) {
-                $nightsProc = (int)$request->override_nights;
+            if ($booking->price_overridden) {
+                // Custom price was set at booking time — honour it exactly, never recalculate from room tariff
+                $trueBase = (float) $booking->total_amount;
+            } else {
+                $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+                $checkoutDateProc = Carbon::parse($booking->check_out_date)->startOfDay();
+                $nightsProc = max(1, $checkinDateProc->diffInDays($checkoutDateProc));
+                // override_nights is set for both early checkout (fewer nights) and overstay (more nights)
+                if ($request->filled('override_nights') && (int)$request->override_nights >= 1) {
+                    $nightsProc = (int)$request->override_nights;
+                }
+                $trueBase = $nightsProc * ($booking->room?->price_per_night ?? 0)
+                            + (float)($booking->meal_cost ?? 0)
+                            + (float)($booking->extra_bed_cost ?? 0)
+                            + $extraChargesTotal;
+                // Persist updated total so the invoice reflects the actual stay duration
+                $booking->update(['total_amount' => $trueBase]);
             }
-            $trueBase = $nightsProc * ($booking->room?->price_per_night ?? 0)
-                        + (float)($booking->meal_cost ?? 0)
-                        + (float)($booking->extra_bed_cost ?? 0)
-                        + $extraChargesTotal;
-            // Persist updated total on the booking so the invoice reflects actual stay
-            $booking->update(['total_amount' => $trueBase - $extraChargesTotal + $extraChargesTotal]);
         } else {
             // per_hour: total_amount updated above; per_slot: total_amount set at booking time (extra charges already incremented)
             $trueBase = (float) $booking->total_amount;
