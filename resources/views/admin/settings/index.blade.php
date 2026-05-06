@@ -163,11 +163,11 @@
                 <p class="text-xs text-gray-400 mb-4">Required for GST Tax Invoice format. Also printed on bank transfer receipts.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="form-label">Second Contact Number <span class="text-gray-400 font-normal text-xs">(used as <code>{{hotel_contact_number}}</code> in WhatsApp)</span></label>
+                        <label class="form-label">Second Contact Number <span class="text-gray-400 font-normal text-xs">(used as <code>@{{hotel_contact_number}}</code> in WhatsApp)</span></label>
                         <input type="text" name="contact_number" value="{{ old('contact_number', $settings->contact_number ?? '') }}" class="form-input" placeholder="e.g. +91 98765 43210">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="form-label">Hotel Location (Google Maps Link) <span class="text-gray-400 font-normal text-xs">(used as <code>{{hotel_location}}</code> in WhatsApp)</span></label>
+                        <label class="form-label">Hotel Location (Google Maps Link) <span class="text-gray-400 font-normal text-xs">(used as <code>@{{hotel_location}}</code> in WhatsApp)</span></label>
                         <input type="url" name="hotel_location" value="{{ old('hotel_location', $settings->hotel_location ?? '') }}" class="form-input" placeholder="https://maps.app.goo.gl/...">
                     </div>
                     <div>
