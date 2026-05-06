@@ -81,3 +81,4 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 | 2026-05-05 | v1.0.2 | `43128628` | Deployment run command re-registered with Replit platform |
 | 2026-05-05 | v1.0.3 | `c2eff7fe` | Room type Non-AC fix — was silently rejected by validation on save |
 | 2026-05-06 | v1.0.4 | `0cd8824c` | Release history added to replit.md; deploy logging procedure enforced |
+| 2026-05-06 | v1.0.5 | `af39272d` | Invoice edit back-calculates pre-tax room tariff so GST bill line items are consistent with edited total; deployment run command registered |
