@@ -139,7 +139,7 @@ class InvoiceController extends Controller
             'notes'        => 'nullable|string|max:1000',
         ]);
 
-        $invoice     = Invoice::with('booking')->findOrFail($id);
+        $invoice     = Invoice::with(['booking.extraCharges'])->findOrFail($id);
         $total       = (float) $request->total_amount;
         $paid        = (float) $request->paid_amount;
         $balance     = max(0, $total - $paid);
@@ -154,7 +154,38 @@ class InvoiceController extends Controller
         ]);
 
         if ($invoice->booking) {
+            // Back-calculate the pre-tax room tariff from the new GST-inclusive total
+            // so that all print views (which calculate from booking data) show consistent line items.
+            $s           = Setting::where('hotel_id', $invoice->booking->hotel_id)->first();
+            $taxRate     = (float)($s->tax_rate ?? 0);
+            $foodTaxRate = (float)($s->food_tax_rate ?? 5);
+            $hasGst      = $s && $s->gst_number && $taxRate > 0;
+
+            // Split extra charges into food (food tax rate) vs service (room tax rate)
+            $extraFood    = 0;
+            $extraService = 0;
+            foreach ($invoice->booking->extraCharges ?? [] as $ec) {
+                if (in_array($ec->category, ['food', 'drink'])) {
+                    $extraFood += (float)$ec->total_price;
+                } else {
+                    $extraService += (float)$ec->total_price;
+                }
+            }
+
+            if ($hasGst) {
+                // Reverse: total = (roomBase + extraService)*(1+taxRate/100) + extraFood*(1+foodTaxRate/100)
+                $foodWithTax        = $extraFood * (1 + $foodTaxRate / 100);
+                $roomAndServicePre  = ($total - $foodWithTax) / (1 + $taxRate / 100);
+                $roomBase           = $roomAndServicePre - $extraService;
+                $newBookingTotal    = round(max(0, $roomBase) + $extraFood + $extraService, 2);
+            } else {
+                // No GST: total is already pre-tax
+                $newBookingTotal = $total;
+            }
+
             $invoice->booking->update([
+                'total_amount'    => $newBookingTotal,
+                'price_overridden' => true,
                 'balance_due'    => $balance,
                 'payment_status' => $request->status,
             ]);

@@ -85,7 +85,7 @@
     $totalSgst      = $roomSgst + $foodSgst;
     $totalWithTax   = $totalBeforeTax + $totalCgst + $totalSgst;
     $roundOff       = round($totalWithTax) - $totalWithTax;
-    $grandTotal     = (int) $invoice->total_amount;
+    $grandTotal     = round($totalWithTax);
     $payments       = $b->payments ?? collect();
     $advancePaid    = (float) $invoice->paid_amount;
     $balanceDue     = max(0, $grandTotal - $advancePaid);

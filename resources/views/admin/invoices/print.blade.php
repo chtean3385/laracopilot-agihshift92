@@ -180,7 +180,7 @@
                 $foodTaxRate  = $settings->food_tax_rate ?? 5;
                 $foodGst      = ($settings && $settings->gst_number && $prtFoodBase > 0) ? $prtFoodBase * ($foodTaxRate / 100) : 0;
                 $gstAmount    = $roomGst + $foodGst;
-                $grandTotal   = (float) $invoice->total_amount;
+                $grandTotal   = $prtSubtotal + $gstAmount;
                 $displayBalance = max(0, $grandTotal - $invoice->paid_amount);
                 $overpayment    = max(0, $invoice->paid_amount - $grandTotal);
             @endphp

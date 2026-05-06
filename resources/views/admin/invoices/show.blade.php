@@ -18,7 +18,8 @@
         $_mealPre    = (float)($invoice->booking->meal_cost ?? 0);
         $_bedPre     = $invoice->booking->extra_beds > 0 ? (float)($invoice->booking->extra_bed_cost ?? 0) : 0;
         $_preBase    = $_roomPre + $_mealPre + $_bedPre + $_ext2;
-        $previewGrand   = (float) $invoice->total_amount;
+        $previewGst     = ($settings && $settings->gst_number) ? round($_preBase * ((float)($settings->tax_rate ?? 0) / 100), 2) : 0;
+        $previewGrand   = $_preBase + $previewGst;
         $previewBalance = max(0, $previewGrand - $invoice->paid_amount);
     @endphp
     <div class="flex items-center justify-between gap-3">
@@ -179,7 +180,7 @@
                 $foodTaxRate     = $settings->food_tax_rate ?? 5;
                 $foodGst         = ($settings && $settings->gst_number && $invFoodBase > 0) ? round($invFoodBase * ($foodTaxRate / 100), 2) : 0;
                 $gstAmount       = $roomGst + $foodGst;
-                $grandTotal      = (float) $invoice->total_amount;
+                $grandTotal      = $invSubtotal + $gstAmount;
                 $displayBalance  = max(0, $grandTotal - $invoice->paid_amount);
                 $overpayment     = max(0, $invoice->paid_amount - $grandTotal);
             @endphp
