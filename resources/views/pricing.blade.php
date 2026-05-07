@@ -400,7 +400,8 @@
                 <div class="ms-track" id="msTrack">
                     <div class="ms-slide"><img src="/images/slider/slide-01.png" alt="Room Management" loading="lazy"></div>
                     <div class="ms-slide"><img src="/images/slider/slide-02.png" alt="Dashboard" loading="lazy"></div>
-                    {{-- Add more slides here: <div class="ms-slide"><img src="/images/slider/slide-03.png" alt="..."></div> --}}
+                    <div class="ms-slide"><img src="/images/slider/slide-03.png" alt="Bookings" loading="lazy"></div>
+                    {{-- Add more slides here: <div class="ms-slide"><img src="/images/slider/slide-04.png" alt="..."></div> --}}
                 </div>
                 {{-- Arrows --}}
                 <button class="ms-arrow ms-prev" onclick="msMove(-1)" aria-label="Previous">&#8249;</button>
