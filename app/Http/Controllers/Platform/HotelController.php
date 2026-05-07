@@ -1145,8 +1145,6 @@ class HotelController extends Controller
             ],
         ];
 
-        $templates = array_slice($templates, 0, 3, true);
-
         return $templates;
     }
 
@@ -1228,37 +1226,14 @@ class HotelController extends Controller
             $templateLang = $templates[$templateKey]['language'];
         }
 
-        // Detect how many positional {{N}} parameters the template needs.
-        // Look it up from the DB first; fall back to 2 for legacy templates.
-        $dashboardUrl   = 'https://resort.dreamstechnology.in/';
-        $dbTemplate     = DB::table('whatsapp_templates')
-            ->whereNull('hotel_id')
-            ->where('template_name', $templateName)
-            ->first(['message_body']);
-        $paramCount = 2; // default for CRM Update / Login Reminder
-        if ($dbTemplate && preg_match_all('/\{\{(\d+)\}\}/', $dbTemplate->message_body ?? '', $m)) {
-            $paramCount = (int) max($m[1]);
-        }
-
-        // Base values: {{1}}=hotel name, {{2}}=dashboard URL (fallback for legacy 2-param templates).
-        // User-provided extra_params override/extend from {{2}} onwards for templates with more params.
-        $paramValues = [1 => $hotel->name, 2 => $dashboardUrl, 3 => $request->input('extra_params.3', '')];
-        $extraParams = $request->input('extra_params', []);
-        foreach ($extraParams as $idx => $val) {
-            $idx = (int) $idx;
-            if ($idx >= 2 && $idx <= 20) {
-                $paramValues[$idx] = (string) $val;
-            }
-        }
-
-        $bodyParameters = [];
-        for ($i = 1; $i <= max($paramCount, 1); $i++) {
-            $bodyParameters[] = ['type' => 'text', 'text' => $paramValues[$i] ?? ''];
-        }
-
-        $components = $paramCount > 0
-            ? [['type' => 'body', 'parameters' => $bodyParameters]]
-            : [];
+        $dashboardUrl = 'https://resort.dreamstechnology.in/';
+        $components = [[
+            'type' => 'body',
+            'parameters' => [
+                ['type' => 'text', 'text' => $hotel->name],
+                ['type' => 'text', 'text' => $dashboardUrl],
+            ],
+        ]];
 
         $phone = PhoneHelper::forWhatsApp($hotel->phone);
 
