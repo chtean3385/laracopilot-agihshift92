@@ -35,7 +35,17 @@ class CheckInController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $booking = Booking::with(['customer', 'room', 'payments', 'bookingGuests'])->findOrFail($bookingId);
-        return view('admin.checkin.show', compact('booking'));
+
+        // Detect sibling bookings: same guest, same dates, still confirmed
+        $siblingBookings = Booking::with('room')
+            ->where('customer_id', $booking->customer_id)
+            ->whereDate('check_in_date', $booking->check_in_date->toDateString())
+            ->whereDate('check_out_date', $booking->check_out_date->toDateString())
+            ->where('status', 'confirmed')
+            ->where('id', '!=', $booking->id)
+            ->get();
+
+        return view('admin.checkin.show', compact('booking', 'siblingBookings'));
     }
 
     public function process(Request $request, $bookingId)
@@ -45,16 +55,39 @@ class CheckInController extends Controller
             'additional_payment' => 'nullable|numeric|min:0',
             'payment_method'     => 'nullable|string',
             'notes'              => 'nullable|string',
+            'check_in_all'       => 'nullable|boolean',
         ]);
         $booking = Booking::with('room')->findOrFail($bookingId);
-        $booking->update([
-            'status'           => 'checked_in',
-            'actual_checkin_at'=> now(),
-            'checkin_notes'    => $request->notes,
-        ]);
-        if ($booking->room) {
-            $booking->room->update(['status' => 'occupied']);
+
+        // Collect all bookings to process (primary + siblings if requested)
+        $allBookings = collect([$booking]);
+        if ($request->boolean('check_in_all')) {
+            $siblings = Booking::with('room')
+                ->where('customer_id', $booking->customer_id)
+                ->whereDate('check_in_date', $booking->check_in_date->toDateString())
+                ->whereDate('check_out_date', $booking->check_out_date->toDateString())
+                ->where('status', 'confirmed')
+                ->where('id', '!=', $booking->id)
+                ->get();
+            $allBookings = $allBookings->concat($siblings);
         }
+
+        $hotelPrefix = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
+        $checkedInRooms = [];
+
+        foreach ($allBookings as $b) {
+            $b->update([
+                'status'           => 'checked_in',
+                'actual_checkin_at'=> now(),
+                'checkin_notes'    => $request->notes,
+            ]);
+            if ($b->room) {
+                $b->room->update(['status' => 'occupied']);
+            }
+            $checkedInRooms[] = $b->is_whole_hotel ? 'Whole Hotel' : ($b->room?->room_number ?? '?');
+        }
+
+        // Apply payment only to the primary booking
         if ($request->additional_payment > 0) {
             Payment::create([
                 'booking_id'     => $booking->id,
@@ -64,7 +97,7 @@ class CheckInController extends Controller
                 'payment_type'   => 'advance',
                 'status'         => 'completed',
                 'notes'          => 'Payment at check-in',
-                'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
+                'transaction_id' => $hotelPrefix . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
             $totalPaid = $booking->advance_payment + $request->additional_payment;
             $booking->update([
@@ -73,10 +106,16 @@ class CheckInController extends Controller
                 'payment_status'  => $totalPaid >= $booking->total_amount ? 'paid' : 'partial',
             ]);
         }
+
         $booking->load('customer');
-        $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '?');
-        ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — Room ' . $roomLabel . ' (Booking #' . $booking->booking_number . ')');
+        $roomSummary = implode(', ', array_map(fn($r) => 'Room ' . $r, $checkedInRooms));
+        ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — ' . $roomSummary . ' (Booking #' . $booking->booking_number . ')');
         WhatsAppService::sendForEvent('checkin.done', $booking);
-        return redirect()->route('checkin.index')->with('success', 'Check-in completed for ' . $booking->customer->name . '!');
+
+        $successMsg = count($checkedInRooms) > 1
+            ? 'Check-in completed for ' . $booking->customer->name . ' — ' . count($checkedInRooms) . ' rooms checked in!'
+            : 'Check-in completed for ' . $booking->customer->name . '!';
+
+        return redirect()->route('checkin.index')->with('success', $successMsg);
     }
 }

@@ -740,6 +740,9 @@
                             $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
                         }
                         $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time & Slot', 'sub' => 'Manage time slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#0284c7)'];
+                        if (\App\Models\Module::isEnabled('slot-search-engine')) {
+                            $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Availability matrix', 'bg' => 'linear-gradient(135deg,#6366f1,#4f46e5)'];
+                        }
                         if (\App\Models\Module::isEnabled('ota_whatsapp_sync')) {
                             $otaShortcutSub = ($otaPendingCount ?? 0) > 0 ? ($otaPendingCount . ' pending review') : 'WhatsApp imports';
                             $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];

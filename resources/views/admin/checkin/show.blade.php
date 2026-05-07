@@ -76,6 +76,41 @@
         @endif
     </div>
 
+    {{-- ── Group check-in prompt ── --}}
+    @if($siblingBookings->isNotEmpty())
+    <div id="groupCheckinBanner" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:14px;padding:16px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:14px;">
+        <div style="width:38px;height:38px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-layer-group" style="color:#fff;font-size:15px;"></i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-size:14px;font-weight:800;color:#1e3a8a;margin-bottom:4px;">
+                This guest has {{ $siblingBookings->count() }} more room{{ $siblingBookings->count() > 1 ? 's' : '' }} booked for the same dates
+            </div>
+            <div style="font-size:12px;color:#3b82f6;margin-bottom:10px;">
+                @foreach($siblingBookings as $sib)
+                    <span style="display:inline-flex;align-items:center;gap:4px;background:#bfdbfe;color:#1e40af;padding:2px 9px;border-radius:999px;font-weight:700;margin-right:4px;margin-bottom:4px;">
+                        <i class="fas fa-door-open" style="font-size:10px;"></i>
+                        Room {{ $sib->room?->room_number ?? '?' }} &middot; {{ $sib->booking_number }}
+                    </span>
+                @endforeach
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" onclick="setCheckInAll(true)" id="btnCheckInAll"
+                    style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-check-double" style="margin-right:5px;"></i>Check In All {{ 1 + $siblingBookings->count() }} Rooms
+                </button>
+                <button type="button" onclick="setCheckInAll(false)" id="btnCheckInOne"
+                    style="padding:8px 16px;background:#fff;color:#2563eb;border:1.5px solid #93c5fd;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">
+                    This room only
+                </button>
+            </div>
+            <div id="groupCheckinNote" style="display:none;margin-top:8px;font-size:11px;font-weight:700;color:#16a34a;">
+                <i class="fas fa-check-circle" style="margin-right:3px;"></i>All rooms will be checked in together when you confirm.
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="ci-main-grid">
         <div class="ci-info-grid" style="margin-bottom:0;">
         {{-- Guest Details --}}
@@ -236,6 +271,7 @@
         <h3 style="font-size:14px;font-weight:800;color:#1e293b;margin:0 0 16px;"><i class="fas fa-sign-in-alt" style="color:#16a34a;margin-right:7px;"></i>Complete Check-In</h3>
         <form action="{{ route('checkin.process', $booking->id) }}" method="POST">
             @csrf
+            <input type="hidden" name="check_in_all" id="checkInAllField" value="0">
             <div class="ci-form-grid">
                 <div>
                     <label class="form-label">Payment at Check-In (₹)</label>
@@ -405,6 +441,28 @@
 <script>
 var ciBookingId = {{ $booking->id }};
 var ciCsrf     = document.querySelector('meta[name="csrf-token"]').content;
+
+/* ── Group check-in toggle ── */
+function setCheckInAll(all) {
+    document.getElementById('checkInAllField').value = all ? '1' : '0';
+    var btnAll  = document.getElementById('btnCheckInAll');
+    var btnOne  = document.getElementById('btnCheckInOne');
+    var note    = document.getElementById('groupCheckinNote');
+    if (!btnAll) return;
+    if (all) {
+        btnAll.style.background = '#1d4ed8';
+        btnAll.style.outline    = '2px solid #1e40af';
+        btnOne.style.background = '#fff';
+        btnOne.style.outline    = 'none';
+        if (note) note.style.display = 'block';
+    } else {
+        btnAll.style.background = '#2563eb';
+        btnAll.style.outline    = 'none';
+        btnOne.style.background = '#dbeafe';
+        btnOne.style.outline    = '2px solid #93c5fd';
+        if (note) note.style.display = 'none';
+    }
+}
 
 /* ── Add Guest Modal ── */
 function openAddGuestModal() {
