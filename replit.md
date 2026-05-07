@@ -82,3 +82,6 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 | 2026-05-05 | v1.0.3 | `c2eff7fe` | Room type Non-AC fix — was silently rejected by validation on save |
 | 2026-05-06 | v1.0.4 | `0cd8824c` | Release history added to replit.md; deploy logging procedure enforced |
 | 2026-05-06 | v1.0.5 | `af39272d` | Invoice edit back-calculates pre-tax room tariff so GST bill line items are consistent with edited total; deployment run command registered |
+| 2026-05-07 | v1.0.6 | `72c1dd7b` | WA Booking Confirmed template updated with hotel location and contact number variables |
+| 2026-05-07 | v1.0.7 | `8bf29d1c` | WA template submission validation fixed — only blocks variable at very first/last line of template body |
+| 2026-05-07 | v1.0.8 | `e93facf9` | Pricing page hero: CSS mockup replaced with real screenshot image slider (auto-play, arrows, dots) |

@@ -206,8 +206,9 @@
         .mockup-bar{background:#060f1c;padding:10px 16px;display:flex;align-items:center;gap:8px;position:relative;z-index:2;}
         .mockup-dot{width:10px;height:10px;border-radius:50%;}
         /* slider */
-        .ms-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
-        .ms-slide{min-width:100%;flex-shrink:0;}
+        .ms-viewport{overflow:hidden;position:relative;width:100%;}
+        .ms-track{display:flex;width:100%;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
+        .ms-slide{flex:0 0 100%;width:100%;min-width:0;}
         .ms-slide img{width:100%;height:auto;display:block;}
         .ms-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3;}
         .ms-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);border:none;cursor:pointer;padding:0;transition:background .2s;}
@@ -395,7 +396,7 @@
                 <span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:8px;">resort.dreamstechnology.in</span>
             </div>
             {{-- Slides --}}
-            <div style="overflow:hidden;position:relative;">
+            <div class="ms-viewport">
                 <div class="ms-track" id="msTrack">
                     <div class="ms-slide"><img src="/images/slider/slide-01.png" alt="Room Management" loading="lazy"></div>
                     <div class="ms-slide"><img src="/images/slider/slide-02.png" alt="Dashboard" loading="lazy"></div>
