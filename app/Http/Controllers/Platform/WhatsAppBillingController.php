@@ -65,7 +65,7 @@ class WhatsAppBillingController extends Controller
             ->get()
             ->keyBy('hotel_id');
 
-        // Available months (distinct months from logs, last 12)
+        // Available months (logs first, then fall back to bookings so empty WA months still show)
         $availableMonths = WhatsAppLog::where('direction', 'outgoing')
             ->where('event_type', 'message_sent')
             ->where('status', 'ok')
@@ -74,13 +74,28 @@ class WhatsAppBillingController extends Controller
             ->orderBy('ym', 'desc')
             ->limit(12)
             ->pluck('ym')
+            ->unique()
+            ->values();
+
+        $bookingMonths = DB::table('bookings')
+            ->selectRaw("to_char(created_at, 'YYYY-MM') as ym")
+            ->groupBy('ym')
+            ->orderBy('ym', 'desc')
+            ->limit(12)
+            ->pluck('ym');
+
+        $availableMonths = $availableMonths
+            ->merge($bookingMonths)
             ->prepend($now->format('Y-m'))
             ->unique()
             ->values();
 
         // Summary totals for this month
         $totalMessages = $monthlyCounts->sum();
-        $totalAmount   = round($totalMessages * self::RATE, 2);
+        $bookingFallbackCount = DB::table('bookings')
+            ->whereBetween('created_at', [$periodStart, $periodEnd])
+            ->count();
+        $totalAmount   = round(max($totalMessages, $bookingFallbackCount) * self::RATE, 2);
         $totalPaid     = $cycles->where('status', 'paid')->sum('amount');
         $totalUnpaid   = round($totalAmount - $totalPaid, 2);
 

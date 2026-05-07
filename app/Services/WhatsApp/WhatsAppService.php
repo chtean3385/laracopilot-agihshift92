@@ -240,6 +240,8 @@ class WhatsAppService
         Booking $booking,
         array $context
     ): bool {
+        $bodyParamCount = max(1, count($params));
+
         // If the template has a document attachment flag, try the full PDF path first.
         $mediaId  = null;
         $filename = null;
@@ -290,7 +292,7 @@ class WhatsAppService
         if ($template->has_document_attachment) {
             // First try: send the SAME template as a plain text template
             // (works when Meta approved the template without a DOCUMENT header component)
-            $textSent = $provider->sendTemplate($phone, $template->template_name, $params);
+            $textSent = $provider->sendTemplate($phone, $template->template_name, array_slice($params, 0, $bodyParamCount));
 
             if ($textSent) {
                 Log::info('WhatsApp: sent PDF template as text-only (no DOCUMENT header in Meta)', array_merge($context, [
@@ -324,7 +326,7 @@ class WhatsAppService
                 foreach ($textVarNames as $name) {
                     $textParams[] = $textVars[$name] ?? '';
                 }
-                $sent = $provider->sendTemplate($phone, $textTemplate->template_name, $textParams);
+                $sent = $provider->sendTemplate($phone, $textTemplate->template_name, array_slice($textParams, 0, max(1, count($textParams))));
                 // Also send PDF as a separate document (best-effort)
                 if ($sent && $mediaId && $filename) {
                     $docSent = $provider->sendDocument($phone, $mediaId, $filename, 'Your invoice is attached below.');
@@ -339,7 +341,7 @@ class WhatsAppService
             return $provider->sendMessage($phone, $plainText);
         }
 
-        return $provider->sendTemplate($phone, $template->template_name, $params);
+        return $provider->sendTemplate($phone, $template->template_name, array_slice($params, 0, $bodyParamCount));
     }
 
     public static function sendRaw(string $phone, string $message): bool

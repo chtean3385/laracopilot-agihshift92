@@ -1256,7 +1256,7 @@ class HotelController extends Controller
 
         // Base values: {{1}}=hotel name, {{2}}=dashboard URL (fallback for legacy 2-param templates).
         // User-provided extra_params override/extend from {{2}} onwards for templates with more params.
-        $paramValues = [1 => $hotel->name, 2 => $dashboardUrl];
+        $paramValues = [1 => $hotel->name, 2 => $dashboardUrl, 3 => $request->input('extra_params.3', '')];
         $extraParams = $request->input('extra_params', []);
         foreach ($extraParams as $idx => $val) {
             $idx = (int) $idx;
