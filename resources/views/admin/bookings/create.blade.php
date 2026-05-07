@@ -312,20 +312,26 @@
                             </div>
                         </div>
                         @endif
-                        <div class="bg-white rounded-xl border border-violet-100 px-4 py-4 space-y-2">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-rupee-sign text-violet-500"></i>
-                                <span class="text-sm text-gray-500">Slot Total:</span>
+                        <div class="bg-white rounded-xl border border-violet-200 px-4 py-4 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-rupee-sign text-violet-500"></i>
+                                    <span class="text-sm text-gray-500 font-medium">Calculated Total:</span>
+                                </div>
                                 <span id="slotTotalDisplay" class="text-xl font-bold text-violet-700">—</span>
                             </div>
-                            <div class="flex items-center gap-3 pt-1 border-t border-violet-50">
-                                <i class="fas fa-pen text-violet-300 text-xs"></i>
-                                <span class="text-xs text-gray-400">Override price:</span>
-                                <input type="number" id="slotCustomTotalInput" step="1" min="0"
-                                       class="flex-1 text-sm font-bold text-violet-600 bg-transparent border-b border-dashed border-violet-300 focus:outline-none focus:border-violet-500 py-0.5 text-center"
-                                       placeholder="Enter custom total to override">
-                                <button type="button" id="resetSlotTotalBtn" onclick="resetSlotCustomTotal()"
-                                        class="text-xs text-violet-500 hover:text-violet-700 underline hidden">↺ Reset</button>
+                            <div class="border-t border-violet-100 pt-3">
+                                <label class="text-sm font-semibold text-gray-700 block mb-1.5">
+                                    <i class="fas fa-pen text-violet-400 mr-1 text-xs"></i>Custom Total (₹)
+                                    <span class="text-xs text-gray-400 font-normal ml-1">— override calculated price</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="slotCustomTotalInput" step="1" min="0"
+                                           class="form-input flex-1 font-bold text-violet-700"
+                                           placeholder="Enter amount to override">
+                                    <button type="button" id="resetSlotTotalBtn" onclick="resetSlotCustomTotal()"
+                                            class="text-xs text-violet-500 hover:text-violet-700 underline hidden whitespace-nowrap">↺ Reset</button>
+                                </div>
                             </div>
                         </div>
                     </div>

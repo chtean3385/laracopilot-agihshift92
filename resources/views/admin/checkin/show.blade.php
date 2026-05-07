@@ -3,6 +3,16 @@
 @section('page-title','Process Check-In')
 @section('page-subtitle','Confirm arrival · ' . $booking->customer?->name ?? '(Deleted Guest)')
 @section('content')
+@php
+    $ciSettings   = \App\Models\Setting::first();
+    $ciTaxRate    = ($ciSettings && !empty($ciSettings->gst_number) && ($ciSettings->tax_rate ?? 0) > 0)
+                        ? (float) $ciSettings->tax_rate : 0;
+    $ciBaseAmt    = (float) $booking->total_amount;
+    $ciGstAmt     = round($ciBaseAmt * ($ciTaxRate / 100), 2);
+    $ciGrandTotal = $ciBaseAmt + $ciGstAmt;
+    $ciPaid       = (float) $booking->advance_payment;
+    $ciBalanceDue = max(0, $ciGrandTotal - $ciPaid);
+@endphp
 
 {{-- ── Global modal styles ── --}}
 <style>
@@ -194,8 +204,18 @@
                     <span style="font-weight:700;">{{ $booking->nights }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid #f1f5f9;padding-top:8px;">
-                    <span style="color:#64748b;flex-shrink:0;">Total</span>
-                    <span style="font-weight:800;">₹{{ number_format($booking->total_amount) }}</span>
+                    <span style="color:#64748b;flex-shrink:0;">Room Total</span>
+                    <span style="font-weight:600;">₹{{ number_format($booking->total_amount) }}</span>
+                </div>
+                @if($ciTaxRate > 0)
+                <div style="display:flex;justify-content:space-between;gap:8px;">
+                    <span style="color:#64748b;flex-shrink:0;">GST ({{ $ciTaxRate }}%)</span>
+                    <span style="font-weight:600;color:#7c3aed;">₹{{ number_format($ciGstAmt) }}</span>
+                </div>
+                @endif
+                <div style="display:flex;justify-content:space-between;gap:8px;background:#f0fdf4;border-radius:8px;padding:6px 8px;margin-top:2px;">
+                    <span style="color:#166534;font-weight:700;flex-shrink:0;">Grand Total</span>
+                    <span style="font-weight:900;color:#166534;font-size:15px;">₹{{ number_format($ciGrandTotal) }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Paid</span>
@@ -203,7 +223,7 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;gap:8px;">
                     <span style="color:#64748b;flex-shrink:0;">Balance</span>
-                    <span style="font-weight:800;color:{{ $booking->balance_due > 0 ? '#ef4444' : '#16a34a' }};">₹{{ number_format($booking->balance_due) }}</span>
+                    <span style="font-weight:800;color:{{ $ciBalanceDue > 0 ? '#ef4444' : '#16a34a' }};">₹{{ number_format($ciBalanceDue) }}</span>
                 </div>
             </div>
         </div>
@@ -283,10 +303,10 @@
                     <p style="font-size:11px;color:#7c3aed;margin-top:4px;font-weight:600;">
                         <i class="fas fa-clock" style="margin-right:3px;"></i>Hourly room — billing calculated at check-out. Leave payment as 0 or collect a deposit.
                     </p>
-                    @elseif($booking->balance_due > 0)
+                    @elseif($ciBalanceDue > 0)
                     <p style="font-size:11px;color:#f59e0b;margin-top:4px;font-weight:600;">
                         <i class="fas fa-info-circle" style="margin-right:3px;"></i>
-                        Balance due: ₹{{ number_format($booking->balance_due) }}. Adjust if collecting partial.
+                        Balance due: ₹{{ number_format($ciBalanceDue) }}{{ $ciTaxRate > 0 ? ' (incl. '.$ciTaxRate.'% GST)' : '' }}. Adjust if collecting partial.
                     </p>
                     @else
                     <p style="font-size:11px;color:#16a34a;margin-top:4px;font-weight:600;">
