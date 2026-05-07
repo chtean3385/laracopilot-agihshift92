@@ -731,7 +731,9 @@
                         if (\App\Models\Module::isEnabled('pathik')) {
                             $dashboardShortcuts[] = ['route' => route('pathik.index'), 'icon' => 'fa-id-card', 'title' => 'Pathik', 'sub' => 'Portal', 'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'];
                         }
-                        $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Availability matrix', 'bg' => 'linear-gradient(135deg,#6366f1,#4f46e5)'];
+                        if (\App\Models\Module::isEnabled('slot-search-engine')) {
+                            $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Availability matrix', 'bg' => 'linear-gradient(135deg,#6366f1,#4f46e5)'];
+                        }
                         if (\App\Models\Module::isEnabled('ota_whatsapp_sync')) {
                             $otaShortcutSub = ($otaPendingCount ?? 0) > 0 ? ($otaPendingCount . ' pending review') : 'WhatsApp imports';
                             $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];
