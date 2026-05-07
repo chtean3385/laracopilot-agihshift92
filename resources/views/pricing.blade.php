@@ -348,6 +348,29 @@
         .footer-copy{max-width:1280px;margin:0 auto;padding:16px 40px 0;border-top:1px solid rgba(255,255,255,.08);margin-top:24px;font-size:11px;color:rgba(255,255,255,.25);text-align:center;}
 
         /* ── RESPONSIVE ── */
+        /* ── TESTIMONIALS ── */
+        .testi-section{background:linear-gradient(135deg,#0c1f3f 0%,#0e2d5b 100%);padding:64px 40px;}
+        .testi-inner{max-width:1280px;margin:0 auto;}
+        .testi-section .section-label h2{color:#fff;}
+        .testi-section .section-label p{color:rgba(255,255,255,.55);}
+        .testi-track-wrap{overflow:hidden;position:relative;}
+        .testi-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
+        .testi-card{flex:0 0 calc(33.333% - 14px);width:calc(33.333% - 14px);min-width:0;margin-right:21px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px 26px;display:flex;flex-direction:column;gap:16px;}
+        .testi-stars{color:#fbbf24;font-size:14px;letter-spacing:2px;}
+        .testi-quote{font-size:14px;line-height:1.75;color:rgba(255,255,255,.82);font-style:italic;flex:1;}
+        .testi-quote::before{content:'\201C';font-size:28px;color:#38bdf8;line-height:0;vertical-align:-10px;margin-right:4px;}
+        .testi-footer{display:flex;align-items:center;gap:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;}
+        .testi-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0369a1,#38bdf8);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff;flex-shrink:0;}
+        .testi-name{font-size:13px;font-weight:800;color:#fff;}
+        .testi-hotel{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+        .testi-nav{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:32px;}
+        .testi-arrow{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0;}
+        .testi-arrow:hover{background:rgba(56,189,248,.35);}
+        .testi-dots{display:flex;gap:6px;}
+        .testi-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);border:none;cursor:pointer;padding:0;transition:background .2s;}
+        .testi-dot.active{background:#38bdf8;width:20px;border-radius:4px;}
+        @media(max-width:860px){.testi-card{flex:0 0 calc(50% - 11px);width:calc(50% - 11px);}}
+        @media(max-width:560px){.testi-card{flex:0 0 100%;width:100%;margin-right:16px;}.testi-section{padding:48px 20px;}}
         @media(max-width:1100px){.plans-grid{grid-template-columns:repeat(2,1fr);}.modules-grid{grid-template-columns:repeat(4,1fr);}}
         @media(max-width:860px){.hero-inner{grid-template-columns:1fr;}.mockup-wrap{display:none;}.benefits-grid{grid-template-columns:repeat(2,1fr);}.hero h1{font-size:34px;}}
         @media(max-width:600px){.plans-grid{grid-template-columns:1fr;}.modules-grid{grid-template-columns:repeat(2,1fr);}.benefits-grid{grid-template-columns:1fr;}.field-row{grid-template-columns:1fr;}.hero{padding:32px 20px;}.plans-section,.modules-section,.benefits-section,.enquiry-section{padding-left:20px;padding-right:20px;}.section-label h2{font-size:24px;}}
@@ -520,6 +543,116 @@
             </div>
         </div>
         @endforeach
+    </div>
+</div>
+
+{{-- ── TESTIMONIALS ── --}}
+<div class="testi-section">
+    <div class="testi-inner">
+        <div class="section-label">
+            <h2>Trusted by Hotel &amp; Resort Owners Across India</h2>
+            <p>Real stories from real hoteliers — see how our CRM transformed their daily operations.</p>
+        </div>
+        <div class="testi-track-wrap">
+            <div class="testi-track" id="testiTrack">
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">Managing multiple room bookings used to be a nightmare. This CRM has completely changed the way we work — everything from check-in to invoicing is now handled in minutes. Our staff loves it.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">S</div>
+                        <div><div class="testi-name">Pravin Gavali</div><div class="testi-hotel">Next Holiday · Saloni Farm Badlapur Resort, Maharashtra</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">Banquet booking management has never been this smooth. The WhatsApp automation saves us hours every week — guests get instant confirmations and we get fewer no-shows. Highly recommend!</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">S</div>
+                        <div><div class="testi-name">Sunil Chaudhary</div><div class="testi-hotel">AS Banquet And Resort · Amroha, Uttar Pradesh</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">The GST invoice generation is perfect for our needs. Earlier we were doing everything manually on paper — now we print a proper GST bill in one click. A must-have for any serious hotelier.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">N</div>
+                        <div><div class="testi-name">Nirmal Negi</div><div class="testi-hotel">Hotel The Moon · Odisha</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">Room occupancy tracking and the dashboard reports have helped us improve revenue by nearly 30%. We can now see exactly which room types are in demand and price them accordingly.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">J</div>
+                        <div><div class="testi-name">Jignesh Patel</div><div class="testi-hotel">Hotel Shreeji Palace · Rajkot, Gujarat</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">Being a resort near Lonavala, we handle a huge rush on weekends. This software handles bulk check-ins, walk-in bookings and payments without any confusion. Our front desk team is so much less stressed now.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">P</div>
+                        <div><div class="testi-name">Priya Deshmukh</div><div class="testi-hotel">Green Valley Resort · Lonavala, Maharashtra</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">The channel manager integration has reduced double-bookings to zero. Earlier we used to get calls from OTAs about conflicts — that headache is completely gone now. The support team is also very responsive.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">R</div>
+                        <div><div class="testi-name">Ramesh Sharma</div><div class="testi-hotel">Hotel Grand Mahal · Jaipur, Rajasthan</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">We run a beach resort in Goa with seasonal staff. The role-based access means I can control exactly what each staff member sees. The activity audit log gives me full visibility even when I'm not on-site.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">C</div>
+                        <div><div class="testi-name">Carlos Fernandes</div><div class="testi-hotel">Sunrise Beach Resort · Goa</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">Switching from spreadsheets to this CRM was the best decision I made this year. Guest history, payment tracking, and WhatsApp messaging — everything in one place. Setup was quick and support was excellent.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">D</div>
+                        <div><div class="testi-name">Dhruv Shah</div><div class="testi-hotel">The Fern Residency · Surat, Gujarat</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">Shimla gets very heavy tourist traffic in summer. The real-time room availability view and quick check-in process means we never keep guests waiting at the front desk. The CRM has genuinely improved our guest experience.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">V</div>
+                        <div><div class="testi-name">Vikram Thakur</div><div class="testi-hotel">Hotel Himalayan View · Shimla, Himachal Pradesh</div></div>
+                    </div>
+                </div>
+
+                <div class="testi-card">
+                    <div class="testi-stars">★★★★★</div>
+                    <div class="testi-quote">The payment link feature is a game changer. We send a link on WhatsApp, guests pay online, and the booking is confirmed automatically. No more chasing advance payments over the phone. Worth every rupee.</div>
+                    <div class="testi-footer">
+                        <div class="testi-avatar">S</div>
+                        <div><div class="testi-name">Sneha Kulkarni</div><div class="testi-hotel">Orchid Inn · Pune, Maharashtra</div></div>
+                    </div>
+                </div>
+
+            </div>{{-- /testi-track --}}
+        </div>{{-- /testi-track-wrap --}}
+        <div class="testi-nav">
+            <button class="testi-arrow" onclick="testiMove(-1)" aria-label="Previous">&#8249;</button>
+            <div class="testi-dots" id="testiDots"></div>
+            <button class="testi-arrow" onclick="testiMove(1)" aria-label="Next">&#8250;</button>
+        </div>
     </div>
 </div>
 
@@ -719,6 +852,51 @@ function sendEnquiry() {
 }
 </script>
 <script>
+(function(){
+    var track  = document.getElementById('testiTrack');
+    if(!track) return;
+    var dotsEl = document.getElementById('testiDots');
+    var cards  = track.querySelectorAll('.testi-card');
+    var total  = cards.length;
+    var perPage= window.innerWidth <= 560 ? 1 : window.innerWidth <= 860 ? 2 : 3;
+    var pages  = Math.ceil(total / perPage);
+    var cur    = 0;
+    var timer;
+
+    function buildDots(){
+        dotsEl.innerHTML='';
+        for(var i=0;i<pages;i++){
+            var d=document.createElement('button');
+            d.className='testi-dot'+(i===0?' active':'');
+            d.setAttribute('aria-label','Page '+(i+1));
+            (function(idx){ d.addEventListener('click',function(){ goTo(idx); resetTimer(); }); })(i);
+            dotsEl.appendChild(d);
+        }
+    }
+
+    function goTo(n){
+        cur=(n+pages)%pages;
+        var cardWidth=cards[0].offsetWidth + 21;
+        track.style.transform='translateX(-'+(cur*perPage*cardWidth)+'px)';
+        dotsEl.querySelectorAll('.testi-dot').forEach(function(d,i){ d.classList.toggle('active',i===cur); });
+    }
+
+    function resetTimer(){
+        clearInterval(timer);
+        timer=setInterval(function(){ goTo(cur+1); },4500);
+    }
+
+    window.testiMove=function(dir){ goTo(cur+dir); resetTimer(); };
+
+    buildDots();
+    resetTimer();
+
+    window.addEventListener('resize',function(){
+        var np=window.innerWidth<=560?1:window.innerWidth<=860?2:3;
+        if(np!==perPage){ perPage=np; pages=Math.ceil(total/perPage); cur=0; track.style.transform='translateX(0)'; buildDots(); resetTimer(); }
+    });
+})();
+
 (function(){
     var track  = document.getElementById('msTrack');
     var dotsEl = document.getElementById('msDots');
