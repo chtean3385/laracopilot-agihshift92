@@ -708,37 +708,55 @@ document.addEventListener('DOMContentLoaded', function() {
 window._aqmHotelId = 0; window._aqmChannel = 'whatsapp'; window._aqmTplName = ''; window._aqmTplLang = '';
 
 window.analyticsOpenModal = function(hotelId, hotelName, phone, channel, consented) {
+    var modal = document.getElementById('analyticsQuickModal');
+    if (!modal) return; // Livewire re-render may have cleared DOM — bail safely
+
     window._aqmHotelId = hotelId;
     window._aqmChannel = channel;
     window._aqmTplName = ''; window._aqmTplLang = '';
 
-    document.getElementById('aqmSubtitle').textContent = 'To: ' + hotelName + (phone ? ' (' + phone + ')' : '');
-    document.getElementById('aqmResult').style.display = 'none';
+    var sub = document.getElementById('aqmSubtitle');
+    if (sub) sub.textContent = 'To: ' + hotelName + (phone ? ' (' + phone + ')' : '');
+
+    var res = document.getElementById('aqmResult');
+    if (res) res.style.display = 'none';
 
     var isWa = (channel === 'whatsapp');
-    document.getElementById('aqmHeader').style.background = isWa
+
+    var hdr = document.getElementById('aqmHeader');
+    if (hdr) hdr.style.background = isWa
         ? 'linear-gradient(135deg,#128c43,#25d366)'
         : 'linear-gradient(135deg,#5b21b6,#7c3aed)';
-    document.getElementById('aqmIcon').className = isWa ? 'fab fa-whatsapp' : 'fas fa-bell';
-    document.getElementById('aqmTitle').innerHTML = '<i id="aqmIcon" class="' + (isWa ? 'fab fa-whatsapp' : 'fas fa-bell') + '"></i> Quick ' + (isWa ? 'WhatsApp' : 'Push');
 
-    document.getElementById('aqmWaSection').style.display  = isWa ? '' : 'none';
-    document.getElementById('aqmPushSection').style.display = isWa ? 'none' : '';
+    var titleEl = document.getElementById('aqmTitle');
+    if (titleEl) titleEl.textContent = '\u00a0Quick ' + (isWa ? 'WhatsApp' : 'Push');
+
+    var iconEl = document.getElementById('aqmIcon');
+    if (iconEl) iconEl.className = isWa ? 'fab fa-whatsapp' : 'fas fa-bell';
+
+    var waSection = document.getElementById('aqmWaSection');
+    if (waSection) waSection.style.display = isWa ? '' : 'none';
+
+    var pushSection = document.getElementById('aqmPushSection');
+    if (pushSection) pushSection.style.display = isWa ? 'none' : '';
 
     if (isWa) {
-        document.getElementById('aqmConsentWarn').style.display = consented ? 'none' : 'block';
+        var warn = document.getElementById('aqmConsentWarn');
+        if (warn) warn.style.display = consented ? 'none' : 'block';
         var sendBtn = document.getElementById('aqmWaSendBtn');
-        sendBtn.disabled = true; sendBtn.style.opacity = '0.5';
+        if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '0.5'; }
         document.querySelectorAll('[id^="aqm-tpl-"]').forEach(function(el) {
             el.style.border = '2px solid #e2e8f0';
             el.style.background = '#fff';
         });
     } else {
-        document.getElementById('aqmPushTitle').value = '';
-        document.getElementById('aqmPushBody').value = '';
+        var pt = document.getElementById('aqmPushTitle');
+        var pb = document.getElementById('aqmPushBody');
+        if (pt) pt.value = '';
+        if (pb) pb.value = '';
     }
 
-    document.getElementById('analyticsQuickModal').style.display = 'flex';
+    modal.style.display = 'flex';
 };
 
 window.analyticsCloseModal = function() {
