@@ -1227,13 +1227,28 @@ class HotelController extends Controller
         }
 
         $dashboardUrl = 'https://resort.dreamstechnology.in/';
-        $components = [[
-            'type' => 'body',
-            'parameters' => [
-                ['type' => 'text', 'text' => $hotel->name],
-                ['type' => 'text', 'text' => $dashboardUrl],
-            ],
-        ]];
+
+        // Detect actual param count from DB; fall back via name hint, then to 2
+        $dbTpl = DB::table('whatsapp_templates')
+            ->whereNull('hotel_id')
+            ->where('template_name', $templateName)
+            ->orderByDesc('id')
+            ->value('message_body');
+        $paramCount = null;
+        if ($dbTpl && preg_match_all('/\{\{(\d+)\}\}/', $dbTpl, $pm) && !empty($pm[1])) {
+            $paramCount = (int) max($pm[1]);
+        }
+        if ($paramCount === null) {
+            // Name-based fallback: final_reminder has 1 param; crm/login templates have 2
+            $paramCount = stripos($templateName, 'final') !== false ? 1 : 2;
+        }
+
+        $paramValues = [1 => $hotel->name, 2 => $dashboardUrl];
+        $bodyParams  = [];
+        for ($i = 1; $i <= max($paramCount, 1); $i++) {
+            $bodyParams[] = ['type' => 'text', 'text' => $paramValues[$i] ?? ''];
+        }
+        $components = [['type' => 'body', 'parameters' => $bodyParams]];
 
         $phone = PhoneHelper::forWhatsApp($hotel->phone);
 
@@ -1317,13 +1332,17 @@ class HotelController extends Controller
 
         // Build body parameters from DB template (respect actual param count)
         $dashboardUrl    = 'https://resort.dreamstechnology.in/';
-        $dbTplAll        = DB::table('whatsapp_templates')
+        $dbTplAllBody    = DB::table('whatsapp_templates')
             ->whereNull('hotel_id')
             ->where('template_name', $templateName)
-            ->first(['message_body']);
-        $paramCountAll   = 2;
-        if ($dbTplAll && preg_match_all('/\{\{(\d+)\}\}/', $dbTplAll->message_body ?? '', $mAll)) {
+            ->orderByDesc('id')
+            ->value('message_body');
+        $paramCountAll   = null;
+        if ($dbTplAllBody && preg_match_all('/\{\{(\d+)\}\}/', $dbTplAllBody, $mAll) && !empty($mAll[1])) {
             $paramCountAll = (int) max($mAll[1]);
+        }
+        if ($paramCountAll === null) {
+            $paramCountAll = stripos($templateName, 'final') !== false ? 1 : 2;
         }
 
         // Language codes to try in order (matching what was used when template was created in Meta)
