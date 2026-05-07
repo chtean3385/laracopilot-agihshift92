@@ -450,13 +450,10 @@
                     $icon = $tpl['is_custom'] ? '✉️' : ($tplKey === 'crm_update' ? '📣' : '🔔');
                     $safeName = e($tpl['meta_name']);
                     $safeLang = e($tpl['language']);
-                    $paramCount = $tplKey === 'final_reminder' ? 1 : $tpl['param_count'];
                     $previewText = Str::limit(str_replace(['{name}', '{url}', '{{1}}', '{{2}}'], ['[Hotel Name]', '[URL]', '[Hotel Name]', '[URL]'], $tpl['preview']), 110);
                 @endphp
                 <div id="tpl-{{ $tplKey }}"
-                    data-param-count="{{ $paramCount }}"
                     data-preview="{{ e($tpl['preview']) }}"
-                    data-fixed="{{ $tplKey === 'final_reminder' ? '1' : '0' }}"
                     onclick="selectWaTpl('{{ $tplKey }}','{{ $safeName }}','{{ $safeLang }}')"
                     style="border:2px solid #e2e8f0;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
@@ -473,9 +470,6 @@
                 @endif
                 @endforeach
             </div>
-
-            {{-- Dynamic parameter inputs (shown when template needs >1 param) --}}
-            <div id="qaExtraParams" style="margin-bottom:14px;"></div>
 
             <div id="qaResult" style="display:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
 
@@ -503,13 +497,12 @@ document.getElementById('welcomeModal').addEventListener('click', function(e) {
     if (e.target === this) closeWelcomeModal();
 });
 
-var _qaHotelId = null, _qaTplName = null, _qaTplLang = null, _qaTplParamCount = 1;
+var _qaHotelId = null, _qaTplName = null, _qaTplLang = null;
 function openQuickWA(hotelId, hotelName, phone, consented) {
-    _qaHotelId = hotelId; _qaTplName = null; _qaTplLang = null; _qaTplParamCount = 1;
+    _qaHotelId = hotelId; _qaTplName = null; _qaTplLang = null;
     document.getElementById('qaModalSubtitle').textContent = 'To: ' + hotelName + ' (' + phone + ')';
     document.getElementById('qaConsentWarn').style.display = consented ? 'none' : 'block';
     document.getElementById('qaResult').style.display = 'none';
-    document.getElementById('qaExtraParams').innerHTML = '';
     document.getElementById('qaSubmitBtn').disabled = true;
     document.getElementById('qaSubmitBtn').style.opacity = '.5';
     document.querySelectorAll('[name="qa_tpl"]').forEach(r => r.checked = false);
@@ -524,65 +517,8 @@ function selectWaTpl(key, metaName, lang) {
     var lbl = document.getElementById('tpl-' + key);
     if (lbl) lbl.style.borderColor = '#25d366';
     _qaTplName = metaName; _qaTplLang = lang;
-    var tplEl = document.getElementById('tpl-' + key);
-    _qaTplParamCount = parseInt((tplEl && tplEl.dataset.paramCount) || '1');
-    var preview = (tplEl && tplEl.dataset.preview) || '';
-    var fixed = (tplEl && tplEl.dataset.fixed) === '1';
-    renderWaExtraParams('qaExtraParams', _qaTplParamCount, preview, 'qa_p', fixed);
     document.getElementById('qaSubmitBtn').disabled = false;
     document.getElementById('qaSubmitBtn').style.opacity = '1';
-}
-
-// Extracts a human-readable label for positional param N from message body
-function waParamLabel(preview, n) {
-    var lines = preview.split('\n');
-    for (var i = 0; i < lines.length; i++) {
-        var idx = lines[i].indexOf('{{' + n + '}}');
-        if (idx >= 0) {
-            var before = lines[i].substring(0, idx).replace(/[^a-zA-Z0-9 \/\-]/g, ' ').replace(/\s+/g, ' ').trim();
-            if (before.length > 0) return before.slice(-30).trim();
-        }
-    }
-    return 'Param ' + n;
-}
-
-// Renders input fields for params 2…N into containerId (param 1 is always hotel name, auto)
-function renderWaExtraParams(containerId, paramCount, preview, idPrefix, fixedOne) {
-    var container = document.getElementById(containerId);
-    container.innerHTML = '';
-    if (paramCount <= 1 && !fixedOne) return;
-    var html = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">';
-    html += '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">Fill template variables</div>';
-    // {{1}} is always hotel name – show as read-only info
-    html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
-    html += '<span style="font-size:11px;font-weight:700;color:#25d366;min-width:32px;">{{1}}</span>';
-    html += '<span style="font-size:11px;color:#64748b;">[Hotel Name] — auto-filled</span></div>';
-    if (fixedOne) {
-        html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
-        html += '<span style="font-size:11px;font-weight:700;color:#7c3aed;min-width:32px;">{{2}}</span>';
-        html += '<span style="font-size:11px;color:#64748b;">[Reply STOP to opt out] — auto-filled</span></div>';
-    }
-    for (var i = 2; i <= paramCount; i++) {
-        var lbl = waParamLabel(preview, i);
-        if (fixedOne && i === 2) continue;
-        html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
-        html += '<span style="font-size:11px;font-weight:700;color:#7c3aed;min-width:32px;">{{' + i + '}}</span>';
-        html += '<input type="text" id="' + idPrefix + i + '" placeholder="' + lbl + '" ';
-        html += 'style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;">';
-        html += '</div>';
-    }
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-// Collects extra params from rendered inputs
-function collectWaExtraParams(paramCount, idPrefix) {
-    var params = {};
-    for (var i = 2; i <= paramCount; i++) {
-        var el = document.getElementById(idPrefix + i);
-        params[i] = el ? el.value.trim() : '';
-    }
-    return params;
 }
 
 function submitQuickWA() {
@@ -590,11 +526,10 @@ function submitQuickWA() {
     var res = document.getElementById('qaResult');
     if (!_qaTplName || !_qaHotelId) { alert('Please choose a template first.'); return; }
     btn.disabled = true; btn.style.opacity = '.5'; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
-    var extraParams = collectWaExtraParams(_qaTplParamCount, 'qa_p');
     fetch('/platform/hotels/' + _qaHotelId + '/send-quick-wa', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
-        body: JSON.stringify({template_name: _qaTplName, template_language: _qaTplLang, extra_params: extraParams})
+        body: JSON.stringify({template_name: _qaTplName, template_language: _qaTplLang})
     }).then(r => r.json()).then(data => {
         res.style.display = 'block';
         res.style.background = data.success ? '#dcfce7' : '#fee2e2';
