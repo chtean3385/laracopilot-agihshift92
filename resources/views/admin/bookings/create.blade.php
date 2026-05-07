@@ -499,7 +499,7 @@
 </div>
 {{-- Quick Add Guest Modal --}}
 <div id="quickGuestModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.45);" onclick="if(event.target===this)closeQuickGuestModal()">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style="max-height:92vh;" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-2xl">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center flex-shrink-0">
@@ -514,7 +514,7 @@
                 <i class="fas fa-times text-sm"></i>
             </button>
         </div>
-        <form id="quickGuestForm" class="px-6 pb-5 pt-4" novalidate>
+        <form id="quickGuestForm" class="px-6 pb-5 pt-4 overflow-y-auto flex-1" novalidate>
             @csrf
             <div id="qgError" class="hidden mb-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2 text-xs flex items-start gap-2">
                 <i class="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
