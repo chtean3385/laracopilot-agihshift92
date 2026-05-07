@@ -1124,42 +1124,28 @@ class HotelController extends Controller
                 'param_count' => 2,
                 'is_custom'   => false,
             ],
-        ];
-
-        // ── Append approved Custom Event Templates from DB ────────────────────────
-        // These are platform-level templates (hotel_id = null) whose trigger_event
-        // is not one of the standard auto-triggered events. They are "manually
-        // triggered" marketing templates added by the platform admin.
-        $standardEvents = array_keys(\App\Models\WhatsAppTemplate::allEvents());
-
-        $customDbTemplates = DB::table('whatsapp_templates')
-            ->whereNull('hotel_id')
-            ->whereNotIn('trigger_event', $standardEvents)
-            ->where('approval_status', 'approved')
-            ->where('is_active', true)
-            ->orderBy('id')
-            ->get(['id', 'trigger_event', 'template_name', 'message_body']);
-
-        foreach ($customDbTemplates as $ct) {
-            if (!$ct->template_name) continue;
-
-            // Count positional parameters {{1}}, {{2}}, … in the stored body
-            $paramCount = 0;
-            if (preg_match_all('/\{\{(\d+)\}\}/', $ct->message_body ?? '', $m)) {
-                $paramCount = (int) max($m[1]);
-            }
-
-            $templates['custom_' . $ct->id] = [
-                'label'       => ucwords(str_replace(['.', '_'], ' ', $ct->trigger_event)),
-                'meta_name'   => $ct->template_name,
-                'language'    => 'en',
-                'preview'     => $ct->message_body ?? '',
+            'final_reminder' => [
+                'label'       => 'Final Reminder',
+                'meta_name'   => DB::table('whatsapp_templates')
+                    ->whereNull('hotel_id')
+                    ->where(function ($q) {
+                        $q->where('trigger_event', 'final_reminder')
+                          ->orWhere('trigger_event', 'final.reminder')
+                          ->orWhere('template_name', 'LIKE', '%Final Reminder%');
+                    })
+                    ->where('approval_status', 'approved')
+                    ->orderByDesc('id')
+                    ->value('template_name') ?? 'final_reminder',
+                'language'    => 'en_US',
+                'preview'     => "Hi {hotel_name}, this is the final reminder for your trial period over. If you are not interested, please reply stop and all future updates will be paused.",
                 'var1'        => 'hotel_name',
                 'var2'        => $dashboardUrl,
-                'param_count' => $paramCount,
+                'param_count' => 2,
                 'is_custom'   => true,
-            ];
-        }
+            ],
+        ];
+
+        $templates = array_slice($templates, 0, 3, true);
 
         return $templates;
     }
