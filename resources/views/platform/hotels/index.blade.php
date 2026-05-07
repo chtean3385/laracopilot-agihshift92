@@ -450,11 +450,13 @@
                     $icon = $tpl['is_custom'] ? '✉️' : ($tplKey === 'crm_update' ? '📣' : '🔔');
                     $safeName = e($tpl['meta_name']);
                     $safeLang = e($tpl['language']);
+                    $paramCount = $tplKey === 'final_reminder' ? 1 : $tpl['param_count'];
                     $previewText = Str::limit(str_replace(['{name}', '{url}', '{{1}}', '{{2}}'], ['[Hotel Name]', '[URL]', '[Hotel Name]', '[URL]'], $tpl['preview']), 110);
                 @endphp
                 <div id="tpl-{{ $tplKey }}"
-                    data-param-count="{{ $tpl['param_count'] }}"
+                    data-param-count="{{ $paramCount }}"
                     data-preview="{{ e($tpl['preview']) }}"
+                    data-fixed="{{ $tplKey === 'final_reminder' ? '1' : '0' }}"
                     onclick="selectWaTpl('{{ $tplKey }}','{{ $safeName }}','{{ $safeLang }}')"
                     style="border:2px solid #e2e8f0;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
@@ -525,7 +527,8 @@ function selectWaTpl(key, metaName, lang) {
     var tplEl = document.getElementById('tpl-' + key);
     _qaTplParamCount = parseInt((tplEl && tplEl.dataset.paramCount) || '1');
     var preview = (tplEl && tplEl.dataset.preview) || '';
-    renderWaExtraParams('qaExtraParams', _qaTplParamCount, preview, 'qa_p');
+    var fixed = (tplEl && tplEl.dataset.fixed) === '1';
+    renderWaExtraParams('qaExtraParams', _qaTplParamCount, preview, 'qa_p', fixed);
     document.getElementById('qaSubmitBtn').disabled = false;
     document.getElementById('qaSubmitBtn').style.opacity = '1';
 }
@@ -544,18 +547,24 @@ function waParamLabel(preview, n) {
 }
 
 // Renders input fields for params 2…N into containerId (param 1 is always hotel name, auto)
-function renderWaExtraParams(containerId, paramCount, preview, idPrefix) {
+function renderWaExtraParams(containerId, paramCount, preview, idPrefix, fixedOne) {
     var container = document.getElementById(containerId);
     container.innerHTML = '';
-    if (paramCount <= 1) return;
+    if (paramCount <= 1 && !fixedOne) return;
     var html = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">';
     html += '<div style="font-size:11px;font-weight:700;color:#475569;margin-bottom:10px;">Fill template variables</div>';
     // {{1}} is always hotel name – show as read-only info
     html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
     html += '<span style="font-size:11px;font-weight:700;color:#25d366;min-width:32px;">{{1}}</span>';
     html += '<span style="font-size:11px;color:#64748b;">[Hotel Name] — auto-filled</span></div>';
+    if (fixedOne) {
+        html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
+        html += '<span style="font-size:11px;font-weight:700;color:#7c3aed;min-width:32px;">{{2}}</span>';
+        html += '<span style="font-size:11px;color:#64748b;">[Reply STOP to opt out] — auto-filled</span></div>';
+    }
     for (var i = 2; i <= paramCount; i++) {
         var lbl = waParamLabel(preview, i);
+        if (fixedOne && i === 2) continue;
         html += '<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
         html += '<span style="font-size:11px;font-weight:700;color:#7c3aed;min-width:32px;">{{' + i + '}}</span>';
         html += '<input type="text" id="' + idPrefix + i + '" placeholder="' + lbl + '" ';
