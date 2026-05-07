@@ -154,10 +154,12 @@ class CustomerController extends Controller
         $request->merge(['phone' => PhoneHelper::normalize($request->input('phone'))]);
 
         $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'phone'   => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
-            'email'   => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
-            'id_type' => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
+            'name'         => 'required|string|max:255',
+            'phone'        => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
+            'email'        => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
+            'id_type'      => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
+            'id_number'    => 'nullable|string|max:50',
+            'documents.*'  => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
 
         // Check if a soft-deleted guest exists with the same phone or email in this hotel
@@ -179,10 +181,11 @@ class CustomerController extends Controller
             ], 422);
         }
 
-        $validated['id_number']   = '';
+        $validated['id_number']   = strtoupper(trim($validated['id_number'] ?? ''));
         $validated['country']     = 'India';
         $validated['nationality'] = 'Indian';
         $customer = Customer::create($validated);
+        $this->saveDocuments($request, $customer->id, $validated['id_type']);
         ActivityLogger::log('Created', 'Guest', 'Quick-created guest: ' . $customer->name . ' (' . $customer->phone . ')');
         return response()->json([
             'id'    => $customer->id,

@@ -536,7 +536,7 @@
                 </div>
                 <div>
                     <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
-                    <select id="qg_id_type" name="id_type" class="form-input" required>
+                    <select id="qg_id_type" name="id_type" class="form-input" required onchange="qgUpdateIdPlaceholder(this.value)">
                         <option value="">Select document type</option>
                         <option value="aadhaar">Aadhaar Card</option>
                         <option value="passport">Passport</option>
@@ -546,6 +546,21 @@
                         <option value="visa">Visa</option>
                         <option value="other">Other</option>
                     </select>
+                </div>
+                <div>
+                    <label class="form-label">ID Number <span class="text-red-500">*</span></label>
+                    <input type="text" id="qg_id_number" name="id_number" class="form-input"
+                        placeholder="Select ID type first"
+                        disabled
+                        style="text-transform:uppercase;"
+                        oninput="this.value=this.value.toUpperCase()">
+                    <p class="text-xs text-gray-400 mt-1">Required when document type is selected.</p>
+                </div>
+                <div>
+                    <label class="form-label">Upload Document <span class="text-gray-400 font-normal text-xs">(optional, multiple allowed)</span></label>
+                    <input type="file" name="documents[]" id="qg_documents" multiple accept=".jpg,.jpeg,.png,.pdf"
+                        class="form-input" style="padding:8px;">
+                    <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>JPG, PNG or PDF · Max 5 MB each</p>
                 </div>
             </div>
             <div class="flex gap-3 mt-6">
@@ -1065,9 +1080,27 @@
     });
 
     // ── Quick Add Guest Modal ─────────────────────────────────────────────
+    var _qgPlaceholders = {
+        aadhaar:          'e.g. 1234 5678 9012',
+        passport:         'e.g. A1234567',
+        driving_license:  'e.g. MH0120230001234',
+        voter_id:         'e.g. ABC1234567',
+        pan_card:         'e.g. ABCDE1234F',
+        visa:             'e.g. Visa Number',
+        other:            'Enter ID number',
+    };
+
+    function qgUpdateIdPlaceholder(type) {
+        var inp = document.getElementById('qg_id_number');
+        if (!inp) return;
+        inp.placeholder = _qgPlaceholders[type] || 'Enter ID number';
+        inp.disabled = !type;
+    }
+
     function openQuickGuestModal() {
         document.getElementById('quickGuestModal').classList.remove('hidden');
         document.getElementById('qg_name').focus();
+        qgUpdateIdPlaceholder('');
     }
 
     function closeQuickGuestModal() {
@@ -1075,6 +1108,8 @@
         document.getElementById('quickGuestForm').reset();
         document.getElementById('qgError').classList.add('hidden');
         document.getElementById('qgErrorMsg').textContent = '';
+        document.getElementById('qg_id_number').placeholder = 'Select ID type first';
+        document.getElementById('qg_id_number').disabled = true;
         const btn = document.getElementById('qgSubmitBtn');
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Guest';
