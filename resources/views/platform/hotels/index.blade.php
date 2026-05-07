@@ -445,6 +445,7 @@
 
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;max-height:320px;overflow-y:auto;padding-right:4px;">
                 @foreach(\App\Http\Controllers\Platform\HotelController::platformWaTemplates() as $tplKey => $tpl)
+                @if(in_array($tplKey, ['crm_update', 'login_reminder', 'final_reminder']))
                 @php
                     $icon = $tpl['is_custom'] ? '✉️' : ($tplKey === 'crm_update' ? '📣' : '🔔');
                     $safeName = e($tpl['meta_name']);
@@ -467,6 +468,7 @@
                         "{{ $previewText }}"
                     </div>
                 </div>
+                @endif
                 @endforeach
             </div>
 
