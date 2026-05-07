@@ -247,7 +247,7 @@
         .plans-section{padding:60px 40px;max-width:1280px;margin:0 auto;}
         .section-label{text-align:center;margin-bottom:36px;}
         .section-label h2{font-size:32px;font-weight:900;margin-bottom:8px;letter-spacing:-.02em;color:#1e293b;}
-        .section-label p{font-size:15px;color:#64748b;}
+        .section-label p{font-size:17px;color:#64748b;}
         .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
 
         /* ── PLAN CARD ── */
@@ -258,7 +258,7 @@
         .plan-header{padding:20px 20px 16px;color:#fff;text-align:center;}
         .plan-icon{width:46px;height:46px;background:rgba(255,255,255,.18);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;margin:0 auto 10px;}
         .plan-name{font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
-        .plan-subtitle{font-size:10px;color:rgba(255,255,255,.75);line-height:1.4;}
+        .plan-subtitle{font-size:12px;color:rgba(255,255,255,.75);line-height:1.4;}
 
         /* Price box */
         .plan-price-box{background:#fff;padding:16px 20px 12px;text-align:center;border-bottom:1px solid #f1f5f9;}
@@ -269,21 +269,21 @@
         .plan-discount-badge{background:#dcfce7;color:#16a34a;font-size:10px;font-weight:900;padding:3px 8px;border-radius:999px;letter-spacing:.04em;white-space:nowrap;border:1px solid #bbf7d0;}
         .plan-price-note{font-size:11px;color:#94a3b8;margin-top:5px;}
 
-        .plan-include{padding:7px 20px;text-align:center;font-size:10px;font-weight:800;letter-spacing:.07em;color:#fff;}
+        .plan-include{padding:7px 20px;text-align:center;font-size:12px;font-weight:800;letter-spacing:.07em;color:#fff;}
         .plan-body{padding:16px 20px;flex:1;background:#fff;}
         .plan-features{list-style:none;margin-bottom:12px;}
-        .plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#374151;margin-bottom:7px;line-height:1.45;}
-        .plan-features li i{color:#16a34a;font-size:11px;flex-shrink:0;margin-top:2px;}
+        .plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#374151;margin-bottom:7px;line-height:1.45;}
+        .plan-features li i{color:#16a34a;font-size:12px;flex-shrink:0;margin-top:2px;}
         .plan-limits{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;padding:10px;background:#f8fafc;border-radius:9px;border:1px solid #e2e8f0;}
-        .plan-limit{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+        .plan-limit{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
         .plan-limit-label{color:#64748b;font-weight:600;display:flex;align-items:center;gap:5px;}
         .plan-limit-label i{color:#94a3b8;font-size:11px;}
         .plan-limit-val{font-weight:900;color:#1e293b;font-size:12px;}
 
         /* Extra modules footer of card */
         .plan-extra{margin-top:auto;border-top:2px dashed #e2e8f0;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;background:#fafbfc;}
-        .plan-extra-label{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;line-height:1.4;display:flex;align-items:center;gap:5px;}
-        .plan-extra-label span{display:block;font-size:9px;font-weight:500;color:#94a3b8;text-transform:none;margin-top:1px;}
+        .plan-extra-label{font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;line-height:1.4;display:flex;align-items:center;gap:5px;}
+        .plan-extra-label span{display:block;font-size:11px;font-weight:500;color:#94a3b8;text-transform:none;margin-top:1px;}
         .plan-extra-price{text-align:right;}
         .plan-extra-price strong{display:block;font-size:17px;font-weight:900;color:#1e293b;}
         .plan-extra-price em{font-style:normal;font-size:9px;color:#94a3b8;}
@@ -300,8 +300,8 @@
         .module-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 12px;text-align:center;transition:all .2s;}
         .module-card:hover{background:#eff6ff;border-color:#bfdbfe;transform:translateY(-3px);box-shadow:0 6px 20px rgba(3,105,161,.1);}
         .module-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 10px;}
-        .module-name{font-size:12px;font-weight:800;color:#1e293b;margin-bottom:4px;line-height:1.3;}
-        .module-desc{font-size:10px;color:#64748b;line-height:1.4;}
+        .module-name{font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px;line-height:1.3;}
+        .module-desc{font-size:12px;color:#64748b;line-height:1.4;}
 
         /* ── BENEFITS ── */
         .benefits-section{background:#f8fafc;padding:52px 40px;border-bottom:1px solid #e2e8f0;}
@@ -310,8 +310,8 @@
         .benefit-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:28px 22px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.05);transition:all .2s;}
         .benefit-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
         .benefit-icon{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 14px;}
-        .benefit-title{font-size:13px;font-weight:900;color:#1e293b;margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em;}
-        .benefit-desc{font-size:12px;color:#64748b;line-height:1.65;}
+        .benefit-title{font-size:14px;font-weight:900;color:#1e293b;margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em;}
+        .benefit-desc{font-size:14px;color:#64748b;line-height:1.65;}
 
         /* ── ENQUIRY FORM ── */
         .enquiry-section{padding:56px 40px;background:#f1f5f9;}
@@ -320,7 +320,7 @@
         .selected-plan-bar{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#0369a1;}
         .selected-plan-bar.empty{background:#fff7ed;border-color:#fed7aa;color:#ea580c;}
         .field{margin-bottom:14px;}
-        .field label{display:block;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;}
+        .field label{display:block;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;}
         .field input,.field select{width:100%;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;color:#1e293b;font-size:14px;outline:none;transition:border-color .2s;}
         .field input:focus,.field select:focus{border-color:#93c5fd;background:#fff;}
         .field input::placeholder{color:#cbd5e1;}
@@ -328,7 +328,7 @@
         .btn-submit{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(3,105,161,.25);transition:all .2s;margin-top:6px;}
         .btn-submit:hover{transform:translateY(-2px);}
         .btn-submit:disabled{opacity:.6;cursor:not-allowed;transform:none;}
-        .form-note{font-size:11px;color:#94a3b8;text-align:center;margin-top:14px;line-height:1.6;}
+        .form-note{font-size:13px;color:#94a3b8;text-align:center;margin-top:14px;line-height:1.6;}
         .form-note a{color:#0369a1;}
 
         /* ── SUCCESS / ERROR ── */
@@ -357,12 +357,12 @@
         .testi-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
         .testi-card{flex:0 0 calc(33.333% - 14px);width:calc(33.333% - 14px);min-width:0;margin-right:21px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px 26px;display:flex;flex-direction:column;gap:16px;}
         .testi-stars{color:#fbbf24;font-size:14px;letter-spacing:2px;}
-        .testi-quote{font-size:14px;line-height:1.75;color:rgba(255,255,255,.82);font-style:italic;flex:1;}
+        .testi-quote{font-size:15px;line-height:1.75;color:rgba(255,255,255,.82);font-style:italic;flex:1;}
         .testi-quote::before{content:'\201C';font-size:28px;color:#38bdf8;line-height:0;vertical-align:-10px;margin-right:4px;}
         .testi-footer{display:flex;align-items:center;gap:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;}
         .testi-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0369a1,#38bdf8);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff;flex-shrink:0;}
-        .testi-name{font-size:13px;font-weight:800;color:#fff;}
-        .testi-hotel{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+        .testi-name{font-size:14px;font-weight:800;color:#fff;}
+        .testi-hotel{font-size:12px;color:rgba(255,255,255,.45);margin-top:2px;}
         .testi-nav{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:32px;}
         .testi-arrow{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0;}
         .testi-arrow:hover{background:rgba(56,189,248,.35);}
