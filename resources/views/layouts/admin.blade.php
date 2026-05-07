@@ -1067,6 +1067,7 @@
                     'pathik'             => \App\Models\Module::isEnabled('pathik'),
                     'time-slots'         => \App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing'),
                     'email-parser'       => \App\Models\Module::isEnabled('email-parser'),
+                    'slot-search-engine' => \App\Models\Module::isEnabled('slot-search-engine'),
                 ];
                 $hasAutomation = collect($autoChildren)->contains(true);
                 $otaNavCount   = $autoChildren['ota_whatsapp_sync']
@@ -1078,7 +1079,8 @@
                 $autoActive = request()->routeIs('whatsapp.*') || request()->routeIs('payment_links.*')
                     || request()->routeIs('channel_manager.*') || request()->routeIs('ota-bookings.*')
                     || request()->routeIs('admin.booking-widget.*') || request()->routeIs('pathik.*')
-                    || request()->routeIs('time-slots.*') || request()->routeIs('email-parser.*');
+                    || request()->routeIs('time-slots.*') || request()->routeIs('email-parser.*')
+                    || request()->routeIs('slot-search.*');
             @endphp
             @if($hasAutomation)
             <div class="nav-section">Automation</div>
@@ -1144,6 +1146,12 @@
                         @if($emailConflictCount > 0)
                         <span class="nav-badge">{{ $emailConflictCount }}</span>
                         @endif
+                    </a>
+                    @endif
+                    @if($autoChildren['slot-search-engine'])
+                    <a href="{{ route('slot-search.index') }}" class="nav-link {{ request()->routeIs('slot-search.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-search"></i></span>
+                        Slot Search
                     </a>
                     @endif
                 </div>

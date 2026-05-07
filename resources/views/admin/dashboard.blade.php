@@ -718,17 +718,17 @@
 
                     @php
                         $dashboardShortcuts = [];
+                        // Core features — always visible (no module needed)
+                        if (\App\Services\PermissionService::check('bookings.view')) {
+                            $dashboardShortcuts[] = ['route' => route('checkin.index'),  'icon' => 'fa-sign-in-alt',  'title' => 'Check In',  'sub' => 'Arrivals',    'bg' => 'linear-gradient(135deg,#06b6d4,#0284c7)'];
+                            $dashboardShortcuts[] = ['route' => route('checkout.index'), 'icon' => 'fa-sign-out-alt', 'title' => 'Check Out', 'sub' => 'Departures', 'bg' => 'linear-gradient(135deg,#f59e0b,#ef4444)'];
+                        }
+                        // Module-gated shortcuts
                         if (\App\Models\Module::isEnabled('extra-billing')) {
                             $dashboardShortcuts[] = ['route' => route('food-billing.index'), 'icon' => 'fa-utensils', 'title' => 'Food Billing', 'sub' => 'Food charges', 'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'];
                         }
                         if (\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.view')) {
                             $dashboardShortcuts[] = ['route' => route('restaurant.index'), 'icon' => 'fa-concierge-bell', 'title' => 'Restaurant', 'sub' => 'Table orders', 'bg' => 'linear-gradient(135deg,#f43f5e,#e11d48)'];
-                        }
-                        if (\App\Models\Module::isEnabled('checkin')) {
-                            $dashboardShortcuts[] = ['route' => route('checkin.index'), 'icon' => 'fa-sign-in-alt', 'title' => 'Check In', 'sub' => 'Arrivals', 'bg' => 'linear-gradient(135deg,#06b6d4,#0284c7)'];
-                        }
-                        if (\App\Models\Module::isEnabled('checkout')) {
-                            $dashboardShortcuts[] = ['route' => route('checkout.index'), 'icon' => 'fa-sign-out-alt', 'title' => 'Check Out', 'sub' => 'Departures', 'bg' => 'linear-gradient(135deg,#f59e0b,#ef4444)'];
                         }
                         if (\App\Models\Module::isEnabled('payment_links')) {
                             $dashboardShortcuts[] = ['route' => route('payment_links.config'), 'icon' => 'fa-credit-card', 'title' => 'Payments', 'sub' => 'Links', 'bg' => 'linear-gradient(135deg,#8b5cf6,#6366f1)'];
@@ -736,16 +736,21 @@
                         if (\App\Models\Module::isEnabled('pathik')) {
                             $dashboardShortcuts[] = ['route' => route('pathik.index'), 'icon' => 'fa-id-card', 'title' => 'Pathik', 'sub' => 'Portal', 'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'];
                         }
-                        if (\App\Models\Module::isEnabled('reports.view')) {
+                        if (\App\Services\PermissionService::check('reports.view')) {
                             $dashboardShortcuts[] = ['route' => route('reports.index'), 'icon' => 'fa-chart-line', 'title' => 'Reports', 'sub' => 'Analytics', 'bg' => 'linear-gradient(135deg,#334155,#0f172a)'];
                         }
-                        $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time & Slot', 'sub' => 'Manage time slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#0284c7)'];
+                        if (\App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing')) {
+                            $dashboardShortcuts[] = ['route' => route('time-slots.index'), 'icon' => 'fa-clock', 'title' => 'Time & Slot', 'sub' => 'Manage time slots', 'bg' => 'linear-gradient(135deg,#0ea5e9,#0284c7)'];
+                        }
                         if (\App\Models\Module::isEnabled('slot-search-engine')) {
                             $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Availability matrix', 'bg' => 'linear-gradient(135deg,#6366f1,#4f46e5)'];
                         }
                         if (\App\Models\Module::isEnabled('ota_whatsapp_sync')) {
                             $otaShortcutSub = ($otaPendingCount ?? 0) > 0 ? ($otaPendingCount . ' pending review') : 'WhatsApp imports';
                             $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];
+                        }
+                        if (\App\Models\Module::isEnabled('email-parser')) {
+                            $dashboardShortcuts[] = ['route' => route('email-parser.config'), 'icon' => 'fa-envelope-open-text', 'title' => 'Email Parser', 'sub' => 'OTA email import', 'bg' => 'linear-gradient(135deg,#0891b2,#0e7490)'];
                         }
                     @endphp
 
