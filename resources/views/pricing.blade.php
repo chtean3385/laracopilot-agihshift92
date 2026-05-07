@@ -201,16 +201,20 @@
         .btn-primary:hover{transform:translateY(-2px);}
         .btn-wa-sm{background:#25d366;color:#fff;padding:14px 24px;border-radius:10px;font-size:15px;font-weight:800;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(37,211,102,.35);}
 
-        /* ── DASHBOARD MOCKUP ── */
-        .mockup-wrap{background:#0f1f38;border-radius:16px;overflow:hidden;box-shadow:0 28px 80px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08);}
-        .mockup-bar{background:#060f1c;padding:10px 16px;display:flex;align-items:center;gap:8px;}
+        /* ── SCREENSHOT SLIDER MOCKUP ── */
+        .mockup-wrap{background:#0f1f38;border-radius:16px;overflow:hidden;box-shadow:0 28px 80px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08);position:relative;}
+        .mockup-bar{background:#060f1c;padding:10px 16px;display:flex;align-items:center;gap:8px;position:relative;z-index:2;}
         .mockup-dot{width:10px;height:10px;border-radius:50%;}
-        .mockup-title-row{background:#0f1f38;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);}
-        .mockup-title-row span{font-size:13px;font-weight:700;color:rgba(255,255,255,.8);}
-        .mockup-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;}
-        .mstat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 6px;text-align:center;}
-        .mstat-label{font-size:8px;color:rgba(255,255,255,.35);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
-        .mstat-val{font-size:16px;font-weight:900;color:#fff;}
+        /* slider */
+        .ms-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
+        .ms-slide{min-width:100%;flex-shrink:0;}
+        .ms-slide img{width:100%;height:auto;display:block;}
+        .ms-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3;}
+        .ms-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);border:none;cursor:pointer;padding:0;transition:background .2s;}
+        .ms-dot.active{background:#38bdf8;}
+        .ms-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:3;transition:background .2s;}
+        .ms-arrow:hover{background:rgba(0,0,0,.75);}
+        .ms-prev{left:10px;} .ms-next{right:10px;}
         .mstat-val.green{color:#4ade80;}
         .mstat-val.blue{color:#38bdf8;}
         .mockup-body{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px;}
@@ -381,47 +385,27 @@
             </div>
         </div>
 
-        {{-- CSS Dashboard Mockup --}}
-        <div class="mockup-wrap">
+        {{-- Screenshot Slider Mockup --}}
+        <div class="mockup-wrap" id="mockupSlider">
+            {{-- Browser chrome bar --}}
             <div class="mockup-bar">
                 <div class="mockup-dot" style="background:#ef4444;"></div>
                 <div class="mockup-dot" style="background:#fbbf24;"></div>
                 <div class="mockup-dot" style="background:#4ade80;"></div>
                 <span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:8px;">resort.dreamstechnology.in</span>
             </div>
-            <div class="mockup-title-row">
-                <span><i class="fas fa-th-large" style="margin-right:7px;color:#38bdf8;"></i>Dashboard</span>
-                <span style="font-size:9px;color:rgba(255,255,255,.3);">Today: {{ now()->format('d M Y') }}</span>
-            </div>
-            <div class="mockup-stats">
-                <div class="mstat"><div class="mstat-label">Today's Check-in</div><div class="mstat-val green">12</div></div>
-                <div class="mstat"><div class="mstat-label">Today's Check-out</div><div class="mstat-val">08</div></div>
-                <div class="mstat"><div class="mstat-label">Total Bookings</div><div class="mstat-val blue">25</div></div>
-                <div class="mstat"><div class="mstat-label">Revenue</div><div class="mstat-val" style="font-size:11px;">₹2.45L</div></div>
-            </div>
-            <div class="mockup-body">
-                <div class="mbody-card">
-                    <div class="mbody-title">Room Occupancy</div>
-                    @foreach([['label'=>'Occupied','pct'=>72,'color'=>'#38bdf8'],['label'=>'Available','pct'=>20,'color'=>'#4ade80'],['label'=>'Maintenance','pct'=>8,'color'=>'#fbbf24']] as $occ)
-                    <div class="occ-bar-wrap">
-                        <div class="occ-label"><span>{{ $occ['label'] }}</span><span>{{ $occ['pct'] }}%</span></div>
-                        <div class="occ-bar"><div class="occ-fill" style="width:{{ $occ['pct'] }}%;background:{{ $occ['color'] }};"></div></div>
-                    </div>
-                    @endforeach
+            {{-- Slides --}}
+            <div style="overflow:hidden;position:relative;">
+                <div class="ms-track" id="msTrack">
+                    <div class="ms-slide"><img src="/images/slider/slide-01.png" alt="Room Management" loading="lazy"></div>
+                    <div class="ms-slide"><img src="/images/slider/slide-02.png" alt="Dashboard" loading="lazy"></div>
+                    {{-- Add more slides here: <div class="ms-slide"><img src="/images/slider/slide-03.png" alt="..."></div> --}}
                 </div>
-                <div class="mbody-card">
-                    <div class="mbody-title">Recent Bookings</div>
-                    @foreach([['name'=>'Amit Patel','room'=>'101','status'=>'green'],['name'=>'Neha Shah','room'=>'205','status'=>'green'],['name'=>'John Doe','room'=>'302','status'=>'amber']] as $b)
-                    <div class="mbooking">
-                        <div><div class="mbooking-name">{{ $b['name'] }}</div><div class="mbooking-room">Room {{ $b['room'] }}</div></div>
-                        <div class="mbadge {{ $b['status'] }}">{{ $b['status']==='green' ? 'Check-in' : 'Pending' }}</div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            <div class="mockup-footer">
-                <span>Hotel CRM — Active</span>
-                <div class="mnew-btn">+ New Booking</div>
+                {{-- Arrows --}}
+                <button class="ms-arrow ms-prev" onclick="msMove(-1)" aria-label="Previous">&#8249;</button>
+                <button class="ms-arrow ms-next" onclick="msMove(1)"  aria-label="Next">&#8250;</button>
+                {{-- Dots --}}
+                <div class="ms-dots" id="msDots"></div>
             </div>
         </div>
     </div>
@@ -731,6 +715,43 @@ function sendEnquiry() {
         errMsg.textContent='Something went wrong. Please try WhatsApp directly or try again.';
     });
 }
+</script>
+<script>
+(function(){
+    var track  = document.getElementById('msTrack');
+    var dotsEl = document.getElementById('msDots');
+    if(!track) return;
+    var slides = track.querySelectorAll('.ms-slide');
+    var total  = slides.length;
+    var cur    = 0;
+    var timer;
+
+    // Build dots
+    slides.forEach(function(_,i){
+        var d = document.createElement('button');
+        d.className = 'ms-dot' + (i===0?' active':'');
+        d.setAttribute('aria-label','Slide '+(i+1));
+        d.addEventListener('click', function(){ goTo(i); resetTimer(); });
+        dotsEl.appendChild(d);
+    });
+
+    function goTo(n){
+        cur = (n + total) % total;
+        track.style.transform = 'translateX(-' + cur*100 + '%)';
+        dotsEl.querySelectorAll('.ms-dot').forEach(function(d,i){
+            d.classList.toggle('active', i===cur);
+        });
+    }
+
+    function resetTimer(){
+        clearInterval(timer);
+        timer = setInterval(function(){ goTo(cur+1); }, 4000);
+    }
+
+    window.msMove = function(dir){ goTo(cur+dir); resetTimer(); };
+
+    resetTimer();
+})();
 </script>
 </body>
 </html>
