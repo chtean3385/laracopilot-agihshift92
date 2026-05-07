@@ -569,7 +569,7 @@
                     <p class="text-xs text-gray-400 mt-0.5">JPG, PNG or PDF · Max 5 MB each</p>
                 </div>
             </div>
-            <div class="flex gap-3 mt-4">
+            <div class="flex gap-3 mt-5 pt-4 border-t border-gray-100">
                 <button type="button" onclick="closeQuickGuestModal()" class="btn-secondary flex-1">Cancel</button>
                 <button type="submit" id="qgSubmitBtn" class="btn-primary flex-1 justify-center">
                     <i class="fas fa-save mr-2"></i>Save Guest
