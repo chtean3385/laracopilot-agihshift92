@@ -354,7 +354,7 @@
 <nav class="top-nav">
     <div class="nav-logo">
         <img src="/hotel-crm-logo.png" alt="Hotel CRM">
-        <div class="nav-logo-text">DREAM HOTEL<br><span>MANAGEMENT CRM</span></div>
+        <div class="nav-logo-text">Hotel/ Resort<br><span>Automation CRM</span></div>
     </div>
     <a href="https://wa.me/919725225519" target="_blank" class="nav-cta">
         <i class="fab fa-whatsapp"></i> +91 97252 25519
@@ -367,9 +367,9 @@
     <div class="hero-inner">
         <div>
             <div class="hero-badge"><i class="fas fa-cloud"></i> Cloud Based Software / CRM</div>
-            <h1>DREAM HOTEL<br><em>MANAGEMENT</em></h1>
-            <div class="hero-sub">Are you a Hotel Owner?<br>Need software that does <span style="color:#fbbf24;">all your staff work?</span></div>
-            <p class="hero-tagline">Manage your hotel operations, automate tasks and grow your business with our all-in-one cloud based solution. Works on Desktop, Mobile & Tablet.</p>
+            <h1>AI-Powered Hotel<br><em>Automation CRM</em></h1>
+            <div class="hero-sub">Run Your Hotel Operations on WhatsApp + AI<br>Need software that does <span style="color:#fbbf24;">all your staff work?</span></div>
+            <p class="hero-tagline">Manage bookings, billing, KOT, guest communication & reports from one cloud platform.Hotel Management Software Built for Indian Hotels & Resorts</p>
             <div class="hero-pills">
                 <div class="hero-pill"><i class="fas fa-cloud"></i><div><strong style="display:block;font-size:12px;color:#fff;">Cloud Based</strong><span style="font-size:10px;color:rgba(255,255,255,.45);">Access from anywhere</span></div></div>
                 <div class="hero-pill"><i class="fas fa-shield-alt"></i><div><strong style="display:block;font-size:12px;color:#fff;">Secure & Reliable</strong><span style="font-size:10px;color:rgba(255,255,255,.45);">Enterprise grade security</span></div></div>
@@ -448,8 +448,9 @@
 {{-- ── PLANS ── --}}
 <div id="plans" class="plans-section">
     <div class="section-label">
-        <h2>Choose Your Perfect Plan</h2>
-        <p>All prices shown include a <strong style="color:#16a34a;">20% discount</strong> — limited time offer. Add extra modules as you grow.</p>
+        <h2>Choose the Right Plan for Your Hotel</h2>
+        <p>Flexible pricing for hotels, resorts & multi-property businesses.
+             <strong style="color:#16a34a;">20% discount</strong> — Start small and add modules as your operations grow.</p>
     </div>
     <div class="plans-grid">
         @foreach($plans as $plan)
@@ -540,8 +541,8 @@
 <div class="modules-section">
     <div class="modules-inner">
         <div class="section-label">
-            <h2>Powerful Add-On Modules</h2>
-            <p>Pick any module to supercharge your hotel — or get them all free with <strong style="color:#d97706;">Pro AI Plan</strong></p>
+            <h2>Smart Add-Ons for Smarter Hotel Operations</h2>
+            <p>Activate advanced <strong style="color:#d97706;">automation, analytics & management</strong> tools as your  <strong style="color:#d97706;">business grows.</strong></p>
         </div>
         <div class="modules-grid">
             @foreach($modules as $mod)
@@ -570,7 +571,7 @@
     <div class="benefits-inner">
         <div class="section-label">
             <h2>Why Hotel Owners Love Us</h2>
-            <p>Thousands of hotels & resorts trust Dreams Technology CRM</p>
+            <p>Growing hotels trust Dream Hotel CRM & Trusted by hotels & resorts in India</p>
         </div>
         <div class="benefits-grid">
             @foreach([
