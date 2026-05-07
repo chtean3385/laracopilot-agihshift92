@@ -1023,6 +1023,9 @@
             if (extraBedSec) extraBedSec.style.display = 'none';
             // Show arrival-slot row if slot module is active
             if (whArrivalRow && window.whSlotModuleOn) whArrivalRow.classList.remove('hidden');
+            // Always show price summary in whole-hotel mode so the custom total field is visible
+            const priceSummary = document.getElementById('priceNightSummary');
+            if (priceSummary) { priceSummary.classList.remove('hidden'); }
             calcWhSuggestedTotal();
         } else {
             // Hide whole-hotel slot row and reset pricing type

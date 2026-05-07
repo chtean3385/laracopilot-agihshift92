@@ -760,7 +760,8 @@ window.analyticsOpenModal = function(hotelId, hotelName, phone, channel, consent
 };
 
 window.analyticsCloseModal = function() {
-    document.getElementById('analyticsQuickModal').style.display = 'none';
+    var modal = document.getElementById('analyticsQuickModal');
+    if (modal) modal.style.display = 'none';
 };
 
 window.analyticsSelectTpl = function(key) {
@@ -774,11 +775,12 @@ window.analyticsSelectTpl = function(key) {
         window._aqmTplLang = el.dataset.tplLang;
     }
     var btn = document.getElementById('aqmWaSendBtn');
-    btn.disabled = false; btn.style.opacity = '1';
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
 };
 
 function _aqmShowResult(success, msg) {
     var res = document.getElementById('aqmResult');
+    if (!res) return;
     res.style.display = 'block';
     res.style.background = success ? '#dcfce7' : '#fee2e2';
     res.style.color      = success ? '#15803d' : '#b91c1c';
@@ -788,6 +790,7 @@ function _aqmShowResult(success, msg) {
 window.analyticsSendWA = function() {
     if (!window._aqmTplName || !window._aqmHotelId) return;
     var btn = document.getElementById('aqmWaSendBtn');
+    if (!btn) return;
     btn.disabled = true; btn.style.opacity = '0.6';
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
     fetch('/platform/hotels/' + window._aqmHotelId + '/send-quick-wa', {
@@ -808,8 +811,11 @@ window.analyticsSendWA = function() {
 
 window.analyticsSendPush = function() {
     if (!window._aqmHotelId) return;
-    var title = document.getElementById('aqmPushTitle').value.trim();
-    var body  = document.getElementById('aqmPushBody').value.trim();
+    var ptEl = document.getElementById('aqmPushTitle');
+    var pbEl = document.getElementById('aqmPushBody');
+    if (!ptEl || !pbEl) return;
+    var title = ptEl.value.trim();
+    var body  = pbEl.value.trim();
     if (!title || !body) { alert('Please fill in both title and message.'); return; }
     fetch('/platform/hotels/' + window._aqmHotelId + '/send-quick-push', {
         method: 'POST',
