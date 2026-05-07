@@ -159,16 +159,22 @@
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
     END META PIXEL -->
-
-    <!-- GOOGLE TAG (GA4 / Google Ads) — PASTE YOUR CODE HERE WHEN READY
-    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GTAG_ID"></script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-WX667N5L');</script>
+    <!-- End Google Tag Manager -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3DE2MT6N5F"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'YOUR_GTAG_ID');
+
+      gtag('config', 'G-3DE2MT6N5F');
     </script>
-    END GOOGLE TAG -->
 
     <link rel="stylesheet" href="/css/font-awesome.min.css">
     <style>
@@ -375,8 +381,13 @@
         @media(max-width:860px){.hero-inner{grid-template-columns:1fr;}.mockup-wrap{display:none;}.benefits-grid{grid-template-columns:repeat(2,1fr);}.hero h1{font-size:34px;}}
         @media(max-width:600px){.plans-grid{grid-template-columns:1fr;}.modules-grid{grid-template-columns:repeat(2,1fr);}.benefits-grid{grid-template-columns:1fr;}.field-row{grid-template-columns:1fr;}.hero{padding:32px 20px;}.plans-section,.modules-section,.benefits-section,.enquiry-section{padding-left:20px;padding-right:20px;}.section-label h2{font-size:24px;}}
     </style>
+    
 </head>
 <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WX667N5L"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
 
 {{-- ── TOP NAV ── --}}
 <nav class="top-nav">

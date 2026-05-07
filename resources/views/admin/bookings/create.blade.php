@@ -138,7 +138,8 @@
                     window.whSlotModuleOn    = {{ $slotModuleOn ? 'true' : 'false' }};
                     window.pureSlotHotel     = {{ $pureSlotHotel ? 'true' : 'false' }};
                     window.mixedBookingTypes = {{ $mixedBookingTypes ? 'true' : 'false' }};
-                    window.selectedBookingType = '{{ $pureSlotHotel ? "per_slot" : "per_night" }}';
+                    window.slotDefault         = {{ ($pureSlotHotel || (!$hasNightRooms && $hasSlotRooms && $slotModuleOn)) ? 'true' : 'false' }};
+                    window.selectedBookingType = window.slotDefault ? 'per_slot' : 'per_night';
                 </script>
 
                 {{-- ── Booking-Type Pills (mixed hotels only) ───────────────────── --}}
@@ -167,8 +168,9 @@
                 </div>
                 @endif
 
-                {{-- ── Per-Night date row (hidden on pure-slot hotels) ──────────── --}}
-                <div id="perNightFields" class="{{ $pureSlotHotel ? 'hidden' : 'contents' }}">
+                {{-- ── Per-Night date row (hidden on slot-default hotels) ───────── --}}
+                @php $slotDefault = $pureSlotHotel || (!$hasNightRooms && $hasSlotRooms && $slotModuleOn); @endphp
+                <div id="perNightFields" class="{{ $slotDefault ? 'hidden' : 'contents' }}">
                 <div>
                     <label class="form-label">Check-In Date <span class="text-red-500">*</span></label>
                     <input type="date" name="check_in_date" id="checkIn" value="{{ old('check_in_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateTotal()">
@@ -177,6 +179,24 @@
                 <div>
                     <label class="form-label">Check-Out Date <span class="text-red-500">*</span></label>
                     <input type="date" name="check_out_date" id="checkOut" value="{{ old('check_out_date') }}" class="form-input" onchange="calculateTotal()">
+                    @error('check_out_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                </div>
+
+                {{-- ── Per-Slot date row: Check-In + Check-Out (shown for slot mode) ─ --}}
+                <div id="slotDateFields" class="{{ $slotDefault ? 'contents' : 'hidden' }}">
+                <div>
+                    <label class="form-label">Check-In Date <span class="text-red-500">*</span></label>
+                    <input type="date" name="check_in_date" id="slotCheckIn" min="{{ date('Y-m-d') }}"
+                           value="{{ old('check_in_date', request('date')) }}"
+                           class="form-input" onchange="onSlotDateChange()">
+                    @error('check_in_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="form-label">Check-Out Date <span class="text-red-500">*</span></label>
+                    <input type="date" name="check_out_date" id="slotCheckOut" min="{{ date('Y-m-d') }}"
+                           value="{{ old('check_out_date') }}"
+                           class="form-input" onchange="onSlotDateChange()">
                     @error('check_out_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 </div>
@@ -199,20 +219,9 @@
                     @error('customer_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
-                {{-- ── Slot/Hourly booking date (top-level, syncs into hidden field) ── --}}
-                {{-- For pure-slot hotels this is always visible (fills the right col beside Guest). --}}
-                {{-- For mixed hotels JS shows/hides it when pill is switched.                       --}}
-                <div id="slotDateTopRow" class="{{ $pureSlotHotel ? 'block' : 'hidden' }}">
-                    <label class="form-label" id="slotDateTopLabel">Booking Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="slotDateTop" min="{{ date('Y-m-d') }}"
-                           value="{{ old('booking_date', request('date')) }}"
-                           class="form-input"
-                           onchange="onSlotTopDateChange(this.value)">
-                </div>
-
                 <div id="roomSelectWrapper">
-                    <label class="form-label">Room <span class="text-red-500">*</span></label>
-                    <select name="room_id" id="roomSelect" class="@error('room_id') border-red-400 @enderror" required>
+                    <label class="form-label">Room <span class="text-red-500">*</span> <span class="text-xs text-gray-400 font-normal ml-1">— select multiple for multi-room booking</span></label>
+                    <select name="room_ids[]" id="roomSelect" multiple class="@error('room_ids') border-red-400 @enderror">
                         <option value="">Search room by number or type...</option>
                         @foreach($rooms as $room)
                         <option value="{{ $room->id }}"
@@ -242,7 +251,7 @@
                         </option>
                         @endforeach
                     </select>
-                    @error('room_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    @error('room_ids')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     <div id="roomAvailBadge" class="hidden mt-2 text-xs font-medium rounded-lg px-3 py-1.5 border"></div>
                 </div>
 
@@ -274,12 +283,7 @@
                             <i class="fas fa-clock text-violet-500"></i>
                             <h4 class="font-bold text-gray-700">Slot Booking</h4>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            {{-- slotDateInnerRow: hidden when slotDateTop (top-level date) is already visible --}}
-                            <div id="slotDateInnerRow">
-                                <label class="form-label">Booking Date <span class="text-red-500">*</span></label>
-                                <input type="date" name="booking_date" id="slotBookingDate" value="{{ old('booking_date', request('date')) }}" min="{{ date('Y-m-d') }}" class="form-input" onchange="calculateSlotTotal(); refreshAvailableSlots(); document.getElementById('slotDateTop') && (document.getElementById('slotDateTop').value = this.value);">
-                            </div>
+                        <div class="grid grid-cols-1 gap-4">
                             <div>
                                 <label class="form-label">Time Slot <span class="text-red-500">*</span></label>
                                 <select name="time_slot_id" id="timeSlotSelect" class="form-input" onchange="calculateSlotTotal(); updateSlotBadge();">
@@ -577,9 +581,11 @@
     }
 
     let roomTS = new TomSelect('#roomSelect', {
+        plugins: ['remove_button'],
         allowEmptyOption: false,
         placeholder: 'Search room by number or type...',
         maxOptions: 100,
+        maxItems: null,
         onChange: function() {
             restoreRoomDataAttrs();  // must be first — rebuilds data-* before pricing reads them
             updatePricingUI();
@@ -600,7 +606,9 @@
 
     function updatePricingUI() {
         const roomEl = document.getElementById('roomSelect');
-        const opt    = roomEl.options[roomEl.selectedIndex];
+        // For multi-select: use first selected option for pricing display
+        const selectedOpts = Array.from(roomEl.options).filter(function(o) { return o.selected && o.value; });
+        const opt    = selectedOpts[0] || null;
 
         // Smart defaults: use booking type pill selection or hotel type
         const defaultType = window.pureSlotHotel
@@ -623,9 +631,22 @@
         // Whether a room is actually chosen (empty value = no selection)
         const hasRoom = !!(opt && opt.value);
 
-        // Per-Night: never show on a pure-slot hotel; show on fallback when module off
+        // ── slotDateFields show/hide (per-slot date row at top of form) ──────
+        const slotDateEl = document.getElementById('slotDateFields');
+        if (slotDateEl) {
+            const showSlotDates = window.selectedBookingType === 'per_slot' || window.slotDefault;
+            if (showSlotDates) {
+                slotDateEl.classList.remove('hidden'); slotDateEl.classList.add('contents');
+                setFieldsEnabled(slotDateEl, true);
+            } else {
+                slotDateEl.classList.remove('contents'); slotDateEl.classList.add('hidden');
+                setFieldsEnabled(slotDateEl, false);
+            }
+        }
+
+        // Per-Night: never show on a slot-default hotel; show on fallback when module off
         if (perNightEl) {
-            const showNight = !window.pureSlotHotel && (
+            const showNight = !window.slotDefault && (
                 pt === 'per_night' ||
                 (hasRoom && pt === 'per_slot'  && !slotModuleEnabled) ||
                 (hasRoom && pt === 'per_hour'  && !hourlyModuleEnabled)
@@ -648,27 +669,13 @@
             const showSlot = hasRoom && pt === 'per_slot' && slotModuleEnabled;
             perSlotEl.classList.toggle('hidden', !showSlot);
             setFieldsEnabled(perSlotEl, showSlot);
-            const sd = document.getElementById('slotBookingDate');
             const st = document.getElementById('timeSlotSelect');
-            if (sd) sd.required = showSlot;
             if (st) st.required = showSlot;
-            // Keep inner slotBookingDate synced with the top date field
+            // Keep slotBookingDate synced from slotCheckIn (for refreshAvailableSlots)
+            const sd = document.getElementById('slotBookingDate');
             if (showSlot && sd) {
-                const topDate = document.getElementById('slotDateTop')?.value;
-                if (topDate) sd.value = topDate;
-            }
-            // Hide the inner "Booking Date" row in perSlotFields when
-            // the top-level slotDateTop is already showing (avoids duplicate).
-            const slotDateInnerRow = document.getElementById('slotDateInnerRow');
-            if (slotDateInnerRow) {
-                const topRowVisible = !document.getElementById('slotDateTopRow')?.classList.contains('hidden');
-                slotDateInnerRow.classList.toggle('hidden', topRowVisible);
-                // When hidden, adjust grid to 1 col so Time Slot takes full width
-                const slotGrid = slotDateInnerRow.closest('.grid');
-                if (slotGrid) {
-                    slotGrid.classList.toggle('grid-cols-1', topRowVisible);
-                    slotGrid.classList.toggle('grid-cols-2', !topRowVisible);
-                }
+                const ci = document.getElementById('slotCheckIn')?.value;
+                if (ci) sd.value = ci;
             }
         }
 
@@ -742,9 +749,13 @@
     // mark unavailable slots as disabled in the Time Slot dropdown.
     function refreshAvailableSlots() {
         const roomEl = document.getElementById('roomSelect');
-        const roomId = roomEl ? roomEl.value : '';
-        const dateEl = document.getElementById('slotBookingDate');
-        const date   = dateEl ? dateEl.value : '';
+        // For multi-select, use first selected room for slot availability
+        const selectedVals = Array.from(roomEl.options).filter(function(o){ return o.selected && o.value; });
+        const roomId = selectedVals.length > 0 ? selectedVals[0].value : '';
+        // Use slotCheckIn as the date source for slot availability
+        const slotCiEl = document.getElementById('slotCheckIn');
+        const dateEl   = document.getElementById('slotBookingDate');
+        const date     = (slotCiEl && slotCiEl.value) ? slotCiEl.value : (dateEl ? dateEl.value : '');
         const slotSel = document.getElementById('timeSlotSelect');
         if (!slotSel) return;
 
@@ -915,7 +926,10 @@
         const checkin = document.getElementById('checkIn').value;
         const checkout = document.getElementById('checkOut').value;
         const roomEl = document.getElementById('roomSelect');
-        const opt = roomEl.options[roomEl.selectedIndex];
+        // Multi-select: sum prices across all selected rooms
+        const allSelectedOpts = Array.from(roomEl.options).filter(function(o) { return o.selected && o.value; });
+        const opt = allSelectedOpts[0] || null;
+        const totalRoomPrice = allSelectedOpts.reduce(function(sum, o) { return sum + (parseFloat(o.dataset.price) || 0); }, 0);
         const pricePerNight = opt ? parseFloat(opt.dataset.price) || 0 : 0;
         if (checkin && checkout) {
             const d1 = new Date(checkin);
@@ -931,7 +945,8 @@
             const extraBedPrice = opt ? parseFloat(opt.dataset.extraBedPrice || 0) : 0;
             const hasExtraBed = opt && opt.dataset.hasExtraBed === '1';
             const extraBedCost = hasExtraBed ? extraBeds * extraBedPrice * nights : 0;
-            const total = nights * pricePerNight + mealCost + extraBedCost;
+            // Sum all selected room prices × nights, plus meals/extras for first room
+            const total = nights * totalRoomPrice + mealCost + extraBedCost;
             document.getElementById('nightsCount').textContent = nights;
             document.getElementById('rateDisplay').textContent = pricePerNight ? '₹' + pricePerNight.toLocaleString('en-IN') : '—';
             setCustomTotal(total);
@@ -961,13 +976,14 @@
 
         hiddenInput.value = isOn ? '1' : '0';
 
+        const slotDates = document.getElementById('slotDateFields');
         if (isOn) {
             // Hide room selector
             roomWrapper.classList.add('hidden');
-            document.getElementById('roomSelect').required = false;
             document.getElementById('roomSelect').disabled = true;
-            // Always show check-in / check-out date fields for whole-hotel
+            // Always show per-night check-in/out for whole-hotel; hide slot date fields
             if (perNight) { perNight.classList.remove('hidden'); perNight.classList.add('contents'); setFieldsEnabled(perNight, true); document.getElementById('checkIn').required = true; document.getElementById('checkOut').required = true; }
+            if (slotDates) { slotDates.classList.remove('contents'); slotDates.classList.add('hidden'); setFieldsEnabled(slotDates, false); }
             // Hide individual-room per-slot / per-hour fields
             if (perSlot)  { perSlot.classList.add('hidden');  setFieldsEnabled(perSlot,  false); }
             if (perHour)  { perHour.classList.add('hidden');  setFieldsEnabled(perHour,  false); }
@@ -986,7 +1002,6 @@
             if (sel) sel.value = '';
             // Restore room selector
             roomWrapper.classList.remove('hidden');
-            document.getElementById('roomSelect').required = true;
             document.getElementById('roomSelect').disabled = false;
             updatePricingUI();
             updateMealOptions();
@@ -1153,16 +1168,17 @@
 
         const checkIn  = document.getElementById('checkIn')?.value;
         const checkOut = document.getElementById('checkOut')?.value;
-        // slotDateTop is the top-level date field for slot/hourly modes
-        const slotDateTop = document.getElementById('slotDateTop')?.value;
-        const slotDate = slotDateTop || document.getElementById('slotBookingDate')?.value;
+        // slotCheckIn / slotCheckOut are the slot-mode date fields (replaced old slotDateTop)
+        const slotCheckIn  = document.getElementById('slotCheckIn')?.value;
+        const slotDate     = slotCheckIn || document.getElementById('slotBookingDate')?.value;
         const slotId   = document.getElementById('timeSlotSelect')?.value;
         const hourDate = document.getElementById('hourBookingDate')?.value;
 
-        if (checkIn && checkOut && (window.selectedBookingType || 'per_night') === 'per_night') {
+        const activeType = window.selectedBookingType || 'per_night';
+        if (checkIn && checkOut && activeType === 'per_night') {
             params.set('check_in',  checkIn);
             params.set('check_out', checkOut);
-        } else if (slotDate && (window.pureSlotHotel || window.selectedBookingType === 'per_slot')) {
+        } else if (slotDate && (window.slotDefault || activeType === 'per_slot')) {
             params.set('date', slotDate);
             if (slotId) params.set('slot_id', slotId);
         } else if (checkIn && checkOut) {
@@ -1220,9 +1236,11 @@
         //    Using the same `let roomTS` variable so no stale references exist.
         roomTS.destroy();
         roomTS = new TomSelect('#roomSelect', {
+            plugins: ['remove_button'],
             allowEmptyOption: false,
             placeholder: 'Search room by number or type...',
             maxOptions: 100,
+            maxItems: null,
             onChange: function() {
                 restoreRoomDataAttrs();
                 updatePricingUI();
@@ -1235,12 +1253,14 @@
         // Ensure data-* attributes are intact after TomSelect rebuild
         restoreRoomDataAttrs();
 
-        // 3. Restore previous selection if still available; otherwise clear pricing
-        if (currentVal && !unavailableIds.includes(parseInt(currentVal))) {
-            roomTS.setValue(currentVal, true);
-            restoreRoomDataAttrs(); // setValue may trigger updateOriginalInput again
-        } else if (currentVal) {
-            updatePricingUI(); // clears pricing display for now-booked room
+        // 3. Restore previous selections (multi-select: currentVal is an array)
+        const prevVals = Array.isArray(currentVal) ? currentVal : (currentVal ? [currentVal] : []);
+        const stillAvail = prevVals.filter(function(v) { return !unavailableIds.includes(parseInt(v)); });
+        if (stillAvail.length > 0) {
+            roomTS.setValue(stillAvail, true);
+            restoreRoomDataAttrs();
+        } else if (prevVals.length > 0) {
+            updatePricingUI(); // clears pricing display for now-booked rooms
         }
 
         // Show/update the availability badge
@@ -1272,16 +1292,19 @@
     document.getElementById('slotBookingDate')?.addEventListener('change', refreshAvailableRooms);
     document.getElementById('timeSlotSelect')?.addEventListener('change',  refreshAvailableRooms);
     document.getElementById('hourBookingDate')?.addEventListener('change', refreshAvailableRooms);
-    // slotDateTop (top-level booking date for slot/hourly modes)
-    document.getElementById('slotDateTop')?.addEventListener('change', refreshAvailableRooms);
+    // slotCheckIn / slotCheckOut — new slot-mode date fields
+    document.getElementById('slotCheckIn')?.addEventListener('change',  refreshAvailableRooms);
+    document.getElementById('slotCheckOut')?.addEventListener('change', refreshAvailableRooms);
 
-    // ── Top-level slot date field ─────────────────────────────────────────────
-    // Syncs slotDateTop → slotBookingDate and triggers slot refresh.
-    function onSlotTopDateChange(val) {
+    // ── Slot date fields change handler ──────────────────────────────────────
+    // Syncs slotCheckIn → slotBookingDate (for refreshAvailableSlots) and triggers refresh.
+    function onSlotDateChange() {
+        const ci = document.getElementById('slotCheckIn')?.value;
         const inner = document.getElementById('slotBookingDate');
-        if (inner) { inner.value = val; }
+        if (inner && ci) { inner.value = ci; }
         calculateSlotTotal();
         refreshAvailableSlots();
+        refreshAvailableRooms();
     }
 
     // ── Booking-type pill logic (mixed hotels only) ────────────────────────────
@@ -1296,17 +1319,17 @@
 
         // Toggle date section visibility
         const perNightEl  = document.getElementById('perNightFields');
-        const slotTopRow  = document.getElementById('slotDateTopRow');
+        const slotDateEl  = document.getElementById('slotDateFields');
         if (type === 'per_night') {
-            if (perNightEl) { perNightEl.classList.remove('hidden'); perNightEl.classList.add('contents'); }
-            if (slotTopRow) { slotTopRow.classList.add('hidden'); slotTopRow.classList.remove('block'); }
+            if (perNightEl) { perNightEl.classList.remove('hidden'); perNightEl.classList.add('contents'); setFieldsEnabled(perNightEl, true); }
+            if (slotDateEl) { slotDateEl.classList.remove('contents'); slotDateEl.classList.add('hidden'); setFieldsEnabled(slotDateEl, false); }
         } else if (type === 'per_slot') {
-            if (perNightEl) { perNightEl.classList.remove('contents'); perNightEl.classList.add('hidden'); }
-            if (slotTopRow) { slotTopRow.classList.remove('hidden'); slotTopRow.classList.add('block'); }
+            if (perNightEl) { perNightEl.classList.remove('contents'); perNightEl.classList.add('hidden'); setFieldsEnabled(perNightEl, false); }
+            if (slotDateEl) { slotDateEl.classList.remove('hidden'); slotDateEl.classList.add('contents'); setFieldsEnabled(slotDateEl, true); }
         } else {
-            // per_hour: hide both top date rows (hourly has its own in perHourFields)
-            if (perNightEl) { perNightEl.classList.remove('contents'); perNightEl.classList.add('hidden'); }
-            if (slotTopRow) { slotTopRow.classList.add('hidden'); slotTopRow.classList.remove('block'); }
+            // per_hour: hide both date rows (hourly has its own inside perHourFields)
+            if (perNightEl) { perNightEl.classList.remove('contents'); perNightEl.classList.add('hidden'); setFieldsEnabled(perNightEl, false); }
+            if (slotDateEl) { slotDateEl.classList.remove('contents'); slotDateEl.classList.add('hidden'); setFieldsEnabled(slotDateEl, false); }
         }
 
         // Rebuild room dropdown filtered to only show rooms of the selected type
@@ -1349,9 +1372,11 @@
         });
 
         roomTS = new TomSelect('#roomSelect', {
+            plugins: ['remove_button'],
             allowEmptyOption: false,
             placeholder: 'Search room by number or type...',
             maxOptions: 100,
+            maxItems: null,
             onChange: function() {
                 restoreRoomDataAttrs();
                 updatePricingUI();
