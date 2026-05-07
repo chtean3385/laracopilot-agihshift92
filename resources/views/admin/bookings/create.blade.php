@@ -514,56 +514,62 @@
                 <i class="fas fa-times text-sm"></i>
             </button>
         </div>
-        <form id="quickGuestForm" class="p-6" novalidate>
+        <form id="quickGuestForm" class="px-6 pb-5 pt-4" novalidate>
             @csrf
-            <div id="qgError" class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
+            <div id="qgError" class="hidden mb-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2 text-xs flex items-start gap-2">
                 <i class="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
                 <span id="qgErrorMsg"></span>
             </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="form-label">Full Name <span class="text-red-500">*</span></label>
-                    <input type="text" id="qg_name" name="name" class="form-input" placeholder="Guest full name" required>
+            <div class="space-y-3">
+                {{-- Row 1: Name + Phone --}}
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="form-label">Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="qg_name" name="name" class="form-input" placeholder="Guest full name" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Phone <span class="text-red-500">*</span></label>
+                        <input type="text" id="qg_phone" name="phone" class="form-input" placeholder="9876543210" required>
+                    </div>
                 </div>
-                <div>
-                    <label class="form-label">Phone Number <span class="text-red-500">*</span></label>
-                    <input type="text" id="qg_phone" name="phone" class="form-input" placeholder="9876543210" required>
-                    <p class="text-xs text-gray-400 mt-1">10-digit Indian mobile. Foreign guests: include country code (e.g. +447911123456).</p>
-                </div>
+                {{-- Row 2: Email --}}
                 <div>
                     <label class="form-label">Email <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
                     <input type="email" id="qg_email" name="email" class="form-input" placeholder="guest@email.com">
                 </div>
-                <div>
-                    <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
-                    <select id="qg_id_type" name="id_type" class="form-input" required onchange="qgUpdateIdPlaceholder(this.value)">
-                        <option value="">Select document type</option>
-                        <option value="aadhaar">Aadhaar Card</option>
-                        <option value="passport">Passport</option>
-                        <option value="driving_license">Driving License</option>
-                        <option value="voter_id">Voter ID</option>
-                        <option value="pan_card">PAN Card</option>
-                        <option value="visa">Visa</option>
-                        <option value="other">Other</option>
-                    </select>
+                {{-- Row 3: ID Type + ID Number --}}
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="form-label">ID Type <span class="text-red-500">*</span></label>
+                        <select id="qg_id_type" name="id_type" class="form-input" required onchange="qgUpdateIdPlaceholder(this.value)">
+                            <option value="">Select type</option>
+                            <option value="aadhaar">Aadhaar Card</option>
+                            <option value="passport">Passport</option>
+                            <option value="driving_license">Driving License</option>
+                            <option value="voter_id">Voter ID</option>
+                            <option value="pan_card">PAN Card</option>
+                            <option value="visa">Visa</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">ID Number <span class="text-red-500">*</span></label>
+                        <input type="text" id="qg_id_number" name="id_number" class="form-input"
+                            placeholder="Select type first"
+                            disabled
+                            style="text-transform:uppercase;"
+                            oninput="this.value=this.value.toUpperCase()">
+                    </div>
                 </div>
+                {{-- Row 4: Upload Document --}}
                 <div>
-                    <label class="form-label">ID Number <span class="text-red-500">*</span></label>
-                    <input type="text" id="qg_id_number" name="id_number" class="form-input"
-                        placeholder="Select ID type first"
-                        disabled
-                        style="text-transform:uppercase;"
-                        oninput="this.value=this.value.toUpperCase()">
-                    <p class="text-xs text-gray-400 mt-1">Required when document type is selected.</p>
-                </div>
-                <div>
-                    <label class="form-label">Upload Document <span class="text-gray-400 font-normal text-xs">(optional, multiple allowed)</span></label>
+                    <label class="form-label">Upload Document <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
                     <input type="file" name="documents[]" id="qg_documents" multiple accept=".jpg,.jpeg,.png,.pdf"
-                        class="form-input" style="padding:8px;">
-                    <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>JPG, PNG or PDF · Max 5 MB each</p>
+                        class="form-input" style="padding:6px;">
+                    <p class="text-xs text-gray-400 mt-0.5">JPG, PNG or PDF · Max 5 MB each</p>
                 </div>
             </div>
-            <div class="flex gap-3 mt-6">
+            <div class="flex gap-3 mt-4">
                 <button type="button" onclick="closeQuickGuestModal()" class="btn-secondary flex-1">Cancel</button>
                 <button type="submit" id="qgSubmitBtn" class="btn-primary flex-1 justify-center">
                     <i class="fas fa-save mr-2"></i>Save Guest
