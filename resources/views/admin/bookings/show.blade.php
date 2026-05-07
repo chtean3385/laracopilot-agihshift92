@@ -82,7 +82,8 @@
                     <div class="flex justify-between"><span class="text-sm text-gray-500">Booking #</span><span class="text-sm font-mono font-bold text-cyan-600">{{ $booking->booking_number }}</span></div>
                     @php $rm = $booking->room; $pType = $booking->is_whole_hotel ? ($booking->whole_hotel_pricing_type ?? 'per_night') : ($rm?->pricing_type ?? 'per_night'); @endphp
                     @if($pType === 'per_slot' && $booking->booking_date)
-                        <div class="flex justify-between"><span class="text-sm text-gray-500">Booking Date</span><span class="text-sm font-semibold">{{ $booking->booking_date->format('d M Y') }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Check-In</span><span class="text-sm font-semibold">{{ $booking->check_in_date?->format('d M Y') ?? $booking->booking_date->format('d M Y') }}</span></div>
+                        <div class="flex justify-between"><span class="text-sm text-gray-500">Check-Out</span><span class="text-sm font-semibold">{{ $booking->check_out_date?->format('d M Y') ?? '—' }}</span></div>
                         <div class="flex justify-between"><span class="text-sm text-gray-500">Time Slot</span>
                             <span class="text-sm font-semibold text-violet-600">
                                 @if($booking->timeSlot)
