@@ -240,8 +240,8 @@
         .feature-strip-inner{max-width:1280px;margin:0 auto;padding:20px 40px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:16px;}
         .fstrip-item{display:flex;align-items:center;gap:10px;font-size:13px;}
         .fstrip-item-icon{width:38px;height:38px;background:#eff6ff;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;color:#0369a1;flex-shrink:0;}
-        .fstrip-item-text strong{display:block;font-size:13px;font-weight:800;color:#1e293b;margin-bottom:1px;}
-        .fstrip-item-text span{font-size:11px;color:#64748b;}
+        .fstrip-item-text strong{display:block;font-size:15px;font-weight:800;color:#1e293b;margin-bottom:1px;}
+        .fstrip-item-text span{font-size:13px;color:#64748b;}
 
         /* ── PLANS SECTION ── */
         .plans-section{padding:60px 40px;max-width:1280px;margin:0 auto;}
@@ -399,9 +399,9 @@
             <div class="hero-sub">Run Your Hotel Operations on WhatsApp + AI<br>Need software that does <span style="color:#fbbf24;">all your staff work?</span></div>
             <p class="hero-tagline">Manage bookings, billing, KOT, guest communication & reports from one cloud platform.Hotel Management Software Built for Indian Hotels & Resorts</p>
             <div class="hero-pills">
-                <div class="hero-pill"><i class="fas fa-cloud"></i><div><strong style="display:block;font-size:12px;color:#fff;">Cloud Based</strong><span style="font-size:10px;color:rgba(255,255,255,.45);">Access from anywhere</span></div></div>
-                <div class="hero-pill"><i class="fas fa-shield-alt"></i><div><strong style="display:block;font-size:12px;color:#fff;">Secure & Reliable</strong><span style="font-size:10px;color:rgba(255,255,255,.45);">Enterprise grade security</span></div></div>
-                <div class="hero-pill"><i class="fas fa-mobile-alt"></i><div><strong style="display:block;font-size:12px;color:#fff;">Access Anywhere</strong><span style="font-size:10px;color:rgba(255,255,255,.45);">Desktop, Mobile & Tablet</span></div></div>
+                <div class="hero-pill"><i class="fas fa-cloud"></i><div><strong style="display:block;font-size:14px;color:#fff;">Cloud Based</strong><span style="font-size:12px;color:rgba(255,255,255,.45);">Access from anywhere</span></div></div>
+                <div class="hero-pill"><i class="fas fa-shield-alt"></i><div><strong style="display:block;font-size:14px;color:#fff;">Secure & Reliable</strong><span style="font-size:12px;color:rgba(255,255,255,.45);">Enterprise grade security</span></div></div>
+                <div class="hero-pill"><i class="fas fa-mobile-alt"></i><div><strong style="display:block;font-size:14px;color:#fff;">Access Anywhere</strong><span style="font-size:12px;color:rgba(255,255,255,.45);">Desktop, Mobile & Tablet</span></div></div>
             </div>
             <div class="hero-btns">
                 <a href="#plans" class="btn-primary"><i class="fas fa-tags"></i> View Plans</a>
