@@ -156,18 +156,24 @@ class DashboardController extends Controller
             }
         }
 
+        // Single query instead of 7 separate queries — group payments by day
+        try {
+            $revenueByDay = Payment::where('status', 'completed')
+                ->where('created_at', '>=', Carbon::today()->subDays(6)->startOfDay())
+                ->selectRaw("DATE(created_at) as day, SUM(amount) as total")
+                ->groupBy('day')
+                ->pluck('total', 'day');
+        } catch (\Exception $e) {
+            $revenueByDay = collect();
+        }
         $weeklyRevenue = [];
         for ($i = 6; $i >= 0; $i--) {
-            $date   = Carbon::today()->subDays($i);
-            $amount = 0;
-            try {
-                $amount = Payment::whereDate('created_at', $date)->where('status', 'completed')->sum('amount');
-            } catch (\Exception $e) {}
+            $date = Carbon::today()->subDays($i);
             $weeklyRevenue[] = [
                 'day'     => $date->format('D'),
                 'date'    => $date->format('d'),
                 'label'   => $date->format('D, d M'),
-                'amount'  => $amount,
+                'amount'  => (float) ($revenueByDay[$date->toDateString()] ?? 0),
                 'isToday' => $date->isToday(),
             ];
         }

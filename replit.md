@@ -432,3 +432,4 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | 2026-05-07 | v1.0.10 | `ea1b9bf3` | Slot Search shortcut only shows when slot-search-engine module is enabled |
 | 2026-05-07 | v1.0.11 | `cb04b7dc` | Removed Check In/Out, Reports, and Time & Slot shortcuts; Slot Search shortcut gated by module |
 | 2026-05-07 | v1.0.12 | `7388eee` | GST-inclusive booking pricing updates, WhatsApp total fix, analytics JS crash guard, and whole-hotel custom price visibility fix |
+| 2026-05-08 | v1.0.13 | `pending` | Performance: WhatsApp sends queued (async), 8 composite DB indexes, dashboard 7-query revenue loop → 1 GROUP BY, queue worker in start.sh |

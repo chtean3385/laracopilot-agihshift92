@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Jobs\SendWhatsAppEvent;
 use App\Services\ActivityLogger;
-use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -110,7 +110,7 @@ class CheckInController extends Controller
         $booking->load('customer');
         $roomSummary = implode(', ', array_map(fn($r) => 'Room ' . $r, $checkedInRooms));
         ActivityLogger::log('Checked In', 'Check-In', 'Checked in: ' . $booking->customer->name . ' — ' . $roomSummary . ' (Booking #' . $booking->booking_number . ')');
-        WhatsAppService::sendForEvent('checkin.done', $booking);
+        SendWhatsAppEvent::dispatch('checkin.done', $booking->id, (int) $booking->hotel_id);
 
         $successMsg = count($checkedInRooms) > 1
             ? 'Check-in completed for ' . $booking->customer->name . ' — ' . count($checkedInRooms) . ' rooms checked in!'

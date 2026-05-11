@@ -7,8 +7,8 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Invoice;
 use App\Models\Setting;
+use App\Jobs\SendWhatsAppEvent;
 use App\Services\ActivityLogger;
-use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -265,7 +265,7 @@ class CheckOutController extends Controller
         $roomLabel = $booking->is_whole_hotel ? 'Whole Hotel' : ($booking->room?->room_number ?? '?');
         ActivityLogger::log('Created', 'Invoice', 'Invoice ' . $invoice->invoice_number . ' created for ' . $booking->customer->name . ' — Room ' . $roomLabel . ' — ₹' . number_format($grandTotal, 2));
         ActivityLogger::log('Checked Out', 'Check-Out', 'Checked out: ' . $booking->customer->name . ' — Room ' . $roomLabel . ' (Invoice #' . $invoice->invoice_number . ')');
-        WhatsAppService::sendForEvent('checkout.done', $booking);
+        SendWhatsAppEvent::dispatch('checkout.done', $booking->id, (int) $booking->hotel_id);
 
         return redirect()->route('invoices.show', $invoice->id)
             ->with('success', 'Check-out complete! Invoice generated.');
