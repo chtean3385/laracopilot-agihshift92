@@ -150,9 +150,13 @@ class BookingController extends Controller
         // Mixed: more than one booking type is available
         $mixedBookingTypes = ((int)$hasNightRooms + (int)($hasSlotRooms && $slotModuleOn) + (int)($hasHourlyRooms && $hourlyModuleOn)) > 1;
 
+        $bkSettings = \App\Models\Setting::first();
+        $taxRate    = ($bkSettings && !empty($bkSettings->gst_number) && ($bkSettings->tax_rate ?? 0) > 0)
+                        ? (float) $bkSettings->tax_rate : 0;
+
         return view('admin.bookings.create', compact(
             'customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'hotelModules', 'timeSlots', 'addOns',
-            'pureSlotHotel', 'mixedBookingTypes', 'hasSlotRooms', 'hasNightRooms', 'hasHourlyRooms'
+            'pureSlotHotel', 'mixedBookingTypes', 'hasSlotRooms', 'hasNightRooms', 'hasHourlyRooms', 'taxRate'
         ));
     }
 

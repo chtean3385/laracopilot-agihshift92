@@ -244,7 +244,7 @@
                                 $label = match($pType) {
                                     'per_slot' => '⏱ Slot-based',
                                     'per_hour' => '⏰ ₹' . number_format($room->hourly_rate ?? 0) . '/hr',
-                                    default    => '₹' . number_format($room->price_per_night) . '/night',
+                                    default    => '₹' . number_format($room->price_per_night) . '/night' . ($taxRate > 0 ? ' + ' . $taxRate . '% GST' : ''),
                                 };
                             @endphp
                             Room {{ $room->room_number }} — {{ ucfirst($room->type) }} — {{ $label }}
@@ -475,6 +475,18 @@
                             </div>
                         </div>
                     </div>
+                    @if($taxRate > 0)
+                    <div class="mt-3 pt-3 border-t border-cyan-200 space-y-1.5">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">GST ({{ $taxRate }}%)</span>
+                            <span id="gstAmountDisplay" class="font-semibold text-violet-600">—</span>
+                        </div>
+                        <div class="flex justify-between text-sm font-bold">
+                            <span class="text-gray-700">Grand Total (incl. GST)</span>
+                            <span id="grandTotalDisplay" class="text-cyan-700 text-base">—</span>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 <div>
@@ -912,6 +924,20 @@
         if (btn) btn.classList.add('hidden');
     }
 
+    // Recomputes GST and grand-total display whenever the base total changes
+    function updateGstDisplay() {
+        const taxRate = {{ $taxRate }};
+        if (taxRate <= 0) return;
+        const inp  = document.getElementById('customTotalInput');
+        const base = parseFloat(inp?.value) || 0;
+        const gst  = Math.round(base * taxRate / 100);
+        const grand = base + gst;
+        const gstEl = document.getElementById('gstAmountDisplay');
+        const gtEl  = document.getElementById('grandTotalDisplay');
+        if (gstEl) gstEl.textContent = base > 0 ? '₹' + gst.toLocaleString('en-IN') : '—';
+        if (gtEl)  gtEl.textContent  = base > 0 ? '₹' + grand.toLocaleString('en-IN') : '—';
+    }
+
     function resetSlotCustomTotal() {
         window._slotCustomTotalDirty = false;
         calculateSlotTotal();
@@ -981,6 +1007,7 @@
             document.getElementById('nightsCount').textContent = nights;
             document.getElementById('rateDisplay').textContent = pricePerNight ? '₹' + pricePerNight.toLocaleString('en-IN') : '—';
             setCustomTotal(total);
+            updateGstDisplay();
             const mealLine = document.getElementById('mealCostLine');
             let extras = [];
             if (mealCost > 0) extras.push('₹' + mealCost.toLocaleString('en-IN') + ' meals');
@@ -991,6 +1018,7 @@
 
     document.getElementById('checkIn').addEventListener('change', calculateTotal);
     document.getElementById('checkOut').addEventListener('change', calculateTotal);
+    document.getElementById('customTotalInput')?.addEventListener('input', updateGstDisplay);
 
     // ── Whole-Hotel toggle ─────────────────────────────────────────────────
     function toggleWholeHotel() {

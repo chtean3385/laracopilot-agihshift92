@@ -1,4 +1,9 @@
 <div class="space-y-5">
+@php
+    $rsSettings = \App\Models\Setting::first();
+    $rsTaxRate  = ($rsSettings && !empty($rsSettings->gst_number) && ($rsSettings->tax_rate ?? 0) > 0)
+                    ? (float) $rsSettings->tax_rate : 0;
+@endphp
     <!-- Stats -->
     <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
         <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
@@ -157,10 +162,13 @@
                         <span class="text-xs text-gray-400">/slot</span>
                     </div>
                     @else
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <i class="fas fa-rupee-sign text-emerald-400 w-4"></i>
                         <span class="text-lg font-bold text-gray-800">₹{{ number_format($room->price_per_night) }}</span>
                         <span class="text-xs text-gray-400">/night</span>
+                        @if($rsTaxRate > 0)
+                        <span class="text-xs text-gray-400">+ {{ $rsTaxRate }}% GST</span>
+                        @endif
                     </div>
                     @endif
                 </div>

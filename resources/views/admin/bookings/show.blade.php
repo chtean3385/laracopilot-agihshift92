@@ -4,6 +4,11 @@
 @section('page-subtitle', $booking->booking_number)
 
 @section('content')
+@php
+    $_showSettings = \App\Models\Setting::first();
+    $_taxRate      = ($_showSettings && !empty($_showSettings->gst_number) && ($_showSettings->tax_rate ?? 0) > 0)
+                        ? (float) $_showSettings->tax_rate : 0;
+@endphp
 <div class="space-y-6">
     {{-- ── Website Booking Confirm Banner ────────────────────────────────── --}}
     @if($booking->status === 'website_pending')
@@ -179,7 +184,7 @@
                         @if($booking->price_overridden)
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Custom Total</span><span class="font-bold text-amber-600">₹{{ number_format($booking->total_amount) }} <span class="text-xs font-normal text-amber-500">(custom)</span></span></div>
                         @else
-                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room?->price_per_night ?? 0) }}</span></div>
+                        <div class="flex justify-between text-sm"><span class="text-gray-500">Rate/Night</span><span class="font-bold text-emerald-600">₹{{ number_format($booking->room?->price_per_night ?? 0) }}@if($_taxRate > 0)<span class="text-xs font-normal text-gray-400 ml-1">+ {{ $_taxRate }}% GST</span>@endif</span></div>
                         @endif
                         @endif
                     </div>

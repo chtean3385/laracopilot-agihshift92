@@ -4,6 +4,11 @@
 @section('page-subtitle', ucfirst($room->type) . ' • ' . $room->view)
 
 @section('content')
+@php
+    $rmSettings = \App\Models\Setting::first();
+    $rmTaxRate  = ($rmSettings && !empty($rmSettings->gst_number) && ($rmSettings->tax_rate ?? 0) > 0)
+                    ? (float) $rmSettings->tax_rate : 0;
+@endphp
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <a href="{{ route('rooms.index') }}" class="btn-secondary text-sm"><i class="fas fa-arrow-left mr-2"></i>Back to Rooms</a>
@@ -46,7 +51,12 @@
                 </div>
                 <div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl">
                     <span class="text-sm text-gray-500">Price/Night</span>
-                    <span class="font-bold text-emerald-600 text-lg">₹{{ number_format($room->price_per_night) }}</span>
+                    <span class="font-bold text-emerald-600 text-lg">
+                        ₹{{ number_format($room->price_per_night) }}
+                        @if($rmTaxRate > 0)
+                        <span class="block text-xs font-normal text-gray-400">+ {{ $rmTaxRate }}% GST = ₹{{ number_format($room->price_per_night * (1 + $rmTaxRate/100)) }} total</span>
+                        @endif
+                    </span>
                 </div>
             </div>
             @if($room->amenities)
