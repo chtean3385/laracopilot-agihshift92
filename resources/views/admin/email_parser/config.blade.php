@@ -80,6 +80,43 @@
                 <label for="is_active" style="font-size:13px;color:#334155;font-weight:600;">Active — sync this inbox every 5 minutes</label>
             </div>
 
+            {{-- ── Allowed Senders Whitelist ──────────────────────────────── --}}
+            <div style="margin-top:20px;">
+                <label style="font-size:13px;font-weight:700;color:#334155;display:block;margin-bottom:6px;">
+                    <i class="fas fa-filter" style="color:#0d9488;"></i> Allowed Senders (Whitelist)
+                </label>
+                <div style="font-size:12px;color:#64748b;margin-bottom:10px;">
+                    Only fetch emails from these addresses. Leave empty to accept all senders.
+                </div>
+
+                {{-- Tag chips display --}}
+                <div id="senderTags" style="display:flex;flex-wrap:wrap;gap:7px;min-height:38px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 10px;align-items:center;margin-bottom:8px;">
+                    @php $existingSenders = $config->allowed_senders ?? []; @endphp
+                    @foreach($existingSenders as $s)
+                    <span class="sender-tag" data-email="{{ $s }}" style="display:inline-flex;align-items:center;gap:5px;background:#ccfbf1;color:#0f766e;border-radius:20px;padding:3px 11px 3px 11px;font-size:12px;font-weight:700;">
+                        {{ $s }}
+                        <button type="button" onclick="removeSender(this)" style="background:none;border:none;color:#0f766e;cursor:pointer;padding:0;line-height:1;font-size:13px;">&times;</button>
+                    </span>
+                    @endforeach
+                    <span id="senderPlaceholder" style="font-size:12px;color:#94a3b8;{{ count($existingSenders) > 0 ? 'display:none;' : '' }}">No senders added — all emails accepted</span>
+                </div>
+
+                {{-- Add sender input row --}}
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="email" id="senderInput" placeholder="e.g. noreply@booking.com"
+                        style="flex:1;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;color:#334155;outline:none;"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();addSender();}">
+                    <button type="button" onclick="addSender()"
+                        style="background:#0d9488;color:#fff;border:none;padding:9px 16px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+
+                {{-- Hidden field submitted with form --}}
+                <input type="hidden" name="allowed_senders" id="allowedSendersHidden"
+                    value="{{ implode(',', $existingSenders) }}">
+            </div>
+
             <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
                 <button type="submit" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border:none;padding:11px 22px;border-radius:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-save"></i> Save Configuration
@@ -278,6 +315,39 @@ async function runSimEmail() {
     } catch (e) {
         out.innerHTML = '<div style="color:#b91c1c;font-size:13px;"><i class="fas fa-times-circle"></i> Network error: ' + e.message + '</div>';
     }
+}
+function syncSendersHidden() {
+    const tags = document.querySelectorAll('#senderTags .sender-tag');
+    const emails = Array.from(tags).map(t => t.dataset.email);
+    document.getElementById('allowedSendersHidden').value = emails.join(',');
+    document.getElementById('senderPlaceholder').style.display = emails.length ? 'none' : '';
+}
+function addSender() {
+    const input = document.getElementById('senderInput');
+    const val = input.value.trim().toLowerCase();
+    if (!val) return;
+    // Basic email check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        input.style.borderColor = '#fca5a5';
+        setTimeout(() => input.style.borderColor = '#e2e8f0', 1500);
+        return;
+    }
+    // Duplicate check
+    const existing = Array.from(document.querySelectorAll('#senderTags .sender-tag')).map(t => t.dataset.email);
+    if (existing.includes(val)) { input.value = ''; return; }
+    // Build chip
+    const chip = document.createElement('span');
+    chip.className = 'sender-tag';
+    chip.dataset.email = val;
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:#ccfbf1;color:#0f766e;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:700;';
+    chip.innerHTML = val + '<button type="button" onclick="removeSender(this)" style="background:none;border:none;color:#0f766e;cursor:pointer;padding:0;line-height:1;font-size:13px;">&times;</button>';
+    document.getElementById('senderTags').appendChild(chip);
+    input.value = '';
+    syncSendersHidden();
+}
+function removeSender(btn) {
+    btn.closest('.sender-tag').remove();
+    syncSendersHidden();
 }
 async function testConnection() {
     const out = document.getElementById('ep-test-result');
