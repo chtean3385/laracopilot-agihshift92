@@ -680,82 +680,61 @@
                     </div>
                 </div>
 
+                {{-- ── OTA Email Alerts — OUTSIDE dbMain so JS reorder can't push them down ── --}}
+                @php
+                    $epEnabled  = \App\Models\Module::isEnabled('email-parser');
+                    $epHotelId  = (int) session('crm_hotel_id');
+                    $epConflicts = $epEnabled ? \App\Models\OtaBookingConflict::unresolvedCountForHotel($epHotelId) : 0;
+                    $epNewToday  = $epEnabled
+                        ? \App\Models\Booking::where('hotel_id', $epHotelId)
+                            ->whereNotNull('external_booking_id')
+                            ->whereDate('created_at', today())
+                            ->count()
+                        : 0;
+                @endphp
+                @if($epEnabled && $epConflicts > 0)
+                <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#7f1d1d,#b91c1c,#dc2626);box-shadow:0 8px 32px rgba(220,38,38,.45);animation:pulse-dirty 2s infinite;margin-bottom:4px;">
+                    <div style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
+                    <div style="position:absolute;left:60px;bottom:-50px;width:130px;height:130px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
+                    <a href="{{ route('email-parser.conflicts') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
+                        <div style="position:relative;flex-shrink:0;">
+                            <div style="position:absolute;inset:0;background:rgba(255,255,255,.25);border-radius:18px;animation:pulse-dirty 1.5s infinite;"></div>
+                            <div style="position:relative;width:62px;height:62px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);border-radius:18px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-triangle-exclamation" style="color:#fff;font-size:26px;"></i>
+                            </div>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                                <span style="font-size:19px;font-weight:900;color:#fff;letter-spacing:-.3px;">{{ $epConflicts }} OTA Booking Conflict{{ $epConflicts === 1 ? '' : 's' }} Need Attention</span>
+                                <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">Action Required</span>
+                            </div>
+                            <div style="font-size:14px;color:rgba(255,255,255,.85);">Bookings imported from email are missing a room assignment — click to resolve now.</div>
+                        </div>
+                        <div style="flex-shrink:0;background:#fff;color:#b91c1c;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">Resolve <i class="fas fa-arrow-right"></i></div>
+                    </a>
+                </div>
+                @endif
+                @if($epEnabled && $epNewToday > 0)
+                <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#064e3b,#065f46,#059669);box-shadow:0 8px 28px rgba(5,150,105,.4);margin-bottom:4px;">
+                    <div style="position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
+                    <div style="position:absolute;left:80px;bottom:-50px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
+                    <a href="{{ route('email-parser.logs') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
+                        <div style="width:62px;height:62px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);border-radius:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-envelope-open-text" style="color:#fff;font-size:26px;"></i>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                                <span style="font-size:19px;font-weight:900;color:#fff;letter-spacing:-.3px;">{{ $epNewToday }} New OTA Booking{{ $epNewToday === 1 ? '' : 's' }} Imported Today</span>
+                                <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">Today</span>
+                            </div>
+                            <div style="font-size:14px;color:rgba(255,255,255,.85);">Auto-created from your connected inbox and added to Bookings.</div>
+                        </div>
+                        <div style="flex-shrink:0;background:#fff;color:#065f46;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">View Bookings <i class="fas fa-arrow-right"></i></div>
+                    </a>
+                </div>
+                @endif
+
                 <div class="dashboard-main" id="dbMain" style="display:flex;flex-direction:column;gap:24px;">
-
-                    {{-- ── OTA Email Alerts — always at very top ───────────────────────────── --}}
-                    @php
-                        $epEnabled  = \App\Models\Module::isEnabled('email-parser');
-                        $epHotelId  = (int) session('crm_hotel_id');
-                        $epConflicts = $epEnabled ? \App\Models\OtaBookingConflict::unresolvedCountForHotel($epHotelId) : 0;
-                        $epNewToday  = $epEnabled
-                            ? \App\Models\Booking::where('hotel_id', $epHotelId)
-                                ->whereNotNull('external_booking_id')
-                                ->whereDate('created_at', today())
-                                ->count()
-                            : 0;
-                    @endphp
-                    @if($epEnabled && $epConflicts > 0)
-                    <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#7f1d1d,#b91c1c,#dc2626);box-shadow:0 8px 32px rgba(220,38,38,.45);animation:pulse-dirty 2s infinite;">
-                        {{-- Decorative orbs --}}
-                        <div style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
-                        <div style="position:absolute;left:60px;bottom:-50px;width:130px;height:130px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
-                        <a href="{{ route('email-parser.conflicts') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
-                            {{-- Pulsing icon --}}
-                            <div style="position:relative;flex-shrink:0;">
-                                <div style="position:absolute;inset:0;background:rgba(255,255,255,.25);border-radius:18px;animation:pulse-dirty 1.5s infinite;"></div>
-                                <div style="position:relative;width:62px;height:62px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);border-radius:18px;display:flex;align-items:center;justify-content:center;">
-                                    <i class="fas fa-triangle-exclamation" style="color:#fff;font-size:26px;"></i>
-                                </div>
-                            </div>
-                            {{-- Text --}}
-                            <div style="flex:1;min-width:0;">
-                                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
-                                    <span style="font-size:19px;font-weight:900;color:#fff;letter-spacing:-.3px;">
-                                        {{ $epConflicts }} OTA Booking Conflict{{ $epConflicts === 1 ? '' : 's' }} Need Attention
-                                    </span>
-                                    <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">Action Required</span>
-                                </div>
-                                <div style="font-size:14px;color:rgba(255,255,255,.85);">
-                                    Bookings imported from email are missing a room assignment — click to resolve now.
-                                </div>
-                            </div>
-                            {{-- CTA --}}
-                            <div style="flex-shrink:0;background:#fff;color:#b91c1c;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">
-                                Resolve <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-                    </div>
-                    @endif
-
-                    @if($epEnabled && $epNewToday > 0)
-                    <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#064e3b,#065f46,#059669);box-shadow:0 8px 28px rgba(5,150,105,.4);">
-                        {{-- Decorative orbs --}}
-                        <div style="position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
-                        <div style="position:absolute;left:80px;bottom:-50px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
-                        <a href="{{ route('email-parser.logs') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
-                            {{-- Icon --}}
-                            <div style="width:62px;height:62px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);border-radius:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fas fa-envelope-open-text" style="color:#fff;font-size:26px;"></i>
-                            </div>
-                            {{-- Text --}}
-                            <div style="flex:1;min-width:0;">
-                                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
-                                    <span style="font-size:19px;font-weight:900;color:#fff;letter-spacing:-.3px;">
-                                        {{ $epNewToday }} New OTA Booking{{ $epNewToday === 1 ? '' : 's' }} Imported Today
-                                    </span>
-                                    <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">Today</span>
-                                </div>
-                                <div style="font-size:14px;color:rgba(255,255,255,.85);">
-                                    Auto-created from your connected inbox and added to Bookings.
-                                </div>
-                            </div>
-                            {{-- CTA --}}
-                            <div style="flex-shrink:0;background:#fff;color:#065f46;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">
-                                View Bookings <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </a>
-                    </div>
-                    @endif
 
                     {{-- ── Hotel Full Alert Banner ─────────────────────────────────────────── --}}
                     @if($hotelFull)
