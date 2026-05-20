@@ -601,7 +601,6 @@
                         'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
                         'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
                         'recent-room-pair'   => ['label' => 'Recent Bookings + Room Availability', 'icon' => 'fa-th-large', 'bg' => 'linear-gradient(135deg,#10b981,#0284c7)'],
-                        'live-activity'      => ['label' => 'Live Activity Feed',              'icon' => 'fa-stream',        'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
                     ];
                     $orderedWidgets = collect($dashWidgetOrder)->filter(fn($k) => array_key_exists($k, $widgetMeta))->values()->all();
                     foreach (array_keys($widgetMeta) as $k) {
@@ -1594,35 +1593,6 @@
                     @endif
                     </div>{{-- /arrivals-departures widget --}}
 
-                    {{-- Live Activity Feed ──────────────────────────────────────────────── --}}
-                    <div data-widget="live-activity" class="db-widget-wrap">
-                    <div class="db-card" style="overflow:hidden;padding:0;">
-                        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#faf5ff,#ede9fe);">
-                            <div style="display:flex;align-items:center;gap:12px;">
-                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,.3);">
-                                    <i class="fas fa-stream" style="color:#fff;font-size:14px;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:15px;">Live Activity Feed</div>
-                                    <div style="font-size:11px;color:#7c3aed;" id="liveActivityStatus">Auto-refreshes every 30s</div>
-                                </div>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <span id="liveActivityDot" style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;animation:pulse-live 2s infinite;flex-shrink:0;" title="Live"></span>
-                                <button onclick="loadLiveFeed(true)" title="Refresh now"
-                                    style="width:32px;height:32px;border:1.5px solid #ddd6fe;border-radius:9px;background:#faf5ff;color:#7c3aed;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;"
-                                    onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#faf5ff'">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="liveActivityList" style="max-height:360px;overflow-y:auto;padding:8px 0;">
-                            <div style="padding:32px;text-align:center;color:#94a3b8;font-size:13px;">
-                                <i class="fas fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block;color:#a78bfa;"></i>Loading activity…
-                            </div>
-                        </div>
-                    </div>
-                    </div>{{-- /live-activity widget --}}
 
 
                 </div>{{-- /dashboard-main --}}
@@ -2168,67 +2138,6 @@
                             .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     }
 
-                    // ── Live Activity Feed ────────────────────────────────────────
-                    var lastFeedId   = 0;
-                    var feedLoading  = false;
-
-                    window.loadLiveFeed = function (manual) {
-                        if (feedLoading && !manual) return;
-                        feedLoading = true;
-
-                        fetch(LIVE_FEED_URL, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                        })
-                        .then(function (r) { return r.ok ? r.json() : null; })
-                        .then(function (items) {
-                            if (!items) return;
-                            var list = document.getElementById('liveActivityList');
-                            if (!list) return;
-
-                            if (!items.length) {
-                                list.innerHTML = '<div style="padding:32px;text-align:center;color:#94a3b8;font-size:13px;"><i class="fas fa-history" style="font-size:20px;margin-bottom:8px;display:block;color:#c4b5fd;"></i>No activity recorded yet.</div>';
-                                return;
-                            }
-
-                            // Highlight new entries since last fetch
-                            var topId = items[0].id;
-
-                            list.innerHTML = items.map(function (e, idx) {
-                                var isNew = (lastFeedId > 0 && e.id > lastFeedId);
-                                return '<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 18px;border-bottom:1px solid #f8fafc;' + (isNew ? 'background:#f5f3ff;' : 'background:transparent;') + 'transition:background .4s;">'
-                                    + '<div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;">' + escHtml(e.avatar) + '</div>'
-                                    + '<div style="flex:1;min-width:0;">'
-                                    +   '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;">'
-                                    +     '<span style="font-weight:700;color:#1e293b;font-size:13px;">' + escHtml(e.user_name) + '</span>'
-                                    +     (e.user_role ? '<span style="font-size:10px;font-weight:600;color:#7c3aed;background:#f5f3ff;border-radius:6px;padding:1px 7px;">' + escHtml(e.user_role) + '</span>' : '')
-                                    +     '<span style="font-size:10px;font-weight:700;border-radius:6px;padding:2px 8px;background:' + escHtml(e.action_bg) + ';color:' + escHtml(e.action_color) + ';">' + escHtml(e.action_label) + '</span>'
-                                    +     (e.module ? '<span style="font-size:10px;color:#94a3b8;">' + escHtml(e.module) + '</span>' : '')
-                                    +   '</div>'
-                                    +   '<div style="font-size:12px;color:#475569;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(e.description) + '</div>'
-                                    + '</div>'
-                                    + '<div style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;padding-top:2px;">' + escHtml(e.time) + '</div>'
-                                    + '</div>';
-                            }).join('');
-
-                            // Update last seen ID and status
-                            if (topId > lastFeedId) {
-                                lastFeedId = topId;
-                            }
-
-                            var statusEl = document.getElementById('liveActivityStatus');
-                            var now = new Date();
-                            if (statusEl) statusEl.textContent = 'Updated ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
-                        })
-                        .catch(function () {
-                            var dot = document.getElementById('liveActivityDot');
-                            if (dot) dot.style.background = '#ef4444';
-                        })
-                        .finally(function () { feedLoading = false; });
-                    };
-
-                    // Initial load + 30s poll
-                    loadLiveFeed(true);
-                    setInterval(function () { loadLiveFeed(false); }, 30000);
 
                     // ── KPI Live Refresh ──────────────────────────────────────────
                     function animateNum(el, target, prefix, isCurrency) {
