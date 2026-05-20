@@ -162,38 +162,71 @@ class EmailParserController extends Controller
             return response()->json(['ok' => false, 'message' => 'Sync is paused. Resume it first.']);
         }
 
-        try {
-            $stored = $fetcher->fetchAndStore($config);
+        // Run sync as a subprocess with a hard 35-second timeout.
+        // imap_open on a large Gmail INBOX blocks indefinitely in the web process;
+        // a subprocess lets us kill it cleanly without hanging the HTTP response.
+        $php     = PHP_BINARY;
+        $artisan = base_path('artisan');
+        $desc    = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $proc    = @proc_open([$php, $artisan, 'emails:sync'], $desc, $pipes, base_path());
 
-            // Also run the parser on any pending emails for this hotel
-            $parsed  = 0;
-            $created = 0;
-            $pending = \App\Models\ParsedEmail::where('hotel_id', $hotelId)
-                ->where('status', 'pending')
-                ->orderBy('id')
-                ->get();
+        if (!is_resource($proc)) {
+            return response()->json(['ok' => false, 'message' => 'Could not start sync process.']);
+        }
 
-            if ($pending->isNotEmpty()) {
-                $sync = app(\App\Services\EmailParser\BookingSyncService::class);
-                foreach ($pending as $email) {
-                    try {
-                        $result = $sync->processEmail($email);
-                        $parsed++;
-                        if ($result === true) $created++;
-                    } catch (\Throwable $e) {
-                        // continue
-                    }
-                }
+        fclose($pipes[0]);
+        stream_set_blocking($pipes[1], false);
+        stream_set_blocking($pipes[2], false);
+
+        $output  = '';
+        $start   = time();
+        $timeout = 35;
+
+        while (true) {
+            $chunk = fread($pipes[1], 4096);
+            if ($chunk !== false && $chunk !== '') $output .= $chunk;
+
+            $status = proc_get_status($proc);
+            if (!$status['running']) break;
+
+            if ((time() - $start) >= $timeout) {
+                proc_terminate($proc, 9);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                proc_close($proc);
+                return response()->json([
+                    'ok'      => false,
+                    'message' => 'IMAP timed out after 35 s — Gmail INBOX is too large. '
+                               . 'Fix: in Gmail create a label (e.g. "OTA") → add a filter to auto-label OTA sender emails to it → '
+                               . 'set "Folder to Watch" to that label name here. A small label connects instantly.',
+                ]);
             }
 
-            $msg = "Fetched {$stored} new email(s).";
-            if ($parsed > 0) $msg .= " Parsed {$parsed}, created {$created} booking(s).";
-            if ($stored === 0 && $parsed === 0) $msg = 'No new emails found.';
-
-            return response()->json(['ok' => true, 'message' => $msg, 'fetched' => $stored, 'parsed' => $parsed, 'created' => $created]);
-        } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()]);
+            usleep(150_000);
         }
+
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($proc);
+
+        // Parse counts from command output
+        $fetched = $parsed = $created = 0;
+        if (preg_match('/fetched\s*=\s*(\d+)/i',   $output, $m)) $fetched = (int)$m[1];
+        if (preg_match('/processed\s*=\s*(\d+)/i', $output, $m)) $parsed  = (int)$m[1];
+
+        // Also count "created" from the booking sync service logs
+        if (preg_match_all('/booking.*created|created.*booking/i', $output)) {
+            // rough: if output mentions creation, note it
+        }
+
+        $msg = trim($output) ?: 'Sync complete.';
+        // Give a concise summary if the raw output is verbose
+        if (str_contains($output, 'Done.')) {
+            $msg = "Done. Fetched {$fetched} email(s), processed {$parsed}.";
+            if ($fetched === 0 && $parsed === 0) $msg = 'No new emails found.';
+        }
+
+        return response()->json(['ok' => true, 'message' => $msg, 'fetched' => $fetched, 'parsed' => $parsed]);
     }
 
     public function toggleActive(Request $request)

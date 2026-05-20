@@ -36,6 +36,27 @@ class EmailFetcherService
         $folder    = $config->folder_to_watch ?: 'INBOX';
         $mailbox   = '{' . $config->imap_host . ':' . (int) $config->imap_port . $flags . '}' . $folder;
 
+        // Set IMAP timeouts (seconds) before connecting.
+        @imap_timeout(IMAP_OPENTIMEOUT,  20);
+        @imap_timeout(IMAP_READTIMEOUT,  20);
+        @imap_timeout(IMAP_WRITETIMEOUT, 20);
+        @imap_timeout(IMAP_CLOSETIMEOUT,  5);
+
+        // Use pcntl_alarm to hard-interrupt imap_open if it blocks past 25 s.
+        // c-client can hang indefinitely when Gmail sends the full INBOX state
+        // for large mailboxes (1000+ emails); imap_timeout doesn't cover that phase.
+        $timedOut = false;
+        if (function_exists('pcntl_signal') && function_exists('pcntl_alarm')) {
+            // async_signals ensures the SIGALRM fires immediately mid-blocking-call (CLI only)
+            if (function_exists('pcntl_async_signals')) {
+                pcntl_async_signals(true);
+            }
+            pcntl_signal(SIGALRM, function () use (&$timedOut) {
+                $timedOut = true;
+            });
+            pcntl_alarm(25);
+        }
+
         // Suppress imap_open warnings; capture last error from imap_errors().
         $conn = @imap_open(
             $mailbox,
@@ -44,6 +65,18 @@ class EmailFetcherService
             0,
             1
         );
+
+        if (function_exists('pcntl_alarm')) {
+            pcntl_alarm(0); // cancel alarm
+        }
+
+        if ($timedOut) {
+            throw new \RuntimeException(
+                'IMAP connection timed out (Gmail took >25 s to respond). '
+                . 'Tip: create a Gmail label for OTA emails and set "Folder to Watch" to that label — '
+                . 'it\'s much faster than scanning the full INBOX.'
+            );
+        }
 
         if (!$conn) {
             $err = imap_last_error() ?: 'Unknown IMAP error';

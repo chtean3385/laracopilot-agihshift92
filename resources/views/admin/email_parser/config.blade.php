@@ -146,7 +146,25 @@
         </form>
         @endif
 
-        <div style="margin-top:22px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;">
+        <div style="margin-top:16px;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:14px;padding:16px;">
+            <div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:14px;">
+                <i class="fas fa-triangle-exclamation" style="color:#d97706;"></i>
+                Gmail INBOX performance tip — important!
+            </div>
+            <p style="margin:0 0 10px;font-size:13px;color:#78350f;line-height:1.6;">
+                If your Gmail INBOX has many emails (500+), the IMAP sync hangs because Gmail sends the full mailbox state on connect.
+                <strong>Create a dedicated Gmail Label</strong> instead — it connects in under 2 seconds.
+            </p>
+            <ol style="margin:0;padding-left:22px;font-size:13px;color:#78350f;line-height:1.9;">
+                <li>In Gmail → left sidebar → <strong>+ Create new label</strong> → name it e.g. <code>OTA Bookings</code></li>
+                <li>Gmail Settings → <strong>Filters and Blocked Addresses → Create a new filter</strong></li>
+                <li>In "From" field: add OTA sender addresses (e.g. <code>noreply@booking.com, noreply@goibibo.com</code>)</li>
+                <li>Click "Create filter" → tick <strong>Apply the label → OTA Bookings</strong> → Save</li>
+                <li>Back in the CRM — set <strong>Folder to Watch</strong> to <code>OTA Bookings</code> and save</li>
+            </ol>
+        </div>
+
+        <div style="margin-top:14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;">
             <div style="font-weight:800;color:#1e293b;margin-bottom:8px;font-size:14px;"><i class="fab fa-google" style="color:#ea4335;"></i> Using Gmail? Generate an App Password:</div>
             <ol style="margin:0;padding-left:22px;font-size:13px;color:#475569;line-height:1.8;">
                 <li>Go to <strong>Google Account → Security → 2-Step Verification</strong> (must be enabled).</li>
@@ -325,12 +343,16 @@ async function syncNow() {
     const out = document.getElementById('ep-sync-result');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
-    out.innerHTML = '<span style="color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Connecting to inbox — this may take up to 30 seconds...</span>';
+    out.innerHTML = '<span style="color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Connecting to Gmail IMAP — please wait up to 60 seconds...</span>';
     try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 70000);
         const r = await fetch('{{ route('email-parser.sync-now') }}', {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+            signal: controller.signal,
         });
+        clearTimeout(timer);
         const j = await r.json();
         if (j.ok) {
             const icon = j.created > 0 ? 'fa-calendar-plus' : (j.fetched > 0 ? 'fa-envelope-open' : 'fa-check-circle');
