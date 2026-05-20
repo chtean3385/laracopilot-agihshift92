@@ -41,7 +41,7 @@ class EmailsSync extends Command
             } catch (\Throwable $e) {
                 Log::warning('emails:sync — fetch failed for hotel #' . $hotelId . ' — ' . $e->getMessage());
                 $this->warn("Hotel #{$hotelId}: fetch error — " . $e->getMessage());
-                continue;
+                // Do NOT continue — always process any pending emails even when IMAP fails.
             }
 
             try {
