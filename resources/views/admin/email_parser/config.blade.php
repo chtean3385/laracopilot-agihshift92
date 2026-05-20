@@ -87,6 +87,9 @@
                 <button type="button" onclick="testConnection()" style="background:#f8fafc;color:#0f766e;border:1.5px solid #0d9488;padding:11px 22px;border-radius:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-plug"></i> Test Connection
                 </button>
+                <button type="button" onclick="document.getElementById('simEmailModal').style.display='flex'" style="background:#f8fafc;color:#6366f1;border:1.5px solid #6366f1;padding:11px 22px;border-radius:12px;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-flask"></i> Simulate Email
+                </button>
             </div>
 
             <div id="ep-test-result" style="margin-top:14px;font-size:13px;font-weight:600;"></div>
@@ -160,6 +163,48 @@
 }
 </style>
 
+{{-- ── Simulate Email Modal ──────────────────────────────────────────────── --}}
+<div id="simEmailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;padding:28px;width:90%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative;max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-flask" style="color:#fff;font-size:15px;"></i>
+                </div>
+                <div>
+                    <div style="font-size:15px;font-weight:800;color:#1e293b;">Simulate Email Parsing</div>
+                    <div style="font-size:11px;color:#94a3b8;">Paste an OTA email to test the parser — nothing is saved</div>
+                </div>
+            </div>
+            <button onclick="closeSimModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:20px;line-height:1;">&times;</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Sender Email <span style="font-weight:400;color:#94a3b8;">(optional — used for OTA matching)</span></label>
+                <input id="sim-sender" type="text" placeholder="e.g. noreply@booking.com" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Subject <span style="font-weight:400;color:#94a3b8;">(optional — used for OTA matching)</span></label>
+                <input id="sim-subject" type="text" placeholder="e.g. New Booking Confirmation – BDC-12345" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px;">Email Body <span style="color:#b91c1c;">*</span></label>
+                <textarea id="sim-body" rows="9" placeholder="Paste the plain-text body of the OTA booking confirmation here..." style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;font-family:monospace;outline:none;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+        </div>
+
+        <div style="margin-top:16px;display:flex;gap:10px;">
+            <button onclick="runSimEmail()" style="flex:1;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-play"></i> Run Parser
+            </button>
+            <button onclick="closeSimModal()" style="background:#f1f5f9;border:none;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">Cancel</button>
+        </div>
+
+        <div id="sim-result" style="margin-top:16px;"></div>
+    </div>
+</div>
+
 <script>
 const QUICK_FILL = {
     gmail:   { host: 'imap.gmail.com',          port: 993, enc: 'ssl' },
@@ -172,6 +217,42 @@ function quickFill(key) {
     document.querySelector('[name=imap_host]').value = f.host;
     document.querySelector('[name=imap_port]').value = f.port;
     document.querySelector('[name=encryption]').value = f.enc;
+}
+function closeSimModal() {
+    document.getElementById('simEmailModal').style.display = 'none';
+    document.getElementById('sim-result').innerHTML = '';
+}
+async function runSimEmail() {
+    const out = document.getElementById('sim-result');
+    const body = document.getElementById('sim-body').value.trim();
+    if (!body) { out.innerHTML = '<p style="color:#b91c1c;font-size:13px;"><i class="fas fa-exclamation-circle"></i> Please paste an email body.</p>'; return; }
+    out.innerHTML = '<p style="color:#64748b;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Parsing...</p>';
+    try {
+        const fd = new FormData();
+        fd.append('sender',  document.getElementById('sim-sender').value.trim());
+        fd.append('subject', document.getElementById('sim-subject').value.trim());
+        fd.append('body',    body);
+        const r = await fetch('{{ route('email-parser.simulate') }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+            body: fd,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+            out.innerHTML = '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;color:#b91c1c;font-size:13px;"><i class="fas fa-times-circle"></i> ' + (j.message || 'Parser returned no match.') + '</div>';
+            return;
+        }
+        // Build result table
+        const rows = Object.entries(j.data).map(([k, v]) =>
+            '<tr><td style="padding:5px 10px;font-weight:700;color:#475569;font-size:12px;white-space:nowrap;">' + k.replace(/_/g,' ') + '</td><td style="padding:5px 10px;color:#1e293b;font-size:12px;">' + (v ?? '—') + '</td></tr>'
+        ).join('');
+        out.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;">'
+            + '<div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Matched: ' + j.ota_label + '</div>'
+            + '<table style="width:100%;border-collapse:collapse;">' + rows + '</table>'
+            + '</div>';
+    } catch (e) {
+        out.innerHTML = '<div style="color:#b91c1c;font-size:13px;"><i class="fas fa-times-circle"></i> Network error: ' + e.message + '</div>';
+    }
 }
 async function testConnection() {
     const out = document.getElementById('ep-test-result');

@@ -321,6 +321,7 @@ Route::post('/email-parser/toggle-active',          [\App\Http\Controllers\Admin
 Route::get('/email-parser/logs',                    [\App\Http\Controllers\Admin\EmailParserController::class, 'logs']            )->name('email-parser.logs');
 Route::get('/email-parser/conflicts',               [\App\Http\Controllers\Admin\EmailParserController::class, 'conflicts']       )->name('email-parser.conflicts');
 Route::post('/email-parser/conflicts/{id}/resolve', [\App\Http\Controllers\Admin\EmailParserController::class, 'resolveConflict'])->name('email-parser.conflicts.resolve');
+Route::post('/email-parser/simulate',               [\App\Http\Controllers\Admin\EmailParserController::class, 'simulate']          )->name('email-parser.simulate');
 
 // ── OTA WhatsApp Sync — Import Queue ───────────────────────────────────────
 Route::get('/ota-bookings',                   [\App\Http\Controllers\Admin\OtaBookingController::class, 'index']  )->name('ota-bookings.index');

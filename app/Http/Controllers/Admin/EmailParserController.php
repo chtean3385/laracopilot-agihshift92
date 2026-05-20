@@ -182,6 +182,39 @@ class EmailParserController extends Controller
         return view('admin.email_parser.conflicts', compact('items'));
     }
 
+    public function simulate(Request $request, \App\Services\EmailParser\EmailParserService $parser)
+    {
+        $this->ensureModule();
+
+        $v = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'subject' => 'nullable|string|max:500',
+            'sender'  => 'nullable|string|max:200',
+            'body'    => 'required|string|max:20000',
+        ]);
+        if ($v->fails()) {
+            return response()->json(['ok' => false, 'message' => $v->errors()->first()]);
+        }
+
+        $subject = trim($request->input('subject', ''));
+        $sender  = trim($request->input('sender', ''));
+        $body    = trim($request->input('body'));
+
+        $result = $parser->parse($sender, $subject, $body);
+
+        if (!$result) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'No OTA parser matched this email. Check that the subject or sender contains a recognised OTA keyword (e.g. "booking confirmation", "reservation").',
+            ]);
+        }
+
+        return response()->json([
+            'ok'        => true,
+            'ota_label' => $result['ota_label'],
+            'data'      => $result['data'],
+        ]);
+    }
+
     public function resolveConflict(Request $request, $id)
     {
         $hotelId  = $this->ensureModule();

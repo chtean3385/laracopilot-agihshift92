@@ -24,9 +24,11 @@ class EmailFetcherService
 
         $encryption = strtolower($config->encryption ?: 'ssl');
         if ($encryption === 'ssl') {
-            $flags = '/imap/ssl';
+            // novalidate-cert bypasses PHP's broken SNI handling for IMAP SSL
+            // (c-client doesn't send SNI, so servers return a self-signed cert).
+            $flags = '/imap/ssl/novalidate-cert';
         } elseif ($encryption === 'tls') {
-            $flags = '/imap/tls';
+            $flags = '/imap/tls/novalidate-cert';
         } else {
             $flags = '/imap/notls';
         }
