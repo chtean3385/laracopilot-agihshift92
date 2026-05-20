@@ -182,36 +182,78 @@ class EmailParserController extends Controller
         return view('admin.email_parser.conflicts', compact('items'));
     }
 
-    public function simulate(Request $request, \App\Services\EmailParser\EmailParserService $parser)
+    public function simulate(Request $request, \App\Services\EmailParser\EmailParserService $parser, \App\Services\EmailParser\BookingSyncService $sync)
     {
-        $this->ensureModule();
+        $hotelId = $this->ensureModule();
 
         $v = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'subject' => 'nullable|string|max:500',
-            'sender'  => 'nullable|string|max:200',
-            'body'    => 'required|string|max:20000',
+            'subject'        => 'nullable|string|max:500',
+            'sender'         => 'nullable|string|max:200',
+            'body'           => 'required|string|max:20000',
+            'create_booking' => 'nullable|boolean',
         ]);
         if ($v->fails()) {
             return response()->json(['ok' => false, 'message' => $v->errors()->first()]);
         }
 
-        $subject = trim($request->input('subject', ''));
-        $sender  = trim($request->input('sender', ''));
-        $body    = trim($request->input('body'));
+        $subject       = trim($request->input('subject', ''));
+        $sender        = trim($request->input('sender', ''));
+        $body          = trim($request->input('body'));
+        $createBooking = $request->boolean('create_booking');
 
         $result = $parser->parse($sender, $subject, $body);
 
         if (!$result) {
             return response()->json([
                 'ok'      => false,
-                'message' => 'No OTA parser matched this email. Check that the subject or sender contains a recognised OTA keyword (e.g. "booking confirmation", "reservation").',
+                'message' => 'No OTA parser matched this email. Check that the subject or sender contains a recognised OTA keyword (e.g. "new booking", "booking confirmation", "reservation").',
             ]);
         }
 
+        if (!$createBooking) {
+            return response()->json([
+                'ok'        => true,
+                'ota_label' => $result['ota_label'],
+                'data'      => $result['data'],
+            ]);
+        }
+
+        // Create a temporary ParsedEmail row and run the full booking sync on it.
+        $row = ParsedEmail::create([
+            'hotel_id'    => $hotelId,
+            'message_uid' => 'sim-' . uniqid(),
+            'subject'     => $subject ?: '(Simulated)',
+            'sender'      => $sender  ?: 'simulate@test',
+            'raw_body'    => $body,
+            'status'      => 'pending',
+        ]);
+
+        try {
+            $status = $sync->processOne($row, $hotelId);
+        } catch (\Throwable $e) {
+            $row->delete();
+            return response()->json(['ok' => false, 'message' => 'Parser ran but booking creation failed: ' . $e->getMessage()]);
+        }
+
+        $row->refresh();
+
+        if ($status === 'processed' && $row->booking_id) {
+            return response()->json([
+                'ok'         => true,
+                'ota_label'  => $result['ota_label'],
+                'data'       => $result['data'],
+                'created'    => true,
+                'booking_id' => $row->booking_id,
+            ]);
+        }
+
+        // processed but no booking ID, or failed/skipped — return reason
         return response()->json([
-            'ok'        => true,
+            'ok'        => false,
             'ota_label' => $result['ota_label'],
             'data'      => $result['data'],
+            'parsed_ok' => true,
+            'message'   => $row->fail_reason ?? ('Booking not created — status: ' . $status),
         ]);
     }
 

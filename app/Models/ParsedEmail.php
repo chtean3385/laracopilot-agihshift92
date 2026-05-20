@@ -44,6 +44,7 @@ class ParsedEmail extends Model
             'pending'   => '#f59e0b',
             'failed'    => '#ef4444',
             'duplicate' => '#94a3b8',
+            'skipped'   => '#cbd5e1',
             default     => '#64748b',
         };
     }

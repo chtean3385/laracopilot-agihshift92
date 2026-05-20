@@ -59,11 +59,12 @@ class BookingSyncService
         );
 
         if (!$parsed) {
+            // Not an OTA booking email — silently skip rather than mark as error.
             $row->update([
-                'status'      => 'failed',
-                'fail_reason' => 'No OTA parser matched, or no fields could be extracted.',
+                'status'      => 'skipped',
+                'fail_reason' => 'No OTA parser matched — not a booking confirmation email.',
             ]);
-            return 'failed';
+            return 'skipped';
         }
 
         $data       = $parsed['data'];

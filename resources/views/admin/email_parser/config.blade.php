@@ -122,7 +122,7 @@
             <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:10px;">Sync Status</div>
             <div style="font-size:13px;color:#64748b;margin-bottom:6px;">Last synced: <strong style="color:#1e293b;">{{ $config?->last_synced_at?->diffForHumans() ?? 'Never' }}</strong></div>
             <div style="font-size:13px;color:#64748b;margin-bottom:6px;">Active: <strong style="color:{{ $config?->is_active ? '#15803d' : '#94a3b8' }};">{{ $config && $config->is_active ? 'Yes' : 'No' }}</strong></div>
-            <div style="font-size:12px;color:#94a3b8;margin-top:10px;">Sync runs via the scheduler. Make sure <code>php artisan schedule:run</code> is hooked into cron every minute.</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:10px;"><i class="fas fa-check-circle" style="color:#10b981;"></i> Scheduler is running automatically — email sync happens every 5 minutes while the app is active.</div>
             <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
                 <a href="{{ route('email-parser.logs') }}" style="background:#f1f5f9;color:#334155;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fas fa-list"></i> View Logs</a>
                 <a href="{{ route('email-parser.conflicts') }}" style="background:#fff7ed;color:#9a3412;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fas fa-triangle-exclamation"></i> Conflicts ({{ $unresolvedConflicts }})</a>
@@ -194,7 +194,12 @@
             </div>
         </div>
 
-        <div style="margin-top:16px;display:flex;gap:10px;">
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;">
+            <input type="checkbox" id="sim-create-booking" style="width:16px;height:16px;cursor:pointer;">
+            <label for="sim-create-booking" style="font-size:13px;font-weight:700;color:#15803d;cursor:pointer;">Also create booking in CRM (like WhatsApp simulate)</label>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:10px;">
             <button onclick="runSimEmail()" style="flex:1;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
                 <i class="fas fa-play"></i> Run Parser
             </button>
@@ -225,31 +230,51 @@ function closeSimModal() {
 async function runSimEmail() {
     const out = document.getElementById('sim-result');
     const body = document.getElementById('sim-body').value.trim();
+    const createBooking = document.getElementById('sim-create-booking').checked;
     if (!body) { out.innerHTML = '<p style="color:#b91c1c;font-size:13px;"><i class="fas fa-exclamation-circle"></i> Please paste an email body.</p>'; return; }
-    out.innerHTML = '<p style="color:#64748b;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Parsing...</p>';
+    out.innerHTML = '<p style="color:#64748b;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> ' + (createBooking ? 'Parsing & creating booking...' : 'Parsing...') + '</p>';
     try {
         const fd = new FormData();
-        fd.append('sender',  document.getElementById('sim-sender').value.trim());
-        fd.append('subject', document.getElementById('sim-subject').value.trim());
-        fd.append('body',    body);
+        fd.append('sender',         document.getElementById('sim-sender').value.trim());
+        fd.append('subject',        document.getElementById('sim-subject').value.trim());
+        fd.append('body',           body);
+        fd.append('create_booking', createBooking ? '1' : '0');
         const r = await fetch('{{ route('email-parser.simulate') }}', {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
             body: fd,
         });
         const j = await r.json();
-        if (!j.ok) {
+
+        // Build parsed fields table (shown in both success and parse_ok cases)
+        const fieldRows = j.data ? Object.entries(j.data).map(([k, v]) =>
+            '<tr><td style="padding:4px 10px;font-weight:700;color:#475569;font-size:12px;white-space:nowrap;">' + k.replace(/_/g,' ') + '</td>'
+            + '<td style="padding:4px 10px;color:#1e293b;font-size:12px;">' + (v ?? '—') + '</td></tr>'
+        ).join('') : '';
+
+        if (j.ok && j.created) {
+            // Booking was created
+            out.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;">'
+                + '<div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Booking Created! Matched: ' + j.ota_label + '</div>'
+                + '<table style="width:100%;border-collapse:collapse;">' + fieldRows + '</table>'
+                + '<div style="margin-top:10px;"><a href="{{ route('bookings.index') }}" style="color:#0f766e;font-size:12px;font-weight:700;text-decoration:underline;"><i class="fas fa-arrow-right"></i> View in Bookings</a></div>'
+                + '</div>';
+        } else if (!j.ok && j.parsed_ok) {
+            // Parsed OK but booking creation failed (e.g. missing fields, room conflict)
+            out.innerHTML = '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;">'
+                + '<div style="font-size:13px;font-weight:800;color:#9a3412;margin-bottom:8px;"><i class="fas fa-exclamation-triangle"></i> Parsed OK · Booking not created</div>'
+                + '<div style="font-size:12px;color:#9a3412;margin-bottom:8px;">' + (j.message || '') + '</div>'
+                + (fieldRows ? '<table style="width:100%;border-collapse:collapse;">' + fieldRows + '</table>' : '')
+                + '</div>';
+        } else if (j.ok) {
+            // Preview only (create_booking unchecked)
+            out.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;">'
+                + '<div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Matched: ' + j.ota_label + '</div>'
+                + '<table style="width:100%;border-collapse:collapse;">' + fieldRows + '</table>'
+                + '</div>';
+        } else {
             out.innerHTML = '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;color:#b91c1c;font-size:13px;"><i class="fas fa-times-circle"></i> ' + (j.message || 'Parser returned no match.') + '</div>';
-            return;
         }
-        // Build result table
-        const rows = Object.entries(j.data).map(([k, v]) =>
-            '<tr><td style="padding:5px 10px;font-weight:700;color:#475569;font-size:12px;white-space:nowrap;">' + k.replace(/_/g,' ') + '</td><td style="padding:5px 10px;color:#1e293b;font-size:12px;">' + (v ?? '—') + '</td></tr>'
-        ).join('');
-        out.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;">'
-            + '<div style="font-size:13px;font-weight:800;color:#15803d;margin-bottom:8px;"><i class="fas fa-check-circle"></i> Matched: ' + j.ota_label + '</div>'
-            + '<table style="width:100%;border-collapse:collapse;">' + rows + '</table>'
-            + '</div>';
     } catch (e) {
         out.innerHTML = '<div style="color:#b91c1c;font-size:13px;"><i class="fas fa-times-circle"></i> Network error: ' + e.message + '</div>';
     }

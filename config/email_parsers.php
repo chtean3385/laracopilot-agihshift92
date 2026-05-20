@@ -25,7 +25,7 @@ return [
                 'guest_phone'      => '/(?:phone|mobile|tel)[:\s]+\+?([0-9][\d\s\-]{6,20})/i',
                 'check_in'         => '/(?:check[\s-]?in|arrival)[:\s]+([A-Za-z0-9 ,\/\-]{6,40})/i',
                 'check_out'        => '/(?:check[\s-]?out|departure)[:\s]+([A-Za-z0-9 ,\/\-]{6,40})/i',
-                'booking_id'       => '/(?:reservation|confirmation|booking)\s*(?:number|id|#|no\.?)[:\s]*([A-Z0-9\-]{4,30})/i',
+                'booking_id'       => '/(?:reservation|confirmation|booking)\s*(?:ref(?:erence)?|number|id|#|no\.?)[:\s]*([A-Z0-9\-]{4,30})/i',
                 'room_type'        => '/(?:room\s*type|room|accommodation)[:\s]+([A-Za-z0-9 ,\/\-\(\)]{3,80})/i',
                 'amount'           => '/(?:total|amount|price)[:\s]*[€£$₹Rs\.]*\s*([\d,]+(?:\.\d{1,2})?)/i',
             ],
