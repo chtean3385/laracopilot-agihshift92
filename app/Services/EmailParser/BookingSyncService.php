@@ -228,16 +228,20 @@ class BookingSyncService
         }
 
         // ── WhatsApp notification to hotel admin (best-effort, never blocks booking) ──
-        try { $this->notifyAdmin($hotelId, [
-            'hotel_name'      => $hotelName,
-            'guest_name'      => $customer->name,
-            'source'          => $otaLabel,
-            'check_in'        => $checkIn,
-            'check_out'       => $checkOut,
-            'booking_number'  => $bookingNo,
-            'is_conflict'     => $conflictType !== null,
-            'conflict_reason' => $this->conflictReason($conflictType),
-        ]);
+        try {
+            $this->notifyAdmin($hotelId, [
+                'hotel_name'      => $hotelName,
+                'guest_name'      => $customer->name,
+                'source'          => $otaLabel,
+                'check_in'        => $checkIn,
+                'check_out'       => $checkOut,
+                'booking_number'  => $bookingNo,
+                'is_conflict'     => $conflictType !== null,
+                'conflict_reason' => $this->conflictReason($conflictType),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('EmailParser: notifyAdmin failed (booking still created): ' . $e->getMessage());
+        }
 
         return 'processed';
     }
@@ -381,19 +385,9 @@ class BookingSyncService
 
     private function notifyAdmin(int $hotelId, array $vars): void
     {
-        $adminPhone = DB::table('hotel_users')
-            ->join('users', 'users.id', '=', 'hotel_users.user_id')
-            ->where('hotel_users.hotel_id', $hotelId)
-            ->where('hotel_users.is_hotel_admin', true)
-            ->whereNotNull('users.phone')
-            ->where('users.phone', '!=', '')
-            ->orderBy('hotel_users.id')
-            ->value('users.phone');
-
-        if (!$adminPhone) {
-            Log::info('EmailParser: no admin phone for hotel #' . $hotelId . ' — skipping WA notification');
-            return;
-        }
+        // Neither users nor hotel_users has a phone column yet — skip WA notification.
+        Log::info('EmailParser: notifyAdmin skipped for hotel #' . $hotelId . ' — no phone column on users table');
+        return;
 
         if ($vars['is_conflict']) {
             $event  = 'ota_booking_conflict';
