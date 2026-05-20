@@ -227,8 +227,8 @@ class BookingSyncService
             ]);
         }
 
-        // ── WhatsApp notification to hotel admin ─────────────────────────────
-        $this->notifyAdmin($hotelId, [
+        // ── WhatsApp notification to hotel admin (best-effort, never blocks booking) ──
+        try { $this->notifyAdmin($hotelId, [
             'hotel_name'      => $hotelName,
             'guest_name'      => $customer->name,
             'source'          => $otaLabel,
