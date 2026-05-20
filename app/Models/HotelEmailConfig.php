@@ -20,14 +20,16 @@ class HotelEmailConfig extends Model
         'imap_port',
         'encryption',
         'folder_to_watch',
+        'allowed_senders',
         'last_synced_at',
         'is_active',
     ];
 
     protected $casts = [
-        'is_active'      => 'boolean',
-        'last_synced_at' => 'datetime',
-        'imap_port'      => 'integer',
+        'is_active'       => 'boolean',
+        'last_synced_at'  => 'datetime',
+        'imap_port'       => 'integer',
+        'allowed_senders' => 'array',
     ];
 
     /**

@@ -75,6 +75,9 @@ class EmailFetcherService
         try {
             $uids = imap_search($conn, 'UNSEEN', SE_UID) ?: [];
 
+            // Build lowercase allowed-sender whitelist (empty = accept all)
+            $allowedSenders = array_map('strtolower', $config->allowed_senders ?? []);
+
             foreach ($uids as $uid) {
                 $messageUid = (string) $uid;
 
@@ -96,6 +99,15 @@ class EmailFetcherService
                 if (!empty($headerInfo->from[0])) {
                     $f      = $headerInfo->from[0];
                     $sender = ($f->mailbox ?? '') . '@' . ($f->host ?? '');
+                }
+
+                // ── Allowed-sender filter ─────────────────────────────────────
+                // If a whitelist is configured, skip emails NOT from those addresses.
+                // We still mark them Seen so they don't pile up on the next cycle.
+                if (!empty($allowedSenders) && !in_array(strtolower($sender), $allowedSenders, true)) {
+                    @imap_setflag_full($conn, (string) $uid, "\\Seen", ST_UID);
+                    Log::debug('EmailFetcher: skipped non-whitelisted sender "' . $sender . '"');
+                    continue;
                 }
 
                 $body = $this->fetchBody($conn, $uid);

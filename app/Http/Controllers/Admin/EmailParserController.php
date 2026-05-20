@@ -60,17 +60,24 @@ class EmailParserController extends Controller
         $existing = HotelEmailConfig::where('hotel_id', $hotelId)->first();
 
         $rules = [
-            'email_address'   => 'required|email|max:200',
-            'imap_host'       => 'required|string|max:200',
-            'imap_port'       => 'required|integer|min:1|max:65535',
-            'encryption'      => 'required|in:ssl,tls,none',
-            'folder_to_watch' => 'nullable|string|max:100',
-            'is_active'       => 'nullable|boolean',
+            'email_address'    => 'required|email|max:200',
+            'imap_host'        => 'required|string|max:200',
+            'imap_port'        => 'required|integer|min:1|max:65535',
+            'encryption'       => 'required|in:ssl,tls,none',
+            'folder_to_watch'  => 'nullable|string|max:100',
+            'is_active'        => 'nullable|boolean',
+            'allowed_senders'  => 'nullable|string',
         ];
         // Password required only on create; optional on update (keep existing).
         $rules['email_password'] = $existing ? 'nullable|string|max:200' : 'required|string|max:200';
 
         $data = $request->validate($rules);
+
+        // Parse allowed senders from comma/newline-separated hidden input
+        $rawSenders = trim($data['allowed_senders'] ?? '');
+        $allowedSenders = $rawSenders
+            ? array_values(array_filter(array_map('trim', preg_split('/[\s,]+/', $rawSenders))))
+            : [];
 
         $payload = [
             'hotel_id'        => $hotelId,
@@ -80,6 +87,7 @@ class EmailParserController extends Controller
             'encryption'      => $data['encryption'],
             'folder_to_watch' => $data['folder_to_watch'] ?: 'INBOX',
             'is_active'       => $request->boolean('is_active'),
+            'allowed_senders' => $allowedSenders ?: null,
         ];
 
         if (!empty($data['email_password'])) {
