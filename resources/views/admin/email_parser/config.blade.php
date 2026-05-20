@@ -127,9 +127,13 @@
                 <button type="button" onclick="document.getElementById('simEmailModal').style.display='flex'" style="background:#f8fafc;color:#6366f1;border:1.5px solid #6366f1;padding:11px 22px;border-radius:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-flask"></i> Simulate Email
                 </button>
+                <button type="button" id="syncNowBtn" onclick="syncNow()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:11px 22px;border-radius:12px;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-sync-alt"></i> Sync Now
+                </button>
             </div>
 
             <div id="ep-test-result" style="margin-top:14px;font-size:13px;font-weight:600;"></div>
+            <div id="ep-sync-result" style="margin-top:8px;font-size:13px;font-weight:600;"></div>
         </form>
 
         @if($config)
@@ -314,6 +318,34 @@ async function runSimEmail() {
         }
     } catch (e) {
         out.innerHTML = '<div style="color:#b91c1c;font-size:13px;"><i class="fas fa-times-circle"></i> Network error: ' + e.message + '</div>';
+    }
+}
+async function syncNow() {
+    const btn = document.getElementById('syncNowBtn');
+    const out = document.getElementById('ep-sync-result');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+    out.innerHTML = '<span style="color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Connecting to inbox — this may take up to 30 seconds...</span>';
+    try {
+        const r = await fetch('{{ route('email-parser.sync-now') }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+        });
+        const j = await r.json();
+        if (j.ok) {
+            const icon = j.created > 0 ? 'fa-calendar-plus' : (j.fetched > 0 ? 'fa-envelope-open' : 'fa-check-circle');
+            const color = j.created > 0 ? '#15803d' : '#0f766e';
+            out.innerHTML = '<span style="color:' + color + ';"><i class="fas ' + icon + '"></i> ' + j.message + '</span>';
+            // Refresh page after 2s so the email list updates
+            if (j.fetched > 0 || j.parsed > 0) setTimeout(() => location.reload(), 2000);
+        } else {
+            out.innerHTML = '<span style="color:#b91c1c;"><i class="fas fa-times-circle"></i> ' + j.message + '</span>';
+        }
+    } catch (e) {
+        out.innerHTML = '<span style="color:#b91c1c;"><i class="fas fa-times-circle"></i> Network error: ' + e.message + '</span>';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Now';
     }
 }
 function syncSendersHidden() {

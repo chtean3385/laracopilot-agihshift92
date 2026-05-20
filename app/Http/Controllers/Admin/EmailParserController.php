@@ -150,6 +150,52 @@ class EmailParserController extends Controller
         }
     }
 
+    public function syncNow(EmailFetcherService $fetcher)
+    {
+        $hotelId = $this->ensureModule();
+        $config  = HotelEmailConfig::where('hotel_id', $hotelId)->first();
+
+        if (!$config) {
+            return response()->json(['ok' => false, 'message' => 'No IMAP configuration saved yet.']);
+        }
+        if (!$config->is_active) {
+            return response()->json(['ok' => false, 'message' => 'Sync is paused. Resume it first.']);
+        }
+
+        try {
+            $stored = $fetcher->fetchAndStore($config);
+
+            // Also run the parser on any pending emails for this hotel
+            $parsed  = 0;
+            $created = 0;
+            $pending = \App\Models\ParsedEmail::where('hotel_id', $hotelId)
+                ->where('status', 'pending')
+                ->orderBy('id')
+                ->get();
+
+            if ($pending->isNotEmpty()) {
+                $sync = app(\App\Services\EmailParser\BookingSyncService::class);
+                foreach ($pending as $email) {
+                    try {
+                        $result = $sync->processEmail($email);
+                        $parsed++;
+                        if ($result === true) $created++;
+                    } catch (\Throwable $e) {
+                        // continue
+                    }
+                }
+            }
+
+            $msg = "Fetched {$stored} new email(s).";
+            if ($parsed > 0) $msg .= " Parsed {$parsed}, created {$created} booking(s).";
+            if ($stored === 0 && $parsed === 0) $msg = 'No new emails found.';
+
+            return response()->json(['ok' => true, 'message' => $msg, 'fetched' => $stored, 'parsed' => $parsed, 'created' => $created]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
     public function toggleActive(Request $request)
     {
         $hotelId = $this->ensureModule();
