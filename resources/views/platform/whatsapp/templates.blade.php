@@ -176,7 +176,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                 </label>
 
                 {{-- Edit --}}
-                <button onclick="openEditModal({{ $t->id }}, '{{ addslashes($t->trigger_event) }}', '{{ addslashes($t->template_name) }}', {{ json_encode($t->message_body) }}, '{{ $t->approval_status }}', {{ $t->is_active ? 'true' : 'false' }}, {{ $t->has_document_attachment ? 'true' : 'false' }})"
+                <button onclick="openEditModal({{ $t->id }}, '{{ addslashes($t->trigger_event) }}', '{{ addslashes($t->template_name) }}', {!! json_encode($t->message_body) !!}, '{{ $t->approval_status }}', {{ $t->is_active ? 'true' : 'false' }}, {{ $t->has_document_attachment ? 'true' : 'false' }})"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -261,7 +261,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     <span id="pt-track-{{ $pdfT->id }}" style="position:absolute;inset:0;border-radius:24px;background:{{ $pdfT->is_active ? '#25d366' : '#e2e8f0' }};transition:background .2s;"></span>
                     <span id="pt-thumb-{{ $pdfT->id }}" style="position:absolute;left:{{ $pdfT->is_active ? '22px' : '2px' }};top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;"></span>
                 </label>
-                <button onclick="openEditModal({{ $pdfT->id }}, '{{ addslashes($pdfT->trigger_event) }}', '{{ addslashes($pdfT->template_name) }}', {{ json_encode($pdfT->message_body) }}, '{{ $pdfT->approval_status }}', {{ $pdfT->is_active ? 'true' : 'false' }}, true)"
+                <button onclick="openEditModal({{ $pdfT->id }}, '{{ addslashes($pdfT->trigger_event) }}', '{{ addslashes($pdfT->template_name) }}', {!! json_encode($pdfT->message_body) !!}, '{{ $pdfT->approval_status }}', {{ $pdfT->is_active ? 'true' : 'false' }}, true)"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -337,7 +337,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     <span id="toggle-{{ $ct->id }}" style="position:absolute;inset:0;border-radius:12px;background:{{ $ct->is_active ? '#25D366' : '#d1d5db' }};transition:background .2s;"></span>
                     <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;{{ $ct->is_active ? 'transform:translateX(20px)' : '' }}"></span>
                 </label>
-                <button onclick="openEditModal({{ $ct->id }}, '{{ addslashes($ct->trigger_event) }}', '{{ addslashes($ct->template_name) }}', {{ json_encode($ct->message_body) }}, '{{ $ct->approval_status }}', {{ $ct->is_active ? 'true' : 'false' }})"
+                <button onclick="openEditModal({{ $ct->id }}, '{{ addslashes($ct->trigger_event) }}', '{{ addslashes($ct->template_name) }}', {!! json_encode($ct->message_body) !!}, '{{ $ct->approval_status }}', {{ $ct->is_active ? 'true' : 'false' }})"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>

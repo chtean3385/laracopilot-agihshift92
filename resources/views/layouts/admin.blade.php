@@ -1405,13 +1405,13 @@
 
         {{-- Session flash → fires the global toast system --}}
         @if(session('success'))
-        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'success',message:{{ json_encode(session('success')) }}}}));});</script>
+        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'success',message:{!! json_encode(session('success')) !!}}}));});</script>
         @endif
         @if(session('error'))
-        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'error',message:{{ json_encode(session('error')) }}}}));});</script>
+        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'error',message:{!! json_encode(session('error')) !!}}}));});</script>
         @endif
         @if(session('warning'))
-        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'warning',message:{{ json_encode(session('warning')) }}}}));});</script>
+        <script>document.addEventListener('DOMContentLoaded',function(){window.dispatchEvent(new CustomEvent('crm-toast',{detail:{type:'warning',message:{!! json_encode(session('warning')) !!}}}));});</script>
         @endif
 
         <!-- Page Content -->

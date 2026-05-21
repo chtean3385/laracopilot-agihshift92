@@ -162,7 +162,7 @@
                     style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
                     <i class="fas fa-check"></i> Confirm & Book
                 </button>
-                <button onclick="openEditModal({{ $imp->id }}, {{ json_encode($imp->only(['guest_name','guest_phone','checkin','checkout','room_type','guests_count','amount','special_request'])) }})"
+                <button onclick="openEditModal({{ $imp->id }}, {!! json_encode($imp->only(['guest_name','guest_phone','checkin','checkout','room_type','guests_count','amount','special_request'])) !!})"
                     style="background:#f1f5f9;border:none;padding:10px 16px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;color:#475569;">
                     <i class="fas fa-edit"></i> Edit
                 </button>

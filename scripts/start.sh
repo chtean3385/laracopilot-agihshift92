@@ -24,11 +24,5 @@ php artisan queue:work --sleep=3 --tries=3 --timeout=60 --queue=default 2>&1 &
 QUEUE_PID=$!
 echo "[start.sh] Queue worker started (PID ${QUEUE_PID})"
 
-# Start Laravel scheduler so cron jobs (emails:sync every 5 min, etc.) actually fire.
-echo "[start.sh] Starting scheduler in background..."
-php artisan schedule:work 2>&1 &
-SCHED_PID=$!
-echo "[start.sh] Scheduler started (PID ${SCHED_PID})"
-
 echo "[start.sh] Launching server on 0.0.0.0:5000 ..."
 exec php artisan serve --host=0.0.0.0 --port=5000

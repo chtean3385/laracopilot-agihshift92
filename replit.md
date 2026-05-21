@@ -435,4 +435,5 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | 2026-05-08 | v1.0.13 | `415aa96` | Performance: WhatsApp sends queued (async), 8 composite DB indexes, dashboard 7-query revenue loop → 1 GROUP BY, queue worker in start.sh |
 | 2026-05-14 | v1.0.14 | `f0e4231` | GST-inclusive pricing shown throughout app: booking create price summary (live JS), room dropdown, room card, rooms search, booking detail Rate/Night |
 | 2026-05-20 | v1.0.15 | `f9df66d` | Fix IMAP SSL SNI error (novalidate-cert); add Simulate Email modal to email parser config page |
-| 2026-05-20 | v1.0.16 | `pending` | Email parser: "Create Booking" option in Simulate Email; booking_id regex matches "Ref:" format; non-OTA emails marked "skipped" not "failed"; scheduler note corrected |
+| 2026-05-20 | v1.0.16 | `85abc64` | Email parser: "Create Booking" option in Simulate Email; booking_id regex matches "Ref:" format; non-OTA emails marked "skipped" not "failed"; scheduler note corrected |
+| 2026-05-21 | v1.0.17 | `pending` | Fix deploy failure: remove schedule:work from start.sh (caused Cloud Run health-check timeout); fix SyntaxError: Unexpected token '&' — replace {{ json_encode() }} with {!! json_encode() !!} in admin.blade.php toast scripts, ota-bookings edit button, and whatsapp/templates 3× edit buttons |
