@@ -24,6 +24,8 @@ foreach ([
     'MAIL_PASSWORD',
     // Mailgun inbound parse webhook signing key (OTA email ingestion)
     'MAILGUN_WEBHOOK_SIGNING_KEY',
+    // External cron trigger secret
+    'CRON_SECRET',
 ] as $_k) {
     if (($v = getenv($_k)) !== false && !isset($_ENV[$_k])) {
         $_ENV[$_k] = $_SERVER[$_k] = $v;

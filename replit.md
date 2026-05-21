@@ -437,4 +437,6 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | 2026-05-20 | v1.0.15 | `f9df66d` | Fix IMAP SSL SNI error (novalidate-cert); add Simulate Email modal to email parser config page |
 | 2026-05-20 | v1.0.16 | `85abc64` | Email parser: "Create Booking" option in Simulate Email; booking_id regex matches "Ref:" format; non-OTA emails marked "skipped" not "failed"; scheduler note corrected |
 | 2026-05-21 | v1.0.17 | `f9f57e0` | Fix deploy failure: remove schedule:work from start.sh (caused Cloud Run health-check timeout); fix SyntaxError: Unexpected token '&' — replace {{ json_encode() }} with {!! json_encode() !!} in admin.blade.php toast scripts, ota-bookings edit button, and whatsapp/templates 3× edit buttons |
-| 2026-05-21 | v1.0.18 | `pending` | Add cron webhook endpoint GET /webhook/cron/emails-sync?token=SECRET — allows external cron service (cron-job.org) to trigger email sync every 5 min in production |
+| 2026-05-21 | v1.0.18 | `ff9e35e` | Add cron webhook endpoint GET /webhook/cron/emails-sync?token=SECRET — allows external cron service (cron-job.org) to trigger email sync every 5 min in production |
+| 2026-05-21 | v1.0.19 | `b9469c7` | Green OTA banner auto-clears when user visits Bookings page (mark-as-seen via session timestamp); banner reappears on next new import |
+| 2026-05-21 | v1.0.20 | `pending` | Fix CRON_SECRET not readable in production — add to bootstrap/app.php env-bridging list so env('CRON_SECRET') works after config:cache |

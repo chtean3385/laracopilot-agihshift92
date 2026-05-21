@@ -17,6 +17,11 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+
+        // Mark OTA email import banner as "seen" for this hotel
+        $hotelId = (int) session('crm_hotel_id');
+        session(["ota_email_seen_{$hotelId}" => now()->toDateTimeString()]);
+
         $query = Booking::with(['customer', 'room']);
         if ($request->status) $query->where('status', $request->status);
         if ($request->search) {

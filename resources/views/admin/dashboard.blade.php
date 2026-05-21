@@ -684,12 +684,20 @@
                     $epEnabled  = \App\Models\Module::isEnabled('email-parser');
                     $epHotelId  = (int) session('crm_hotel_id');
                     $epConflicts = $epEnabled ? \App\Models\OtaBookingConflict::unresolvedCountForHotel($epHotelId) : 0;
-                    $epNewToday  = $epEnabled
+
+                    // Only show "New OTA Bookings" banner for imports the user hasn't seen yet.
+                    // Seen = user visited the Bookings page after the import arrived.
+                    // We store the seen timestamp in the session as ota_email_seen_{hotelId}.
+                    $epSeenAt   = session("ota_email_seen_{$epHotelId}");
+                    $epNewQuery = $epEnabled
                         ? \App\Models\Booking::where('hotel_id', $epHotelId)
                             ->whereNotNull('external_booking_id')
                             ->whereDate('created_at', today())
-                            ->count()
-                        : 0;
+                        : null;
+                    if ($epNewQuery && $epSeenAt) {
+                        $epNewQuery->where('created_at', '>', $epSeenAt);
+                    }
+                    $epNewToday = $epNewQuery ? $epNewQuery->count() : 0;
                 @endphp
                 @if($epEnabled && $epConflicts > 0)
                 <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#7f1d1d,#b91c1c,#dc2626);box-shadow:0 8px 32px rgba(220,38,38,.45);animation:pulse-dirty 2s infinite;margin-bottom:4px;">
@@ -717,16 +725,16 @@
                 <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#064e3b,#065f46,#059669);box-shadow:0 8px 28px rgba(5,150,105,.4);margin-bottom:4px;">
                     <div style="position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
                     <div style="position:absolute;left:80px;bottom:-50px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
-                    <a href="{{ route('email-parser.logs') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
+                    <a href="{{ route('bookings.index') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
                         <div style="width:62px;height:62px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);border-radius:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                             <i class="fas fa-envelope-open-text" style="color:#fff;font-size:26px;"></i>
                         </div>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                                 <span style="font-size:19px;font-weight:900;color:#fff;letter-spacing:-.3px;">{{ $epNewToday }} New OTA Booking{{ $epNewToday === 1 ? '' : 's' }} Imported Today</span>
-                                <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">Today</span>
+                                <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">New</span>
                             </div>
-                            <div style="font-size:14px;color:rgba(255,255,255,.85);">Auto-created from your connected inbox and added to Bookings.</div>
+                            <div style="font-size:14px;color:rgba(255,255,255,.85);">Auto-created from your inbox — click to view &amp; this banner will clear.</div>
                         </div>
                         <div style="flex-shrink:0;background:#fff;color:#065f46;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">View Bookings <i class="fas fa-arrow-right"></i></div>
                     </a>
