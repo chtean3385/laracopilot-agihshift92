@@ -57,6 +57,22 @@ Route::withoutMiddleware([
 
     // OTA Email Inbound Parse webhook (Mailgun — public, no auth, no CSRF)
     Route::post('/webhook/ota-email', [\App\Http\Controllers\OtaEmailWebhookController::class, 'receive'])->name('ota-email.webhook.receive');
+
+    // ── Cron trigger — hit by external cron service (e.g. cron-job.org) every 5 min
+    // Protected by CRON_SECRET token in query string. Returns JSON.
+    Route::get('/webhook/cron/emails-sync', function (\Illuminate\Http\Request $request) {
+        $secret = env('CRON_SECRET', '');
+        if (empty($secret) || !hash_equals($secret, (string) $request->query('token', ''))) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        try {
+            \Illuminate\Support\Facades\Artisan::call('emails:sync');
+            $output = trim(\Illuminate\Support\Facades\Artisan::output());
+            return response()->json(['status' => 'ok', 'output' => $output ?: 'sync completed']);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    })->name('webhook.cron.emails-sync');
 });
 
 // ── Root ───────────────────────────────────────────────────────────────────
