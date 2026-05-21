@@ -70,10 +70,25 @@ class OtaBookingController extends Controller
                   ?? OtaSource::findByContentPattern($body);
 
         if (!$otaSource) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Message format not recognised. Make sure it contains "Property:" and "Booking Ref:" lines.',
-            ]);
+            // Fallback: the message body matches OTA format but no generic source exists
+            // in the database (e.g. fresh install or demo). Create a temporary in-memory
+            // generic source so simulation still works.
+            $hasProperty   = (bool) preg_match('/Property\s*:/i', $body);
+            $hasBookingRef = (bool) preg_match('/Booking\s+Ref\s*:/i', $body);
+            if ($hasProperty && $hasBookingRef) {
+                $otaSource = new OtaSource([
+                    'id'                  => 0,
+                    'name'                => 'Test/Generic',
+                    'message_pattern_key' => 'generic',
+                    'sender_number'       => null,
+                    'is_active'           => true,
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Message format not recognised. Make sure it contains "Property:" and "Booking Ref:" lines.',
+                ]);
+            }
         }
 
         try {
