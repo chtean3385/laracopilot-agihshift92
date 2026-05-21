@@ -71,7 +71,7 @@
                             </button>
                         </td>
                         <td class="px-5 py-3 text-center whitespace-nowrap">
-                            <button onclick="openSlotModal({{ json_encode($slot) }})"
+                            <button onclick="openSlotModal({!! json_encode($slot) !!})"
                                 class="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-800 px-3 py-1.5 rounded-lg hover:bg-violet-50 transition-colors font-medium">
                                 <i class="fas fa-edit"></i> Edit
                             </button>

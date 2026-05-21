@@ -77,7 +77,7 @@ Special Request: Early check-in if possible</pre>
                         </button>
                     </td>
                     <td style="padding:12px 16px;text-align:right;white-space:nowrap;">
-                        <button onclick="openEdit({{ $src->id }}, {{ json_encode($src) }})"
+                        <button onclick="openEdit({{ $src->id }}, {!! json_encode($src) !!})"
                             style="background:#f1f5f9;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;margin-right:6px;">
                             <i class="fas fa-edit"></i> Edit
                         </button>

@@ -377,7 +377,7 @@
                     @php $sd = $hotel['slots'][$col['key']] ?? null; @endphp
                     @if($sd && $sd['has_slot'])
                     <td class="slot-cell"
-                        onclick="openPanel({{ json_encode($hotel) }}, '{{ $col['key'] }}', '{{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }}', '{{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}')"
+                        onclick="openPanel({!! json_encode($hotel) !!}, '{{ $col['key'] }}', '{{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }}', '{{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}')"
                         title="Click for details">
                         <div class="slot-badge-wrap">
                             <span class="slot-badge {{ $sd['color'] }}">
