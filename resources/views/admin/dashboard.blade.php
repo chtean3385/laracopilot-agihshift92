@@ -2198,7 +2198,8 @@
                 }
 
                 document.addEventListener('DOMContentLoaded', function() {
-                    loadAvailability(document.getElementById('availDatePicker').value);
+                    var _avPicker = document.getElementById('availDatePicker');
+                    if (_avPicker) loadAvailability(_avPicker.value);
                 });
                 </script>
 
