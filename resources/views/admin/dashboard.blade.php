@@ -1008,6 +1008,26 @@
                         </div>
 
                         {{-- Table Grid --}}
+                        <style>
+                        .qtm-grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); }
+                        @media (min-width:640px){ .qtm-grid{ grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
+                        @media (max-width:480px){
+                            .qtm-grid{ gap:8px; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); }
+                            .qtm-card{ padding:8px 6px !important; min-height:88px !important; border-radius:10px !important; }
+                            .qtm-card .qtm-name{ font-size:13px !important; }
+                            .qtm-card .qtm-meta{ font-size:10px !important; }
+                            .qtm-card .qtm-bottom{ margin-top:4px !important; }
+                            .qtm-card .qtm-status{ font-size:10px !important; }
+                            .qtm-card .qtm-order{ font-size:9px !important; }
+                            .qtm-card .qtm-total{ font-size:10px !important; }
+                            .qtm-card .qtm-plus{ margin-top:2px !important; padding:1px 5px !important; font-size:9px !important; }
+                            .qtm-card .qtm-dot{ width:8px !important; height:8px !important; top:6px !important; right:6px !important; }
+                        }
+                        @media (hover:none){
+                            .qtm-card:hover{ transform:none !important; box-shadow:none !important; }
+                        }
+                        </style>
+
                         <div style="padding:14px 16px;">
                         @if($restAllTables->isEmpty())
                             <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
@@ -1016,7 +1036,7 @@
                                 <a href="{{ route('restaurant.index') }}" style="display:inline-block;margin-top:10px;padding:8px 18px;background:#f43f5e;color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;">Go to Restaurant →</a>
                             </div>
                         @else
-                        <div id="qtmGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
+                        <div id="qtmGrid" class="qtm-grid">
                             @foreach($restAllTables as $table)
                             @php
                                 $qtmBg = match($table->status) {
@@ -1043,6 +1063,7 @@
                                 $isClickable = $table->status !== 'unavailable';
                             @endphp
                             <div id="qtm-table-{{ $table->id }}"
+                                 class="qtm-card"
                                  data-table-id="{{ $table->id }}"
                                  data-status="{{ $table->status }}"
                                  data-order-id="{{ $table->activeOrder?->id ?? '' }}"
@@ -1054,19 +1075,19 @@
                                  onmouseleave="this.style.transform='';this.style.boxShadow='';">
 
                                 {{-- Status dot --}}
-                                <div data-role="dot" style="position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:{{ $qtmDot }};"></div>
+                                <div data-role="dot" class="qtm-dot" style="position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:{{ $qtmDot }};"></div>
 
                                 {{-- Table name --}}
-                                <div style="font-size:15px;font-weight:800;color:#1e293b;">{{ $table->name }}</div>
-                                <div style="font-size:11px;color:#64748b;margin-top:2px;"><i class="fas fa-users" style="font-size:9px;"></i> {{ $table->capacity }}</div>
+                                <div class="qtm-name" style="font-size:15px;font-weight:800;color:#1e293b;">{{ $table->name }}</div>
+                                <div class="qtm-meta" style="font-size:11px;color:#64748b;margin-top:2px;"><i class="fas fa-users" style="font-size:9px;"></i> {{ $table->capacity }}</div>
 
-                                <div data-role="bottom" style="margin-top:8px;">
-                                    <div style="font-size:11px;font-weight:700;color:{{ $qtmLabel }};">{{ $table->statusLabel() }}</div>
+                                <div data-role="bottom" class="qtm-bottom" style="margin-top:8px;">
+                                    <div class="qtm-status" style="font-size:11px;font-weight:700;color:{{ $qtmLabel }};">{{ $table->statusLabel() }}</div>
                                     @if($table->activeOrder)
-                                    <div style="font-size:10px;color:#92400e;margin-top:3px;font-weight:600;">{{ $table->activeOrder->order_number }}</div>
-                                    <div style="font-size:11px;color:#c2410c;font-weight:700;">₹{{ number_format($table->activeOrder->total, 2) }}</div>
+                                    <div class="qtm-order" style="font-size:10px;color:#92400e;margin-top:3px;font-weight:600;">{{ $table->activeOrder->order_number }}</div>
+                                    <div class="qtm-total" style="font-size:11px;color:#c2410c;font-weight:700;">₹{{ number_format($table->activeOrder->total, 2) }}</div>
                                     @elseif($table->status === 'free')
-                                    <div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803d;">
+                                    <div class="qtm-plus" style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803d;">
                                         <i class="fas fa-plus" style="font-size:9px;"></i> Order
                                     </div>
                                     @endif
@@ -1167,12 +1188,12 @@
                                         // Rebuild bottom section
                                         var bottom = card.querySelector('[data-role="bottom"]');
                                         if (bottom) {
-                                            var statusHtml = '<div style="font-size:11px;font-weight:700;color:' + s.label + ';">' + t.status_label + '</div>';
+                                            var statusHtml = '<div class="qtm-status" style="font-size:11px;font-weight:700;color:' + s.label + ';">' + t.status_label + '</div>';
                                             if (t.order_id) {
-                                                statusHtml += '<div style="font-size:10px;color:#92400e;margin-top:3px;font-weight:600;">' + t.order_number + '</div>'
-                                                           + '<div style="font-size:11px;color:#c2410c;font-weight:700;">₹' + t.order_total + '</div>';
+                                                statusHtml += '<div class="qtm-order" style="font-size:10px;color:#92400e;margin-top:3px;font-weight:600;">' + t.order_number + '</div>'
+                                                           + '<div class="qtm-total" style="font-size:11px;color:#c2410c;font-weight:700;">₹' + t.order_total + '</div>';
                                             } else if (t.status === 'free') {
-                                                statusHtml += '<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803d;"><i class=\'fas fa-plus\' style=\'font-size:9px;\'></i> Order</div>';
+                                                statusHtml += '<div class="qtm-plus" style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803d;"><i class=\'fas fa-plus\' style=\'font-size:9px;\'></i> Order</div>';
                                             }
                                             bottom.innerHTML = statusHtml;
                                         }
