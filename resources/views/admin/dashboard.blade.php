@@ -842,7 +842,7 @@
                             <div class="kpi-sub">Needs approval</div>
                         </a>
                         @endif
-                        <a href="{{ route('restaurant.table-map') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#10b981,#059669);">
+                        <a href="{{ route('restaurant.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#10b981,#059669);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-chair kpi-icon"></i>
                             <div class="kpi-label">Tables</div>
