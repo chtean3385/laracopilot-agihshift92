@@ -107,7 +107,21 @@
         <p class="text-sm mt-1">Click "Add Table" to get started</p>
     </div>
 @else
-<div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+<style>
+.rt-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
+@media (max-width:480px){
+    .rt-grid{ grid-template-columns:1fr 1fr; gap:10px; }
+    .rt-card{ padding:10px !important; }
+    .rt-card .rt-name{ font-size:15px !important; }
+    .rt-card .rt-meta{ font-size:10px !important; margin-bottom:6px !important; }
+    .rt-card .rt-label{ font-size:10px !important; }
+    .rt-card .rt-order{ font-size:10px !important; }
+    .rt-card .rt-dot{ width:8px !important; height:8px !important; top:8px !important; right:8px !important; }
+    .rt-card .rt-edit{ display:none !important; }
+}
+@media (hover:none){ .rt-card .rt-edit{ display:none !important; } }
+</style>
+<div class="rt-grid">
     @foreach($tables as $table)
     @php
         $cardStyle = match($table->status) {
@@ -132,25 +146,25 @@
             default       => 'color:#374151;',
         };
     @endphp
-    <div class="border-2 rounded-xl p-4 cursor-pointer transition-all relative group"
+    <div class="border-2 rounded-xl p-4 cursor-pointer transition-all relative group rt-card"
          style="{{ $cardStyle }}"
          onclick="handleTableClick({{ $table->id }}, '{{ $table->status }}', {{ $table->activeOrder?->id ?? 'null' }}, '{{ addslashes($table->name) }}', {{ $table->capacity }})">
 
         {{-- Status dot --}}
-        <div class="absolute top-3 right-3 w-3 h-3 rounded-full" style="{{ $dotStyle }}"></div>
+        <div class="absolute top-3 right-3 w-3 h-3 rounded-full rt-dot" style="{{ $dotStyle }}"></div>
 
         {{-- Table name --}}
-        <div class="text-lg font-bold text-gray-800 mb-1">{{ $table->name }}</div>
-        <div class="text-xs text-gray-500 mb-3">👥 {{ $table->capacity }} seats</div>
+        <div class="text-lg font-bold text-gray-800 mb-1 rt-name">{{ $table->name }}</div>
+        <div class="text-xs text-gray-500 mb-3 rt-meta">👥 {{ $table->capacity }} seats</div>
 
         {{-- Status label --}}
-        <div class="text-xs font-medium" style="{{ $labelStyle }}">
+        <div class="text-xs font-medium rt-label" style="{{ $labelStyle }}">
             {{ $table->statusLabel() }}
         </div>
 
         {{-- Active order info --}}
         @if($table->activeOrder)
-        <div class="mt-2 text-xs text-orange-600 font-medium">
+        <div class="mt-2 text-xs text-orange-600 font-medium rt-order">
             {{ $table->activeOrder->order_number }}<br>
             ₹{{ number_format($table->activeOrder->total, 2) }}
         </div>
@@ -158,7 +172,7 @@
 
         {{-- Edit button (admin only) --}}
         @canDo('restaurant.tables')
-        <div class="absolute bottom-2 right-2 hidden group-hover:flex gap-1">
+        <div class="absolute bottom-2 right-2 hidden group-hover:flex gap-1 rt-edit">
             <button onclick="event.stopPropagation(); openEditTable({{ $table->id }}, '{{ addslashes($table->name) }}', {{ $table->capacity }}, '{{ $table->status }}')"
                 class="text-xs bg-white border border-gray-300 rounded px-2 py-1 hover:bg-gray-50">✏️</button>
         </div>
