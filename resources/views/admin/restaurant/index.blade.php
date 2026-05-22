@@ -3,39 +3,33 @@
 @section('title', 'Restaurant')
 
 @section('content')
-<div class="content-header">
-    <div class="flex items-center justify-between flex-wrap gap-3">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">🍽️ Restaurant</h1>
-            <p class="text-gray-500 text-sm mt-1">Table map — click a table to open or view order</p>
+{{-- ═════ MOBILE-FIRST RESTAURANT POS HEADER ═════ --}}
+<div style="position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #f1f5f9;box-shadow:0 1px 6px rgba(0,0,0,.04);">
+    <div style="padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <a href="{{ route('dashboard') }}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#475569;text-decoration:none;white-space:nowrap;">
+            <i class="fas fa-arrow-left" style="font-size:10px;"></i> Dashboard
+        </a>
+        <div style="flex:1;min-width:0;">
+            <h1 style="font-size:17px;font-weight:900;color:#0f172a;margin:0;letter-spacing:-.3px;">🍽️ Restaurant</h1>
+            <p style="font-size:11px;color:#94a3b8;margin:0;">Tap a table to start or view order</p>
         </div>
-        <div class="flex gap-2 flex-wrap">
-            @canDo('restaurant.menu')
-            <a href="{{ route('restaurant.menu.index') }}" class="btn-secondary">
-                📋 Manage Menu
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <a href="{{ route('restaurant.orders.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:12px;font-weight:700;color:#0369a1;text-decoration:none;">
+                📋 Orders
             </a>
-            <a href="{{ route('restaurant.qr.index') }}" class="btn-secondary" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">
-                <i class="fas fa-qrcode"></i> QR Codes
-            </a>
-            @endCanDo
-            @canDo('restaurant.billing')
-            <a href="{{ route('restaurant.bills.index') }}" class="btn-secondary">
+            <a href="{{ route('restaurant.bills.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:700;color:#15803d;text-decoration:none;">
                 🧾 Bills
             </a>
-            @endCanDo
-            @canDo('restaurant.reports')
-            <a href="{{ route('restaurant.reports') }}" class="btn-secondary">
-                📊 Reports
-            </a>
-            @endCanDo
             @canDo('restaurant.tables')
-            <button onclick="document.getElementById('addTableModal').classList.remove('hidden')" class="btn-primary">
-                + Add Table
+            <button onclick="document.getElementById('addTableModal').classList.remove('hidden')" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f43f5e;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-plus" style="font-size:10px;"></i> Table
             </button>
             @endCanDo
         </div>
     </div>
 </div>
+
+<div style="padding:14px 16px 100px;">
 
 {{-- Flash Messages --}}
 @if(session('success'))
@@ -92,19 +86,25 @@
 @endif
 @endCanDo
 
-{{-- Legend --}}
-<div style="display:flex;gap:18px;margin-bottom:22px;flex-wrap:wrap;align-items:center;">
-    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#22c55e;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Free</span></div>
-    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#f97316;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Occupied</span></div>
-    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#ef4444;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Needs Cleaning</span></div>
-    <div style="display:inline-flex;align-items:center;gap:8px;"><span style="width:14px;height:14px;border-radius:999px;background:#1f2937;display:inline-block;"></span><span style="font-size:13px;color:#475569;font-weight:600;">Not Available</span></div>
+{{-- Compact Legend --}}
+<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;">
+    <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Free</span></div>
+    <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#f97316;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Occupied</span></div>
+    <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Dirty</span></div>
+    <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#374151;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Off</span></div>
 </div>
 {{-- Table Grid --}}
 @if($tables->isEmpty())
-    <div class="text-center py-20 text-gray-400">
-        <div class="text-6xl mb-4">🍽️</div>
-        <p class="text-lg font-medium">No tables added yet</p>
-        <p class="text-sm mt-1">Click "Add Table" to get started</p>
+    <div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:56px;margin-bottom:14px;">🍽️</div>
+        <p style="font-size:15px;font-weight:700;color:#475569;">No tables yet</p>
+        <p style="font-size:12px;margin-top:4px;">Add tables to start taking orders</p>
+        @canDo('restaurant.tables')
+        <button onclick="document.getElementById('addTableModal').classList.remove('hidden')"
+            style="margin-top:16px;padding:10px 24px;background:#f43f5e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+            <i class="fas fa-plus"></i> Add First Table
+        </button>
+        @endCanDo
     </div>
 @else
 <style>
@@ -291,4 +291,6 @@ function openEditTable(id, name, capacity, status) {
     document.getElementById('editTableModal').classList.remove('hidden');
 }
 </script>
+
+</div>{{-- /padding wrapper --}}
 @endsection

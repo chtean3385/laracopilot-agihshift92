@@ -3,19 +3,23 @@
 @section('title', 'Restaurant Orders')
 
 @section('content')
-<div class="content-header">
-    <div class="flex items-center justify-between flex-wrap gap-3">
-        <div>
-            <a href="{{ route('restaurant.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Tables</a>
-            <h1 class="text-2xl font-bold text-gray-800 mt-1">📋 Restaurant Orders</h1>
-            <p class="text-gray-500 text-sm">All restaurant orders (newest first)</p>
-        </div>
-        <div class="flex gap-2">
-            <a href="{{ route('restaurant.bills.index') }}" class="btn-secondary">🧾 Bills</a>
-            <a href="{{ route('restaurant.qr.index') }}" class="btn-secondary">📱 QR Codes</a>
+{{-- ═══ MOBILE-FIRST POS HEADER ═══ --}}
+<div style="position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #f1f5f9;box-shadow:0 1px 6px rgba(0,0,0,.04);">
+    <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <a href="{{ route('dashboard') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#475569;text-decoration:none;">
+            <i class="fas fa-arrow-left" style="font-size:10px;"></i> Dashboard
+        </a>
+        <a href="{{ route('restaurant.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;font-weight:700;color:#991b1b;text-decoration:none;">
+            <i class="fas fa-chair" style="font-size:10px;"></i> Tables
+        </a>
+        <div style="flex:1;min-width:0;text-align:right;">
+            <h1 style="font-size:17px;font-weight:900;color:#0f172a;margin:0;">📋 Orders</h1>
+            <p style="font-size:11px;color:#94a3b8;margin:0;">{{ $orders->total() ?? 0 }} total orders</p>
         </div>
     </div>
 </div>
+
+<div style="padding:14px 16px 100px;">
 
 @if(session('success'))
     <div class="alert-success mb-4">{{ session('success') }}</div>
@@ -24,85 +28,71 @@
     <div class="alert-danger mb-4">{{ session('error') }}</div>
 @endif
 
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+<style>
+.oc-card{ background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;position:relative; }
+.oc-top{ display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px; }
+.oc-badges{ display:flex;gap:4px;flex-wrap:wrap; }
+.oc-badge{ font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.3px; }
+.oc-meta{ display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#64748b;margin-bottom:10px; }
+.oc-total{ font-size:18px;font-weight:900;color:#0f172a; }
+@media(max-width:480px){
+    .oc-card{ padding:12px; }
+    .oc-total{ font-size:16px; }
+}
+</style>
+
     @if($orders->isEmpty())
-    <div class="text-center py-20 text-gray-400">
-        <div class="text-6xl mb-4">📋</div>
-        <p class="text-lg font-medium">No orders yet</p>
-        <p class="text-sm mt-1">Orders will appear here once guests start ordering</p>
+    <div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">📋</div>
+        <p style="font-size:15px;font-weight:700;color:#475569;">No orders yet</p>
+        <p style="font-size:12px;margin-top:4px;">Orders appear once guests start ordering</p>
+        <a href="{{ route('restaurant.index') }}" style="display:inline-block;margin-top:14px;padding:10px 20px;background:#0f172a;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+            Go to Tables →
+        </a>
     </div>
     @else
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-200 bg-gray-50">
-                    <th class="text-left px-4 py-3 text-gray-600">Order #</th>
-                    <th class="text-left px-4 py-3 text-gray-600">Source</th>
-                    <th class="text-left px-4 py-3 text-gray-600">Table / Room</th>
-                    <th class="text-center px-4 py-3 text-gray-600">Items</th>
-                    <th class="text-center px-4 py-3 text-gray-600">Status</th>
-                    <th class="text-center px-4 py-3 text-gray-600">Approval</th>
-                    <th class="text-center px-4 py-3 text-gray-600">Payment</th>
-                    <th class="text-right px-4 py-3 text-gray-600">Total</th>
-                    <th class="text-left px-4 py-3 text-gray-600">Created</th>
-                    <th class="px-4 py-3"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($orders as $order)
-                <tr class="border-b border-gray-100 hover:bg-gray-50">
-                    <td class="px-4 py-3 font-mono font-semibold text-gray-800">{{ $order->order_number }}</td>
-                    <td class="px-4 py-3">
-                        @if($order->source === 'guest_qr')
-                            <span style="padding:3px 9px;border-radius:10px;background:#fef3c7;color:#a16207;font-size:11px;font-weight:700;">📱 Guest QR</span>
-                        @else
-                            <span style="padding:3px 9px;border-radius:10px;background:#e0f2fe;color:#075985;font-size:11px;font-weight:700;">👨‍🍳 Staff</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 text-gray-700">
-                        @if($order->table)
-                            <i class="fas fa-chair text-gray-400 mr-1"></i> {{ $order->table->name }}
-                        @elseif($order->room_number)
-                            <i class="fas fa-door-open text-gray-400 mr-1"></i> Room {{ $order->room_number }}
-                        @else
-                            <span class="text-gray-400">—</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 text-center text-gray-700">{{ $order->items->sum('quantity') }}</td>
-                    <td class="px-4 py-3 text-center">{!! $order->statusBadge() !!}</td>
-                    <td class="px-4 py-3 text-center">
-                        @if($order->approval_status === 'pending')
-                            <span style="padding:3px 9px;border-radius:10px;background:#fed7aa;color:#9a3412;font-size:11px;font-weight:700;">⏳ Pending</span>
-                        @elseif($order->approval_status === 'approved')
-                            <span style="padding:3px 9px;border-radius:10px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;">✓ Approved</span>
-                        @elseif($order->approval_status === 'rejected')
-                            <span style="padding:3px 9px;border-radius:10px;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;">✕ Rejected</span>
-                        @else
-                            <span class="text-gray-400 text-xs">—</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        @if($order->payment_status === 'paid')
-                            <span style="padding:3px 9px;border-radius:10px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;">✓ Paid</span>
-                        @else
-                            <span style="padding:3px 9px;border-radius:10px;background:#f1f5f9;color:#475569;font-size:11px;font-weight:700;">Unpaid</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 text-right font-semibold text-gray-800">₹{{ number_format($order->total, 2) }}</td>
-                    <td class="px-4 py-3 text-gray-600 text-xs">{{ $order->created_at->format('d M Y, h:i A') }}</td>
-                    <td class="px-4 py-3 text-right">
-                        <button type="button" onclick="openOrderModal({{ $order->id }})" class="text-blue-600 hover:underline text-xs font-semibold" style="background:none;border:none;cursor:pointer;">View →</button>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    @foreach($orders as $order)
+    <div class="oc-card" onclick="openOrderModal({{ $order->id }})" style="cursor:pointer;">
+        <div class="oc-top">
+            <div>
+                <div style="font-family:'SF Mono',Menlo,monospace;font-size:15px;font-weight:900;color:#0f172a;">{{ $order->order_number }}</div>
+                <div class="oc-meta">
+                    <span><i class="fas fa-clock" style="font-size:10px;color:#94a3b8;"></i> {{ $order->created_at->format('d M, h:i A') }}</span>
+                    @if($order->table)
+                    <span><i class="fas fa-chair" style="font-size:10px;color:#94a3b8;"></i> {{ $order->table->name }}</span>
+                    @elseif($order->room_number)
+                    <span><i class="fas fa-door-open" style="font-size:10px;color:#94a3b8;"></i> Rm {{ $order->room_number }}</span>
+                    @endif
+                    <span><i class="fas fa-shopping-basket" style="font-size:10px;color:#94a3b8;"></i> {{ $order->items->sum('quantity') }} items</span>
+                </div>
+            </div>
+            <div class="oc-total">₹{{ number_format($order->total, 0) }}</div>
+        </div>
+        <div class="oc-badges">
+            @if($order->source === 'guest_qr')
+                <span class="oc-badge" style="background:#fef3c7;color:#a16207;">📱 Guest QR</span>
+            @else
+                <span class="oc-badge" style="background:#e0f2fe;color:#075985;">👨‍🍳 Staff</span>
+            @endif
+            {!! $order->statusBadge() !!}
+            @if($order->approval_status === 'pending')
+                <span class="oc-badge" style="background:#fed7aa;color:#9a3412;">⏳ Pending</span>
+            @elseif($order->approval_status === 'rejected')
+                <span class="oc-badge" style="background:#fee2e2;color:#b91c1c;">✕ Rejected</span>
+            @endif
+            @if($order->payment_status === 'paid')
+                <span class="oc-badge" style="background:#dcfce7;color:#15803d;">✓ Paid</span>
+            @else
+                <span class="oc-badge" style="background:#f1f5f9;color:#475569;">Unpaid</span>
+            @endif
+        </div>
     </div>
-    <div class="px-4 py-3 border-t border-gray-100">
+    @endforeach
+
+    <div style="margin-top:16px;">
         {{ $orders->links() }}
     </div>
     @endif
-</div>
 
 {{-- Per-order detail modals (pre-rendered, shown on demand) --}}
 @foreach($orders as $order)
@@ -182,7 +172,7 @@
                     @foreach($order->items as $it)
                     <tr style="border-bottom:1px solid #f1f5f9;">
                         <td style="padding:8px 4px;color:#1e293b;">
-                            {{ $it->food_type === 'veg' ? '🟢' : ($it->food_type === 'nonveg' ? '🔴' : '🔵') }} {{ $it->item_name }}
+                            {{ $it->food_type === 'veg' ? '🌱' : ($it->food_type === 'nonveg' ? '🍗' : '🥪') }} {{ $it->item_name }}
                             @if($it->kot_note)<div style="font-size:11px;color:#94a3b8;">{{ $it->kot_note }}</div>@endif
                         </td>
                         <td style="padding:8px 4px;text-align:center;">{{ $it->quantity }}</td>
@@ -245,4 +235,6 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.querySelectorAll('[id^="orderModal-"]').forEach(m => m.style.display = 'none'), document.body.style.overflow = '';
 });
 </script>
+
+</div>{{-- /padding wrapper --}}
 @endsection

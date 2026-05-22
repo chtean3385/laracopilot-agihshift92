@@ -3,9 +3,23 @@
 @section('title', 'Order ' . $order->order_number)
 
 @section('content')
-<div style="margin-bottom:14px;">
-    <a href="{{ route('restaurant.orders.index') }}" style="font-size:13px;color:#2563eb;text-decoration:none;">← Back to Orders</a>
+{{-- ═════ MOBILE POS HEADER ═════ --}}
+<div style="position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #f1f5f9;box-shadow:0 1px 6px rgba(0,0,0,.04);">
+    <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <a href="{{ route('dashboard') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#475569;text-decoration:none;">
+            <i class="fas fa-arrow-left" style="font-size:10px;"></i> Dashboard
+        </a>
+        <a href="{{ route('restaurant.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;font-weight:700;color:#991b1b;text-decoration:none;">
+            <i class="fas fa-chair" style="font-size:10px;"></i> Tables
+        </a>
+        <div style="flex:1;min-width:0;text-align:right;">
+            <div style="font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Order</div>
+            <div style="font-family:'SF Mono',Menlo,monospace;font-size:18px;font-weight:900;color:#0f172a;">{{ $order->order_number }}</div>
+        </div>
+    </div>
 </div>
+
+<div style="padding:14px 16px 100px;">
 
 {{-- ═════ TICKET HEADER (KOT-style) ═════ --}}
 <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:20px 24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
@@ -52,16 +66,26 @@
         </div>
     </div>
 
-    {{-- Action buttons (only for approved + open orders) --}}
+    {{-- Compact action buttons — single column on mobile --}}
     @if($order->isOpen() && !$order->isPendingApproval())
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px dashed #e2e8f0;">
-        <button onclick="printKot()" style="padding:11px 22px;background:#0f172a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">🖨️ Print KOT</button>
+    <style>
+    .act-btn{ padding:8px 14px;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap; }
+    @media(max-width:480px){ .act-btn{ font-size:11px; padding:6px 10px; border-radius:6px; } }
+    </style>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0;justify-content:center;">
+        <button onclick="printKot()" class="act-btn" style="background:#0f172a;color:#fff;">
+            <i class="fas fa-print" style="font-size:9px;"></i> KOT
+        </button>
         @if(!$order->isPaid())
-        <button onclick="document.getElementById('billModal').classList.remove('hidden')" style="padding:11px 22px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">💳 Generate Bill</button>
+        <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="act-btn" style="background:#2563eb;color:#fff;">
+            <i class="fas fa-receipt" style="font-size:9px;"></i> Bill
+        </button>
         @endif
         <form action="{{ route('restaurant.orders.cancel', $order->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Cancel this order? Table will be freed.')">
             @csrf
-            <button type="submit" style="padding:11px 22px;background:#fff;color:#dc2626;border:1.5px solid #fecaca;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;">✕ Cancel</button>
+            <button type="submit" class="act-btn" style="background:#fff;color:#dc2626;border:1px solid #fecaca;">
+                <i class="fas fa-times" style="font-size:9px;"></i> Cancel
+            </button>
         </form>
     </div>
     @endif
@@ -198,25 +222,36 @@
                 @endforeach
             </div>
 
+            <style>
+            .menu-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; max-height:440px; overflow-y:auto; padding:4px; border:1px solid #f1f5f9; border-radius:10px; background:#fafbfc; }
+            .menu-card{ background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;transition:all .15s; }
+            .menu-card:hover{ border-color:#2563eb; box-shadow:0 2px 8px rgba(37,99,235,.15); }
+            .menu-img{ width:100%;height:90px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:28px;color:#cbd5e1; }
+            @media(max-width:480px){
+                .menu-grid{ grid-template-columns:1fr 1fr; gap:8px; padding:6px; max-height:320px; }
+                .menu-card{ border-radius:8px; }
+                .menu-img{ height:60px; font-size:22px; }
+                .menu-card .mn-txt{ padding:6px 8px !important; }
+                .menu-card .mn-name{ font-size:11px !important; }
+                .menu-card .mn-price{ font-size:12px !important; }
+            }
+            </style>
             {{-- Menu Items Grid — scrollable so big menus don't blow up the page --}}
-            <div id="menuGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-height:440px;overflow-y:auto;padding:4px;border:1px solid #f1f5f9;border-radius:10px;background:#fafbfc;">
+            <div id="menuGrid" class="menu-grid">
                 @foreach($categories as $cat)
                 @foreach($cat->activeItems as $item)
                 @php $img = method_exists($item,'imageUrl') ? $item->imageUrl() : null; @endphp
-                <div class="menu-item" data-cat="{{ $cat->id }}" data-name="{{ strtolower($item->name) }}"
-                     onclick="addToOrder({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}')"
-                     style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;transition:all .15s;"
-                     onmouseover="this.style.borderColor='#2563eb';this.style.boxShadow='0 2px 8px rgba(37,99,235,.15)';"
-                     onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';">
-                    <div style="width:100%;height:90px;background:#f1f5f9 url('{{ $img }}') center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:28px;color:#cbd5e1;">
+                <div class="menu-item menu-card" data-cat="{{ $cat->id }}" data-name="{{ strtolower($item->name) }}"
+                     onclick="addToOrder({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}')">
+                    <div class="menu-img" style="background-image:url('{{ $img }}');background-size:cover;background-position:center;">
                         @if(!$img)🍽️@endif
                     </div>
-                    <div style="padding:8px 10px;">
+                    <div class="mn-txt" style="padding:8px 10px;">
                         <div style="display:flex;justify-content:space-between;align-items:start;gap:4px;">
-                            <span style="font-size:13px;font-weight:600;color:#0f172a;line-height:1.2;">{{ $item->name }}</span>
-                            <span style="font-size:11px;flex-shrink:0;">{{ $item->food_type === 'veg' ? '🟢' : ($item->food_type === 'nonveg' ? '🔴' : '🔵') }}</span>
+                            <span class="mn-name" style="font-size:13px;font-weight:600;color:#0f172a;line-height:1.2;">{{ $item->name }}</span>
+                            <span style="font-size:11px;flex-shrink:0;">{{ $item->food_type === 'veg' ? '🌱' : ($item->food_type === 'nonveg' ? '🍗' : '🥪') }}</span>
                         </div>
-                        <div style="font-size:13px;font-weight:800;color:#2563eb;margin-top:3px;">₹{{ number_format($item->price, 2) }}</div>
+                        <div class="mn-price" style="font-size:13px;font-weight:800;color:#2563eb;margin-top:3px;">₹{{ number_format($item->price, 2) }}</div>
                     </div>
                 </div>
                 @endforeach
@@ -547,4 +582,40 @@ function togglePaymentMethod(type) {
     document.getElementById('paymentMethodSection').style.display = type === 'room' ? 'none' : '';
 }
 </script>
+
+{{-- ═══ STICKY BOTTOM ACTION BAR ═══ --}}
+@if($order->isOpen())
+<style>
+.pos-bar{ position:fixed;bottom:0;left:0;right:0;z-index:40;background:#fff;border-top:1px solid #e2e8f0;box-shadow:0 -4px 20px rgba(0,0,0,.08);padding:8px 14px;display:flex;gap:6px;align-items:center;justify-content:center; }
+.pos-bar-btn{ flex:1;max-width:160px;padding:10px 8px;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap; }
+@media(max-width:480px){
+    .pos-bar{ padding:6px 10px; gap:4px; }
+    .pos-bar-btn{ padding:7px 6px; font-size:11px; border-radius:6px; max-width:110px; }
+}
+@media(max-width:360px){
+    .pos-bar{ flex-direction:column; padding:6px 12px; }
+    .pos-bar-btn{ width:100%; max-width:none; padding:8px 6px; }
+}
+@media(min-width:768px){ .pos-bar{ padding:12px 24px; gap:12px; } }
+</style>
+<div class="pos-bar">
+    @if(!$order->isPendingApproval())
+    <button onclick="document.getElementById('menuGrid').scrollIntoView({behavior:'smooth'})" class="pos-bar-btn" style="background:#0f172a;color:#fff;">
+        <i class="fas fa-plus" style="font-size:9px;"></i> Items
+    </button>
+    <button onclick="printKot()" class="pos-bar-btn" style="background:#f59e0b;color:#fff;">
+        <i class="fas fa-print" style="font-size:9px;"></i> KOT
+    </button>
+    @if(!$order->isPaid())
+    <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="pos-bar-btn" style="background:#2563eb;color:#fff;">
+        <i class="fas fa-receipt" style="font-size:9px;"></i> Bill
+    </button>
+    @endif
+    @else
+    <span style="font-size:12px;color:#9a3412;font-weight:700;">Approve this order above to continue</span>
+    @endif
+</div>
+@endif
+
+</div>{{-- /padding wrapper --}}
 @endsection
