@@ -1012,7 +1012,7 @@
                         .qtm-grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); }
                         @media (min-width:640px){ .qtm-grid{ grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
                         @media (max-width:480px){
-                            .qtm-grid{ gap:8px; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); }
+                            .qtm-grid{ gap:8px; grid-template-columns:1fr 1fr; }
                             .qtm-card{ padding:8px 6px !important; min-height:88px !important; border-radius:10px !important; }
                             .qtm-card .qtm-name{ font-size:13px !important; }
                             .qtm-card .qtm-meta{ font-size:10px !important; }
