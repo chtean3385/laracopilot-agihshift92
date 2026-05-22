@@ -207,7 +207,10 @@
                         <button type="submit" style="padding:9px 18px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">✓ Approve &amp; Send to Kitchen</button>
                     </form>
                 @elseif($order->isOpen())
-                    <a href="{{ route('restaurant.orders.kot.print', $order->id) }}" target="_blank" style="padding:9px 16px;background:#0f172a;color:#fff;border-radius:8px;font-weight:800;font-size:13px;text-decoration:none;">🖨️ Print KOT</a>
+                    <form action="{{ route('restaurant.orders.kot', $order->id) }}" method="POST" style="display:inline;" onsubmit="const self=this;fetch(this.action,{method:'POST',headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}'}}).then(r=>r.json()).then(d=>{if(d.success){const t=document.createElement('div');t.textContent='✅ Sent to kitchen!';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:13px;z-index:9999;';document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}});return false;">
+                        @csrf
+                        <button type="submit" style="padding:9px 16px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">🛡️ Send to Kitchen</button>
+                    </form>
                     @if(!$order->isPaid())
                     <a href="{{ route('restaurant.orders.show', $order->id) }}" style="padding:9px 16px;background:#2563eb;color:#fff;border-radius:8px;font-weight:800;font-size:13px;text-decoration:none;">💳 Generate Bill</a>
                     @endif

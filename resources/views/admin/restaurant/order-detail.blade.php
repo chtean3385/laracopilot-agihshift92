@@ -73,8 +73,8 @@
     @media(max-width:480px){ .act-btn{ font-size:11px; padding:6px 10px; border-radius:6px; } }
     </style>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0;justify-content:center;">
-        <button onclick="printKot()" class="act-btn" style="background:#0f172a;color:#fff;">
-            <i class="fas fa-print" style="font-size:9px;"></i> KOT
+        <button onclick="sendToKitchen()" class="act-btn" style="background:#0f172a;color:#fff;">
+            <i class="fas fa-paper-plane" style="font-size:9px;"></i> Kitchen
         </button>
         @if(!$order->isPaid())
         <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="act-btn" style="background:#2563eb;color:#fff;">
@@ -305,7 +305,7 @@
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
             <p class="font-medium mb-1">Next Steps</p>
             <p>1. Add items from menu</p>
-            <p>2. Print KOT for kitchen</p>
+            <p>2. Send to kitchen</p>
             <p>3. Generate bill when done</p>
         </div>
         @elseif($order->isPendingApproval())
@@ -548,7 +548,7 @@ function removeItem(itemId) {
     });
 }
 
-function printKot() {
+function sendToKitchen() {
     fetch('{{ route("restaurant.orders.kot", $order->id) }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
@@ -556,10 +556,17 @@ function printKot() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            window.open(data.print_url, '_blank');
-            location.reload();
+            showToast('✅ Sent to kitchen!');
         }
     });
+}
+
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 2000);
 }
 
 function linkBooking() {
@@ -603,8 +610,8 @@ function togglePaymentMethod(type) {
     <button onclick="document.getElementById('menuGrid').scrollIntoView({behavior:'smooth'})" class="pos-bar-btn" style="background:#0f172a;color:#fff;">
         <i class="fas fa-plus" style="font-size:9px;"></i> Items
     </button>
-    <button onclick="printKot()" class="pos-bar-btn" style="background:#f59e0b;color:#fff;">
-        <i class="fas fa-print" style="font-size:9px;"></i> KOT
+    <button onclick="sendToKitchen()" class="pos-bar-btn" style="background:#f59e0b;color:#fff;">
+        <i class="fas fa-paper-plane" style="font-size:9px;"></i> Kitchen
     </button>
     @if(!$order->isPaid())
     <button onclick="document.getElementById('billModal').classList.remove('hidden')" class="pos-bar-btn" style="background:#2563eb;color:#fff;">
