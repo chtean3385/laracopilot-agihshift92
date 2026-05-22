@@ -1058,16 +1058,21 @@
             @endCanDo
 
             @php
+                // Integration routes don't have granular permission middleware,
+                // so we gate the whole section by role capability.
+                $canSeeIntegrations = !\App\Services\PermissionService::isRestaurantOnly()
+                    || session('crm_user_role') === 'Super Admin';
+
                 $autoChildren = [
-                    'whatsapp'           => \App\Models\Module::isEnabled('whatsapp'),
-                    'payment_links'      => \App\Models\Module::isEnabled('payment_links'),
-                    'channel_manager'    => \App\Models\Module::isEnabled('channel_manager'),
-                    'ota_whatsapp_sync'  => \App\Models\Module::isEnabled('ota_whatsapp_sync'),
-                    'booking-widget'     => \App\Models\Module::isEnabled('booking-widget'),
-                    'pathik'             => \App\Models\Module::isEnabled('pathik'),
-                    'time-slots'         => \App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing'),
-                    'email-parser'       => \App\Models\Module::isEnabled('email-parser'),
-                    'slot-search-engine' => \App\Models\Module::isEnabled('slot-search-engine'),
+                    'whatsapp'           => $canSeeIntegrations && \App\Models\Module::isEnabled('whatsapp'),
+                    'payment_links'      => $canSeeIntegrations && \App\Models\Module::isEnabled('payment_links'),
+                    'channel_manager'    => $canSeeIntegrations && \App\Models\Module::isEnabled('channel_manager'),
+                    'ota_whatsapp_sync'  => $canSeeIntegrations && \App\Models\Module::isEnabled('ota_whatsapp_sync'),
+                    'booking-widget'     => $canSeeIntegrations && \App\Models\Module::isEnabled('booking-widget'),
+                    'pathik'             => $canSeeIntegrations && \App\Models\Module::isEnabled('pathik'),
+                    'time-slots'         => $canSeeIntegrations && (\App\Models\Module::isEnabled('time-slot-pricing') || \App\Models\Module::isEnabled('hourly-pricing')),
+                    'email-parser'       => $canSeeIntegrations && \App\Models\Module::isEnabled('email-parser'),
+                    'slot-search-engine' => $canSeeIntegrations && \App\Models\Module::isEnabled('slot-search-engine'),
                 ];
                 $hasAutomation = collect($autoChildren)->contains(true);
                 $otaNavCount   = $autoChildren['ota_whatsapp_sync']

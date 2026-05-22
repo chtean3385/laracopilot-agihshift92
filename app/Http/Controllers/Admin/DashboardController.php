@@ -6,13 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Mail\HotelFullAlertMail;
 use App\Models\ActivityLog;
 use App\Models\Booking;
-use App\Models\Hotel;
-use App\Models\Room;
 use App\Models\Customer;
-use App\Models\Payment;
+use App\Models\DashboardPreference;
+use App\Models\Hotel;
 use App\Models\HotelTimeSlot;
 use App\Models\Module;
-use App\Models\DashboardPreference;
+use App\Models\Payment;
+use App\Models\RestaurantBill;
+use App\Models\RestaurantMenuItem;
+use App\Models\RestaurantOrder;
+use App\Models\RestaurantTable;
+use App\Models\Room;
+use App\Services\PermissionService;
 use App\Services\SlotConflictService;
 use App\Support\AnalyticsCache;
 use Carbon\Carbon;
@@ -27,339 +32,414 @@ class DashboardController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
 
         $today = Carbon::today();
+        $hotelId = (int) session('crm_hotel_id');
 
-        try {
-            $todayCheckins = Booking::with(['customer', 'room'])
-                ->whereDate('check_in_date', $today)
-                ->where('status', 'confirmed')
-                ->get();
-        } catch (\Exception $e) {
-            $todayCheckins = collect();
-        }
+        // ── Per-role data scope ────────────────────────────────────────────────
+        $isRestaurantOnly = PermissionService::isRestaurantOnly();
 
-        try {
-            $todayCheckouts = Booking::with(['customer', 'room'])
-                ->whereDate('check_out_date', $today)
-                ->where('status', 'checked_in')
-                ->get();
-        } catch (\Exception $e) {
-            $todayCheckouts = collect();
-        }
+        // ── Hotel-wide data (skipped for restaurant-only users) ──────────────
+        $todayCheckins    = collect();
+        $todayCheckouts   = collect();
+        $availableRooms   = 0;
+        $occupiedRooms    = 0;
+        $maintenanceRooms = 0;
+        $totalRooms       = 0;
+        $dirtyRooms       = 0;
+        $monthRevenue     = 0;
+        $todayRevenue     = 0;
+        $pendingPayments  = 0;
+        $websitePendingCount = 0;
+        $otaPendingCount  = 0;
+        $lowStockCount    = 0;
+        $totalCustomers   = 0;
+        $newCustomersMonth = 0;
+        $recentBookings   = collect();
+        $occupancyRate    = 0;
+        $weeklyRevenue    = [];
+        $hotelFull        = false;
+        $dirtyRoomsList   = [];
+        $showAgenda       = false;
 
-        try {
-            $maintenanceRooms = Room::where('status', 'maintenance')->count();
-            $totalRooms       = Room::count();
-            $nonMaintenanceRooms = $totalRooms - $maintenanceRooms;
-            $wholeHotelActiveToday = Booking::where('is_whole_hotel', true)
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->where('check_in_date', '<=', $today->toDateString())
-                ->where('check_out_date', '>', $today->toDateString())
-                ->exists();
-            $dirtyRooms = Room::where('status', 'dirty')->count();
-            if ($wholeHotelActiveToday) {
-                $occupiedRooms  = $nonMaintenanceRooms;
-                $availableRooms = 0;
-            } else {
-                $availableRooms = Room::where('status', 'available')->count();
-                $occupiedRooms  = Room::where('status', 'occupied')->count();
-            }
-        } catch (\Exception $e) {
-            $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = $dirtyRooms = 0;
-        }
-
-        try {
-            $monthRevenue = Payment::whereMonth('created_at', $today->month)
-                ->whereYear('created_at', $today->year)
-                ->where('status', 'completed')
-                ->sum('amount');
-            $todayRevenue = Payment::whereDate('created_at', $today)
-                ->where('status', 'completed')
-                ->sum('amount');
-        } catch (\Exception $e) {
-            $monthRevenue = $todayRevenue = 0;
-        }
-
-        try {
-            $pendingPayments = Booking::whereIn('payment_status', ['pending', 'partial'])->count();
-        } catch (\Exception $e) {
-            $pendingPayments = 0;
-        }
-
-        try {
-            $websitePendingCount = Module::isEnabled('booking-widget')
-                ? Booking::where('status', 'website_pending')->count()
-                : 0;
-        } catch (\Exception $e) {
-            $websitePendingCount = 0;
-        }
-
-        try {
-            $otaPendingCount = Module::isEnabled('ota_whatsapp_sync')
-                ? \App\Models\OtaImportedBooking::where('hotel_id', (int) session('crm_hotel_id'))
-                    ->where('status', 'pending')
-                    ->count()
-                : 0;
-        } catch (\Exception $e) {
-            $otaPendingCount = 0;
-        }
-
-        try {
-            $lowStockCount = Module::isEnabled('inventory')
-                ? \App\Models\InventoryItem::where('is_active', true)
-                    ->whereRaw('current_stock <= reorder_level AND reorder_level > 0')
-                    ->count()
-                : 0;
-        } catch (\Exception $e) {
-            $lowStockCount = 0;
-        }
-
-        try {
-            $totalCustomers    = Customer::count();
-            $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
-                ->whereYear('created_at', $today->year)
-                ->count();
-        } catch (\Exception $e) {
-            $totalCustomers = $newCustomersMonth = 0;
-        }
-
-        try {
-            $recentBookings = Booking::with(['customer' => fn($q) => $q->withTrashed(), 'room'])
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
-        } catch (\Exception $e) {
-            $recentBookings = collect();
-        }
-
-        $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
-
-        // ── Hotel Full Alert ──────────────────────────────────────────────────
-        $hotelFull = $totalRooms > 0 && $availableRooms === 0;
-        if ($hotelFull) {
-            $hotelId  = (int) session('crm_hotel_id');
-            $cacheKey = "hotel_full_alert_{$hotelId}_" . now()->toDateString();
-            if (!Cache::has($cacheKey)) {
-                Cache::put($cacheKey, true, now()->endOfDay()->diffInSeconds(now()));
-                try {
-                    $hotel = Hotel::find($hotelId);
-                    if ($hotel && $hotel->email) {
-                        Mail::to($hotel->email)->send(new HotelFullAlertMail(
-                            hotelName:     $hotel->name,
-                            totalRooms:    $totalRooms,
-                            occupiedRooms: $occupiedRooms,
-                            date:          now()->format('d M Y'),
-                        ));
-                    }
-                } catch (\Exception $e) {
-                    // silently skip — never crash the dashboard
-                }
-            }
-        }
-
-        // Single query instead of 7 separate queries — group payments by day
-        try {
-            $revenueByDay = Payment::where('status', 'completed')
-                ->where('created_at', '>=', Carbon::today()->subDays(6)->startOfDay())
-                ->selectRaw("DATE(created_at) as day, SUM(amount) as total")
-                ->groupBy('day')
-                ->pluck('total', 'day');
-        } catch (\Exception $e) {
-            $revenueByDay = collect();
-        }
-        $weeklyRevenue = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::today()->subDays($i);
-            $weeklyRevenue[] = [
-                'day'     => $date->format('D'),
-                'date'    => $date->format('d'),
-                'label'   => $date->format('D, d M'),
-                'amount'  => (float) ($revenueByDay[$date->toDateString()] ?? 0),
-                'isToday' => $date->isToday(),
-            ];
-        }
-
-        // --- Slot Availability Widget ---
         $hasSlotModule = false;
         $dashboardSlots = collect();
         $dashboardSlotAvailability = [];
         $slotWeekStart = Carbon::today()->startOfWeek(Carbon::MONDAY);
 
-        if (Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing')) {
-            try {
-                if (request('slot_week')) {
-                    $slotWeekStart = Carbon::parse(request('slot_week'))->startOfWeek(Carbon::MONDAY);
-                }
-                $slotWeekEnd = $slotWeekStart->copy()->addDays(6);
-                $dashboardSlots = HotelTimeSlot::where('is_active', true)->ordered()->get();
-                $slotRooms      = Room::where('pricing_type', 'per_slot')->orderBy('room_number')->get();
-                $slotRoomCount  = $slotRooms->count();
-                $slotRoomIds    = $slotRooms->pluck('id')->toArray();
-
-                // Pre-load whole-hotel bookings that cover any day in this week
-                $whBookingsWeek = Booking::where('is_whole_hotel', true)
-                    ->whereNotIn('status', ['cancelled', 'checked_out'])
-                    ->where('check_in_date', '<=', $slotWeekEnd->toDateString())
-                    ->where('check_out_date', '>', $slotWeekStart->toDateString())
-                    ->with('customer:id,name')
-                    ->get();
-
-                if ($dashboardSlots->isNotEmpty() && $slotRoomCount > 0) {
-                    $hasSlotModule = true;
-                    $conflictSvc   = new SlotConflictService();
-                    $cur = $slotWeekStart->copy();
-                    while ($cur <= $slotWeekEnd) {
-                        $ds      = $cur->toDateString();
-                        $dayData = [
-                            'date'     => $ds,
-                            'label'    => $cur->format('D'),
-                            'sublabel' => $cur->format('d M'),
-                            'isToday'  => $cur->isToday(),
-                            'slots'    => [],
-                        ];
-
-                        // Check if a whole-hotel booking covers this specific day
-                        $whForDay = $whBookingsWeek->first(
-                            fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
-                        );
-
-                        foreach ($dashboardSlots as $slot) {
-                            if ($whForDay) {
-                                // Whole hotel booked — mark ALL slots as 100% full (red)
-                                $dayData['slots'][] = [
-                                    'slot_name'      => $slot->name,
-                                    'time'           => $slot->start_time . '–' . $slot->end_time,
-                                    'available'      => 0,
-                                    'booked'         => $slotRoomCount,
-                                    'total'          => $slotRoomCount,
-                                    'pct'            => 100,
-                                    'color'          => 'red',
-                                    'booked_rooms'   => $slotRooms->map(fn($r) => ['room_id' => $r->id, 'room_number' => $r->room_number, 'guest' => $whForDay->customer->name ?? '—'])->values()->toArray(),
-                                    'free_rooms'     => [],
-                                    'whole_hotel_bk' => $whForDay->booking_number,
-                                ];
-                                continue;
-                            }
-                            $bookedDetails = $conflictSvc->getConflictingRoomDetails($slot, $ds);
-                            $bookedIds     = array_column($bookedDetails, 'room_id');
-                            // restrict to slot rooms only
-                            $bookedDetails = array_values(array_filter($bookedDetails, fn($d) => in_array($d['room_id'], $slotRoomIds)));
-                            $bookedIds     = array_column($bookedDetails, 'room_id');
-                            $booked        = count($bookedIds);
-                            $total         = $slotRoomCount;
-                            $available     = $total - $booked;
-                            $pct           = $total > 0 ? round($booked / $total * 100) : 0;
-                            $color         = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
-                            $freeRooms     = $slotRooms->filter(fn($r) => !in_array($r->id, $bookedIds))->pluck('room_number')->values()->all();
-                            $dayData['slots'][] = [
-                                'slot_name'    => $slot->name,
-                                'time'         => $slot->start_time . '–' . $slot->end_time,
-                                'available'    => $available,
-                                'booked'       => $booked,
-                                'total'        => $total,
-                                'pct'          => $pct,
-                                'color'        => $color,
-                                'booked_rooms' => $bookedDetails,
-                                'free_rooms'   => $freeRooms,
-                            ];
-                        }
-                        $dashboardSlotAvailability[] = $dayData;
-                        $cur->addDay();
-                    }
-                }
-            } catch (\Exception $e) {
-                $hasSlotModule = false;
-            }
-        }
-
-        // --- Booking Calendar ---
         $calWeeks  = [];
         $calStart  = $today->copy()->startOfMonth();
         $prevMonth = $calStart->copy()->subMonth();
         $nextMonth = $calStart->copy()->addMonth();
 
-        try {
-            $calYear  = (int) request('cal_year',  $today->year);
-            $calMonth = (int) request('cal_month', $today->month);
-
-            if ($calMonth < 1)  { $calMonth = 12; $calYear--; }
-            if ($calMonth > 12) { $calMonth = 1;  $calYear++; }
-
-            $calStart     = Carbon::create($calYear, $calMonth, 1)->startOfDay();
-            $calEnd       = $calStart->copy()->endOfMonth();
-            $calGridStart = $calStart->copy()->startOfWeek(Carbon::SUNDAY);
-            $calGridEnd   = $calEnd->copy()->endOfWeek(Carbon::SATURDAY);
-            $prevMonth    = $calStart->copy()->subMonth();
-            $nextMonth    = $calStart->copy()->addMonth();
-
-            $calBookings = Booking::whereIn('status', ['confirmed', 'checked_in'])
-                ->with(['customer', 'room'])
-                ->where(function ($q) use ($calGridStart, $calGridEnd) {
-                    $q->whereBetween('check_in_date', [$calGridStart->toDateString(), $calGridEnd->toDateString()])
-                      ->orWhereBetween('check_out_date', [$calGridStart->toDateString(), $calGridEnd->toDateString()])
-                      ->orWhere(function ($q2) use ($calGridStart, $calGridEnd) {
-                          $q2->where('check_in_date', '<=', $calGridStart->toDateString())
-                             ->where('check_out_date', '>=', $calGridEnd->toDateString());
-                      });
-                })
-                ->get();
-
-            // Whole-hotel bookings that overlap this calendar grid (for red day highlight)
-            $calWhBookings = Booking::where('is_whole_hotel', true)
-                ->whereNotIn('status', ['cancelled', 'checked_out'])
-                ->where('check_in_date', '<=', $calGridEnd->toDateString())
-                ->where('check_out_date', '>', $calGridStart->toDateString())
-                ->with('customer:id,name')
-                ->get();
-
-            $calDays = [];
-            $cur = $calGridStart->copy();
-            while ($cur <= $calGridEnd) {
-                $ds = $cur->toDateString();
-
-                $checkinBookings  = $calBookings->filter(fn($b) => $b->check_in_date->toDateString() === $ds);
-                $checkoutBookings = $calBookings->filter(fn($b) => $b->check_out_date->toDateString() === $ds);
-                $stayingBookings  = $calBookings->filter(
-                    fn($b) => $b->check_in_date->toDateString() < $ds
-                           && $b->check_out_date->toDateString() > $ds
-                           && $b->status === 'checked_in'
-                );
-
-                $buildTooltip = function ($collection) {
-                    return $collection->map(fn($b) => [
-                        'name'   => $b->customer->name ?? '—',
-                        'room'   => $b->room->room_number ?? '—',
-                        'type'   => $b->room->type ?? '',
-                        'status' => $b->status,
-                    ])->values()->toArray();
-                };
-
-                $whForCalDay = $calWhBookings->first(
-                    fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
-                );
-                $calDays[] = [
-                    'date'             => $cur->copy(),
-                    'ds'               => $ds,
-                    'day'              => $cur->day,
-                    'inMonth'          => $cur->month === $calMonth,
-                    'isToday'          => $cur->isToday(),
-                    'checkins'         => $checkinBookings->count(),
-                    'checkouts'        => $checkoutBookings->count(),
-                    'staying'          => $stayingBookings->count(),
-                    'checkin_guests'   => $buildTooltip($checkinBookings),
-                    'checkout_guests'  => $buildTooltip($checkoutBookings),
-                    'staying_guests'   => $buildTooltip($stayingBookings),
-                    'whole_hotel'      => $whForCalDay ? $whForCalDay->booking_number : null,
-                    'wh_guest'         => $whForCalDay ? ($whForCalDay->customer->name ?? 'Guest') : null,
-                ];
-                $cur->addDay();
+        if (!$isRestaurantOnly) {
+            try {
+                $todayCheckins = Booking::with(['customer', 'room'])
+                    ->whereDate('check_in_date', $today)
+                    ->where('status', 'confirmed')
+                    ->get();
+            } catch (\Exception $e) {
+                $todayCheckins = collect();
             }
-            $calWeeks = array_chunk($calDays, 7);
-        } catch (\Exception $e) {
-            $calWeeks = [];
+
+            try {
+                $todayCheckouts = Booking::with(['customer', 'room'])
+                    ->whereDate('check_out_date', $today)
+                    ->where('status', 'checked_in')
+                    ->get();
+            } catch (\Exception $e) {
+                $todayCheckouts = collect();
+            }
+
+            try {
+                $maintenanceRooms = Room::where('status', 'maintenance')->count();
+                $totalRooms       = Room::count();
+                $nonMaintenanceRooms = $totalRooms - $maintenanceRooms;
+                $wholeHotelActiveToday = Booking::where('is_whole_hotel', true)
+                    ->whereNotIn('status', ['cancelled', 'checked_out'])
+                    ->where('check_in_date', '<=', $today->toDateString())
+                    ->where('check_out_date', '>', $today->toDateString())
+                    ->exists();
+                $dirtyRooms = Room::where('status', 'dirty')->count();
+                if ($wholeHotelActiveToday) {
+                    $occupiedRooms  = $nonMaintenanceRooms;
+                    $availableRooms = 0;
+                } else {
+                    $availableRooms = Room::where('status', 'available')->count();
+                    $occupiedRooms  = Room::where('status', 'occupied')->count();
+                }
+            } catch (\Exception $e) {
+                $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = $dirtyRooms = 0;
+            }
+
+            try {
+                $monthRevenue = Payment::whereMonth('created_at', $today->month)
+                    ->whereYear('created_at', $today->year)
+                    ->where('status', 'completed')
+                    ->sum('amount');
+                $todayRevenue = Payment::whereDate('created_at', $today)
+                    ->where('status', 'completed')
+                    ->sum('amount');
+            } catch (\Exception $e) {
+                $monthRevenue = $todayRevenue = 0;
+            }
+
+            try {
+                $pendingPayments = Booking::whereIn('payment_status', ['pending', 'partial'])->count();
+            } catch (\Exception $e) {
+                $pendingPayments = 0;
+            }
+
+            try {
+                $websitePendingCount = Module::isEnabled('booking-widget')
+                    ? Booking::where('status', 'website_pending')->count()
+                    : 0;
+            } catch (\Exception $e) {
+                $websitePendingCount = 0;
+            }
+
+            try {
+                $otaPendingCount = Module::isEnabled('ota_whatsapp_sync')
+                    ? \App\Models\OtaImportedBooking::where('hotel_id', $hotelId)
+                        ->where('status', 'pending')
+                        ->count()
+                    : 0;
+            } catch (\Exception $e) {
+                $otaPendingCount = 0;
+            }
+
+            try {
+                $lowStockCount = Module::isEnabled('inventory')
+                    ? \App\Models\InventoryItem::where('is_active', true)
+                        ->whereRaw('current_stock <= reorder_level AND reorder_level > 0')
+                        ->count()
+                    : 0;
+            } catch (\Exception $e) {
+                $lowStockCount = 0;
+            }
+
+            try {
+                $totalCustomers    = Customer::count();
+                $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
+                    ->whereYear('created_at', $today->year)
+                    ->count();
+            } catch (\Exception $e) {
+                $totalCustomers = $newCustomersMonth = 0;
+            }
+
+            try {
+                $recentBookings = Booking::with(['customer' => fn($q) => $q->withTrashed(), 'room'])
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+            } catch (\Exception $e) {
+                $recentBookings = collect();
+            }
+
+            $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
+
+            // ── Hotel Full Alert ──────────────────────────────────────────────
+            $hotelFull = $totalRooms > 0 && $availableRooms === 0;
+            if ($hotelFull) {
+                $cacheKey = "hotel_full_alert_{$hotelId}_" . now()->toDateString();
+                if (!Cache::has($cacheKey)) {
+                    Cache::put($cacheKey, true, now()->endOfDay()->diffInSeconds(now()));
+                    try {
+                        $hotel = Hotel::find($hotelId);
+                        if ($hotel && $hotel->email) {
+                            Mail::to($hotel->email)->send(new HotelFullAlertMail(
+                                hotelName:     $hotel->name,
+                                totalRooms:    $totalRooms,
+                                occupiedRooms: $occupiedRooms,
+                                date:          now()->format('d M Y'),
+                            ));
+                        }
+                    } catch (\Exception $e) {
+                        // silently skip — never crash the dashboard
+                    }
+                }
+            }
+
+            // Weekly revenue chart
+            try {
+                $revenueByDay = Payment::where('status', 'completed')
+                    ->where('created_at', '>=', Carbon::today()->subDays(6)->startOfDay())
+                    ->selectRaw("DATE(created_at) as day, SUM(amount) as total")
+                    ->groupBy('day')
+                    ->pluck('total', 'day');
+            } catch (\Exception $e) {
+                $revenueByDay = collect();
+            }
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::today()->subDays($i);
+                $weeklyRevenue[] = [
+                    'day'     => $date->format('D'),
+                    'date'    => $date->format('d'),
+                    'label'   => $date->format('D, d M'),
+                    'amount'  => (float) ($revenueByDay[$date->toDateString()] ?? 0),
+                    'isToday' => $date->isToday(),
+                ];
+            }
+
+            // ── Slot Availability Widget ──────────────────────────────────────
+            if (Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing')) {
+                try {
+                    if (request('slot_week')) {
+                        $slotWeekStart = Carbon::parse(request('slot_week'))->startOfWeek(Carbon::MONDAY);
+                    }
+                    $slotWeekEnd = $slotWeekStart->copy()->addDays(6);
+                    $dashboardSlots = HotelTimeSlot::where('is_active', true)->ordered()->get();
+                    $slotRooms      = Room::where('pricing_type', 'per_slot')->orderBy('room_number')->get();
+                    $slotRoomCount  = $slotRooms->count();
+                    $slotRoomIds    = $slotRooms->pluck('id')->toArray();
+
+                    $whBookingsWeek = Booking::where('is_whole_hotel', true)
+                        ->whereNotIn('status', ['cancelled', 'checked_out'])
+                        ->where('check_in_date', '<=', $slotWeekEnd->toDateString())
+                        ->where('check_out_date', '>', $slotWeekStart->toDateString())
+                        ->with('customer:id,name')
+                        ->get();
+
+                    if ($dashboardSlots->isNotEmpty() && $slotRoomCount > 0) {
+                        $hasSlotModule = true;
+                        $conflictSvc   = new SlotConflictService();
+                        $cur = $slotWeekStart->copy();
+                        while ($cur <= $slotWeekEnd) {
+                            $ds      = $cur->toDateString();
+                            $dayData = [
+                                'date'     => $ds,
+                                'label'    => $cur->format('D'),
+                                'sublabel' => $cur->format('d M'),
+                                'isToday'  => $cur->isToday(),
+                                'slots'    => [],
+                            ];
+                            $whForDay = $whBookingsWeek->first(
+                                fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
+                            );
+                            foreach ($dashboardSlots as $slot) {
+                                if ($whForDay) {
+                                    $dayData['slots'][] = [
+                                        'slot_name'      => $slot->name,
+                                        'time'           => $slot->start_time . '–' . $slot->end_time,
+                                        'available'      => 0,
+                                        'booked'         => $slotRoomCount,
+                                        'total'          => $slotRoomCount,
+                                        'pct'            => 100,
+                                        'color'          => 'red',
+                                        'booked_rooms'   => $slotRooms->map(fn($r) => ['room_id' => $r->id, 'room_number' => $r->room_number, 'guest' => $whForDay->customer->name ?? '—'])->values()->toArray(),
+                                        'free_rooms'     => [],
+                                        'whole_hotel_bk' => $whForDay->booking_number,
+                                    ];
+                                    continue;
+                                }
+                                $bookedDetails = $conflictSvc->getConflictingRoomDetails($slot, $ds);
+                                $bookedIds     = array_column($bookedDetails, 'room_id');
+                                $bookedDetails = array_values(array_filter($bookedDetails, fn($d) => in_array($d['room_id'], $slotRoomIds)));
+                                $bookedIds     = array_column($bookedDetails, 'room_id');
+                                $booked        = count($bookedIds);
+                                $total         = $slotRoomCount;
+                                $available     = $total - $booked;
+                                $pct           = $total > 0 ? round($booked / $total * 100) : 0;
+                                $color         = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
+                                $freeRooms     = $slotRooms->filter(fn($r) => !in_array($r->id, $bookedIds))->pluck('room_number')->values()->all();
+                                $dayData['slots'][] = [
+                                    'slot_name'    => $slot->name,
+                                    'time'         => $slot->start_time . '–' . $slot->end_time,
+                                    'available'    => $available,
+                                    'booked'       => $booked,
+                                    'total'        => $total,
+                                    'pct'          => $pct,
+                                    'color'        => $color,
+                                    'booked_rooms' => $bookedDetails,
+                                    'free_rooms'   => $freeRooms,
+                                ];
+                            }
+                            $dashboardSlotAvailability[] = $dayData;
+                            $cur->addDay();
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $hasSlotModule = false;
+                }
+            }
+
+            // ── Booking Calendar ──────────────────────────────────────────────
+            try {
+                $calYear  = (int) request('cal_year',  $today->year);
+                $calMonth = (int) request('cal_month', $today->month);
+                if ($calMonth < 1)  { $calMonth = 12; $calYear--; }
+                if ($calMonth > 12) { $calMonth = 1;  $calYear++; }
+
+                $calStart     = Carbon::create($calYear, $calMonth, 1)->startOfDay();
+                $calEnd       = $calStart->copy()->endOfMonth();
+                $calGridStart = $calStart->copy()->startOfWeek(Carbon::SUNDAY);
+                $calGridEnd   = $calEnd->copy()->endOfWeek(Carbon::SATURDAY);
+                $prevMonth    = $calStart->copy()->subMonth();
+                $nextMonth    = $calStart->copy()->addMonth();
+
+                $calBookings = Booking::whereIn('status', ['confirmed', 'checked_in'])
+                    ->with(['customer', 'room'])
+                    ->where(function ($q) use ($calGridStart, $calGridEnd) {
+                        $q->whereBetween('check_in_date', [$calGridStart->toDateString(), $calGridEnd->toDateString()])
+                          ->orWhereBetween('check_out_date', [$calGridStart->toDateString(), $calGridEnd->toDateString()])
+                          ->orWhere(function ($q2) use ($calGridStart, $calGridEnd) {
+                              $q2->where('check_in_date', '<=', $calGridStart->toDateString())
+                                 ->where('check_out_date', '>=', $calGridEnd->toDateString());
+                          });
+                    })
+                    ->get();
+
+                $calWhBookings = Booking::where('is_whole_hotel', true)
+                    ->whereNotIn('status', ['cancelled', 'checked_out'])
+                    ->where('check_in_date', '<=', $calGridEnd->toDateString())
+                    ->where('check_out_date', '>', $calGridStart->toDateString())
+                    ->with('customer:id,name')
+                    ->get();
+
+                $calDays = [];
+                $cur = $calGridStart->copy();
+                while ($cur <= $calGridEnd) {
+                    $ds = $cur->toDateString();
+                    $checkinBookings  = $calBookings->filter(fn($b) => $b->check_in_date->toDateString() === $ds);
+                    $checkoutBookings = $calBookings->filter(fn($b) => $b->check_out_date->toDateString() === $ds);
+                    $stayingBookings  = $calBookings->filter(
+                        fn($b) => $b->check_in_date->toDateString() < $ds
+                               && $b->check_out_date->toDateString() > $ds
+                               && $b->status === 'checked_in'
+                    );
+                    $buildTooltip = function ($collection) {
+                        return $collection->map(fn($b) => [
+                            'name'   => $b->customer->name ?? '—',
+                            'room'   => $b->room->room_number ?? '—',
+                            'type'   => $b->room->type ?? '',
+                            'status' => $b->status,
+                        ])->values()->toArray();
+                    };
+                    $whForCalDay = $calWhBookings->first(
+                        fn($b) => $b->check_in_date->toDateString() <= $ds && $b->check_out_date->toDateString() > $ds
+                    );
+                    $calDays[] = [
+                        'date'             => $cur->copy(),
+                        'ds'               => $ds,
+                        'day'              => $cur->day,
+                        'inMonth'          => $cur->month === $calMonth,
+                        'isToday'          => $cur->isToday(),
+                        'checkins'         => $checkinBookings->count(),
+                        'checkouts'        => $checkoutBookings->count(),
+                        'staying'          => $stayingBookings->count(),
+                        'checkin_guests'   => $buildTooltip($checkinBookings),
+                        'checkout_guests'  => $buildTooltip($checkoutBookings),
+                        'staying_guests'   => $buildTooltip($stayingBookings),
+                        'whole_hotel'      => $whForCalDay ? $whForCalDay->booking_number : null,
+                        'wh_guest'         => $whForCalDay ? ($whForCalDay->customer->name ?? 'Guest') : null,
+                    ];
+                    $cur->addDay();
+                }
+                $calWeeks = array_chunk($calDays, 7);
+            } catch (\Exception $e) {
+                $calWeeks = [];
+            }
+
+            // ── Dirty rooms list for Today's Agenda modal ─────────────────────
+            $dirtyRoomsList = Room::where('status', 'dirty')
+                ->orderBy('room_number')
+                ->get(['id', 'room_number', 'type'])
+                ->toArray();
+
+            // ── Today's Agenda ────────────────────────────────────────────────
+            $agendaKey  = 'agenda_shown_' . now()->toDateString();
+            $showAgenda = !session($agendaKey, false);
+            if ($showAgenda) {
+                session([$agendaKey => true]);
+            }
+        }
+
+        // ── Restaurant KPIs (for restaurant-only users, OR all users when module enabled) ─
+        $restActiveOrders    = 0;
+        $restPendingQr       = 0;
+        $restTablesOccupied  = 0;
+        $restTablesTotal     = 0;
+        $restTodayRevenue    = 0;
+        $restMenuItems       = 0;
+        $restRecentOrders    = collect();
+        $restWeeklyRevenue   = [];
+
+        if ($isRestaurantOnly && Module::isEnabled('restaurant')) {
+            try {
+                $restActiveOrders = RestaurantOrder::whereIn('status', ['open', 'kotted', 'served'])->count();
+                $restPendingQr    = RestaurantOrder::where('source', 'guest_qr')
+                    ->where('approval_status', 'pending')
+                    ->count();
+                $restTablesOccupied = RestaurantTable::where('status', 'occupied')->count();
+                $restTablesTotal    = RestaurantTable::where('is_active', true)->count();
+                $restTodayRevenue   = RestaurantBill::whereDate('created_at', $today)
+                    ->where('payment_status', 'paid')
+                    ->sum('total');
+                $restMenuItems      = RestaurantMenuItem::where('is_active', true)->count();
+                $restRecentOrders   = RestaurantOrder::with(['table', 'items'])
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+
+                // Weekly food revenue for mini chart
+                $foodRevenueByDay = RestaurantBill::whereDate('created_at', '>=', Carbon::today()->subDays(6)->startOfDay())
+                    ->where('payment_status', 'paid')
+                    ->selectRaw("DATE(created_at) as day, SUM(total) as total")
+                    ->groupBy('day')
+                    ->pluck('total', 'day');
+                for ($i = 6; $i >= 0; $i--) {
+                    $date = Carbon::today()->subDays($i);
+                    $restWeeklyRevenue[] = [
+                        'day'    => $date->format('D'),
+                        'date'   => $date->format('d'),
+                        'label'  => $date->format('D, d M'),
+                        'amount' => (float) ($foodRevenueByDay[$date->toDateString()] ?? 0),
+                    ];
+                }
+            } catch (\Exception $e) {
+                // silently skip — never crash the dashboard
+            }
         }
 
         // ── Dashboard preferences (per-user, fallback to hotel default) ─────────
-        $hotelId = (int) session('crm_hotel_id');
         $userId  = (int) session('crm_user_id');
 
         $dashPref = DashboardPreference::where('hotel_id', $hotelId)
@@ -388,19 +468,6 @@ class DashboardController extends Controller
             ->where('is_hotel_default', true)
             ->first();
 
-        // ── Dirty rooms list for Today's Agenda modal ─────────────────────────
-        $dirtyRoomsList = Room::where('status', 'dirty')
-            ->orderBy('room_number')
-            ->get(['id', 'room_number', 'type'])
-            ->toArray();
-
-        // ── Today's Agenda: show once per login-day (tracked in session) ───────
-        $agendaKey  = 'agenda_shown_' . now()->toDateString();
-        $showAgenda = !session($agendaKey, false);
-        if ($showAgenda) {
-            session([$agendaKey => true]);
-        }
-
         return view('admin.dashboard', compact(
             'todayCheckins', 'todayCheckouts', 'availableRooms', 'occupiedRooms',
             'dirtyRooms', 'maintenanceRooms', 'totalRooms', 'monthRevenue', 'todayRevenue',
@@ -410,7 +477,10 @@ class DashboardController extends Controller
             'hasSlotModule', 'dashboardSlots', 'dashboardSlotAvailability', 'slotWeekStart',
             'websitePendingCount',
             'dashWidgetOrder', 'dashHiddenWidgets', 'dashIsPersonal', 'dashHotelDefault', 'allWidgetKeys',
-            'dirtyRoomsList', 'showAgenda', 'hotelFull', 'otaPendingCount', 'lowStockCount'
+            'dirtyRoomsList', 'showAgenda', 'hotelFull', 'otaPendingCount', 'lowStockCount',
+            'isRestaurantOnly',
+            'restActiveOrders', 'restPendingQr', 'restTablesOccupied', 'restTablesTotal',
+            'restTodayRevenue', 'restMenuItems', 'restRecentOrders', 'restWeeklyRevenue'
         ));
     }
 

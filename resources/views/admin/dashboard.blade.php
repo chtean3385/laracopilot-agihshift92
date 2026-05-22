@@ -786,21 +786,23 @@
                         if (\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.view')) {
                             $dashboardShortcuts[] = ['route' => route('restaurant.index'), 'icon' => 'fa-concierge-bell', 'title' => 'Restaurant', 'sub' => 'Table orders', 'bg' => 'linear-gradient(135deg,#f43f5e,#e11d48)'];
                         }
-                        if (\App\Models\Module::isEnabled('payment_links')) {
-                            $dashboardShortcuts[] = ['route' => route('payment_links.config'), 'icon' => 'fa-credit-card', 'title' => 'Payments', 'sub' => 'Links', 'bg' => 'linear-gradient(135deg,#8b5cf6,#6366f1)'];
-                        }
-                        if (\App\Models\Module::isEnabled('pathik')) {
-                            $dashboardShortcuts[] = ['route' => route('pathik.index'), 'icon' => 'fa-id-card', 'title' => 'Pathik', 'sub' => 'Portal', 'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'];
-                        }
-                        if (\App\Models\Module::isEnabled('slot-search-engine')) {
-                            $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Availability matrix', 'bg' => 'linear-gradient(135deg,#6366f1,#4f46e5)'];
-                        }
-                        if (\App\Models\Module::isEnabled('ota_whatsapp_sync')) {
-                            $otaShortcutSub = ($otaPendingCount ?? 0) > 0 ? ($otaPendingCount . ' pending review') : 'WhatsApp imports';
-                            $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];
-                        }
-                        if (\App\Models\Module::isEnabled('email-parser')) {
-                            $dashboardShortcuts[] = ['route' => route('email-parser.config'), 'icon' => 'fa-envelope-open-text', 'title' => 'Email Parser', 'sub' => 'OTA email import', 'bg' => 'linear-gradient(135deg,#0891b2,#0e7490)'];
+                        if (!$isRestaurantOnly) {
+                            if (\App\Models\Module::isEnabled('payment_links')) {
+                                $dashboardShortcuts[] = ['route' => route('payment_links.config'), 'icon' => 'fa-credit-card', 'title' => 'Payments', 'sub' => 'Links', 'bg' => 'linear-gradient(135deg,#8b5cf6,#6366f1)'];
+                            }
+                            if (\App\Models\Module::isEnabled('pathik')) {
+                                $dashboardShortcuts[] = ['route' => route('pathik.index'), 'icon' => 'fa-id-card', 'title' => 'Pathik', 'sub' => 'Portal', 'bg' => 'linear-gradient(135deg,#7c3aed,#a855f7)'];
+                            }
+                            if (\App\Models\Module::isEnabled('slot-search-engine')) {
+                                $dashboardShortcuts[] = ['route' => route('slot-search.index'), 'icon' => 'fa-search', 'title' => 'Slot Search', 'sub' => 'Availability matrix', 'bg' => 'linear-gradient(135deg,#6366f1,#4f46e5)'];
+                            }
+                            if (\App\Models\Module::isEnabled('ota_whatsapp_sync')) {
+                                $otaShortcutSub = ($otaPendingCount ?? 0) > 0 ? ($otaPendingCount . ' pending review') : 'WhatsApp imports';
+                                $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];
+                            }
+                            if (\App\Models\Module::isEnabled('email-parser')) {
+                                $dashboardShortcuts[] = ['route' => route('email-parser.config'), 'icon' => 'fa-envelope-open-text', 'title' => 'Email Parser', 'sub' => 'OTA email import', 'bg' => 'linear-gradient(135deg,#0891b2,#0e7490)'];
+                            }
                         }
                     @endphp
 
@@ -817,8 +819,53 @@
                                 ->count()
                             : 0;
                     @endphp
-                    {{-- KPI Stats — single compact row of 8 cards --}}
+                    {{-- KPI Stats — conditional by role --}}
                     <div data-widget="kpi-row-1" class="db-widget-wrap">
+                    @if($isRestaurantOnly)
+                    {{-- Restaurant-only KPI row --}}
+                    <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+                        <a href="{{ route('restaurant.orders.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <i class="fas fa-concierge-bell kpi-icon"></i>
+                            <div class="kpi-label">Active Orders</div>
+                            <div class="kpi-num" data-count="{{ $restActiveOrders }}">{{ $restActiveOrders }}</div>
+                            <div class="kpi-sub">Open / KOT / Served</div>
+                        </a>
+                        @if($restPendingQr > 0)
+                        <a href="{{ route('restaurant.orders.index') }}" class="kpi-card kpi-card-sm"
+                           style="background:linear-gradient(135deg,#f59e0b,#d97706);animation:pulse-dirty 1.8s infinite;position:relative;overflow:visible;">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#dc2626;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;animation:dirty-badge-pop 1s ease-in-out infinite;z-index:2;line-height:1;">{{ $restPendingQr }}</span>
+                            <i class="fas fa-qrcode kpi-icon" style="animation:dirty-icon-shake 2.2s ease-in-out infinite;display:inline-block;"></i>
+                            <div class="kpi-label">QR Pending</div>
+                            <div class="kpi-num" data-count="{{ $restPendingQr }}">{{ $restPendingQr }}</div>
+                            <div class="kpi-sub">Needs approval</div>
+                        </a>
+                        @endif
+                        <a href="{{ route('restaurant.table-map') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#10b981,#059669);">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <i class="fas fa-chair kpi-icon"></i>
+                            <div class="kpi-label">Tables</div>
+                            <div class="kpi-num" data-count="{{ $restTablesOccupied }}">{{ $restTablesOccupied }}</div>
+                            <div class="kpi-sub">{{ $restTablesTotal }} total</div>
+                        </a>
+                        <a href="{{ route('restaurant.bills.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <i class="fas fa-rupee-sign kpi-icon"></i>
+                            <div class="kpi-label">Food Revenue</div>
+                            <div class="kpi-num" data-count="{{ $restTodayRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($restTodayRevenue) }}</div>
+                            <div class="kpi-sub">Today</div>
+                        </a>
+                        <a href="{{ route('restaurant.menu.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
+                            <div class="kpi-shine"></div><div class="kpi-shine2"></div>
+                            <i class="fas fa-utensils kpi-icon"></i>
+                            <div class="kpi-label">Menu Items</div>
+                            <div class="kpi-num" data-count="{{ $restMenuItems }}">{{ $restMenuItems }}</div>
+                            <div class="kpi-sub">Active</div>
+                        </a>
+                    </div>
+                    @else
+                    {{-- Standard hotel-wide KPI row --}}
                     <div class="kpi-grid kpi-grid-8" style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
                         <a href="{{ route('checkin.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
@@ -852,7 +899,6 @@
                         <a href="{{ route('rooms.index') }}?status=dirty" class="kpi-card kpi-card-sm"
                            style="background:linear-gradient(135deg,#f97316,#ea580c);animation:pulse-dirty 1.8s infinite,dirty-bg-flash 2.6s ease-in-out infinite;position:relative;overflow:visible;">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
-                            {{-- Flashing "!" attention badge --}}
                             <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#dc2626;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;animation:dirty-badge-pop 1s ease-in-out infinite;z-index:2;line-height:1;">!</span>
                             <i class="fas fa-broom kpi-icon" style="animation:dirty-icon-shake 2.2s ease-in-out infinite;display:inline-block;"></i>
                             <div class="kpi-label">Needs Cleaning</div>
@@ -923,8 +969,10 @@
                         </a>
                         @endif
                     </div>
+                    @endif
                     </div>{{-- /kpi-row-1 widget --}}
 
+                    @if(!$isRestaurantOnly)
                     {{-- ── Revenue Trend & Occupancy ────────────────────────────────── --}}
                     <div data-widget="revenue-trend" class="db-widget-wrap">
                     <div class="db-card" style="overflow:hidden;padding:0;">
@@ -969,6 +1017,7 @@
                         <div id="rtOccupancyChart" style="min-height:120px;padding:0 4px 12px;"></div>
                     </div>
                     </div>{{-- /revenue-trend widget --}}
+                    @endif
 
                     <script>
                     (function(){
@@ -1133,6 +1182,7 @@
                         @endif
 
                         {{-- Right: Quick Actions --}}
+                        @if(!$isRestaurantOnly)
                         <div class="db-card">
                             <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
                             <div style="display:flex;flex-direction:column;gap:10px;">
@@ -1200,11 +1250,13 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
 
                     </div>
                     </div>{{-- /shortcuts-actions-pair widget --}}
 
                     {{-- Slot Availability Widget --}}
+                    @if(!$isRestaurantOnly)
                     @canDo('reports.view')
                     <div data-widget="slot-availability" class="db-widget-wrap">
                     @if($hasSlotModule)
@@ -1378,8 +1430,10 @@
                     @endif
                     </div>{{-- /slot-availability widget --}}
                     @endCanDo
+                    @endif
 
                     {{-- Recent Bookings + Room Availability — side-by-side ──────────────── --}}
+                    @if(!$isRestaurantOnly)
                     <div data-widget="recent-room-pair" class="db-widget-wrap">
                     <div class="recent-room-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
 
@@ -1441,8 +1495,10 @@
 
                     </div>
                     </div>{{-- /recent-room-pair widget --}}
+                    @endif
 
                     {{-- Booking Calendar --}}
+                    @if(!$isRestaurantOnly)
                     @canDo('reports.view')
                     <div data-widget="booking-calendar" class="db-widget-wrap">
                             <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
@@ -1543,7 +1599,9 @@
                         </div>
                     </div>{{-- /booking-calendar widget --}}
                     @endCanDo
+                    @endif
 
+                    @if(!$isRestaurantOnly)
                     {{-- Today's Arrivals & Departures (always render for customisation) --}}
                     <div data-widget="arrivals-departures" class="db-widget-wrap">
                     @if($todayCheckins->count() > 0 || $todayCheckouts->count() > 0)
@@ -1600,6 +1658,7 @@
                     </div>
                     @endif
                     </div>{{-- /arrivals-departures widget --}}
+                    @endif
 
 
 
