@@ -972,6 +972,243 @@
                     @endif
                     </div>{{-- /kpi-row-1 widget --}}
 
+                    @if($isRestaurantOnly && Module::isEnabled('restaurant'))
+                    {{-- ── Quick Order Table Map (restaurant-only) ────────────────────── --}}
+                    <div data-widget="quick-table-map" class="db-widget-wrap">
+                    <div class="db-card" style="overflow:hidden;padding:0;">
+
+                        {{-- Header --}}
+                        <div style="padding:14px 18px;background:linear-gradient(135deg,#fff1f2,#fce7f3);border-bottom:1px solid #fce7f3;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:36px;height:36px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(244,63,94,.3);">
+                                    <i class="fas fa-concierge-bell" style="color:#fff;font-size:14px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800;color:#1e293b;font-size:15px;">Quick Order</div>
+                                    <div style="font-size:11px;color:#be185d;" id="qtmUpdatedAt">Tap a table to start an order</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span id="qtmPendingQrBadge" style="display:none;background:#dc2626;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;animation:pulse-dirty 1.8s infinite;">
+                                    <i class="fas fa-qrcode"></i> <span id="qtmPendingQrCount">0</span> QR pending
+                                </span>
+                                <span id="qtmSpinner" style="display:none;width:18px;height:18px;border:2px solid #fecdd3;border-top-color:#f43f5e;border-radius:50%;animation:spin 0.7s linear infinite;"></span>
+                                <a href="{{ route('restaurant.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f43f5e;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(244,63,94,.3);">
+                                    Full View <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- Legend --}}
+                        <div style="padding:8px 18px;background:#fafafa;border-bottom:1px solid #f1f5f9;display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+                            <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Free</span></div>
+                            <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#f97316;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Occupied</span></div>
+                            <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Needs Cleaning</span></div>
+                            <div style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#374151;display:inline-block;"></span><span style="font-size:11px;color:#475569;font-weight:600;">Unavailable</span></div>
+                        </div>
+
+                        {{-- Table Grid --}}
+                        <div style="padding:14px 16px;">
+                        @if($restAllTables->isEmpty())
+                            <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
+                                <i class="fas fa-chair" style="font-size:2.5rem;margin-bottom:12px;display:block;"></i>
+                                <p style="font-size:14px;font-weight:600;">No tables set up yet</p>
+                                <a href="{{ route('restaurant.index') }}" style="display:inline-block;margin-top:10px;padding:8px 18px;background:#f43f5e;color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;">Go to Restaurant →</a>
+                            </div>
+                        @else
+                        <div id="qtmGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
+                            @foreach($restAllTables as $table)
+                            @php
+                                $qtmBg = match($table->status) {
+                                    'free'        => 'background:#dcfce7;border:2px solid #16a34a;',
+                                    'occupied'    => 'background:#ffedd5;border:2px solid #ea580c;',
+                                    'dirty'       => 'background:#fee2e2;border:2px solid #dc2626;',
+                                    'unavailable' => 'background:#e5e7eb;border:2px solid #374151;opacity:.7;',
+                                    default       => 'background:#f8fafc;border:2px solid #e2e8f0;',
+                                };
+                                $qtmDot = match($table->status) {
+                                    'free'        => '#22c55e',
+                                    'occupied'    => '#f97316',
+                                    'dirty'       => '#ef4444',
+                                    'unavailable' => '#374151',
+                                    default       => '#9ca3af',
+                                };
+                                $qtmLabel = match($table->status) {
+                                    'free'        => '#15803d',
+                                    'occupied'    => '#c2410c',
+                                    'dirty'       => '#b91c1c',
+                                    'unavailable' => '#6b7280',
+                                    default       => '#374151',
+                                };
+                                $isClickable = $table->status !== 'unavailable';
+                            @endphp
+                            <div id="qtm-table-{{ $table->id }}"
+                                 data-table-id="{{ $table->id }}"
+                                 data-status="{{ $table->status }}"
+                                 data-order-id="{{ $table->activeOrder?->id ?? '' }}"
+                                 data-table-name="{{ $table->name }}"
+                                 data-capacity="{{ $table->capacity }}"
+                                 onclick="qtmHandleClick(this)"
+                                 style="border-radius:14px;padding:12px 10px;cursor:{{ $isClickable ? 'pointer' : 'default' }};position:relative;transition:transform .15s,box-shadow .15s;min-height:110px;display:flex;flex-direction:column;justify-content:space-between;-webkit-tap-highlight-color:transparent;{{ $qtmBg }}"
+                                 onmouseenter="if(this.dataset.status!=='unavailable'){this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.12)';}"
+                                 onmouseleave="this.style.transform='';this.style.boxShadow='';">
+
+                                {{-- Status dot --}}
+                                <div data-role="dot" style="position:absolute;top:9px;right:9px;width:10px;height:10px;border-radius:50%;background:{{ $qtmDot }};"></div>
+
+                                {{-- Table name --}}
+                                <div style="font-size:15px;font-weight:800;color:#1e293b;">{{ $table->name }}</div>
+                                <div style="font-size:11px;color:#64748b;margin-top:2px;"><i class="fas fa-users" style="font-size:9px;"></i> {{ $table->capacity }}</div>
+
+                                <div data-role="bottom" style="margin-top:8px;">
+                                    <div style="font-size:11px;font-weight:700;color:{{ $qtmLabel }};">{{ $table->statusLabel() }}</div>
+                                    @if($table->activeOrder)
+                                    <div style="font-size:10px;color:#92400e;margin-top:3px;font-weight:600;">{{ $table->activeOrder->order_number }}</div>
+                                    <div style="font-size:11px;color:#c2410c;font-weight:700;">₹{{ number_format($table->activeOrder->total, 2) }}</div>
+                                    @elseif($table->status === 'free')
+                                    <div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803d;">
+                                        <i class="fas fa-plus" style="font-size:9px;"></i> Order
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                        </div>
+
+                        {{-- Footer: last refreshed --}}
+                        <div style="padding:8px 18px;background:#fafafa;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                            <span style="font-size:11px;color:#94a3b8;">Auto-refreshes every 20 s</span>
+                            <span id="qtmLastRefresh" style="font-size:11px;color:#64748b;font-weight:600;"></span>
+                        </div>
+
+                    </div>
+                    </div>{{-- /quick-table-map widget --}}
+
+                    {{-- Quick Order JS --}}
+                    <script>
+                    (function(){
+                        var orderStoreUrl   = '{{ route("restaurant.orders.store") }}';
+                        var ordersBaseUrl   = '{{ url("restaurant/orders") }}';
+                        var tablesJsonUrl   = '{{ route("dashboard.restaurant_tables") }}';
+                        var restaurantUrl   = '{{ route("restaurant.index") }}';
+                        var csrfToken       = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                        // Map status → styles
+                        var statusStyles = {
+                            free:        { bg:'#dcfce7', border:'#16a34a', dot:'#22c55e', label:'#15803d' },
+                            occupied:    { bg:'#ffedd5', border:'#ea580c', dot:'#f97316', label:'#c2410c' },
+                            dirty:       { bg:'#fee2e2', border:'#dc2626', dot:'#ef4444', label:'#b91c1c' },
+                            unavailable: { bg:'#e5e7eb', border:'#374151', dot:'#374151', label:'#6b7280' },
+                        };
+
+                        window.qtmHandleClick = function(card) {
+                            var status   = card.dataset.status;
+                            var tableId  = card.dataset.tableId;
+                            var orderId  = card.dataset.orderId;
+                            var name     = card.dataset.tableName;
+                            var capacity = card.dataset.capacity;
+
+                            if (status === 'unavailable') return;
+
+                            if (status === 'dirty') {
+                                if (confirm('Table "' + name + '" needs cleaning. Go to full restaurant view to update status?')) {
+                                    window.location.href = restaurantUrl;
+                                }
+                                return;
+                            }
+
+                            if (status === 'occupied' && orderId) {
+                                window.location.href = ordersBaseUrl + '/' + orderId;
+                                return;
+                            }
+
+                            if (status === 'free') {
+                                if (!confirm('Start new order for ' + name + ' (' + capacity + ' seats)?')) return;
+                                var form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = orderStoreUrl;
+                                form.innerHTML = '<input type="hidden" name="_token" value="' + csrfToken + '">'
+                                              + '<input type="hidden" name="table_id" value="' + tableId + '">';
+                                document.body.appendChild(form);
+                                form.submit();
+                            }
+                        };
+
+                        function qtmRefresh() {
+                            var spinner = document.getElementById('qtmSpinner');
+                            if (spinner) spinner.style.display = 'inline-block';
+
+                            fetch(tablesJsonUrl, { headers:{ 'X-Requested-With':'XMLHttpRequest' } })
+                                .then(function(r){ return r.json(); })
+                                .then(function(data) {
+                                    // Update each table card
+                                    (data.tables || []).forEach(function(t) {
+                                        var card = document.getElementById('qtm-table-' + t.id);
+                                        if (!card) return;
+                                        var s = statusStyles[t.status] || statusStyles['unavailable'];
+
+                                        // Update data attrs
+                                        card.dataset.status  = t.status;
+                                        card.dataset.orderId = t.order_id || '';
+
+                                        // Background + border
+                                        card.style.background = s.bg;
+                                        card.style.border     = '2px solid ' + s.border;
+                                        card.style.opacity    = t.status === 'unavailable' ? '0.7' : '1';
+                                        card.style.cursor     = t.status === 'unavailable' ? 'default' : 'pointer';
+
+                                        // Status dot
+                                        var dot = card.querySelector('[data-role="dot"]');
+                                        if (!dot) { dot = card.querySelector('div[style*="border-radius:50%"]'); }
+                                        if (dot) dot.style.background = s.dot;
+
+                                        // Rebuild bottom section
+                                        var bottom = card.querySelector('[data-role="bottom"]');
+                                        if (bottom) {
+                                            var statusHtml = '<div style="font-size:11px;font-weight:700;color:' + s.label + ';">' + t.status_label + '</div>';
+                                            if (t.order_id) {
+                                                statusHtml += '<div style="font-size:10px;color:#92400e;margin-top:3px;font-weight:600;">' + t.order_number + '</div>'
+                                                           + '<div style="font-size:11px;color:#c2410c;font-weight:700;">₹' + t.order_total + '</div>';
+                                            } else if (t.status === 'free') {
+                                                statusHtml += '<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803d;"><i class=\'fas fa-plus\' style=\'font-size:9px;\'></i> Order</div>';
+                                            }
+                                            bottom.innerHTML = statusHtml;
+                                        }
+                                    });
+
+                                    // Pending QR badge
+                                    var badge = document.getElementById('qtmPendingQrBadge');
+                                    var qrCount = document.getElementById('qtmPendingQrCount');
+                                    if (badge && qrCount) {
+                                        if (data.pending_qr > 0) {
+                                            qrCount.textContent = data.pending_qr;
+                                            badge.style.display = 'inline-flex';
+                                        } else {
+                                            badge.style.display = 'none';
+                                        }
+                                    }
+
+                                    // Last refresh time
+                                    var ts = document.getElementById('qtmLastRefresh');
+                                    if (ts) ts.textContent = 'Updated ' + data.updated_at;
+                                    var updLabel = document.getElementById('qtmUpdatedAt');
+                                    if (updLabel) updLabel.textContent = 'Live · ' + data.updated_at;
+                                })
+                                .catch(function(){})
+                                .finally(function(){
+                                    if (spinner) spinner.style.display = 'none';
+                                });
+                        }
+
+                        // Initial refresh after 2s, then every 20s
+                        setTimeout(qtmRefresh, 2000);
+                        setInterval(qtmRefresh, 20000);
+                    })();
+                    </script>
+                    @endif
+
                     @if(!$isRestaurantOnly)
                     {{-- ── Revenue Trend & Occupancy ────────────────────────────────── --}}
                     <div data-widget="revenue-trend" class="db-widget-wrap">

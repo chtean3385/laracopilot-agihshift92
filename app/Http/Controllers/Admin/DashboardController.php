@@ -402,6 +402,8 @@ class DashboardController extends Controller
         $restRecentOrders    = collect();
         $restWeeklyRevenue   = [];
 
+        $restAllTables = collect();
+
         if ($isRestaurantOnly && Module::isEnabled('restaurant')) {
             try {
                 $restActiveOrders = RestaurantOrder::whereIn('status', ['open', 'kotted', 'served'])->count();
@@ -414,6 +416,10 @@ class DashboardController extends Controller
                     ->where('payment_status', 'paid')
                     ->sum('total');
                 $restMenuItems      = RestaurantMenuItem::where('is_active', true)->count();
+                $restAllTables      = RestaurantTable::with('activeOrder')
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get();
                 $restRecentOrders   = RestaurantOrder::with(['table', 'items'])
                     ->orderBy('created_at', 'desc')
                     ->take(5)
@@ -480,8 +486,40 @@ class DashboardController extends Controller
             'dirtyRoomsList', 'showAgenda', 'hotelFull', 'otaPendingCount', 'lowStockCount',
             'isRestaurantOnly',
             'restActiveOrders', 'restPendingQr', 'restTablesOccupied', 'restTablesTotal',
-            'restTodayRevenue', 'restMenuItems', 'restRecentOrders', 'restWeeklyRevenue'
+            'restTodayRevenue', 'restMenuItems', 'restRecentOrders', 'restWeeklyRevenue',
+            'restAllTables'
         ));
+    }
+
+    // ── Restaurant Tables JSON (for dashboard quick-order live polling) ──────
+    public function restaurantTables()
+    {
+        if (!session('crm_logged_in')) return response()->json([], 401);
+
+        $tables = RestaurantTable::with('activeOrder')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(fn($t) => [
+                'id'           => $t->id,
+                'name'         => $t->name,
+                'capacity'     => $t->capacity,
+                'status'       => $t->status,
+                'status_label' => $t->statusLabel(),
+                'order_id'     => $t->activeOrder?->id,
+                'order_number' => $t->activeOrder?->order_number,
+                'order_total'  => $t->activeOrder ? number_format((float) $t->activeOrder->total, 2) : null,
+            ]);
+
+        $pendingQr = RestaurantOrder::where('source', 'guest_qr')
+            ->where('approval_status', 'pending')
+            ->count();
+
+        return response()->json([
+            'tables'      => $tables,
+            'pending_qr'  => $pendingQr,
+            'updated_at'  => now()->format('H:i:s'),
+        ]);
     }
 
     // ── Live Activity Feed ────────────────────────────────────────────────────

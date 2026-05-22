@@ -203,9 +203,11 @@ Route::middleware('permission:reports.view')->group(function () {
     Route::get('/reports/inventory-movements', [ReportController::class, 'inventoryMovements'] )->name('reports.inventory_movements');
 });
 
-// ── Dashboard JSON endpoint for Revenue Trend widget ──────────────────────
+// ── Dashboard JSON endpoints ───────────────────────────────────────────────
 Route::get('/dashboard/revenue-trend', [\App\Http\Controllers\Admin\DashboardController::class, 'revenueTrend'])
     ->name('dashboard.revenue_trend');
+Route::get('/dashboard/restaurant-tables', [\App\Http\Controllers\Admin\DashboardController::class, 'restaurantTables'])
+    ->name('dashboard.restaurant_tables');
 
 // ── Settings ───────────────────────────────────────────────────────────────
 Route::middleware('permission:settings.view')->group(function () {
