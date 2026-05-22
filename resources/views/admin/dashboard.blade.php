@@ -972,7 +972,7 @@
                     @endif
                     </div>{{-- /kpi-row-1 widget --}}
 
-                    @if($isRestaurantOnly && Module::isEnabled('restaurant'))
+                    @if($isRestaurantOnly && \App\Models\Module::isEnabled('restaurant'))
                     {{-- ── Quick Order Table Map (restaurant-only) ────────────────────── --}}
                     <div data-widget="quick-table-map" class="db-widget-wrap">
                     <div class="db-card" style="overflow:hidden;padding:0;">
