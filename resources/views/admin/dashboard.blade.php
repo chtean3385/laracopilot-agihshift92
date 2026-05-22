@@ -1388,7 +1388,8 @@
                     })();
                     </script>
 
-                    {{-- Shortcuts + Quick Actions — side-by-side ──────────────────────── --}}
+                    {{-- Shortcuts + Quick Actions — hidden for restaurant-only users (Chef/Waiter) --}}
+                    @if(!$isRestaurantOnly)
                     <div data-widget="shortcuts-actions-pair" class="db-widget-wrap">
                     <div class="shortcuts-actions-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
 
@@ -1491,6 +1492,7 @@
 
                     </div>
                     </div>{{-- /shortcuts-actions-pair widget --}}
+                    @endif{{-- !isRestaurantOnly --}}
 
                     {{-- Slot Availability Widget --}}
                     @if(!$isRestaurantOnly)
