@@ -480,12 +480,12 @@
                     <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
                         <div style="text-align:center;">
                             <div style="font-size:22px;font-weight:900;color:#15803d;">{{ $sentCount }}</div>
-                            <div style="font-size:11px;color:#64748b;font-weight:600;">Sent</div>
+                            <div style="font-size:11px;color:#64748b;font-weight:600;">Accepted by Meta</div>
                         </div>
                         @if($failCount > 0)
                         <div style="text-align:center;">
                             <div style="font-size:22px;font-weight:900;color:#dc2626;">{{ $failCount }}</div>
-                            <div style="font-size:11px;color:#64748b;font-weight:600;">Failed</div>
+                            <div style="font-size:11px;color:#64748b;font-weight:600;">Failed (API error)</div>
                         </div>
                         @endif
                         @if($skipCount > 0)
@@ -497,14 +497,29 @@
                     </div>
                 </div>
 
+                {{-- Delivery note --}}
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400e;line-height:1.6;">
+                    <strong><i class="fas fa-info-circle"></i> About delivery:</strong>
+                    "Accepted by Meta" means Meta queued the message — actual delivery depends on:
+                    <ul style="margin:5px 0 0 16px;padding:0;">
+                        <li>Template must be <strong>approved</strong> in Meta Business Manager (not just in this system)</li>
+                        <li>Recipient must have an active WhatsApp account on that number</li>
+                        <li>First-time contacts must have messaged your number in the last 24h <em>or</em> the template must be a utility/marketing category</li>
+                    </ul>
+                    To verify template status: <strong>WA Templates → Sync from Meta</strong>.
+                    Messages sent are logged in the inbox — click the contact on the left to view.
+                </div>
+
                 {{-- Per-number results --}}
-                <div style="max-height:260px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:10px;">
+                <div style="max-height:200px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:10px;">
                     @foreach($blastResults as $r)
                     <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f8fafc;font-size:12px;">
                         <i class="fas fa-{{ $r['status'] === 'sent' ? 'check-circle' : ($r['status'] === 'skip' ? 'minus-circle' : 'times-circle') }}"
                            style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#f59e0b' : '#dc2626') }};font-size:14px;flex-shrink:0;"></i>
                         <span style="font-family:monospace;color:#374151;flex:1;">{{ $r['phone'] }}</span>
-                        <span style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#92400e' : '#dc2626') }};font-weight:600;">{{ $r['msg'] }}</span>
+                        <span style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#92400e' : '#dc2626') }};font-weight:600;">
+                            {{ $r['status'] === 'sent' ? 'Accepted ✓' : $r['msg'] }}
+                        </span>
                     </div>
                     @endforeach
                 </div>
@@ -516,7 +531,7 @@
                     </button>
                     <button wire:click="closeBlast"
                             style="height:38px;padding:0 18px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">
-                        Close
+                        <i class="fas fa-inbox" style="font-size:11px;margin-right:5px;"></i> Close &amp; View Inbox
                     </button>
                 </div>
 

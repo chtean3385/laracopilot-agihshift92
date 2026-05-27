@@ -272,6 +272,15 @@ class WaInbox extends Component
     public function closeBlast(): void
     {
         $this->showBlast = false;
+
+        // Auto-open the first successfully sent contact so messages are immediately visible
+        $firstSent = collect($this->blastResults)->firstWhere('status', 'sent');
+        if ($firstSent) {
+            $phone = preg_replace('/[^0-9]/', '', $firstSent['phone']);
+            if (strlen($phone) === 10) $phone = '91' . $phone;
+            $this->selectedPhone = $phone;
+            $this->dispatch('wa-scroll-to-bottom');
+        }
     }
 
     public function selectBlastTemplate(int $id): void
