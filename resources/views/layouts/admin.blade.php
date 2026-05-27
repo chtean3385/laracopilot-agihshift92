@@ -756,17 +756,19 @@
                 pageLanguage: 'en',
                 includedLanguages: 'en,hi',
                 autoDisplay: false,
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
             }, 'google_translate_element');
-            // After widget loads, sync button to whatever language is active
-            _gtSyncBtn();
+            // Give the widget a moment to inject its <select>, then sync button state
+            setTimeout(_gtSyncBtn, 400);
         }
 
-        // Read the googtrans cookie to detect the active language
+        // Read the googtrans cookie (/en/hi or /en/en) to detect active language
         function _gtReadCookie() {
-            var m = document.cookie.match(/googtrans=([^;]+)/);
+            var m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
             if (!m) return 'en';
             var parts = decodeURIComponent(m[1]).split('/');
-            return parts[parts.length - 1] || 'en';
+            var lang = parts[parts.length - 1] || 'en';
+            return lang === 'en' ? 'en' : lang;
         }
 
         var _gtCurrentLang = _gtReadCookie();
@@ -775,28 +777,41 @@
             var btn = document.getElementById('gt-toggle-btn');
             if (!btn) return;
             if (_gtCurrentLang === 'hi') {
-                btn.innerHTML = '<span>EN</span><span style="opacity:.4;">|</span><span style="font-weight:900;color:#ef4444;">हिं ✓</span>';
+                btn.innerHTML = '<span style="font-family:system-ui,sans-serif;">EN</span>'
+                    + '<span style="opacity:.4;margin:0 2px;">|</span>'
+                    + '<span style="font-weight:900;color:#ef4444;font-family:system-ui,sans-serif;">हिं ✓</span>';
             } else {
-                btn.innerHTML = '<span style="font-weight:900;color:#0891b2;">EN ✓</span><span style="opacity:.4;">|</span><span>हिं</span>';
+                btn.innerHTML = '<span style="font-weight:900;color:#0891b2;font-family:system-ui,sans-serif;">EN ✓</span>'
+                    + '<span style="opacity:.4;margin:0 2px;">|</span>'
+                    + '<span style="font-family:system-ui,sans-serif;">हिं</span>';
             }
         }
 
-        function _gtToggle() {
-            // doGTranslate is injected by the Google widget — wait if not ready yet
-            if (typeof doGTranslate !== 'function') {
-                setTimeout(_gtToggle, 300); return;
+        // Drive Google's hidden <select class="goog-te-combo"> directly — this is
+        // the only reliable programmatic API exposed by TranslateElement.
+        function _gtApply(lang) {
+            var sel = document.querySelector('.goog-te-combo');
+            if (!sel) {
+                // Widget not ready yet — retry
+                setTimeout(function(){ _gtApply(lang); }, 250);
+                return;
             }
+            sel.value = lang;
+            sel.dispatchEvent(new Event('change'));
+        }
+
+        function _gtToggle() {
             if (_gtCurrentLang !== 'hi') {
-                doGTranslate('en|hi');
+                _gtApply('hi');
                 _gtCurrentLang = 'hi';
             } else {
-                doGTranslate('en|en');
+                _gtApply('en');
                 _gtCurrentLang = 'en';
             }
             _gtSyncBtn();
         }
 
-        // Sync button on every page load (cookie persists across navigations)
+        // On every page load: sync button to cookie state (persists across navigations)
         document.addEventListener('DOMContentLoaded', _gtSyncBtn);
     </script>
     <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
