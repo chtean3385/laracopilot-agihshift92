@@ -455,7 +455,7 @@ class WhatsAppWebhookController extends Controller
 
         $response = Http::timeout(10)
             ->withToken($platform->saas_token)
-            ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+            ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", [
                 'messaging_product' => 'whatsapp',
                 'to'                => $numericPhone,
                 'type'              => 'text',

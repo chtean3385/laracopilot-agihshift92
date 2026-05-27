@@ -43,7 +43,7 @@ class MetaProvider implements WhatsAppProviderInterface
 
         try {
             $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
-                ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
+                ->post("https://graph.facebook.com/v22.0/{$this->config->phone_number_id}/messages", $payload);
 
             if ($response->successful()) {
                 Log::info('WhatsApp document sent', ['to' => $to, 'filename' => $filename]);
@@ -65,7 +65,7 @@ class MetaProvider implements WhatsAppProviderInterface
 
         try {
             $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
-                ->post("https://graph.facebook.com/v18.0/{$this->config->phone_number_id}/messages", [
+                ->post("https://graph.facebook.com/v22.0/{$this->config->phone_number_id}/messages", [
                     'messaging_product' => 'whatsapp',
                     'to'                => $to,
                     'type'              => 'text',
@@ -108,7 +108,7 @@ class MetaProvider implements WhatsAppProviderInterface
 
         try {
             $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
-                ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
+                ->post("https://graph.facebook.com/v22.0/{$this->config->phone_number_id}/messages", $payload);
 
             if ($response->successful()) {
                 Log::info('WhatsApp template sent', [
@@ -139,7 +139,7 @@ class MetaProvider implements WhatsAppProviderInterface
         try {
             $response = Http::timeout(20)->connectTimeout(5)->withToken($this->config->api_key)
                 ->attach('file', $pdfBytes, $filename, ['Content-Type' => 'application/pdf'])
-                ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/media", [
+                ->post("https://graph.facebook.com/v22.0/{$this->config->phone_number_id}/media", [
                     'messaging_product' => 'whatsapp',
                     'type'              => 'application/pdf',
                 ]);
@@ -206,7 +206,7 @@ class MetaProvider implements WhatsAppProviderInterface
 
         try {
             $response = Http::timeout(15)->connectTimeout(5)->withToken($this->config->api_key)
-                ->post("https://graph.facebook.com/v19.0/{$this->config->phone_number_id}/messages", $payload);
+                ->post("https://graph.facebook.com/v22.0/{$this->config->phone_number_id}/messages", $payload);
 
             if ($response->successful()) {
                 Log::info('WhatsApp document template sent', [

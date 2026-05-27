@@ -24,7 +24,7 @@ class WhatsAppSetupService
         }
 
         try {
-            $response = Http::timeout(20)->get('https://graph.facebook.com/v19.0/oauth/access_token', [
+            $response = Http::timeout(20)->get('https://graph.facebook.com/v22.0/oauth/access_token', [
                 'client_id'     => $this->platform->meta_app_id,
                 'client_secret' => $this->platform->meta_app_secret,
                 'code'          => $code,
@@ -59,7 +59,7 @@ class WhatsAppSetupService
         try {
             $response = Http::timeout(20)
                 ->withToken($token)
-                ->post("https://graph.facebook.com/v19.0/{$wabaId}/subscribed_apps", [
+                ->post("https://graph.facebook.com/v22.0/{$wabaId}/subscribed_apps", [
                     'override_callback_and_verify_token' => true,
                     'callback_url'                        => route('whatsapp.webhook.receive'),
                     'verify_token'                        => $this->platform->webhook_verify_token,
@@ -113,7 +113,7 @@ class WhatsAppSetupService
 
             $response = Http::timeout(20)
                 ->withToken($token)
-                ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", [
+                ->post("https://graph.facebook.com/v22.0/{$wabaId}/message_templates", [
                     'name'       => str_replace([' ', '-'], '_', strtolower($template->template_name)),
                     'language'   => 'en',
                     'category'   => 'UTILITY',

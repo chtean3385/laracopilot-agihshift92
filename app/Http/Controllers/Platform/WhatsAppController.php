@@ -60,7 +60,7 @@ class WhatsAppController extends Controller
         try {
             $response = Http::timeout(15)
                 ->withToken($settings->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$settings->saas_phone_number_id}/messages", [
+                ->post("https://graph.facebook.com/v22.0/{$settings->saas_phone_number_id}/messages", [
                     'messaging_product' => 'whatsapp',
                     'to'                => $phone,
                     'type'              => 'template',
@@ -165,7 +165,7 @@ class WhatsAppController extends Controller
         try {
             $response = Http::timeout(20)
                 ->withToken($platform->saas_token)
-                ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
+                ->get("https://graph.facebook.com/v22.0/{$platform->saas_waba_id}/message_templates", [
                     'fields' => 'name,status,id,components',
                     'limit'  => 200,
                 ]);
@@ -367,7 +367,7 @@ class WhatsAppController extends Controller
         $components[] = $bodyComponent;
 
         $response = Http::withToken($token)
-            ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", [
+            ->post("https://graph.facebook.com/v22.0/{$wabaId}/message_templates", [
                 'name'       => $templateName,
                 'language'   => 'en_US',
                 'category'   => 'UTILITY',
@@ -449,7 +449,7 @@ class WhatsAppController extends Controller
             $response = Http::timeout(30)
                 ->withToken($platform->saas_token)
                 ->attach('file', file_get_contents($file->getRealPath()), $origName, ['Content-Type' => $mime])
-                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/media", [
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/media", [
                     'messaging_product' => 'whatsapp',
                     'type'              => $mime,
                 ]);
@@ -524,7 +524,7 @@ class WhatsAppController extends Controller
         try {
             $addResp = Http::timeout(20)
                 ->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/phone_numbers", [
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_waba_id}/phone_numbers", [
                     'verified_name' => $request->display_name,
                     'code_method'   => 'SMS',
                     'language'      => 'en',
@@ -553,7 +553,7 @@ class WhatsAppController extends Controller
         try {
             $otpResp = Http::timeout(15)
                 ->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$phoneNumberId}/request_code", [
+                ->post("https://graph.facebook.com/v22.0/{$phoneNumberId}/request_code", [
                     'code_method' => 'SMS',
                     'language'    => 'en',
                 ]);
@@ -608,7 +608,7 @@ class WhatsAppController extends Controller
         try {
             $resp = Http::timeout(15)
                 ->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$config->phone_number_id}/request_code", [
+                ->post("https://graph.facebook.com/v22.0/{$config->phone_number_id}/request_code", [
                     'code_method' => 'SMS',
                     'language'    => 'en',
                 ]);
@@ -643,7 +643,7 @@ class WhatsAppController extends Controller
         try {
             $resp = Http::timeout(15)
                 ->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$config->phone_number_id}/verify_code", [
+                ->post("https://graph.facebook.com/v22.0/{$config->phone_number_id}/verify_code", [
                     'code' => $request->code,
                 ]);
 
@@ -682,7 +682,7 @@ class WhatsAppController extends Controller
         try {
             $resp = Http::timeout(15)
                 ->withToken($platform->saas_token)
-                ->get("https://graph.facebook.com/v19.0/{$config->phone_number_id}", [
+                ->get("https://graph.facebook.com/v22.0/{$config->phone_number_id}", [
                     'fields' => 'verified_name,display_phone_number,name_status,status,code_verification_status',
                 ]);
 

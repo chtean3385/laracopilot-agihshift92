@@ -341,7 +341,7 @@ class WhatsAppController extends Controller
         Log::info('Meta template submission payload', ['template' => $template->id, 'payload' => $payload]);
 
         $response = Http::withToken($token)
-            ->post("https://graph.facebook.com/v19.0/{$wabaId}/message_templates", $payload);
+            ->post("https://graph.facebook.com/v22.0/{$wabaId}/message_templates", $payload);
 
         $result = $response->json();
 
@@ -469,7 +469,7 @@ class WhatsAppController extends Controller
         try {
             $resp = Http::timeout(20)
                 ->withToken($platform->saas_token)
-                ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
+                ->get("https://graph.facebook.com/v22.0/{$platform->saas_waba_id}/message_templates", [
                     'fields' => 'name,status,id,components',
                     'limit'  => 200,
                 ]);
@@ -632,7 +632,7 @@ class WhatsAppController extends Controller
         try {
             $response = Http::timeout(15)
                 ->withToken($token)
-                ->post("https://graph.facebook.com/v19.0/{$phoneNumberId}/messages", [
+                ->post("https://graph.facebook.com/v22.0/{$phoneNumberId}/messages", [
                     'messaging_product' => 'whatsapp',
                     'to'                => $phone,
                     'type'              => 'template',

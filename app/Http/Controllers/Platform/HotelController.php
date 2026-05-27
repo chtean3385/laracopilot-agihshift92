@@ -1159,7 +1159,7 @@ class HotelController extends Controller
 
         try {
             $response = Http::timeout(15)
-                ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
+                ->get("https://graph.facebook.com/v22.0/{$platform->saas_waba_id}/message_templates", [
                     'access_token' => $platform->saas_token,
                     'status'       => 'APPROVED',
                     'fields'       => 'name,status,language,components',
@@ -1263,7 +1263,7 @@ class HotelController extends Controller
 
             foreach ($langCodesToTry as $lang) {
                 $response = Http::timeout(15)->withToken($platform->saas_token)
-                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                    ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", [
                         'messaging_product' => 'whatsapp',
                         'to'                => $phone,
                         'type'              => 'template',
@@ -1384,7 +1384,7 @@ class HotelController extends Controller
 
                 foreach ($langCodesToTryAll as $lang) {
                     $response = Http::timeout(15)->withToken($platform->saas_token)
-                        ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                        ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", [
                             'messaging_product' => 'whatsapp',
                             'to'                => $phone,
                             'type'              => 'template',

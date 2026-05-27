@@ -210,7 +210,7 @@ class WaInbox extends Component
         try {
             $response = Http::timeout(15)
                 ->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", [
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", [
                     'messaging_product' => 'whatsapp',
                     'to'                => $phone,
                     'type'              => 'text',
@@ -286,7 +286,7 @@ class WaInbox extends Component
 
             $response = Http::timeout(15)
                 ->withToken($platform->saas_token)
-                ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", $msgPayload);
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", $msgPayload);
 
             $body = $response->json();
 
@@ -471,7 +471,7 @@ class WaInbox extends Component
             try {
                 $response = Http::timeout(12)
                     ->withToken($platform->saas_token)
-                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", $payload);
+                    ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", $payload);
 
                 $body = $response->json();
 
