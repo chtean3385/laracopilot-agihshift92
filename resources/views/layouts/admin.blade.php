@@ -733,6 +733,73 @@
         .tour-btn-next:hover { opacity: .9; }
     </style>
     @stack('styles')
+
+    {{-- ── Google Translate: hide default toolbar & floating widget ── --}}
+    <style>
+        /* Prevent Google's bar from pushing the page down */
+        body { top: 0 !important; }
+        .skiptranslate { display: none !important; }
+        #goog-gt-tt,
+        .goog-te-balloon-frame { display: none !important; }
+        .goog-te-banner-frame { display: none !important; }
+        /* Hide the ugly select dropdown Google renders */
+        #google_translate_element { display: none !important; }
+        /* Don't let Google's iframe affect layout */
+        iframe.goog-te-menu-frame { box-shadow: none !important; }
+    </style>
+    {{-- Hidden element Google Translate attaches to --}}
+    <div id="google_translate_element" style="display:none;"></div>
+    <script>
+        // ── Google Translate helpers ────────────────────────────────────────────
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,hi',
+                autoDisplay: false,
+            }, 'google_translate_element');
+            // After widget loads, sync button to whatever language is active
+            _gtSyncBtn();
+        }
+
+        // Read the googtrans cookie to detect the active language
+        function _gtReadCookie() {
+            var m = document.cookie.match(/googtrans=([^;]+)/);
+            if (!m) return 'en';
+            var parts = decodeURIComponent(m[1]).split('/');
+            return parts[parts.length - 1] || 'en';
+        }
+
+        var _gtCurrentLang = _gtReadCookie();
+
+        function _gtSyncBtn() {
+            var btn = document.getElementById('gt-toggle-btn');
+            if (!btn) return;
+            if (_gtCurrentLang === 'hi') {
+                btn.innerHTML = '<span>EN</span><span style="opacity:.4;">|</span><span style="font-weight:900;color:#ef4444;">हिं ✓</span>';
+            } else {
+                btn.innerHTML = '<span style="font-weight:900;color:#0891b2;">EN ✓</span><span style="opacity:.4;">|</span><span>हिं</span>';
+            }
+        }
+
+        function _gtToggle() {
+            // doGTranslate is injected by the Google widget — wait if not ready yet
+            if (typeof doGTranslate !== 'function') {
+                setTimeout(_gtToggle, 300); return;
+            }
+            if (_gtCurrentLang !== 'hi') {
+                doGTranslate('en|hi');
+                _gtCurrentLang = 'hi';
+            } else {
+                doGTranslate('en|en');
+                _gtCurrentLang = 'en';
+            }
+            _gtSyncBtn();
+        }
+
+        // Sync button on every page load (cookie persists across navigations)
+        document.addEventListener('DOMContentLoaded', _gtSyncBtn);
+    </script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 </head>
 <body>
 
@@ -1337,6 +1404,16 @@
                         </div>
                     </div>
                 </div>
+                <!-- Language toggle: EN ↔ हिं -->
+                <button id="gt-toggle-btn" onclick="_gtToggle()" title="Switch language / भाषा बदलें"
+                    style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;font-weight:700;color:#374151;cursor:pointer;transition:all .15s;flex-shrink:0;white-space:nowrap;font-family:system-ui,sans-serif;"
+                    onmouseover="this.style.borderColor='#06b6d4';this.style.background='#f0f9ff';this.style.color='#0891b2'"
+                    onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc';this.style.color='#374151'">
+                    <span style="font-weight:900;color:#0891b2;">EN ✓</span>
+                    <span style="opacity:.4;">|</span>
+                    <span>हिं</span>
+                </button>
+
                 <!-- WhatsApp Support — header -->
                 <a href="#" id="header-wa-btn" title="Get Support on WhatsApp"
                    style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#25d366,#128c43);color:#fff;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 3px 10px rgba(37,211,102,.3);transition:all .18s;flex-shrink:0;"
