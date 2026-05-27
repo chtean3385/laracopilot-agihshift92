@@ -397,6 +397,12 @@ class WhatsAppWebhookController extends Controller
                     'bot_state'   => 'completed',
                     'updated_at'  => now(),
                 ]);
+
+                // Fire HOT lead admin alert (re-use WaLeadBot's shared method)
+                if ($leadStatus === 'hot') {
+                    $lead = DB::table('whatsapp_leads')->where('phone', $phone)->first();
+                    \App\Services\WaLeadBot::notifyAdmin($platform, $phone, $lead, '—');
+                }
                 return;
             }
 

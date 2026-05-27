@@ -403,7 +403,7 @@ class WaLeadBot
 
     // ── Admin notification (HOT lead) ────────────────────────────────────────
 
-    private static function notifyAdmin(object $platform, string $phone, ?object $lead, string $demo): void
+    public static function notifyAdmin(object $platform, string $phone, ?object $lead, string $demo): void
     {
         // Fetch configured admin notify phone
         $adminPhone = DB::table('platform_whatsapp_settings')->value('admin_notify_phone');
