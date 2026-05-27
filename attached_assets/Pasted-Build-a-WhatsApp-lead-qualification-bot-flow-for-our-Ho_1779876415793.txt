@@ -1,0 +1,416 @@
+Build a WhatsApp lead qualification bot flow for our Hotel CRM SaaS using Laravel + Livewire.
+
+IMPORTANT:
+
+* Human-like conversational flow
+* Bot should always resume where conversation stopped
+* Save every step in database
+* Update contact details dynamically
+* Create CRM lead card automatically
+* Use warm natural language
+* No robotic replies
+* Must support STOP opt-out system
+
+==================================================
+MAIN FLOW
+=========
+
+ENTRY TEMPLATE BUTTONS:
+
+1. Book Demo
+2. Maybe Later
+
+If user types:
+HI
+HELLO
+DEMO
+
+Start welcome flow.
+
+==================================================
+BOOK DEMO FLOW
+==============
+
+STEP 1 → Ask Name
+
+Bot:
+"Thank you for your interest 😊
+
+May I know your name?"
+
+Save:
+customer_name
+
+Update WhatsApp contact name immediately.
+
+After reply:
+"Great to connect with you {{name}} 😊"
+
+==================================================
+
+STEP 2 → Ask Hotel Name
+
+Bot:
+"Please share your hotel / resort / farmhouse name 😊"
+
+Save:
+hotel_name
+
+==================================================
+
+STEP 3 → Ask Rooms
+
+Bot:
+"Awesome 👍
+
+Approximately how many rooms or properties do you manage?"
+
+Save:
+room_count
+
+==================================================
+
+STEP 4 → Existing Software
+
+Bot:
+"Are you currently using any software to manage bookings or hotel operations?"
+
+Expected answers:
+
+* Yes
+* No
+* Manual
+* Excel
+
+Save:
+current_system
+
+==================================================
+
+STEP 5 → Role
+
+Bot:
+"Got it 😊
+
+Are you:
+
+1️⃣ Hotel Owner
+2️⃣ Manager
+3️⃣ Staff / Operator"
+
+Save:
+decision_role
+
+==================================================
+
+STEP 6 → Location
+
+Bot:
+"Which city is your property located in?"
+
+Save:
+location
+
+==================================================
+
+STEP 7 → Urgency
+
+Bot:
+"How soon are you planning to implement hotel software?"
+
+Expected:
+1️⃣ Immediately
+2️⃣ Within 1 month
+3️⃣ Exploring options
+4️⃣ Just checking
+
+Save:
+implementation_timeline
+
+==================================================
+
+STEP 8 → DEMO DATE/TIME
+
+Bot:
+"Perfect 👍
+
+Please share your preferred date & time for online demo.
+
+Example:
+28 May - 4 PM"
+
+Save:
+demo_datetime
+
+==================================================
+
+# FINAL CONFIRMATION
+
+Bot:
+"Thank you {{name}} 😊
+
+Our team will schedule your online demo shortly.
+
+🏨 Property: {{hotel_name}}
+🛏 Rooms: {{room_count}}
+📍 Location: {{location}}
+📅 Demo Time: {{demo_datetime}}
+
+You’ll receive Google Meet details soon."
+
+==================================================
+LEAD SCORING
+============
+
+HOT LEAD:
+IF:
+
+* owner
+* 20+ rooms
+* immediate implementation
+
+Set:
+lead_status = hot
+
+Notify admin instantly.
+
+---
+
+WARM LEAD:
+IF:
+
+* manager
+* exploring
+* 5-20 rooms
+
+Set:
+lead_status = warm
+
+---
+
+COLD LEAD:
+IF:
+
+* no urgency
+* small property
+
+Set:
+lead_status = cold
+
+---
+
+DEAD:
+IF:
+
+* not interested
+* spam
+* fake inquiry
+
+Set:
+lead_status = dead
+
+==================================================
+MAYBE LATER FLOW
+================
+
+If user clicks:
+"Maybe Later"
+
+Bot:
+"No problem 😊
+
+We’ll occasionally share hotel automation updates and demo videos.
+
+Whenever you want demo, just type DEMO 👍"
+
+Set:
+lead_status = nurture
+
+Start automated follow-up:
+2 messages per week maximum.
+
+==================================================
+FOLLOW-UP MESSAGES
+==================
+
+Follow-up examples:
+
+1.
+
+"Hi {{name}} 😊
+
+Many hotels are now automating bookings & guest communication using WhatsApp.
+
+Would you like to see a quick live demo?"
+
+2.
+
+"Still managing bookings manually?
+
+Dreams Hotel CRM helps manage:
+✅ Room availability
+✅ Guest follow-up
+✅ WhatsApp automation
+✅ Billing & reports
+
+Reply DEMO anytime 😊"
+
+==================================================
+STOP / OPT OUT SYSTEM
+=====================
+
+If user types:
+STOP
+UNSUBSCRIBE
+NO
+
+Immediately:
+
+* stop all campaigns
+* set opt_out = true
+* set lead_status = opted_out
+
+Bot reply:
+"You have been unsubscribed successfully 😊
+
+If you need hotel CRM demo in future, simply message HI."
+
+IMPORTANT:
+Never send any message again after STOP.
+
+Only restart flow if user messages again manually.
+
+==================================================
+VIDEO FLOW
+==========
+
+If user types:
+VIDEO
+YOUTUBE
+DEMO VIDEO
+
+Send:
+YouTube demo link
+
+Bot:
+"Sure 😊
+
+Here’s our Hotel CRM demo video:
+{{youtube_link}}
+
+You can continue booking your live demo anytime 👍"
+
+IMPORTANT:
+Do not reset conversation step.
+
+==================================================
+STATE MANAGEMENT
+================
+
+Bot must always resume from last step.
+
+Example:
+If user completed name + hotel name
+and comes back after 3 days,
+bot should continue from room count question.
+
+Never ask same question twice.
+
+==================================================
+CRM REQUIREMENTS
+================
+
+Create lead card automatically with:
+
+* name
+* phone
+* hotel name
+* rooms
+* role
+* city
+* timeline
+* lead score
+* demo date
+* notes
+* last message timestamp
+
+Show lead bio summary in CRM card.
+
+==================================================
+HUMAN STYLE REQUIREMENTS
+========================
+
+Bot should sound:
+
+* warm
+* conversational
+* natural
+* Indian business friendly
+
+Avoid robotic messages.
+
+Use phrases like:
+
+* Great 😊
+* Awesome 👍
+* Got it
+* Perfect
+* Thank you
+
+==================================================
+ADMIN NOTIFICATIONS
+===================
+
+If HOT lead:
+Send admin notification:
+
+"🔥 HOT LEAD
+
+{{hotel_name}}
+{{room_count}} rooms
+{{location}}
+Implementation: Immediate"
+
+==================================================
+IMPORTANT RULES
+===============
+
+* Never spam users
+* Respect STOP
+* Resume conversation state
+* Save all replies
+* Use WhatsApp button replies when possible
+* Support free text replies too
+* Handle unexpected replies gracefully
+* Allow human takeover anytime
+
+==================================================
+DATABASE SUGGESTION
+===================
+
+Table:
+whatsapp_leads
+
+Fields:
+
+* id
+* phone
+* name
+* hotel_name
+* room_count
+* current_system
+* role
+* city
+* implementation_timeline
+* demo_datetime
+* lead_status
+* current_step
+* opt_out
+* notes
+* last_message_at
+* created_at
+* updated_at
+
+==================================================
+END
+===
