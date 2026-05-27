@@ -184,11 +184,29 @@ class WhatsAppWebhookController extends Controller
                      ?? null;
             } elseif ($type === 'button') {
                 $text = $message['button']['text'] ?? null;
+            } elseif ($type === 'reaction') {
+                $emoji = $message['reaction']['emoji'] ?? '👍';
+                $text  = "Reacted: {$emoji}";
             }
 
             Log::info('WhatsApp incoming message', ['from' => $phone, 'type' => $type, 'text' => $text]);
 
-            $preview = $text ? mb_substr($text, 0, 200) : "Type: {$type}";
+            // Human-friendly previews for media & unsupported types
+            if ($text) {
+                $preview = mb_substr($text, 0, 200);
+            } else {
+                $preview = match($type) {
+                    'image'       => '📷 Image',
+                    'video'       => '🎥 Video',
+                    'audio'       => '🎵 Voice message',
+                    'document'    => '📄 Document',
+                    'sticker'     => '🪄 Sticker',
+                    'location'    => '📍 Location',
+                    'contacts'    => '👤 Contact card',
+                    'unsupported' => '⚠️ Unsupported message (sticker / GIF / special format)',
+                    default       => "📨 {$type} message",
+                };
+            }
 
             // Resolve hotel_id by matching phone
             $hotelId = null;

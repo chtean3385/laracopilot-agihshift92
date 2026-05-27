@@ -442,3 +442,4 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | 2026-05-21 | v1.0.20 | `2b38ac0` | Fix CRON_SECRET not readable in production — add to bootstrap/app.php env-bridging list so env('CRON_SECRET') works after config:cache |
 | 2026-05-22 | v1.0.21 | `2b38ac0` | Per-role dashboard & sidebar customization: Chef (restaurant-only) sees only Restaurant KPIs, shortcuts, and sidebar items; Admin/Manager retain full access; `isRestaurantOnly()` + `hasAny()` helpers in PermissionService |
 | 2026-05-27 | v1.0.22 | `a579557` | Hindi language toggle (EN/हिं pill button in header) via Google Translate; widget div moved to body, https script URL, targeted CSS suppression |
+| 2026-05-27 | v1.0.23 | `6b088ca` | WA Inbox: fix "Type: unsupported" — webhook now stores human-friendly labels (📷 Image, 🎵 Voice, ⚠️ Unsupported, etc.) for all media/reaction types; chat bubble renders them with coloured icons |

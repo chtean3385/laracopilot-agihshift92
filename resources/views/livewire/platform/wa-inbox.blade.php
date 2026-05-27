@@ -198,14 +198,36 @@
                     <span style="font-weight:700;color:{{ $msg->tag_color }};font-size:10px;">{{ $msg->tag }}</span>
                     &nbsp;·&nbsp; {{ $msg->time }}
                 </div>
-                <div style="max-width:68%;background:{{ $isOutgoing ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : '#fff' }};color:{{ $isOutgoing ? '#fff' : '#1e293b' }};border-radius:{{ $isOutgoing ? '18px 18px 4px 18px' : '18px 18px 18px 4px' }};padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.1);">
-                    @if(str_starts_with($msg->text, '📷') || str_starts_with($msg->text, '📄'))
-                    <div style="font-size:13px;line-height:1.5;word-break:break-word;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-{{ str_starts_with($msg->text, '📷') ? 'image' : 'file-pdf' }}" style="font-size:16px;opacity:.8;"></i>
-                        {{ $msg->text }}
+                @php
+                    $txt = $msg->text;
+                    $mediaMap = [
+                        '📷' => ['fa-image',          '#0891b2', '#e0f2fe'],
+                        '🎥' => ['fa-video',           '#7c3aed', '#ede9fe'],
+                        '🎵' => ['fa-microphone',      '#059669', '#d1fae5'],
+                        '📄' => ['fa-file-alt',        '#d97706', '#fef3c7'],
+                        '🪄' => ['fa-magic',           '#ec4899', '#fce7f3'],
+                        '📍' => ['fa-map-marker-alt',  '#dc2626', '#fee2e2'],
+                        '👤' => ['fa-address-card',    '#64748b', '#f1f5f9'],
+                        '⚠️' => ['fa-exclamation-triangle', '#b45309', '#fef3c7'],
+                        '📨' => ['fa-envelope',        '#0891b2', '#e0f2fe'],
+                    ];
+                    $mediaIcon = null; $mediaColor = null; $mediaBg = null;
+                    foreach ($mediaMap as $emoji => [$icon, $color, $bg]) {
+                        if (mb_substr($txt, 0, mb_strlen($emoji)) === $emoji) {
+                            $mediaIcon = $icon; $mediaColor = $color; $mediaBg = $bg; break;
+                        }
+                    }
+                @endphp
+                <div style="max-width:68%;background:{{ $isOutgoing ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : ($mediaIcon && !$isOutgoing ? $mediaBg : '#fff') }};color:{{ $isOutgoing ? '#fff' : '#1e293b' }};border-radius:{{ $isOutgoing ? '18px 18px 4px 18px' : '18px 18px 18px 4px' }};padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                    @if($mediaIcon && !$isOutgoing)
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="width:32px;height:32px;background:{{ $mediaColor }}22;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas {{ $mediaIcon }}" style="color:{{ $mediaColor }};font-size:14px;"></i>
+                        </div>
+                        <span style="font-size:13px;color:#374151;font-weight:500;">{{ $txt }}</span>
                     </div>
                     @else
-                    <div style="font-size:13px;line-height:1.5;word-break:break-word;white-space:pre-wrap;">{{ $msg->text }}</div>
+                    <div style="font-size:13px;line-height:1.5;word-break:break-word;white-space:pre-wrap;">{{ $txt }}</div>
                     @endif
                 </div>
             </div>
