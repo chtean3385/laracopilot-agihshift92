@@ -1,3 +1,4 @@
+<div wire:poll.4000ms style="display:flex;height:calc(100vh - 140px);background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;position:relative;">
 <style>
 @keyframes wa-hot-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
@@ -8,11 +9,9 @@
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.35; }
 }
-.wa-hot-row      { animation: wa-hot-pulse 2s infinite; }
-.wa-hot-badge    { animation: wa-hot-badge-blink 1.2s ease-in-out infinite; }
+.wa-hot-row   { animation: wa-hot-pulse 2s infinite; }
+.wa-hot-badge { animation: wa-hot-badge-blink 1.2s ease-in-out infinite; }
 </style>
-
-<div wire:poll.4000ms style="display:flex;height:calc(100vh - 140px);background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;position:relative;">
 
     {{-- ── Conversations List ─────────────────────────────────────────── --}}
     <div style="width:300px;flex-shrink:0;border-right:1px solid #f1f5f9;display:flex;flex-direction:column;overflow:hidden;">
@@ -48,58 +47,57 @@
                 $isCold     = $convo->lead_status === 'cold';
                 $isNurture  = $convo->lead_status === 'nurture';
             @endphp
-            <div style="position:relative;">
-                <div wire:click="selectContact('{{ $convo->phone }}')"
-                     class="{{ $isHot ? 'wa-hot-row' : '' }}"
-                     style="padding:11px 13px;padding-right:36px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;
-                            {{ $isSelected ? 'background:#ede9fe;border-left:3px solid #7c3aed;' : ($isHot ? 'background:#fff5f5;border-left:3px solid #ef4444;' : 'border-left:3px solid transparent;') }}"
-                     onmouseover="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='#f8fafc'"
-                     onmouseout="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='{{ $isHot ? '#fff5f5' : '' }}'">
-                    <div style="display:flex;align-items:flex-start;gap:9px;">
-                        <div style="position:relative;flex-shrink:0;">
-                            <div style="width:40px;height:40px;background:{{ $convo->type_color }};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;opacity:.9;">
-                                {{ mb_strtoupper(mb_substr($convo->name, 0, 1)) }}
-                            </div>
-                            <span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;border:2px solid #fff;background:{{ $convo->consented ? '#25d366' : '#e2e8f0' }};"></span>
+            {{-- Contact row: position:relative so ℹ️ button can sit inside it --}}
+            <div wire:click="selectContact('{{ $convo->phone }}')"
+                 class="{{ $isHot ? 'wa-hot-row' : '' }}"
+                 style="position:relative;padding:11px 13px;padding-right:36px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;
+                        {{ $isSelected ? 'background:#ede9fe;border-left:3px solid #7c3aed;' : ($isHot ? 'background:#fff5f5;border-left:3px solid #ef4444;' : 'border-left:3px solid transparent;') }}"
+                 onmouseover="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='#f8fafc'"
+                 onmouseout="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='{{ $isHot ? '#fff5f5' : '' }}'">
+                <div style="display:flex;align-items:flex-start;gap:9px;">
+                    <div style="position:relative;flex-shrink:0;">
+                        <div style="width:40px;height:40px;background:{{ $convo->type_color }};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;opacity:.9;">
+                            {{ mb_strtoupper(mb_substr($convo->name, 0, 1)) }}
                         </div>
-                        <div style="flex:1;min-width:0;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:2px;">
-                                <span style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">
-                                    @if($isHot)<span class="wa-hot-badge" style="font-size:13px;margin-right:2px;">🔥</span>@endif
-                                    {{ $convo->name }}
-                                </span>
-                                <span style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">{{ $convo->time_ago }}</span>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
-                                <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:{{ $convo->type_bg }};color:{{ $convo->type_color }};flex-shrink:0;letter-spacing:.3px;">{{ strtoupper($convo->type_label) }}</span>
-                                @if($isHot)<span class="wa-hot-badge" style="font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;background:#fee2e2;color:#dc2626;flex-shrink:0;border:1px solid #fca5a5;">🔥 HOT</span>@endif
-                                @if($isWarm)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fef3c7;color:#d97706;flex-shrink:0;">🟡 WARM</span>@endif
-                                @if($isCold)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#eff6ff;color:#3b82f6;flex-shrink:0;">❄️ COLD</span>@endif
-                                @if($isNurture)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f8fafc;color:#64748b;flex-shrink:0;">💤 NURTURE</span>@endif
-                                @if(!$convo->subscribed)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f1f5f9;color:#94a3b8;flex-shrink:0;">STOPPED</span>@endif
-                                <span style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">{{ $convo->preview }}</span>
-                                @if($convo->unread > 0)
-                                <span style="background:#25d366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;flex-shrink:0;min-width:18px;text-align:center;">{{ $convo->unread }}</span>
-                                @endif
-                            </div>
-                            <div style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                                @if($convo->hotel_name)
-                                <span>{{ $convo->hotel_name }}</span>
-                                @else
-                                <span>{{ $convo->phone }}</span>
-                                @endif
-                                @if($convo->lead_role)
-                                <span style="color:#cbd5e1;">·</span>
-                                <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;background:#f1f5f9;color:#64748b;">{{ $convo->lead_role }}</span>
-                                @endif
-                            </div>
+                        <span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;border:2px solid #fff;background:{{ $convo->consented ? '#25d366' : '#e2e8f0' }};"></span>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:2px;">
+                            <span style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">
+                                @if($isHot)<span class="wa-hot-badge" style="font-size:13px;margin-right:2px;">🔥</span>@endif
+                                {{ $convo->name }}
+                            </span>
+                            <span style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">{{ $convo->time_ago }}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                            <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:{{ $convo->type_bg }};color:{{ $convo->type_color }};flex-shrink:0;letter-spacing:.3px;">{{ strtoupper($convo->type_label) }}</span>
+                            @if($isHot)<span class="wa-hot-badge" style="font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;background:#fee2e2;color:#dc2626;flex-shrink:0;border:1px solid #fca5a5;">🔥 HOT</span>@endif
+                            @if($isWarm)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fef3c7;color:#d97706;flex-shrink:0;">🟡 WARM</span>@endif
+                            @if($isCold)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#eff6ff;color:#3b82f6;flex-shrink:0;">❄️ COLD</span>@endif
+                            @if($isNurture)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f8fafc;color:#64748b;flex-shrink:0;">💤 NURTURE</span>@endif
+                            @if(!$convo->subscribed)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f1f5f9;color:#94a3b8;flex-shrink:0;">STOPPED</span>@endif
+                            <span style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">{{ $convo->preview }}</span>
+                            @if($convo->unread > 0)
+                            <span style="background:#25d366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;flex-shrink:0;min-width:18px;text-align:center;">{{ $convo->unread }}</span>
+                            @endif
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                            @if($convo->hotel_name)
+                            <span>{{ $convo->hotel_name }}</span>
+                            @else
+                            <span>{{ $convo->phone }}</span>
+                            @endif
+                            @if($convo->lead_role)
+                            <span style="color:#cbd5e1;">·</span>
+                            <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;background:#f1f5f9;color:#64748b;">{{ $convo->lead_role }}</span>
+                            @endif
                         </div>
                     </div>
                 </div>
-                {{-- ℹ️ Lead info button — positioned absolutely to avoid triggering selectContact --}}
+                {{-- ℹ️ button inside the wire:click div — wire:click.stop prevents selectContact from firing --}}
                 <button wire:click.stop="openLeadInfo('{{ $convo->phone }}')"
                         title="View lead details"
-                        style="position:absolute;top:50%;right:8px;transform:translateY(-50%);width:22px;height:22px;background:{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }};border:1px solid {{ $convo->lead_status ? '#c4b5fd' : '#e2e8f0' }};border-radius:6px;cursor:pointer;color:{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }};display:flex;align-items:center;justify-content:center;font-size:11px;z-index:10;transition:all .15s;"
+                        style="position:absolute;top:50%;right:8px;transform:translateY(-50%);width:22px;height:22px;background:{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }};border:1px solid {{ $convo->lead_status ? '#c4b5fd' : '#e2e8f0' }};border-radius:6px;cursor:pointer;color:{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }};display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;transition:all .15s;"
                         onmouseover="this.style.background='#ede9fe';this.style.color='#7c3aed';this.style.borderColor='#a78bfa'"
                         onmouseout="this.style.background='{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }}';this.style.color='{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }}'">
                     <i class="fas fa-info" style="font-size:9px;"></i>

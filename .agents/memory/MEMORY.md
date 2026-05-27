@@ -1,0 +1,1 @@
+- [Livewire 4 single root element](livewire4-single-root.md) — a <style> tag BEFORE the root <div> silently kills ALL wire:click events in the component.
