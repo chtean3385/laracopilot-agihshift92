@@ -180,55 +180,84 @@ class WhatsAppController extends Controller
 
             $dbTemplates = WhatsAppTemplate::withoutGlobalScopes()
                 ->whereNull('hotel_id')
-                ->get();
+                ->get()
+                ->keyBy(fn($t) => strtolower($t->template_name));
 
             $updated = 0;
-            foreach ($dbTemplates as $tmpl) {
-                $key  = strtolower($tmpl->template_name);
-                $meta = $metaTemplates->get($key);
-                if (!$meta) continue;
+            $imported = 0;
 
-                $newStatus     = strtolower($meta['status']) === 'approved' ? 'approved'
-                    : (strtolower($meta['status']) === 'rejected' ? 'rejected' : 'pending');
-                $newMetaStatus = strtolower($meta['status']) === 'approved' ? 'approved' : 'submitted';
+            foreach ($metaTemplates as $key => $meta) {
+                $metaStatus    = strtolower($meta['status'] ?? '');
+                $newStatus     = $metaStatus === 'approved' ? 'approved'
+                    : ($metaStatus === 'rejected' ? 'rejected' : 'pending');
+                $newMetaStatus = $metaStatus === 'approved' ? 'approved' : 'submitted';
 
-                // Parse components to extract header format and button presence
-                $components   = $meta['components'] ?? [];
-                $headerFormat = 'none';
+                // Parse components to extract body text, header format, and buttons
+                $components     = $meta['components'] ?? [];
+                $headerFormat   = 'none';
                 $headerMediaUrl = null;
-                $hasButtons   = false;
+                $hasButtons     = false;
+                $bodyText       = '';
 
                 foreach ($components as $component) {
                     $type = strtolower($component['type'] ?? '');
                     if ($type === 'header') {
                         $fmt = strtolower($component['format'] ?? 'text');
                         $headerFormat = in_array($fmt, ['image', 'video', 'document']) ? $fmt : 'text';
-                        // Extract sample media URL if present
                         if ($headerFormat !== 'text') {
                             $example = $component['example'] ?? [];
                             $headerMediaUrl = $example['header_handle'][0]
                                 ?? $example['header_url'][0]
-                                ?? $tmpl->header_media_url
                                 ?? null;
                         }
+                    }
+                    if ($type === 'body') {
+                        $bodyText = $component['text'] ?? '';
                     }
                     if ($type === 'buttons') {
                         $hasButtons = !empty($component['buttons']);
                     }
                 }
 
-                $tmpl->update([
-                    'approval_status'  => $newStatus,
-                    'meta_status'      => $newMetaStatus,
-                    'meta_template_id' => $meta['id'] ?? $tmpl->meta_template_id,
-                    'header_format'    => $headerFormat,
-                    'header_media_url' => $headerMediaUrl ?? $tmpl->header_media_url,
-                    'has_buttons'      => $hasButtons,
-                ]);
-                $updated++;
+                $existing = $dbTemplates->get($key);
+
+                if ($existing) {
+                    // Update existing record
+                    $existing->update([
+                        'approval_status'  => $newStatus,
+                        'meta_status'      => $newMetaStatus,
+                        'meta_template_id' => $meta['id'] ?? $existing->meta_template_id,
+                        'header_format'    => $headerFormat,
+                        'header_media_url' => $headerMediaUrl ?? $existing->header_media_url,
+                        'has_buttons'      => $hasButtons,
+                    ]);
+                    $updated++;
+                } else {
+                    // Auto-import: create a new platform-level template for any Meta template
+                    // not yet in the local DB (approved or otherwise — user can manage from here)
+                    WhatsAppTemplate::withoutGlobalScopes()->create([
+                        'hotel_id'         => null,
+                        'template_name'    => $meta['name'],
+                        'trigger_event'    => 'manual',
+                        'message_body'     => $bodyText ?: '(imported from Meta — edit body here)',
+                        'approval_status'  => $newStatus,
+                        'meta_status'      => $newMetaStatus,
+                        'meta_template_id' => $meta['id'] ?? null,
+                        'is_active'        => $metaStatus === 'approved',
+                        'header_format'    => $headerFormat,
+                        'header_media_url' => $headerMediaUrl,
+                        'has_buttons'      => $hasButtons,
+                        'has_document_attachment' => false,
+                    ]);
+                    $imported++;
+                }
             }
 
-            return back()->with('success', "Synced {$updated} template(s) from Meta. Statuses are now up to date.");
+            $msg = "Synced {$updated} existing template(s) from Meta.";
+            if ($imported > 0) {
+                $msg .= " Auto-imported {$imported} new template(s) found on Meta.";
+            }
+            return back()->with('success', $msg);
         } catch (\Throwable $e) {
             Log::error('Platform WhatsApp syncFromMeta error: ' . $e->getMessage());
             return back()->with('error', 'Sync failed: ' . $e->getMessage());
