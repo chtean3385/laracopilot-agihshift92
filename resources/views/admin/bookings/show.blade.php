@@ -181,7 +181,20 @@
                     </div>
                     <div class="space-y-3">
                         @foreach($allGroupedRooms as $gbEntry)
-                        @php $gbRoom = $gbEntry->room; @endphp
+                        @php
+                            $gbRoom = $gbEntry->room;
+                            // Primary booking stores the COMBINED total in total_amount.
+                            // Derive its individual room portion from rate × nights so
+                            // each card shows only that room's cost, not the group total.
+                            if ($gbEntry->id === $booking->id && $gbRoom) {
+                                $gbAmount = $booking->nights * $gbRoom->price_per_night
+                                          + (float)($booking->meal_cost ?? 0)
+                                          + (float)($booking->extra_bed_cost ?? 0);
+                            } else {
+                                // Child bookings already store their per-room amount
+                                $gbAmount = (float) $gbEntry->total_amount;
+                            }
+                        @endphp
                         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;">
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div style="width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -193,7 +206,7 @@
                                 </div>
                             </div>
                             <div style="text-align:right;">
-                                <div style="font-weight:700;font-size:14px;color:#059669;">₹{{ number_format($gbEntry->total_amount) }}</div>
+                                <div style="font-weight:700;font-size:14px;color:#059669;">₹{{ number_format($gbAmount) }}</div>
                                 <div style="font-size:11px;color:#94a3b8;">{{ $booking->nights }} night{{ $booking->nights != 1 ? 's' : '' }}</div>
                             </div>
                         </div>
@@ -254,6 +267,11 @@
                         } elseif ($booking->price_overridden) {
                             // Custom price set at booking — total_amount already includes any extra charges added later
                             $bBase = (float) $booking->total_amount;
+                        } elseif ($booking->groupedBookings->isNotEmpty()) {
+                            // Group booking: total_amount stores the pre-computed combined total for all rooms
+                            // (primary room + all child rooms + meal/extra-bed on primary).
+                            // Extra charges added post-booking are also incremented into total_amount.
+                            $bBase = (float) $booking->total_amount;
                         } elseif ($pType === 'per_slot' && $booking->timeSlot) {
                             $bBase = (float) $booking->timeSlot->base_price + $bExtraChargesTotal;
                         } else {
@@ -300,11 +318,20 @@
                             <span class="text-gray-500"><i class="fas fa-pen text-amber-400 mr-1"></i>Room charge <span class="text-xs text-amber-600">(custom price)</span></span>
                             <span class="font-medium">₹{{ number_format(max(0, (float)$booking->total_amount - $bExtraChargesTotal)) }}</span>
                         </div>
+                        @elseif($booking->groupedBookings->isNotEmpty())
+                        {{-- Group booking: combined total for all rooms (meal & extra beds already folded in) --}}
+                        @php
+                            $gbRoomsBase = max(0, (float)$booking->total_amount - $bExtraChargesTotal);
+                        @endphp
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500"><i class="fas fa-layer-group text-blue-400 mr-1"></i>{{ $booking->groupedBookings->count() + 1 }} rooms · {{ $booking->nights }} night{{ $booking->nights != 1 ? 's' : '' }}</span>
+                            <span class="font-medium">₹{{ number_format($gbRoomsBase) }}</span>
+                        </div>
                         @else
                         @php $roomCost = $booking->room ? $booking->nights * $booking->room->price_per_night : $booking->total_amount; @endphp
                         <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $booking->nights }} nights × ₹{{ number_format($booking->room ? $booking->room->price_per_night : 0) }}</span><span class="font-medium">₹{{ number_format($roomCost) }}</span></div>
                         @endif
-                        @if($booking->meal_cost > 0)
+                        @if(!$booking->groupedBookings->isNotEmpty() && $booking->meal_cost > 0)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500"><i class="fas fa-utensils text-amber-400 mr-1"></i>Meal Plan
                                 @if($booking->meal_breakfast)<span class="ml-1 text-xs bg-amber-100 text-amber-700 rounded px-1">B</span>@endif
@@ -314,7 +341,7 @@
                             <span class="font-medium text-amber-600">₹{{ number_format($booking->meal_cost) }}</span>
                         </div>
                         @endif
-                        @if($booking->extra_beds > 0)
+                        @if(!$booking->groupedBookings->isNotEmpty() && $booking->extra_beds > 0)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500"><i class="fas fa-bed text-blue-400 mr-1"></i>Extra Beds ({{ $booking->extra_beds }})</span>
                             <span class="font-medium text-blue-600">₹{{ number_format($booking->extra_bed_cost) }}</span>
