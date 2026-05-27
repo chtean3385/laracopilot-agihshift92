@@ -740,9 +740,11 @@
         body { top: 0 !important; }
         /* Hide every part of Google's visible UI — but NOT the element div itself,
            because display:none prevents the <select> from being injected into the DOM */
-        .skiptranslate { display: none !important; visibility: hidden !important; }
+        .goog-te-banner-frame.skiptranslate,
+        .goog-te-gadget.skiptranslate { display: none !important; visibility: hidden !important; }
         .goog-te-banner-frame,
         .goog-te-balloon-frame,
+        .goog-te-ftab-float,
         #goog-gt-tt { display: none !important; }
         /* Push the widget container off-screen so it's in the DOM but invisible */
         #google_translate_element {
@@ -753,8 +755,6 @@
             pointer-events: none !important;
         }
     </style>
-    {{-- Must NOT be display:none — Google needs to render into it so .goog-te-combo exists --}}
-    <div id="google_translate_element"></div>
     <script>
         // ── Google Translate helpers ────────────────────────────────────────────
         function googleTranslateElementInit() {
@@ -815,9 +815,11 @@
 
         document.addEventListener('DOMContentLoaded', _gtSyncBtn);
     </script>
-    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 </head>
 <body>
+{{-- GT widget must be in <body> (not <head>) so Google can inject .goog-te-combo into the DOM --}}
+<div id="google_translate_element"></div>
 
 <!-- Full-Screen Lock Overlay (trial/plan expired — state set by CheckTrialStatus middleware in session) -->
 @php
