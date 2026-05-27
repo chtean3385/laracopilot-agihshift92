@@ -135,6 +135,7 @@ class WaInbox extends Component
                 'demo'        => $lead->demo_datetime ?? '—',
                 'status'      => $statusLabel,
                 'raw_status'  => $lead->lead_status ?? 'new',
+                'lead_score'  => $lead->lead_score ?? null,
                 'step'        => $lead->current_step ?? '—',
                 'last_seen'   => $lead->last_message_at
                     ? \Carbon\Carbon::parse($lead->last_message_at)->diffForHumans()
@@ -559,7 +560,12 @@ class WaInbox extends Component
             ->orderByDesc('last_message_at')
             ->get();
 
-        $conversations = $contacts->map(function ($c) {
+        // Pre-fetch all whatsapp_leads keyed by phone for O(1) lookup
+        $leadsByPhone = DB::table('whatsapp_leads')
+            ->get()
+            ->keyBy('phone');
+
+        $conversations = $contacts->map(function ($c) use ($leadsByPhone) {
             $typeLabel = match($c->contact_type) {
                 'owner'   => 'Owner',
                 'guest'   => 'Guest',
@@ -576,15 +582,26 @@ class WaInbox extends Component
                 default   => '#f1f5f9',
             };
 
-            $hotelName = null;
-            if ($c->hotel_id) {
+            // Try to get hotel name from whatsapp_leads first (collected by bot),
+            // then fall back to hotel_id lookup (for owner/guest contacts)
+            $lead      = $leadsByPhone->get($c->phone);
+            $hotelName = $lead?->hotel_name ?? null;
+            if (!$hotelName && $c->hotel_id) {
                 $hotelName = DB::table('hotels')->where('id', $c->hotel_id)->value('name');
             }
+
+            // Role from whatsapp_leads answers (set by the bot)
+            $leadRole = $lead?->role ?? null;
+
+            // Lead status: prefer wa_contacts.lead_status (set after scoring),
+            // but also keep lead row's value in sync
+            $leadStatus = $c->lead_status ?? $lead?->lead_status ?? null;
 
             return (object) [
                 'phone'        => $c->phone,
                 'hotel_id'     => $c->hotel_id,
                 'hotel_name'   => $hotelName,
+                'lead_role'    => $leadRole,
                 'name'         => $c->display_name ?? ($hotelName ?? $c->phone),
                 'type'         => $c->contact_type,
                 'type_label'   => $typeLabel,
@@ -598,7 +615,7 @@ class WaInbox extends Component
                 'unread'       => (int)($c->unread_count ?? 0),
                 'consented'    => !empty($c->consented_at),
                 'subscribed'   => (bool)($c->subscribed ?? true),
-                'lead_status'  => $c->lead_status ?? null,
+                'lead_status'  => $leadStatus,
                 'bot_state'    => $c->bot_state ?? null,
                 'bot_service'  => $c->bot_service_interest ?? null,
                 'bot_budget'   => $c->bot_budget ?? null,

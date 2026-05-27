@@ -119,13 +119,7 @@ class WaLeadBot
 
             $upper = strtoupper(preg_replace('/\s+/', ' ', $text));
 
-            // VIDEO keyword — send video link without resetting step
-            if (in_array($upper, ['VIDEO', 'YOUTUBE', 'DEMO VIDEO', 'DEMO'])) {
-                self::send($platform, $phone, self::MSG_VIDEO);
-                return;
-            }
-
-            // OPT-OUT keywords
+            // OPT-OUT keywords (checked before video to ensure correct routing)
             if (in_array($upper, ['STOP', 'UNSUBSCRIBE', 'NO'])) {
                 self::optOut($phone, $platform);
                 return;
@@ -144,14 +138,28 @@ class WaLeadBot
             // Contacts that have already completed or opted out — ignore
             if (in_array($state, ['lead_completed', 'opted_out', 'nurture'])) return;
 
-            // New / unknown state — start the flow
-            if (empty($state) || !str_starts_with($state, 'lead_step_')) {
+            // VIDEO keyword — send video without resetting step (only when already in-flow)
+            // DEMO VIDEO (two words) always sends video; bare DEMO starts the flow
+            if (in_array($upper, ['VIDEO', 'YOUTUBE', 'DEMO VIDEO'])) {
+                self::send($platform, $phone, self::MSG_VIDEO);
+                return;
+            }
+
+            // Entry triggers: HI / HELLO / DEMO start the flow (or any unrecognised state)
+            $isEntryTrigger = in_array($upper, ['HI', 'HELLO', 'HEY', 'DEMO']);
+            $inFlow         = str_starts_with($state, 'lead_step_');
+
+            // New / unknown state or explicit entry trigger — start the flow
+            if (empty($state) || (!$inFlow && $isEntryTrigger)) {
                 self::send($platform, $phone, self::MSG_GREETING);
                 self::setState($phone, 'lead_step_1');
                 // Create or initialize the leads row
                 self::upsertLead($phone, ['current_step' => 'step_1', 'last_message_at' => now()]);
                 return;
             }
+
+            // If not in flow and not an entry trigger, silently ignore to avoid confusing partial inputs
+            if (!$inFlow) return;
 
             // Process each step
             match ($state) {
@@ -317,22 +325,29 @@ class WaLeadBot
         $timeline = strtolower($lead?->implementation_timeline ?? '');
 
         $isOwner     = str_contains($role, 'owner');
+        $isManager   = str_contains($role, 'manager');
         $isImmediate = str_contains($timeline, 'immediate') || str_contains($timeline, 'asap');
-        $isBig       = $rooms >= 20;
+        $isBig       = $rooms >= 20;   // 20+ rooms
+        $isMedium    = $rooms >= 5 && $rooms < 20; // 5–19 rooms
 
-        $score = 'cold';
-        if ($isOwner && $isImmediate) {
+        // HOT = owner + 20+ rooms + immediate
+        // WARM = manager OR 5–19 rooms (and not hot)
+        // COLD = everything else
+        if ($isOwner && $isBig && $isImmediate) {
             $score = 'hot';
-        } elseif ($isOwner || $rooms >= 5) {
+        } elseif ($isManager || $isMedium) {
             $score = 'warm';
+        } else {
+            $score = 'cold';
         }
 
-        // Persist final step
+        // Persist final step with both lead_status and lead_score
         self::upsertLead($phone, [
-            'demo_datetime'          => $demo,
-            'lead_status'            => $score,
-            'current_step'           => 'completed',
-            'last_message_at'        => now(),
+            'demo_datetime'   => $demo,
+            'lead_status'     => $score,
+            'lead_score'      => $score,
+            'current_step'    => 'completed',
+            'last_message_at' => now(),
         ]);
 
         // Update wa_contacts with lead score so inbox shows the badge

@@ -82,11 +82,17 @@
                                 <span style="background:#25d366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;flex-shrink:0;min-width:18px;text-align:center;">{{ $convo->unread }}</span>
                                 @endif
                             </div>
-                            @if($convo->hotel_name)
-                            <div style="font-size:10px;color:#94a3b8;">{{ $convo->hotel_name }}</div>
-                            @else
-                            <div style="font-size:10px;color:#94a3b8;">{{ $convo->phone }}</div>
-                            @endif
+                            <div style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                                @if($convo->hotel_name)
+                                <span>{{ $convo->hotel_name }}</span>
+                                @else
+                                <span>{{ $convo->phone }}</span>
+                                @endif
+                                @if($convo->lead_role)
+                                <span style="color:#cbd5e1;">·</span>
+                                <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;background:#f1f5f9;color:#64748b;">{{ $convo->lead_role }}</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -605,8 +611,8 @@
                     <div style="font-size:12px;margin-top:4px;line-height:1.5;">This contact hasn't started the qualification flow, or hasn't answered any questions yet.</div>
                 </div>
                 @else
-                {{-- Lead status badge --}}
-                <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                {{-- Lead status + score badges --}}
+                <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     @php
                         $rawStatus = $leadInfo['raw_status'] ?? 'new';
                         $statusBg  = match($rawStatus) {
@@ -619,11 +625,26 @@
                             'nurture'   => '#64748b', 'opted_out' => '#94a3b8', 'completed' => '#15803d',
                             default     => '#64748b',
                         };
+                        $scoreRaw   = $leadInfo['lead_score'] ?? null;
+                        $scoreBg    = match($scoreRaw) {
+                            'hot'  => '#fee2e2', 'warm' => '#fef3c7', 'cold' => '#eff6ff', default => null,
+                        };
+                        $scoreColor = match($scoreRaw) {
+                            'hot'  => '#dc2626', 'warm' => '#d97706', 'cold' => '#3b82f6', default => null,
+                        };
+                        $scoreLabel = match($scoreRaw) {
+                            'hot'  => '🔥 HOT LEAD', 'warm' => '🟡 WARM LEAD', 'cold' => '❄️ COLD LEAD', default => null,
+                        };
                     @endphp
-                    <span style="font-size:14px;font-weight:800;padding:4px 12px;border-radius:8px;background:{{ $statusBg }};color:{{ $statusColor }};">
+                    <span style="font-size:13px;font-weight:800;padding:4px 12px;border-radius:8px;background:{{ $statusBg }};color:{{ $statusColor }};">
                         {{ $leadInfo['status'] }}
                     </span>
-                    <span style="font-size:11px;color:#94a3b8;">Progress: {{ $leadInfo['step'] }}</span>
+                    @if($scoreLabel)
+                    <span style="font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px;background:{{ $scoreBg }};color:{{ $scoreColor }};border:1px solid {{ $scoreColor }}33;">
+                        {{ $scoreLabel }}
+                    </span>
+                    @endif
+                    <span style="font-size:11px;color:#94a3b8;margin-left:auto;">Step: {{ $leadInfo['step'] }}</span>
                 </div>
 
                 {{-- Fields grid --}}

@@ -415,6 +415,17 @@ class WhatsAppWebhookController extends Controller
             'updated_at'      => now(),
         ]);
 
+        // Also update whatsapp_leads if this contact has a lead row
+        $leadExists = DB::table('whatsapp_leads')->where('phone', $phone)->exists();
+        if ($leadExists) {
+            DB::table('whatsapp_leads')->where('phone', $phone)->update([
+                'opt_out'         => true,
+                'lead_status'     => 'opted_out',
+                'last_message_at' => now(),
+                'updated_at'      => now(),
+            ]);
+        }
+
         $msg = "You have been *unsubscribed* from Dreams Technology messages. 🚫\n\nWe will no longer send you proactive messages.\n\n_Reply *START* anytime to re-subscribe._";
         $this->botSend($platform, $phone, $msg);
         Log::info("WA opt-out: {$phone} has unsubscribed.");
