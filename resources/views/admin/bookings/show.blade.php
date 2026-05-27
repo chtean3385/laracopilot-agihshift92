@@ -170,6 +170,39 @@
                             @endif
                         </div>
                     </div>
+                    @elseif($booking->groupedBookings->isNotEmpty())
+                    {{-- Group booking: primary room + all child rooms --}}
+                    @php $allGroupedRooms = collect([$booking])->concat($booking->groupedBookings); @endphp
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:13px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:3px 10px;border-radius:20px;">
+                            <i class="fas fa-layer-group" style="font-size:11px;margin-right:4px;"></i>
+                            Group Booking · {{ $allGroupedRooms->count() }} Rooms
+                        </span>
+                    </div>
+                    <div class="space-y-3">
+                        @foreach($allGroupedRooms as $gbEntry)
+                        @php $gbRoom = $gbEntry->room; @endphp
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800;font-size:15px;color:#1e293b;">Room {{ $gbRoom?->room_number ?? '—' }}</div>
+                                    <div style="font-size:12px;color:#64748b;">{{ ucfirst($gbRoom?->type ?? '') }}{{ $gbRoom?->floor ? ' · Floor '.$gbRoom->floor : '' }}</div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:700;font-size:14px;color:#059669;">₹{{ number_format($gbEntry->total_amount) }}</div>
+                                <div style="font-size:11px;color:#94a3b8;">{{ $booking->nights }} night{{ $booking->nights != 1 ? 's' : '' }}</div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <div style="margin-top:12px;padding:10px 12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:13px;font-weight:700;color:#15803d;">Combined Total</span>
+                        <span style="font-size:16px;font-weight:900;color:#15803d;">₹{{ number_format($booking->total_amount) }}</span>
+                    </div>
                     @elseif($booking->room)
                     <div class="text-4xl font-black text-gray-800 mb-1">{{ $booking->room?->room_number }}</div>
                     <span class="badge-{{ $booking->room?->type_color }}">{{ ucfirst($booking->room?->type ?? '') }}</span>

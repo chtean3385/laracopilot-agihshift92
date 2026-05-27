@@ -276,6 +276,24 @@
                                 <span class="lv-room-pill-num">WH</span>
                             </div>
                             <div class="lv-secondary" style="margin-top:4px;color:#7e22ce;font-weight:600;">Whole Hotel</div>
+                            @elseif($booking->groupedBookings->isNotEmpty())
+                            {{-- Group booking: show all room numbers --}}
+                            <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                                <div class="lv-room-pill" style="background:#dbeafe;color:#1d4ed8;">
+                                    <span class="lv-room-pill-label">RM</span>
+                                    <span class="lv-room-pill-num">{{ $booking->room?->room_number }}</span>
+                                </div>
+                                @foreach($booking->groupedBookings as $gbChild)
+                                <div class="lv-room-pill" style="background:#dbeafe;color:#1d4ed8;">
+                                    <span class="lv-room-pill-label">RM</span>
+                                    <span class="lv-room-pill-num">{{ $gbChild->room?->room_number }}</span>
+                                </div>
+                                @endforeach
+                            </div>
+                            <div class="lv-secondary" style="margin-top:4px;color:#1d4ed8;font-weight:600;">
+                                <i class="fas fa-layer-group" style="font-size:10px;"></i>
+                                {{ 1 + $booking->groupedBookings->count() }} rooms
+                            </div>
                             @elseif($booking->room)
                             <div class="lv-room-pill">
                                 <span class="lv-room-pill-label">RM</span>

@@ -34,7 +34,7 @@ class Booking extends Model
     }
 
     protected $fillable = [
-        'hotel_id',
+        'hotel_id', 'group_booking_id',
         'booking_number', 'customer_id', 'room_id',
         'time_slot_id', 'booking_date', 'slot_start_time', 'slot_end_time', 'hours_booked',
         'check_in_date', 'check_out_date',
@@ -78,6 +78,35 @@ class Booking extends Model
     public function room()
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function groupedBookings()
+    {
+        return $this->hasMany(Booking::class, 'group_booking_id')->with('room');
+    }
+
+    public function parentBooking()
+    {
+        return $this->belongsTo(Booking::class, 'group_booking_id');
+    }
+
+    public function isGroupPrimary(): bool
+    {
+        return is_null($this->group_booking_id) && $this->groupedBookings()->exists();
+    }
+
+    public function allRooms(): \Illuminate\Support\Collection
+    {
+        $rooms = collect();
+        if ($this->room) {
+            $rooms->push($this->room);
+        }
+        foreach ($this->groupedBookings as $child) {
+            if ($child->room) {
+                $rooms->push($child->room);
+            }
+        }
+        return $rooms;
     }
 
     public function payments()

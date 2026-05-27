@@ -304,8 +304,9 @@ class BookingController extends Controller
             }
         }
 
-        $bookingPrefix  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
-        $bookingNumber  = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
+        $bookingPrefix   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
+        $bookingNumber   = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
+        $extraRoomTotals = []; // populated in per_night block; used by group-booking loop below
 
         if ($pricingType === 'per_slot') {
             $slot          = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
@@ -369,7 +370,18 @@ class BookingController extends Controller
                            + ($mealDinner    ? ($room->dinner_price    * $nights) : 0);
             $extraBeds     = $room->has_extra_bed ? max(0, (int) $request->input('extra_beds', 0)) : 0;
             $extraBedCost  = $room->has_extra_bed ? ($extraBeds * ($room->extra_bed_price ?? 0) * $nights) : 0;
-            $totalAmount   = $nights * $room->price_per_night + $mealCost + $extraBedCost;
+            $primaryRoomTotal = $nights * $room->price_per_night + $mealCost + $extraBedCost;
+
+            // Pre-calculate each extra room's individual amount so we can sum into one combined total
+            $extraRoomTotals = [];
+            foreach (array_slice($roomIds, 1) as $extraRoomId) {
+                $extraRoom = Room::find((int) $extraRoomId);
+                if ($extraRoom) {
+                    $extraRoomTotals[(int) $extraRoomId] = $nights * ($extraRoom->price_per_night ?? 0);
+                }
+            }
+            $totalAmount   = $primaryRoomTotal + array_sum($extraRoomTotals);
+
             $advancePayment= $validated['advance_payment'] ?? 0;
             $bookingData   = [
                 'booking_number'  => $bookingNumber,
@@ -446,7 +458,9 @@ class BookingController extends Controller
             $room->update(['status' => 'occupied']);
         }
 
-        // ── Multi-room: create additional bookings for rooms 2, 3, … ─────────
+        // ── Group booking: link extra rooms to primary via group_booking_id ──────
+        // All payment/billing is on the primary booking. Child bookings exist only
+        // to track room occupancy and check-in/out state for each additional room.
         $allNumbers = [$booking->booking_number];
         if (count($roomIds) > 1) {
             foreach (array_slice($roomIds, 1) as $extraRoomId) {
@@ -454,15 +468,17 @@ class BookingController extends Controller
                 if (!$extraRoom) continue;
                 $extraNum  = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
                 $extraData = $bookingData;
-                $extraData['booking_number']  = $extraNum;
-                $extraData['room_id']         = (int) $extraRoomId;
-                $extraData['advance_payment'] = 0;    // advance only on the first room
-                $extraData['price_overridden']= false;
-                if ($pricingType === 'per_night') {
-                    $extraData['total_amount'] = max(1, Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']))) * ($extraRoom->price_per_night ?? 0);
-                }
-                $extraData['balance_due']    = $extraData['total_amount'];
-                $extraData['payment_status'] = 'pending';
+                $extraData['group_booking_id'] = $booking->id;  // link to primary
+                $extraData['booking_number']   = $extraNum;
+                $extraData['room_id']          = (int) $extraRoomId;
+                $extraData['advance_payment']  = 0;             // all payment on primary
+                $extraData['price_overridden'] = false;
+                // Store per-room amount for display in the rooms breakdown
+                $extraData['total_amount']     = $pricingType === 'per_night'
+                    ? ($extraRoomTotals[(int) $extraRoomId] ?? 0)
+                    : 0;
+                $extraData['balance_due']      = 0;             // billing handled by primary
+                $extraData['payment_status']   = 'pending';
                 $extraBooking = Booking::create($extraData);
                 $allNumbers[] = $extraBooking->booking_number;
                 if ($pricingType === 'per_night') {
@@ -477,7 +493,7 @@ class BookingController extends Controller
         WhatsAppService::sendForEvent('booking.created', $booking);
         WhatsAppService::sendOwnerAlert($booking);
         $successMsg = count($allNumbers) > 1
-            ? count($allNumbers) . ' bookings created: ' . implode(', ', $allNumbers)
+            ? 'Group booking created for ' . count($allNumbers) . ' rooms! #' . $booking->booking_number
             : 'Booking created! #' . $booking->booking_number;
         return redirect()->route('bookings.show', $booking->id)->with('success', $successMsg);
     }
@@ -485,7 +501,7 @@ class BookingController extends Controller
     public function show($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests', 'timeSlot', 'bookingAddOns', 'extraCharges', 'paymentReferences'])->findOrFail($id);
+        $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests', 'timeSlot', 'bookingAddOns', 'extraCharges', 'paymentReferences', 'groupedBookings.room'])->findOrFail($id);
         $rooms   = Room::where('status', '!=', 'maintenance')->orderBy('room_number')->get();
         return view('admin.bookings.show', compact('booking', 'rooms'));
     }
@@ -740,8 +756,17 @@ class BookingController extends Controller
     public function destroy($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
-        $booking = Booking::with('room')->findOrFail($id);
+        $booking = Booking::with(['room', 'groupedBookings.room'])->findOrFail($id);
         $number  = $booking->booking_number;
+
+        // Cancel all child bookings in a group booking and free their rooms
+        foreach ($booking->groupedBookings as $childBooking) {
+            $childBooking->update(['status' => 'cancelled']);
+            if ($childBooking->room) {
+                $childBooking->room->update(['status' => 'available']);
+            }
+        }
+
         $booking->update(['status' => 'cancelled']);
         if ($booking->room) {
             $booking->room->update(['status' => 'available']);

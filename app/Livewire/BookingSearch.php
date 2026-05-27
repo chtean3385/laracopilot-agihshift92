@@ -68,8 +68,17 @@ class BookingSearch extends Component
             return;
         }
 
-        $booking = Booking::findOrFail($id);
+        $booking = Booking::with('groupedBookings.room')->findOrFail($id);
         $number  = $booking->booking_number;
+
+        // Cancel all child (grouped) bookings too and free their rooms
+        foreach ($booking->groupedBookings as $child) {
+            $child->update(['status' => 'cancelled']);
+            if ($child->room) {
+                $child->room->update(['status' => 'available']);
+            }
+        }
+
         $booking->update(['status' => 'cancelled']);
 
         if ($booking->room) {
@@ -82,7 +91,10 @@ class BookingSearch extends Component
 
     public function render()
     {
-        $query = Booking::with(['customer', 'room', 'timeSlot']);
+        // Only show primary bookings — child bookings (part of a group) are hidden
+        // from the list and accessible via the primary booking's show page.
+        $query = Booking::with(['customer', 'room', 'timeSlot', 'groupedBookings.room'])
+            ->whereNull('group_booking_id');
 
         if ($this->status) {
             $query->where('status', $this->status);

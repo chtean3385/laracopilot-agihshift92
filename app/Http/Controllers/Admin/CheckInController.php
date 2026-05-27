@@ -17,6 +17,7 @@ class CheckInController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $query = Booking::with(['customer', 'room'])
             ->where('status', 'confirmed')
+            ->whereNull('group_booking_id')  // hide child bookings; check in via primary
             ->whereDate('check_in_date', '<=', Carbon::today())
             ->orderBy('check_in_date');
         if ($request->search) {

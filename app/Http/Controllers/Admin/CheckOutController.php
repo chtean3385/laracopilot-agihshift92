@@ -19,6 +19,7 @@ class CheckOutController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $query = Booking::with(['customer', 'room'])
             ->where('status', 'checked_in')
+            ->whereNull('group_booking_id')  // hide child bookings; check out via primary
             ->orderBy('check_out_date');
         if ($request->search) {
             $s = $request->search;
@@ -153,7 +154,7 @@ class CheckOutController extends Controller
             'override_nights' => 'nullable|integer|min:1|max:365',
         ]);
 
-        $booking = Booking::with(['room', 'payments', 'customer', 'extraCharges', 'bookingAddOns'])->findOrFail($bookingId);
+        $booking = Booking::with(['room', 'payments', 'customer', 'extraCharges', 'bookingAddOns', 'groupedBookings.room'])->findOrFail($bookingId);
 
         if ($request->final_payment > 0) {
             Payment::create([
@@ -209,9 +210,11 @@ class CheckOutController extends Controller
         // Compute true base (same logic as show())
         $extraChargesTotal = $booking->extraCharges->sum('total_price');
         $pricingTypeProc   = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+        $isGroupBooking = $booking->groupedBookings->isNotEmpty();
+
         if ($pricingTypeProc === 'per_night' && !$booking->is_whole_hotel) {
-            if ($booking->price_overridden) {
-                // Custom price was set at booking time — honour it exactly, never recalculate from room tariff
+            if ($booking->price_overridden || $isGroupBooking) {
+                // Custom price OR group booking (combined total stored on primary) — use as-is
                 $trueBase = (float) $booking->total_amount;
             } else {
                 $checkinDateProc  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
@@ -249,6 +252,19 @@ class CheckOutController extends Controller
 
         if ($booking->room) {
             $booking->room->update(['status' => 'dirty']);
+        }
+
+        // Also check out child bookings in a group booking and free their rooms
+        foreach ($booking->groupedBookings as $childBooking) {
+            $childBooking->update([
+                'status'             => 'checked_out',
+                'actual_checkout_at' => now(),
+                'payment_status'     => 'paid', // billing covered by primary
+                'balance_due'        => 0,
+            ]);
+            if ($childBooking->room) {
+                $childBooking->room->update(['status' => 'dirty']);
+            }
         }
 
         $invoice = Invoice::create([
