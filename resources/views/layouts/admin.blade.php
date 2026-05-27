@@ -734,21 +734,27 @@
     </style>
     @stack('styles')
 
-    {{-- ── Google Translate: hide default toolbar & floating widget ── --}}
+    {{-- ── Google Translate: hide default toolbar, keep widget functional ── --}}
     <style>
-        /* Prevent Google's bar from pushing the page down */
+        /* Stop Google's bar from shifting the page down */
         body { top: 0 !important; }
-        .skiptranslate { display: none !important; }
-        #goog-gt-tt,
-        .goog-te-balloon-frame { display: none !important; }
-        .goog-te-banner-frame { display: none !important; }
-        /* Hide the ugly select dropdown Google renders */
-        #google_translate_element { display: none !important; }
-        /* Don't let Google's iframe affect layout */
-        iframe.goog-te-menu-frame { box-shadow: none !important; }
+        /* Hide every part of Google's visible UI — but NOT the element div itself,
+           because display:none prevents the <select> from being injected into the DOM */
+        .skiptranslate { display: none !important; visibility: hidden !important; }
+        .goog-te-banner-frame,
+        .goog-te-balloon-frame,
+        #goog-gt-tt { display: none !important; }
+        /* Push the widget container off-screen so it's in the DOM but invisible */
+        #google_translate_element {
+            position: fixed !important;
+            top: -999px !important;
+            left: -999px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
     </style>
-    {{-- Hidden element Google Translate attaches to --}}
-    <div id="google_translate_element" style="display:none;"></div>
+    {{-- Must NOT be display:none — Google needs to render into it so .goog-te-combo exists --}}
+    <div id="google_translate_element"></div>
     <script>
         // ── Google Translate helpers ────────────────────────────────────────────
         function googleTranslateElementInit() {
@@ -756,19 +762,18 @@
                 pageLanguage: 'en',
                 includedLanguages: 'en,hi',
                 autoDisplay: false,
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
             }, 'google_translate_element');
-            // Give the widget a moment to inject its <select>, then sync button state
-            setTimeout(_gtSyncBtn, 400);
+            // Sync the pill button after widget has had time to inject its <select>
+            setTimeout(_gtSyncBtn, 600);
         }
 
-        // Read the googtrans cookie (/en/hi or /en/en) to detect active language
+        // Read googtrans cookie — value is like "/en/hi"
         function _gtReadCookie() {
             var m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
             if (!m) return 'en';
             var parts = decodeURIComponent(m[1]).split('/');
             var lang = parts[parts.length - 1] || 'en';
-            return lang === 'en' ? 'en' : lang;
+            return (lang && lang !== 'en') ? lang : 'en';
         }
 
         var _gtCurrentLang = _gtReadCookie();
@@ -777,41 +782,37 @@
             var btn = document.getElementById('gt-toggle-btn');
             if (!btn) return;
             if (_gtCurrentLang === 'hi') {
-                btn.innerHTML = '<span style="font-family:system-ui,sans-serif;">EN</span>'
-                    + '<span style="opacity:.4;margin:0 2px;">|</span>'
-                    + '<span style="font-weight:900;color:#ef4444;font-family:system-ui,sans-serif;">हिं ✓</span>';
+                btn.innerHTML = 'EN <span style="opacity:.4;">|</span> <b style="color:#ef4444;">हिं ✓</b>';
             } else {
-                btn.innerHTML = '<span style="font-weight:900;color:#0891b2;font-family:system-ui,sans-serif;">EN ✓</span>'
-                    + '<span style="opacity:.4;margin:0 2px;">|</span>'
-                    + '<span style="font-family:system-ui,sans-serif;">हिं</span>';
+                btn.innerHTML = '<b style="color:#0891b2;">EN ✓</b> <span style="opacity:.4;">|</span> हिं';
             }
         }
 
-        // Drive Google's hidden <select class="goog-te-combo"> directly — this is
-        // the only reliable programmatic API exposed by TranslateElement.
+        // Drive Google's .goog-te-combo select — the only reliable public API.
+        // Uses old-style HTMLEvents for maximum browser compat.
         function _gtApply(lang) {
             var sel = document.querySelector('.goog-te-combo');
             if (!sel) {
-                // Widget not ready yet — retry
-                setTimeout(function(){ _gtApply(lang); }, 250);
+                setTimeout(function () { _gtApply(lang); }, 300);
                 return;
             }
             sel.value = lang;
-            sel.dispatchEvent(new Event('change'));
+            var ev = document.createEvent('HTMLEvents');
+            ev.initEvent('change', true, true);
+            sel.dispatchEvent(ev);
         }
 
         function _gtToggle() {
             if (_gtCurrentLang !== 'hi') {
-                _gtApply('hi');
                 _gtCurrentLang = 'hi';
+                _gtApply('hi');
             } else {
-                _gtApply('en');
                 _gtCurrentLang = 'en';
+                _gtApply('en');
             }
             _gtSyncBtn();
         }
 
-        // On every page load: sync button to cookie state (persists across navigations)
         document.addEventListener('DOMContentLoaded', _gtSyncBtn);
     </script>
     <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
