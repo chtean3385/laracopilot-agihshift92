@@ -253,11 +253,13 @@ class WhatsAppWebhookController extends Controller
                     }
                 }
 
-                // Bot flow disabled
-                // $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
-                // if ($platform && ($contact?->subscribed ?? true)) {
-                //     $this->runBotFlow($phone, $text, $platform);
-                // }
+                // Lead qualification bot — runs for all subscribed contacts
+                if ($platform && $text !== null) {
+                    $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
+                    if ($contact?->subscribed ?? true) {
+                        \App\Services\WaLeadBot::handle($phone, $text, $platform);
+                    }
+                }
             }
         }
 

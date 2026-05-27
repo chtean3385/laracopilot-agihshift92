@@ -32,6 +32,7 @@ class WhatsAppController extends Controller
             'webhook_verify_token'   => 'nullable|string|max:255',
             'is_saas_active'         => 'nullable|boolean',
             'skip_signature_check'   => 'nullable|boolean',
+            'admin_notify_phone'     => 'nullable|string|max:30',
         ]);
 
         $data['is_saas_active']       = $request->boolean('is_saas_active');

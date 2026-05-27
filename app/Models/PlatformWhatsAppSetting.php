@@ -18,6 +18,7 @@ class PlatformWhatsAppSetting extends Model
         'webhook_verify_token',
         'is_saas_active',
         'skip_signature_check',
+        'admin_notify_phone',
     ];
 
     protected $casts = [

@@ -1,3 +1,17 @@
+<style>
+@keyframes wa-hot-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+    70%  { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+@keyframes wa-hot-badge-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+}
+.wa-hot-row      { animation: wa-hot-pulse 2s infinite; }
+.wa-hot-badge    { animation: wa-hot-badge-blink 1.2s ease-in-out infinite; }
+</style>
+
 <div wire:poll.4000ms style="display:flex;height:calc(100vh - 140px);background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;position:relative;">
 
     {{-- ── Conversations List ─────────────────────────────────────────── --}}
@@ -27,44 +41,63 @@
 
         <div style="flex:1;overflow-y:auto;">
             @forelse($conversations as $convo)
-            @php $isSelected = $selectedContact && $selectedContact->phone === $convo->phone;
-                 $isHot      = $convo->lead_status === 'hot'; @endphp
-            <div wire:click="selectContact('{{ $convo->phone }}')"
-                 style="padding:11px 13px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;
-                        {{ $isSelected ? 'background:#ede9fe;border-left:3px solid #7c3aed;' : ($isHot ? 'background:#fff5f5;border-left:3px solid #ef4444;' : 'border-left:3px solid transparent;') }}"
-                 onmouseover="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='#f8fafc'"
-                 onmouseout="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='{{ $isHot ? '#fff5f5' : '' }}'">
-                <div style="display:flex;align-items:flex-start;gap:9px;">
-                    <div style="position:relative;flex-shrink:0;">
-                        <div style="width:40px;height:40px;background:{{ $convo->type_color }};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;opacity:.9;">
-                            {{ mb_strtoupper(mb_substr($convo->name, 0, 1)) }}
+            @php
+                $isSelected = $selectedContact && $selectedContact->phone === $convo->phone;
+                $isHot      = $convo->lead_status === 'hot';
+                $isWarm     = $convo->lead_status === 'warm';
+                $isCold     = $convo->lead_status === 'cold';
+                $isNurture  = $convo->lead_status === 'nurture';
+            @endphp
+            <div style="position:relative;">
+                <div wire:click="selectContact('{{ $convo->phone }}')"
+                     class="{{ $isHot ? 'wa-hot-row' : '' }}"
+                     style="padding:11px 13px;padding-right:36px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;
+                            {{ $isSelected ? 'background:#ede9fe;border-left:3px solid #7c3aed;' : ($isHot ? 'background:#fff5f5;border-left:3px solid #ef4444;' : 'border-left:3px solid transparent;') }}"
+                     onmouseover="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='#f8fafc'"
+                     onmouseout="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='{{ $isHot ? '#fff5f5' : '' }}'">
+                    <div style="display:flex;align-items:flex-start;gap:9px;">
+                        <div style="position:relative;flex-shrink:0;">
+                            <div style="width:40px;height:40px;background:{{ $convo->type_color }};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;opacity:.9;">
+                                {{ mb_strtoupper(mb_substr($convo->name, 0, 1)) }}
+                            </div>
+                            <span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;border:2px solid #fff;background:{{ $convo->consented ? '#25d366' : '#e2e8f0' }};"></span>
                         </div>
-                        <span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;border:2px solid #fff;background:{{ $convo->consented ? '#25d366' : '#e2e8f0' }};"></span>
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:2px;">
-                            <span style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">
-                                @if($isHot)<span style="font-size:13px;margin-right:2px;">🔥</span>@endif
-                                {{ $convo->name }}
-                            </span>
-                            <span style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">{{ $convo->time_ago }}</span>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
-                            <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:{{ $convo->type_bg }};color:{{ $convo->type_color }};flex-shrink:0;letter-spacing:.3px;">{{ strtoupper($convo->type_label) }}</span>
-                            @if($isHot)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fee2e2;color:#dc2626;flex-shrink:0;">HOT</span>@endif
-                            @if(!$convo->subscribed)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f1f5f9;color:#94a3b8;flex-shrink:0;">STOPPED</span>@endif
-                            <span style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">{{ $convo->preview }}</span>
-                            @if($convo->unread > 0)
-                            <span style="background:#25d366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;flex-shrink:0;min-width:18px;text-align:center;">{{ $convo->unread }}</span>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:2px;">
+                                <span style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">
+                                    @if($isHot)<span class="wa-hot-badge" style="font-size:13px;margin-right:2px;">🔥</span>@endif
+                                    {{ $convo->name }}
+                                </span>
+                                <span style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">{{ $convo->time_ago }}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                                <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:{{ $convo->type_bg }};color:{{ $convo->type_color }};flex-shrink:0;letter-spacing:.3px;">{{ strtoupper($convo->type_label) }}</span>
+                                @if($isHot)<span class="wa-hot-badge" style="font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;background:#fee2e2;color:#dc2626;flex-shrink:0;border:1px solid #fca5a5;">🔥 HOT</span>@endif
+                                @if($isWarm)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#fef3c7;color:#d97706;flex-shrink:0;">🟡 WARM</span>@endif
+                                @if($isCold)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#eff6ff;color:#3b82f6;flex-shrink:0;">❄️ COLD</span>@endif
+                                @if($isNurture)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f8fafc;color:#64748b;flex-shrink:0;">💤 NURTURE</span>@endif
+                                @if(!$convo->subscribed)<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#f1f5f9;color:#94a3b8;flex-shrink:0;">STOPPED</span>@endif
+                                <span style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">{{ $convo->preview }}</span>
+                                @if($convo->unread > 0)
+                                <span style="background:#25d366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;flex-shrink:0;min-width:18px;text-align:center;">{{ $convo->unread }}</span>
+                                @endif
+                            </div>
+                            @if($convo->hotel_name)
+                            <div style="font-size:10px;color:#94a3b8;">{{ $convo->hotel_name }}</div>
+                            @else
+                            <div style="font-size:10px;color:#94a3b8;">{{ $convo->phone }}</div>
                             @endif
                         </div>
-                        @if($convo->hotel_name)
-                        <div style="font-size:10px;color:#94a3b8;">{{ $convo->hotel_name }}</div>
-                        @else
-                        <div style="font-size:10px;color:#94a3b8;">{{ $convo->phone }}</div>
-                        @endif
                     </div>
                 </div>
+                {{-- ℹ️ Lead info button — positioned absolutely to avoid triggering selectContact --}}
+                <button wire:click.stop="openLeadInfo('{{ $convo->phone }}')"
+                        title="View lead details"
+                        style="position:absolute;top:50%;right:8px;transform:translateY(-50%);width:22px;height:22px;background:{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }};border:1px solid {{ $convo->lead_status ? '#c4b5fd' : '#e2e8f0' }};border-radius:6px;cursor:pointer;color:{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }};display:flex;align-items:center;justify-content:center;font-size:11px;z-index:10;transition:all .15s;"
+                        onmouseover="this.style.background='#ede9fe';this.style.color='#7c3aed';this.style.borderColor='#a78bfa'"
+                        onmouseout="this.style.background='{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }}';this.style.color='{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }}'">
+                    <i class="fas fa-info" style="font-size:9px;"></i>
+                </button>
             </div>
             @empty
             <div style="padding:40px 20px;text-align:center;color:#94a3b8;">
@@ -535,6 +568,93 @@
                     </button>
                 </div>
 
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Lead Info Popup Modal ────────────────────────────────────────── --}}
+    @if($showLeadInfo)
+    <div style="position:absolute;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);"
+         wire:click.self="closeLeadInfo">
+        <div style="background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:420px;max-width:90vw;overflow:hidden;">
+            {{-- Header --}}
+            <div style="padding:16px 20px;background:linear-gradient(135deg,#7c3aed,#5b21b6);display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-info" style="color:#fff;font-size:13px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:14px;font-weight:800;color:#fff;">Lead Details</div>
+                        <div style="font-size:11px;color:rgba(255,255,255,.7);">{{ $leadInfoPhone }}</div>
+                    </div>
+                </div>
+                <button wire:click="closeLeadInfo"
+                        style="width:28px;height:28px;background:rgba(255,255,255,.2);border:none;border-radius:8px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-times" style="font-size:11px;"></i>
+                </button>
+            </div>
+
+            {{-- Body --}}
+            <div style="padding:18px 20px;">
+                @if(!($leadInfo['found'] ?? false))
+                <div style="text-align:center;padding:30px 0;color:#94a3b8;">
+                    <i class="fas fa-user-clock" style="font-size:32px;opacity:.4;display:block;margin-bottom:10px;"></i>
+                    <div style="font-size:14px;font-weight:600;color:#64748b;">No lead data yet</div>
+                    <div style="font-size:12px;margin-top:4px;line-height:1.5;">This contact hasn't started the qualification flow, or hasn't answered any questions yet.</div>
+                </div>
+                @else
+                {{-- Lead status badge --}}
+                <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                    @php
+                        $rawStatus = $leadInfo['raw_status'] ?? 'new';
+                        $statusBg  = match($rawStatus) {
+                            'hot'       => '#fee2e2', 'warm' => '#fef3c7', 'cold' => '#eff6ff',
+                            'nurture'   => '#f8fafc', 'opted_out' => '#f1f5f9', 'completed' => '#dcfce7',
+                            default     => '#f8fafc',
+                        };
+                        $statusColor = match($rawStatus) {
+                            'hot'       => '#dc2626', 'warm' => '#d97706', 'cold' => '#3b82f6',
+                            'nurture'   => '#64748b', 'opted_out' => '#94a3b8', 'completed' => '#15803d',
+                            default     => '#64748b',
+                        };
+                    @endphp
+                    <span style="font-size:14px;font-weight:800;padding:4px 12px;border-radius:8px;background:{{ $statusBg }};color:{{ $statusColor }};">
+                        {{ $leadInfo['status'] }}
+                    </span>
+                    <span style="font-size:11px;color:#94a3b8;">Progress: {{ $leadInfo['step'] }}</span>
+                </div>
+
+                {{-- Fields grid --}}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                    @php
+                        $fields = [
+                            ['fas fa-user',         '#7c3aed', 'Name',           $leadInfo['name']],
+                            ['fas fa-hotel',         '#0891b2', 'Hotel / Resort', $leadInfo['hotel_name']],
+                            ['fas fa-bed',           '#059669', 'Rooms',          $leadInfo['room_count']],
+                            ['fas fa-laptop',        '#d97706', 'Current System', $leadInfo['software']],
+                            ['fas fa-id-badge',      '#6366f1', 'Role',           $leadInfo['role']],
+                            ['fas fa-map-marker-alt','#dc2626', 'City',           $leadInfo['city']],
+                            ['fas fa-clock',         '#0891b2', 'Timeline',       $leadInfo['timeline']],
+                            ['fas fa-calendar-check','#059669', 'Demo Slot',      $leadInfo['demo']],
+                        ];
+                    @endphp
+                    @foreach($fields as [$icon, $color, $label, $value])
+                    <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;">
+                        <div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;display:flex;align-items:center;gap:5px;">
+                            <i class="{{ $icon }}" style="color:{{ $color }};font-size:9px;"></i>
+                            {{ strtoupper($label) }}
+                        </div>
+                        <div style="font-size:13px;font-weight:600;color:#1e293b;word-break:break-word;">{{ $value }}</div>
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- Last seen --}}
+                <div style="font-size:11px;color:#94a3b8;text-align:center;">
+                    <i class="fas fa-clock" style="margin-right:4px;"></i>Last message {{ $leadInfo['last_seen'] }}
+                </div>
                 @endif
             </div>
         </div>

@@ -222,6 +222,22 @@
     </div>
 </div>
 
+{{-- HOT Lead Admin Notification Phone --}}
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px 28px;margin-bottom:24px;">
+    <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-fire" style="color:#dc2626;"></i> HOT Lead Admin Notify Phone
+    </div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+        When a HOT lead completes the qualification bot (Owner + Immediate timeline), a WhatsApp alert is sent to this number. Leave blank to disable.
+    </div>
+    <input type="text" name="admin_notify_phone" value="{{ old('admin_notify_phone', $settings->admin_notify_phone) }}"
+        placeholder="e.g. 919876543210 (with country code, no +)"
+        style="width:100%;padding:10px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;">
+    <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
+        Include country code — e.g. <code style="background:#f3f4f6;padding:1px 4px;border-radius:4px;">919876543210</code> for India.
+    </div>
+</div>
+
 {{-- Signature bypass toggle (dev mode) --}}
 <div style="background:{{ $settings->skip_signature_check ? '#fef2f2' : '#fff' }};border:1px solid {{ $settings->skip_signature_check ? '#fca5a5' : '#e5e7eb' }};border-radius:16px;padding:20px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;">
     <div>

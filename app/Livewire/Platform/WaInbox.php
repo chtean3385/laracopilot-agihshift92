@@ -22,6 +22,11 @@ class WaInbox extends Component
     public string $editName        = '';
     public string $editType        = 'unknown';
 
+    // Lead info popup state
+    public bool   $showLeadInfo   = false;
+    public string $leadInfoPhone  = '';
+    public array  $leadInfo       = [];
+
     // ── Bulk Blast state ──────────────────────────────────────────────────
     public bool   $showBlast       = false;
     public string $blastNumbers    = '';
@@ -99,6 +104,54 @@ class WaInbox extends Component
     public function cancelEdit(): void
     {
         $this->editingContact = false;
+    }
+
+    // ── Lead info popup ───────────────────────────────────────────────────
+
+    public function openLeadInfo(string $phone): void
+    {
+        $this->leadInfoPhone = $phone;
+        $lead = DB::table('whatsapp_leads')->where('phone', $phone)->first();
+
+        if ($lead) {
+            $statusLabel = match($lead->lead_status) {
+                'hot'       => '🔥 HOT',
+                'warm'      => '🟡 WARM',
+                'cold'      => '❄️ COLD',
+                'nurture'   => '💤 NURTURE',
+                'opted_out' => '🚫 OPTED OUT',
+                'completed' => '✅ COMPLETED',
+                default     => '🆕 NEW',
+            };
+            $this->leadInfo = [
+                'found'       => true,
+                'name'        => $lead->name ?? '—',
+                'hotel_name'  => $lead->hotel_name ?? '—',
+                'room_count'  => $lead->room_count ?? '—',
+                'software'    => $lead->current_system ?? '—',
+                'role'        => $lead->role ?? '—',
+                'city'        => $lead->city ?? '—',
+                'timeline'    => $lead->implementation_timeline ?? '—',
+                'demo'        => $lead->demo_datetime ?? '—',
+                'status'      => $statusLabel,
+                'raw_status'  => $lead->lead_status ?? 'new',
+                'step'        => $lead->current_step ?? '—',
+                'last_seen'   => $lead->last_message_at
+                    ? \Carbon\Carbon::parse($lead->last_message_at)->diffForHumans()
+                    : '—',
+            ];
+        } else {
+            $this->leadInfo = ['found' => false];
+        }
+
+        $this->showLeadInfo = true;
+    }
+
+    public function closeLeadInfo(): void
+    {
+        $this->showLeadInfo  = false;
+        $this->leadInfoPhone = '';
+        $this->leadInfo      = [];
     }
 
     // ── Subscription toggle ───────────────────────────────────────────────
