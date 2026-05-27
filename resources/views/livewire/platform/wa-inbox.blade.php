@@ -413,7 +413,7 @@
                         @foreach($blastVarNames as $idx => $varName)
                         <div style="display:flex;align-items:center;gap:10px;">
                             <label style="font-size:12px;font-weight:600;color:#475569;white-space:nowrap;min-width:120px;">
-                                {{ '{{' . $varName . '}}' }}
+                                @php echo e('{{' . $varName . '}}'); @endphp
                             </label>
                             <input wire:model="blastVars.{{ $idx }}"
                                    type="text"
