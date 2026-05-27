@@ -408,11 +408,15 @@ class BookingController extends Controller
             ];
         }
 
-        // ── Custom price override (all pricing types including per_hour) ────
+        // ── Custom price override (single-room only; skip for multi-room group bookings) ────
+        // For group bookings the front-end custom_total only captures the first room's
+        // calculated amount, which will differ from the correct server-side combined total,
+        // falsely triggering the override and wiping out the other rooms' amounts.
         $customTotal     = (float) $request->input('custom_total', 0);
         $calculatedTotal = $bookingData['total_amount'];
         $advAmt          = (float) ($bookingData['advance_payment'] ?? 0);
-        if ($customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
+        $isGroupBooking  = count($roomIds) > 1;
+        if (!$isGroupBooking && $customTotal > 0 && abs($customTotal - $calculatedTotal) > 0.01) {
             $bookingData['total_amount']     = $customTotal;
             $bookingData['balance_due']      = max(0, $customTotal - $advAmt);
             $bookingData['payment_status']   = $advAmt >= $customTotal ? 'paid' : ($advAmt > 0 ? 'partial' : 'pending');
