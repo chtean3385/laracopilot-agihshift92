@@ -219,10 +219,21 @@ class WhatsAppController extends Controller
                     }
                 }
 
+                // If we got a CDN URL from header_handle, upload it to Meta's
+                // Media API right now to get a stable media_id (CDN URLs expire).
+                if ($headerMediaUrl && str_starts_with($headerMediaUrl, 'http')
+                    && in_array($headerFormat, ['image', 'video', 'document'])
+                ) {
+                    $mediaId = $this->uploadMediaFromUrl($headerMediaUrl, $headerFormat, $platform);
+                    if ($mediaId) {
+                        $headerMediaUrl = $mediaId; // store id, not the CDN URL
+                    }
+                }
+
                 $existing = $dbTemplates->get($key);
 
                 if ($existing) {
-                    // Update existing record
+                    // Update existing record — always refresh media_id if we got one
                     $existing->update([
                         'approval_status'  => $newStatus,
                         'meta_status'      => $newMetaStatus,
@@ -261,6 +272,50 @@ class WhatsAppController extends Controller
         } catch (\Throwable $e) {
             Log::error('Platform WhatsApp syncFromMeta error: ' . $e->getMessage());
             return back()->with('error', 'Sync failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download an image/video/document from $url and upload it to Meta's
+     * Media API. Returns the stable media_id string, or null on failure.
+     * Called at sync time so the CDN URL (which expires) is converted once.
+     */
+    private function uploadMediaFromUrl(string $url, string $type, $platform): ?string
+    {
+        try {
+            $download = Http::timeout(20)->get($url);
+            if (!$download->successful()) {
+                Log::warning("WA sync: could not download header media from {$url} — HTTP {$download->status()}");
+                return null;
+            }
+
+            $fileContents = $download->body();
+            $contentType  = $download->header('Content-Type') ?: match ($type) {
+                'image'    => 'image/jpeg',
+                'video'    => 'video/mp4',
+                'document' => 'application/pdf',
+                default    => 'application/octet-stream',
+            };
+            $contentType = trim(explode(';', $contentType)[0]);
+            $ext         = explode('/', $contentType)[1] ?? 'jpg';
+
+            $upload = Http::timeout(30)
+                ->withToken($platform->saas_token)
+                ->attach('file', $fileContents, "header.{$ext}")
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/media", [
+                    'messaging_product' => 'whatsapp',
+                    'type'              => $contentType,
+                ]);
+
+            if ($upload->successful() && isset($upload->json()['id'])) {
+                return (string) $upload->json()['id'];
+            }
+
+            Log::warning('WA sync: media upload to Meta failed — ' . $upload->body());
+            return null;
+        } catch (\Throwable $e) {
+            Log::warning('WA sync uploadMediaFromUrl exception: ' . $e->getMessage());
+            return null;
         }
     }
 

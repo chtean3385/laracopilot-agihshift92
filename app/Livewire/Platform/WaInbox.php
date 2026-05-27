@@ -417,17 +417,33 @@ class WaInbox extends Component
         $headerFmt     = $template->header_format ?? 'none';
         $headerMediaTypes = ['image', 'video', 'document'];
 
-        // Add header component for media-header templates (image/video/document)
-        // Meta requires this even when the media is "baked into" the template
+        // Add header component for media-header templates (image/video/document).
+        // We MUST upload via Meta's Media API first to get a stable media_id —
+        // signed CDN URLs (scontent.whatsapp.net) expire and return 403 when
+        // Meta tries to re-download them via the link approach.
         if (in_array($headerFmt, $headerMediaTypes)) {
-            $mediaUrl = trim($this->blastHeaderUrl);
-            if ($mediaUrl) {
+            $mediaVal = trim($this->blastHeaderUrl);
+            if ($mediaVal) {
+                // If stored value is already a media_id (numeric or non-URL handle
+                // e.g. "1234567890" set by sync), use it directly — no upload needed.
+                // If it's a URL (http...), upload it first to get a fresh media_id.
+                if (!str_starts_with($mediaVal, 'http')) {
+                    $mediaId = $mediaVal; // already a meta media_id
+                } else {
+                    $mediaId = $this->uploadHeaderMedia($mediaVal, $headerFmt, $platform);
+                    if (!$mediaId) {
+                        $this->blastError = 'Could not upload header image to WhatsApp. '
+                            . 'Please provide a direct, publicly accessible image URL (not a Facebook CDN link).';
+                        $this->blasting = false;
+                        return;
+                    }
+                }
                 $components[] = [
                     'type'       => 'header',
                     'parameters' => [
                         [
-                            'type'        => $headerFmt,
-                            $headerFmt    => ['link' => $mediaUrl],
+                            'type'     => $headerFmt,
+                            $headerFmt => ['id' => $mediaId],
                         ],
                     ],
                 ];
@@ -554,6 +570,56 @@ class WaInbox extends Component
         }
 
         return [];
+    }
+
+    /**
+     * Upload a media file to Meta's WhatsApp Media API and return the media_id.
+     * This is required for image/video/document header components — signed CDN
+     * URLs (scontent.whatsapp.net) expire and return 403 when Meta tries to
+     * re-download them via the link approach.
+     *
+     * @return string|null  media_id on success, null on failure
+     */
+    private function uploadHeaderMedia(string $url, string $type, $platform): ?string
+    {
+        try {
+            // Download the media file
+            $download = Http::timeout(20)->get($url);
+            if (!$download->successful()) {
+                Log::warning("WaInbox: could not download header media from {$url} — HTTP {$download->status()}");
+                return null;
+            }
+
+            $fileContents = $download->body();
+            $contentType  = $download->header('Content-Type') ?: match ($type) {
+                'image'    => 'image/jpeg',
+                'video'    => 'video/mp4',
+                'document' => 'application/pdf',
+                default    => 'application/octet-stream',
+            };
+
+            // Strip any charset suffix (e.g. "image/jpeg; charset=utf-8")
+            $contentType = trim(explode(';', $contentType)[0]);
+
+            // Upload to Meta Media API
+            $upload = Http::timeout(30)
+                ->withToken($platform->saas_token)
+                ->attach('file', $fileContents, 'header.' . explode('/', $contentType)[1])
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/media", [
+                    'messaging_product' => 'whatsapp',
+                    'type'              => $contentType,
+                ]);
+
+            if ($upload->successful() && isset($upload->json()['id'])) {
+                return (string) $upload->json()['id'];
+            }
+
+            Log::warning('WaInbox: Media upload to Meta failed — ' . $upload->body());
+            return null;
+        } catch (\Throwable $e) {
+            Log::error('WaInbox uploadHeaderMedia exception: ' . $e->getMessage());
+            return null;
+        }
     }
 
     private function logOutgoing(string $phone, ?int $hotelId, string $note, array $body): void
