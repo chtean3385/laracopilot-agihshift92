@@ -439,6 +439,26 @@
                 </div>
                 @endif
 
+                {{-- Header media URL — required for image/video/document header templates --}}
+                @if(in_array($blastHeaderFormat, ['image','video','document']))
+                <div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px 14px;">
+                    <label style="font-size:12px;font-weight:700;color:#713f12;display:block;margin-bottom:6px;">
+                        <i class="fas fa-image" style="margin-right:4px;"></i>
+                        {{ ucfirst($blastHeaderFormat) }} Header URL <span style="color:#dc2626;">*</span>
+                        <span style="font-weight:400;color:#92400e;"> — Meta requires this for {{ $blastHeaderFormat }} header templates</span>
+                    </label>
+                    <input wire:model="blastHeaderUrl"
+                           type="url"
+                           placeholder="https://example.com/your-image.jpg"
+                           style="width:100%;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 11px;font-size:12px;color:#0f172a;outline:none;box-sizing:border-box;"
+                           onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#fcd34d'">
+                    <div style="font-size:11px;color:#92400e;margin-top:4px;">
+                        <i class="fas fa-info-circle"></i> Use a publicly accessible URL. Must be the same image as in your Meta template.
+                        @if($blastHeaderUrl) <span style="color:#15803d;"> ✓ URL set</span> @endif
+                    </div>
+                </div>
+                @endif
+
                 {{-- Variable inputs --}}
                 @if(!empty($blastVarNames))
                 <div>

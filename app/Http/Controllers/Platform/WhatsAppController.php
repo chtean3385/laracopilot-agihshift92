@@ -166,7 +166,7 @@ class WhatsAppController extends Controller
             $response = Http::timeout(20)
                 ->withToken($platform->saas_token)
                 ->get("https://graph.facebook.com/v19.0/{$platform->saas_waba_id}/message_templates", [
-                    'fields' => 'name,status,id',
+                    'fields' => 'name,status,id,components',
                     'limit'  => 200,
                 ]);
 
@@ -192,10 +192,38 @@ class WhatsAppController extends Controller
                     : (strtolower($meta['status']) === 'rejected' ? 'rejected' : 'pending');
                 $newMetaStatus = strtolower($meta['status']) === 'approved' ? 'approved' : 'submitted';
 
+                // Parse components to extract header format and button presence
+                $components   = $meta['components'] ?? [];
+                $headerFormat = 'none';
+                $headerMediaUrl = null;
+                $hasButtons   = false;
+
+                foreach ($components as $component) {
+                    $type = strtolower($component['type'] ?? '');
+                    if ($type === 'header') {
+                        $fmt = strtolower($component['format'] ?? 'text');
+                        $headerFormat = in_array($fmt, ['image', 'video', 'document']) ? $fmt : 'text';
+                        // Extract sample media URL if present
+                        if ($headerFormat !== 'text') {
+                            $example = $component['example'] ?? [];
+                            $headerMediaUrl = $example['header_handle'][0]
+                                ?? $example['header_url'][0]
+                                ?? $tmpl->header_media_url
+                                ?? null;
+                        }
+                    }
+                    if ($type === 'buttons') {
+                        $hasButtons = !empty($component['buttons']);
+                    }
+                }
+
                 $tmpl->update([
                     'approval_status'  => $newStatus,
                     'meta_status'      => $newMetaStatus,
                     'meta_template_id' => $meta['id'] ?? $tmpl->meta_template_id,
+                    'header_format'    => $headerFormat,
+                    'header_media_url' => $headerMediaUrl ?? $tmpl->header_media_url,
+                    'has_buttons'      => $hasButtons,
                 ]);
                 $updated++;
             }

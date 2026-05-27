@@ -28,16 +28,18 @@ class WaInbox extends Component
     public array  $leadInfo       = [];
 
     // ── Bulk Blast state ──────────────────────────────────────────────────
-    public bool   $showBlast       = false;
-    public string $blastNumbers    = '';
-    public int    $blastTemplateId = 0;
-    public array  $blastVars       = [];
-    public array  $blastVarNames   = [];
-    public string $blastPreview    = '';
-    public array  $blastResults    = [];
-    public bool   $blasting        = false;
-    public bool   $blastDone       = false;
-    public string $blastError      = '';
+    public bool   $showBlast        = false;
+    public string $blastNumbers     = '';
+    public int    $blastTemplateId  = 0;
+    public array  $blastVars        = [];
+    public array  $blastVarNames    = [];
+    public string $blastPreview     = '';
+    public string $blastHeaderUrl   = '';   // image/video/document URL for media-header templates
+    public string $blastHeaderFormat = '';  // none|text|image|video|document
+    public array  $blastResults     = [];
+    public bool   $blasting         = false;
+    public bool   $blastDone        = false;
+    public string $blastError       = '';
 
     public function mount(): void
     {
@@ -311,16 +313,18 @@ class WaInbox extends Component
 
     public function openBlast(): void
     {
-        $this->showBlast       = true;
-        $this->blastNumbers    = '';
-        $this->blastTemplateId = 0;
-        $this->blastVars       = [];
-        $this->blastVarNames   = [];
-        $this->blastPreview    = '';
-        $this->blastResults    = [];
-        $this->blasting        = false;
-        $this->blastDone       = false;
-        $this->blastError      = '';
+        $this->showBlast          = true;
+        $this->blastNumbers       = '';
+        $this->blastTemplateId    = 0;
+        $this->blastVars          = [];
+        $this->blastVarNames      = [];
+        $this->blastPreview       = '';
+        $this->blastHeaderUrl     = '';
+        $this->blastHeaderFormat  = '';
+        $this->blastResults       = [];
+        $this->blasting           = false;
+        $this->blastDone          = false;
+        $this->blastError         = '';
     }
 
     public function closeBlast(): void
@@ -340,10 +344,12 @@ class WaInbox extends Component
     public function selectBlastTemplate(int $id): void
     {
         if ($id === 0) {
-            $this->blastTemplateId = 0;
-            $this->blastPreview    = '';
-            $this->blastVarNames   = [];
-            $this->blastVars       = [];
+            $this->blastTemplateId   = 0;
+            $this->blastPreview      = '';
+            $this->blastVarNames     = [];
+            $this->blastVars         = [];
+            $this->blastHeaderUrl    = '';
+            $this->blastHeaderFormat = '';
             return;
         }
 
@@ -354,8 +360,10 @@ class WaInbox extends Component
 
         if (!$template) return;
 
-        $this->blastTemplateId = $id;
-        $this->blastPreview    = $template->message_body ?? '';
+        $this->blastTemplateId   = $id;
+        $this->blastPreview      = $template->message_body ?? '';
+        $this->blastHeaderFormat = $template->header_format ?? 'none';
+        $this->blastHeaderUrl    = $template->header_media_url ?? '';
 
         // Extract variable names from the body
         $this->blastVarNames = $this->extractVarNames($template->message_body ?? '');
@@ -405,7 +413,27 @@ class WaInbox extends Component
         preg_match_all('/\{\{(\d+)\}\}/', $metaBody, $posMatches);
         $paramCount = empty($posMatches[1]) ? 0 : max(array_map('intval', $posMatches[1]));
 
-        $components = [];
+        $components    = [];
+        $headerFmt     = $template->header_format ?? 'none';
+        $headerMediaTypes = ['image', 'video', 'document'];
+
+        // Add header component for media-header templates (image/video/document)
+        // Meta requires this even when the media is "baked into" the template
+        if (in_array($headerFmt, $headerMediaTypes)) {
+            $mediaUrl = trim($this->blastHeaderUrl);
+            if ($mediaUrl) {
+                $components[] = [
+                    'type'       => 'header',
+                    'parameters' => [
+                        [
+                            'type'        => $headerFmt,
+                            $headerFmt    => ['link' => $mediaUrl],
+                        ],
+                    ],
+                ];
+            }
+        }
+
         if ($paramCount > 0) {
             $params = [];
             for ($i = 0; $i < $paramCount; $i++) {
@@ -666,7 +694,7 @@ class WaInbox extends Component
             ->where('approval_status', 'approved')
             ->where('is_active', true)
             ->orderBy('template_name')
-            ->get(['id', 'template_name', 'message_body', 'trigger_event']);
+            ->get(['id', 'template_name', 'message_body', 'trigger_event', 'header_format', 'header_media_url', 'has_buttons']);
 
         return view('livewire.platform.wa-inbox', [
             'conversations'     => $conversations,

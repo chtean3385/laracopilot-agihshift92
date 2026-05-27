@@ -19,6 +19,9 @@ class WhatsAppTemplate extends Model
         'variables_hint',
         'is_active',
         'has_document_attachment',
+        'header_format',
+        'header_media_url',
+        'has_buttons',
         'approval_status',
         'meta_template_id',
         'meta_status',
@@ -27,6 +30,7 @@ class WhatsAppTemplate extends Model
     protected $casts = [
         'is_active'                => 'boolean',
         'has_document_attachment'  => 'boolean',
+        'has_buttons'              => 'boolean',
     ];
 
     public static function forEvent(string $event): ?static
