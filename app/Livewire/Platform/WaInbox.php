@@ -3,6 +3,7 @@
 namespace App\Livewire\Platform;
 
 use App\Models\PlatformWhatsAppSetting;
+use App\Models\WhatsAppTemplate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -20,6 +21,18 @@ class WaInbox extends Component
     public bool   $editingContact  = false;
     public string $editName        = '';
     public string $editType        = 'unknown';
+
+    // ── Bulk Blast state ──────────────────────────────────────────────────
+    public bool   $showBlast       = false;
+    public string $blastNumbers    = '';
+    public int    $blastTemplateId = 0;
+    public array  $blastVars       = [];
+    public array  $blastVarNames   = [];
+    public string $blastPreview    = '';
+    public array  $blastResults    = [];
+    public bool   $blasting        = false;
+    public bool   $blastDone       = false;
+    public string $blastError      = '';
 
     public function mount(): void
     {
@@ -240,7 +253,217 @@ class WaInbox extends Component
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // ── Bulk Blast ────────────────────────────────────────────────────────
+
+    public function openBlast(): void
+    {
+        $this->showBlast       = true;
+        $this->blastNumbers    = '';
+        $this->blastTemplateId = 0;
+        $this->blastVars       = [];
+        $this->blastVarNames   = [];
+        $this->blastPreview    = '';
+        $this->blastResults    = [];
+        $this->blasting        = false;
+        $this->blastDone       = false;
+        $this->blastError      = '';
+    }
+
+    public function closeBlast(): void
+    {
+        $this->showBlast = false;
+    }
+
+    public function selectBlastTemplate(int $id): void
+    {
+        if ($id === 0) {
+            $this->blastTemplateId = 0;
+            $this->blastPreview    = '';
+            $this->blastVarNames   = [];
+            $this->blastVars       = [];
+            return;
+        }
+
+        $template = WhatsAppTemplate::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->where('approval_status', 'approved')
+            ->find($id);
+
+        if (!$template) return;
+
+        $this->blastTemplateId = $id;
+        $this->blastPreview    = $template->message_body ?? '';
+
+        // Extract variable names from the body
+        $this->blastVarNames = $this->extractVarNames($template->message_body ?? '');
+        $this->blastVars     = array_fill(0, count($this->blastVarNames), '');
+    }
+
+    public function sendBlast(): void
+    {
+        $this->blastError  = '';
+        $this->blastResults = [];
+
+        // Validate template
+        if ($this->blastTemplateId === 0) {
+            $this->blastError = 'Please select a template.';
+            return;
+        }
+
+        $template = WhatsAppTemplate::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->where('approval_status', 'approved')
+            ->find($this->blastTemplateId);
+
+        if (!$template) {
+            $this->blastError = 'Template not found or no longer approved.';
+            return;
+        }
+
+        // Validate phone numbers
+        $lines = array_filter(array_map('trim', explode("\n", $this->blastNumbers)));
+        if (empty($lines)) {
+            $this->blastError = 'Please enter at least one phone number.';
+            return;
+        }
+        if (count($lines) > 200) {
+            $this->blastError = 'Maximum 200 numbers per blast. Please split into smaller batches.';
+            return;
+        }
+
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            $this->blastError = 'Platform WhatsApp credentials are not configured.';
+            return;
+        }
+
+        // Build Meta template components
+        $metaBody   = $template->convertBodyForMeta();
+        preg_match_all('/\{\{(\d+)\}\}/', $metaBody, $posMatches);
+        $paramCount = empty($posMatches[1]) ? 0 : max(array_map('intval', $posMatches[1]));
+
+        $components = [];
+        if ($paramCount > 0) {
+            $params = [];
+            for ($i = 0; $i < $paramCount; $i++) {
+                $val      = trim($this->blastVars[$i] ?? '');
+                $params[] = ['type' => 'text', 'text' => $val ?: '-'];
+            }
+            $components[] = ['type' => 'body', 'parameters' => $params];
+        }
+
+        $this->blasting = true;
+        $results        = [];
+
+        foreach ($lines as $rawPhone) {
+            $phone = preg_replace('/[^0-9]/', '', $rawPhone);
+            if (strlen($phone) === 10) $phone = '91' . $phone;
+
+            if (strlen($phone) < 10 || strlen($phone) > 15) {
+                $results[] = ['phone' => $rawPhone, 'status' => 'skip', 'msg' => 'Invalid number'];
+                continue;
+            }
+
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'to'                => $phone,
+                'type'              => 'template',
+                'template'          => [
+                    'name'       => $template->template_name,
+                    'language'   => ['code' => 'en_US'],
+                ],
+            ];
+            if (!empty($components)) {
+                $payload['template']['components'] = $components;
+            }
+
+            try {
+                $response = Http::timeout(12)
+                    ->withToken($platform->saas_token)
+                    ->post("https://graph.facebook.com/v19.0/{$platform->saas_phone_number_id}/messages", $payload);
+
+                $body = $response->json();
+
+                if ($response->successful() && isset($body['messages'])) {
+                    $results[] = ['phone' => $rawPhone, 'status' => 'sent', 'msg' => 'Sent'];
+
+                    // Log the outgoing message
+                    $preview = '📨 Blast: ' . $template->template_name;
+                    DB::table('whatsapp_logs')->insert([
+                        'direction'  => 'outgoing',
+                        'event_type' => 'message_sent',
+                        'phone'      => $phone,
+                        'hotel_id'   => null,
+                        'status'     => 'ok',
+                        'payload'    => json_encode($body),
+                        'notes'      => $preview,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    // Upsert wa_contacts so it appears in inbox
+                    $existing = DB::table('wa_contacts')->where('phone', $phone)->first();
+                    if ($existing) {
+                        DB::table('wa_contacts')->where('phone', $phone)->update([
+                            'last_message_preview' => $preview,
+                            'last_message_at'      => now(),
+                            'updated_at'           => now(),
+                        ]);
+                    } else {
+                        DB::table('wa_contacts')->insert([
+                            'phone'                => $phone,
+                            'contact_type'        => 'unknown',
+                            'display_name'        => $phone,
+                            'subscribed'          => true,
+                            'last_message_preview'=> $preview,
+                            'last_message_at'     => now(),
+                            'unread_count'        => 0,
+                            'created_at'          => now(),
+                            'updated_at'          => now(),
+                        ]);
+                    }
+                } else {
+                    $errMsg    = $body['error']['error_user_msg'] ?? $body['error']['message'] ?? 'API error';
+                    $results[] = ['phone' => $rawPhone, 'status' => 'fail', 'msg' => $errMsg];
+                }
+            } catch (\Throwable $e) {
+                $results[]  = ['phone' => $rawPhone, 'status' => 'fail', 'msg' => $e->getMessage()];
+                Log::error('WaInbox blast exception for ' . $phone . ': ' . $e->getMessage());
+            }
+
+            // Small pause to avoid Meta rate limits
+            usleep(150000); // 150 ms
+        }
+
+        $this->blastResults = $results;
+        $this->blasting     = false;
+        $this->blastDone    = true;
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────
+
+    /**
+     * Extract human-readable variable names from a template body.
+     * Supports both {{guest_name}} (named) and {{1}}, {{2}} (positional) styles.
+     * Returns an ordered, de-duplicated list of labels.
+     */
+    private function extractVarNames(string $body): array
+    {
+        // Named variables: {{guest_name}}, {{hotel_name}}, etc.
+        preg_match_all('/\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/', $body, $namedMatches);
+        if (!empty($namedMatches[1])) {
+            return array_values(array_unique($namedMatches[1]));
+        }
+
+        // Positional: {{1}}, {{2}}, ...
+        preg_match_all('/\{\{(\d+)\}\}/', $body, $numMatches);
+        if (!empty($numMatches[1])) {
+            $max = max(array_map('intval', $numMatches[1]));
+            return array_map(fn ($i) => "Variable {$i}", range(1, $max));
+        }
+
+        return [];
+    }
 
     private function logOutgoing(string $phone, ?int $hotelId, string $note, array $body): void
     {
@@ -358,12 +581,21 @@ class WaInbox extends Component
 
         $totalUnread = DB::table('wa_contacts')->sum('unread_count');
 
+        // Approved templates for blast modal
+        $approvedTemplates = WhatsAppTemplate::withoutGlobalScopes()
+            ->whereNull('hotel_id')
+            ->where('approval_status', 'approved')
+            ->where('is_active', true)
+            ->orderBy('template_name')
+            ->get(['id', 'template_name', 'message_body', 'trigger_event']);
+
         return view('livewire.platform.wa-inbox', [
-            'conversations'   => $conversations,
-            'selectedContact' => $selectedContact,
-            'messages'        => $messages,
-            'within24h'       => $within24h,
-            'totalUnread'     => (int) $totalUnread,
+            'conversations'     => $conversations,
+            'selectedContact'   => $selectedContact,
+            'messages'          => $messages,
+            'within24h'         => $within24h,
+            'totalUnread'       => (int) $totalUnread,
+            'approvedTemplates' => $approvedTemplates,
         ]);
     }
 }

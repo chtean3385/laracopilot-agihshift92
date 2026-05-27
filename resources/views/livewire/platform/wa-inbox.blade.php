@@ -1,4 +1,4 @@
-<div wire:poll.4000ms style="display:flex;height:calc(100vh - 140px);background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
+<div wire:poll.4000ms style="display:flex;height:calc(100vh - 140px);background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;position:relative;">
 
     {{-- ── Conversations List ─────────────────────────────────────────── --}}
     <div style="width:300px;flex-shrink:0;border-right:1px solid #f1f5f9;display:flex;flex-direction:column;overflow:hidden;">
@@ -8,13 +8,20 @@
                 <div style="width:34px;height:34px;background:linear-gradient(135deg,#25d366,#128c43);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <i class="fab fa-whatsapp" style="color:#fff;font-size:16px;"></i>
                 </div>
-                <div>
+                <div style="flex:1;min-width:0;">
                     <div style="font-size:14px;font-weight:800;color:#0f172a;">WA Inbox</div>
                     <div style="font-size:11px;color:#94a3b8;">{{ $conversations->count() }} conversation{{ $conversations->count() !== 1 ? 's' : '' }}</div>
                 </div>
                 @if($totalUnread > 0)
-                <span style="margin-left:auto;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:2px 8px;min-width:22px;text-align:center;">{{ $totalUnread }}</span>
+                <span style="background:#ef4444;color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:2px 8px;min-width:22px;text-align:center;">{{ $totalUnread }}</span>
                 @endif
+                {{-- Bulk Blast button --}}
+                <button wire:click="openBlast"
+                        title="Bulk Send — paste numbers and send approved template"
+                        style="width:30px;height:30px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:8px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s;"
+                        onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+                    <i class="fas fa-plus" style="font-size:13px;"></i>
+                </button>
             </div>
         </div>
 
@@ -335,6 +342,189 @@
 
         @endif
     </div>
+
+    {{-- ── Bulk Blast Modal ────────────────────────────────────────────── --}}
+    @if($showBlast)
+    <div style="position:absolute;inset:0;background:rgba(15,23,42,.55);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;backdrop-filter:blur(2px);">
+        <div style="background:#fff;border-radius:20px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
+
+            {{-- Header --}}
+            <div style="padding:18px 22px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#7c3aed,#5b21b6);">
+                <div style="width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-paper-plane" style="color:#fff;font-size:16px;"></i>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:15px;font-weight:800;color:#fff;">Bulk WhatsApp Blast</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,.7);">Select an approved template, add numbers, send</div>
+                </div>
+                <button wire:click="closeBlast" style="width:32px;height:32px;background:rgba(255,255,255,.2);border:none;border-radius:8px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-times" style="font-size:13px;"></i>
+                </button>
+            </div>
+
+            <div style="padding:20px 22px;display:flex;flex-direction:column;gap:18px;">
+
+                @if($blastError)
+                <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:13px;color:#b91c1c;font-weight:600;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-exclamation-circle"></i> {{ $blastError }}
+                </div>
+                @endif
+
+                @if(!$blastDone)
+
+                {{-- Step 1: Template selector --}}
+                <div>
+                    <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">
+                        <span style="background:#7c3aed;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">1</span>
+                        Select Approved Template
+                    </label>
+                    <select wire:change="selectBlastTemplate($event.target.value)"
+                            style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:13px;color:#0f172a;background:#fff;outline:none;"
+                            onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e2e8f0'">
+                        <option value="0">— Choose a template —</option>
+                        @foreach($approvedTemplates as $tmpl)
+                        <option value="{{ $tmpl->id }}" {{ $blastTemplateId === $tmpl->id ? 'selected' : '' }}>
+                            {{ $tmpl->template_name }}
+                            @if($tmpl->trigger_event) ({{ $tmpl->trigger_event }}) @endif
+                        </option>
+                        @endforeach
+                    </select>
+                    @if($approvedTemplates->isEmpty())
+                    <p style="font-size:11px;color:#f59e0b;margin-top:5px;"><i class="fas fa-exclamation-triangle"></i> No approved templates found. Go to WA Templates, submit one to Meta, and sync status.</p>
+                    @endif
+                </div>
+
+                {{-- Template preview --}}
+                @if($blastPreview)
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;">
+                    <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;letter-spacing:.5px;">TEMPLATE PREVIEW</div>
+                    <div style="font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.6;">{{ $blastPreview }}</div>
+                </div>
+                @endif
+
+                {{-- Variable inputs --}}
+                @if(!empty($blastVarNames))
+                <div>
+                    <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px;">
+                        <span style="background:#7c3aed;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">2</span>
+                        Fill Template Variables
+                    </label>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        @foreach($blastVarNames as $idx => $varName)
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <label style="font-size:12px;font-weight:600;color:#475569;white-space:nowrap;min-width:120px;">
+                                {{ '{{' . $varName . '}}' }}
+                            </label>
+                            <input wire:model="blastVars.{{ $idx }}"
+                                   type="text"
+                                   placeholder="Value for {{ $varName }}"
+                                   style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;color:#0f172a;outline:none;"
+                                   onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e2e8f0'">
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Step: Phone numbers --}}
+                <div>
+                    <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">
+                        <span style="background:#7c3aed;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">{{ empty($blastVarNames) ? '2' : '3' }}</span>
+                        Phone Numbers <span style="font-weight:400;color:#94a3b8;">(one per line — 10-digit or full with country code)</span>
+                    </label>
+                    <textarea wire:model="blastNumbers"
+                              rows="6"
+                              placeholder="9876543210&#10;917890123456&#10;8012345678&#10;..."
+                              style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:13px;color:#0f172a;resize:vertical;outline:none;font-family:monospace;box-sizing:border-box;"
+                              onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+                    @php $lineCount = $blastNumbers ? count(array_filter(array_map('trim', explode("\n", $blastNumbers)))) : 0; @endphp
+                    <div style="font-size:11px;color:#64748b;margin-top:4px;display:flex;justify-content:space-between;">
+                        <span>{{ $lineCount }} number{{ $lineCount !== 1 ? 's' : '' }} entered</span>
+                        <span style="color:{{ $lineCount > 100 ? '#dc2626' : '#94a3b8' }};">Max 200 per blast</span>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
+                    <button wire:click="closeBlast"
+                            style="height:40px;padding:0 20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">
+                        Cancel
+                    </button>
+                    <button wire:click="sendBlast"
+                            wire:loading.attr="disabled"
+                            style="height:40px;padding:0 24px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:7px;transition:opacity .15s;"
+                            onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        <span wire:loading.remove wire:target="sendBlast">
+                            <i class="fas fa-paper-plane"></i>
+                            Send to {{ $lineCount }} Number{{ $lineCount !== 1 ? 's' : '' }}
+                        </span>
+                        <span wire:loading wire:target="sendBlast">
+                            <i class="fas fa-spinner fa-spin"></i> Sending… (this may take a moment)
+                        </span>
+                    </button>
+                </div>
+
+                @else
+
+                {{-- Results view --}}
+                @php
+                    $sentCount  = collect($blastResults)->where('status', 'sent')->count();
+                    $failCount  = collect($blastResults)->where('status', 'fail')->count();
+                    $skipCount  = collect($blastResults)->where('status', 'skip')->count();
+                @endphp
+                <div style="background:{{ $failCount === 0 ? '#f0fdf4' : '#fffbeb' }};border:1px solid {{ $failCount === 0 ? '#bbf7d0' : '#fde68a' }};border-radius:12px;padding:14px 16px;">
+                    <div style="font-size:14px;font-weight:800;color:{{ $failCount === 0 ? '#15803d' : '#92400e' }};margin-bottom:4px;">
+                        <i class="fas fa-{{ $failCount === 0 ? 'check-circle' : 'exclamation-triangle' }}"></i>
+                        Blast Complete
+                    </div>
+                    <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+                        <div style="text-align:center;">
+                            <div style="font-size:22px;font-weight:900;color:#15803d;">{{ $sentCount }}</div>
+                            <div style="font-size:11px;color:#64748b;font-weight:600;">Sent</div>
+                        </div>
+                        @if($failCount > 0)
+                        <div style="text-align:center;">
+                            <div style="font-size:22px;font-weight:900;color:#dc2626;">{{ $failCount }}</div>
+                            <div style="font-size:11px;color:#64748b;font-weight:600;">Failed</div>
+                        </div>
+                        @endif
+                        @if($skipCount > 0)
+                        <div style="text-align:center;">
+                            <div style="font-size:22px;font-weight:900;color:#f59e0b;">{{ $skipCount }}</div>
+                            <div style="font-size:11px;color:#64748b;font-weight:600;">Skipped</div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Per-number results --}}
+                <div style="max-height:260px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:10px;">
+                    @foreach($blastResults as $r)
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f8fafc;font-size:12px;">
+                        <i class="fas fa-{{ $r['status'] === 'sent' ? 'check-circle' : ($r['status'] === 'skip' ? 'minus-circle' : 'times-circle') }}"
+                           style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#f59e0b' : '#dc2626') }};font-size:14px;flex-shrink:0;"></i>
+                        <span style="font-family:monospace;color:#374151;flex:1;">{{ $r['phone'] }}</span>
+                        <span style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#92400e' : '#dc2626') }};font-weight:600;">{{ $r['msg'] }}</span>
+                    </div>
+                    @endforeach
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button wire:click="openBlast"
+                            style="height:38px;padding:0 18px;background:#ede9fe;border:1px solid #ddd6fe;border-radius:10px;font-size:13px;font-weight:600;color:#7c3aed;cursor:pointer;">
+                        <i class="fas fa-redo" style="font-size:11px;margin-right:5px;"></i> New Blast
+                    </button>
+                    <button wire:click="closeBlast"
+                            style="height:38px;padding:0 18px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">
+                        Close
+                    </button>
+                </div>
+
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
 
 </div>
 
