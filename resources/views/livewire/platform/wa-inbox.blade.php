@@ -38,6 +38,36 @@
             </div>
         </div>
 
+        {{-- ── Search bar ──────────────────────────────────────────────── --}}
+        <div style="padding:8px 12px;border-bottom:1px solid #f1f5f9;background:#fff;">
+            <div style="position:relative;">
+                <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:11px;pointer-events:none;"></i>
+                <input wire:model.live.debounce.300ms="search"
+                       type="text" placeholder="Search name or number…"
+                       style="width:100%;padding:6px 9px 6px 28px;font-size:12px;border:1px solid #e2e8f0;border-radius:8px;outline:none;background:#f8fafc;color:#0f172a;box-sizing:border-box;"
+                       onfocus="this.style.borderColor='#a78bfa';this.style.background='#fff'"
+                       onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+                @if($search)
+                <button wire:click="$set('search','')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:11px;padding:0;">
+                    <i class="fas fa-times"></i>
+                </button>
+                @endif
+            </div>
+        </div>
+
+        {{-- ── Inbox / Archived tabs ───────────────────────────────────── --}}
+        <div style="display:flex;border-bottom:1px solid #f1f5f9;background:#fff;">
+            <button wire:click="$set('showArchived',false)"
+                    style="flex:1;padding:7px 4px;font-size:11px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid {{ !$showArchived ? '#7c3aed' : 'transparent' }};color:{{ !$showArchived ? '#7c3aed' : '#94a3b8' }};transition:all .15s;">
+                <i class="fas fa-inbox" style="margin-right:4px;font-size:10px;"></i>Inbox
+            </button>
+            <button wire:click="$set('showArchived',true)"
+                    style="flex:1;padding:7px 4px;font-size:11px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid {{ $showArchived ? '#7c3aed' : 'transparent' }};color:{{ $showArchived ? '#7c3aed' : '#94a3b8' }};transition:all .15s;">
+                <i class="fas fa-archive" style="margin-right:4px;font-size:10px;"></i>Archived
+                @if($archivedCount > 0)<span style="background:{{ $showArchived ? '#7c3aed' : '#e2e8f0' }};color:{{ $showArchived ? '#fff' : '#64748b' }};border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:3px;">{{ $archivedCount }}</span>@endif
+            </button>
+        </div>
+
         <div style="flex:1;overflow-y:auto;">
             @forelse($conversations as $convo)
             @php
@@ -50,7 +80,7 @@
             {{-- Contact row: position:relative so ℹ️ button can sit inside it --}}
             <div wire:click="selectContact('{{ $convo->phone }}')"
                  class="{{ $isHot ? 'wa-hot-row' : '' }}"
-                 style="position:relative;padding:11px 13px;padding-right:36px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;
+                 style="position:relative;padding:11px 13px;padding-right:58px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;
                         {{ $isSelected ? 'background:#ede9fe;border-left:3px solid #7c3aed;' : ($isHot ? 'background:#fff5f5;border-left:3px solid #ef4444;' : 'border-left:3px solid transparent;') }}"
                  onmouseover="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='#f8fafc'"
                  onmouseout="if(!{{ $isSelected ? 'true' : 'false' }})this.style.background='{{ $isHot ? '#fff5f5' : '' }}'">
@@ -94,14 +124,50 @@
                         </div>
                     </div>
                 </div>
-                {{-- ℹ️ button inside the wire:click div — wire:click.stop prevents selectContact from firing --}}
+                {{-- ℹ️ button — shifted left to make room for ⋮ menu --}}
                 <button wire:click.stop="openLeadInfo('{{ $convo->phone }}')"
                         title="View lead details"
-                        style="position:absolute;top:50%;right:8px;transform:translateY(-50%);width:22px;height:22px;background:{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }};border:1px solid {{ $convo->lead_status ? '#c4b5fd' : '#e2e8f0' }};border-radius:6px;cursor:pointer;color:{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }};display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;transition:all .15s;"
+                        style="position:absolute;top:50%;right:32px;transform:translateY(-50%);width:22px;height:22px;background:{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }};border:1px solid {{ $convo->lead_status ? '#c4b5fd' : '#e2e8f0' }};border-radius:6px;cursor:pointer;color:{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }};display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;transition:all .15s;"
                         onmouseover="this.style.background='#ede9fe';this.style.color='#7c3aed';this.style.borderColor='#a78bfa'"
                         onmouseout="this.style.background='{{ $convo->lead_status ? '#ede9fe' : '#f1f5f9' }}';this.style.color='{{ $convo->lead_status ? '#7c3aed' : '#94a3b8' }}'">
                     <i class="fas fa-info" style="font-size:9px;"></i>
                 </button>
+                {{-- ⋮ context menu: Archive / Delete --}}
+                <div onclick="event.stopPropagation()" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);z-index:10;">
+                    <button onclick="event.stopPropagation();waToggleMenu('{{ $convo->phone }}')"
+                            title="More options"
+                            style="width:22px;height:22px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;"
+                            onmouseover="this.style.background='#f1f5f9';this.style.color='#475569'"
+                            onmouseout="this.style.background='#f1f5f9';this.style.color='#94a3b8'">
+                        <i class="fas fa-ellipsis-v" style="font-size:9px;"></i>
+                    </button>
+                    <div id="wamenu-{{ $convo->phone }}"
+                         style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.10);min-width:140px;overflow:hidden;z-index:999;">
+                        @if(!$showArchived)
+                        <button wire:click.stop="archiveContact('{{ $convo->phone }}')"
+                                onclick="waCloseAllMenus()"
+                                style="width:100%;padding:9px 14px;text-align:left;background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#475569;display:flex;align-items:center;gap:8px;"
+                                onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='none'">
+                            <i class="fas fa-archive" style="color:#94a3b8;width:14px;"></i>Archive
+                        </button>
+                        @else
+                        <button wire:click.stop="unarchiveContact('{{ $convo->phone }}')"
+                                onclick="waCloseAllMenus()"
+                                style="width:100%;padding:9px 14px;text-align:left;background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#475569;display:flex;align-items:center;gap:8px;"
+                                onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='none'">
+                            <i class="fas fa-inbox" style="color:#94a3b8;width:14px;"></i>Unarchive
+                        </button>
+                        @endif
+                        <div style="height:1px;background:#f1f5f9;margin:0 10px;"></div>
+                        <button wire:click.stop="deleteContact('{{ $convo->phone }}')"
+                                onclick="waCloseAllMenus()"
+                                wire:confirm="Delete this entire conversation? This cannot be undone."
+                                style="width:100%;padding:9px 14px;text-align:left;background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#ef4444;display:flex;align-items:center;gap:8px;"
+                                onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='none'">
+                            <i class="fas fa-trash" style="width:14px;"></i>Delete chat
+                        </button>
+                    </div>
+                </div>
             </div>
             @empty
             <div style="padding:40px 20px;text-align:center;color:#94a3b8;">
@@ -784,6 +850,24 @@ window.waHandleFileSelect = function (input) {
 };
 
 // Override send button: if attachment is ready, send attachment; else send text
+// ── Conversation row context menu helpers ────────────────────────────────
+window.waCloseAllMenus = function () {
+    document.querySelectorAll('[id^="wamenu-"]').forEach(function (el) {
+        el.style.display = 'none';
+    });
+};
+
+window.waToggleMenu = function (phone) {
+    var menu = document.getElementById('wamenu-' + phone);
+    if (!menu) return;
+    var isOpen = menu.style.display === 'block';
+    waCloseAllMenus();
+    if (!isOpen) menu.style.display = 'block';
+};
+
+// Close menus when clicking outside
+document.addEventListener('click', function () { waCloseAllMenus(); });
+
 document.addEventListener('DOMContentLoaded', function () {
     setTimeout(window.waScrollToBottom, 300);
 });

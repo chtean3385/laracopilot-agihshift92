@@ -17,6 +17,10 @@ class WaInbox extends Component
     public string $sendResult    = '';
     public bool   $sending       = false;
 
+    // Search + archive filter
+    public string $search       = '';
+    public bool   $showArchived = false;
+
     // Contact edit modal state
     public bool   $editingContact  = false;
     public string $editName        = '';
@@ -106,6 +110,32 @@ class WaInbox extends Component
     public function cancelEdit(): void
     {
         $this->editingContact = false;
+    }
+
+    // ── Archive / Delete ──────────────────────────────────────────────────
+
+    public function archiveContact(string $phone): void
+    {
+        DB::table('wa_contacts')->where('phone', $phone)->update(['is_archived' => true]);
+        if ($this->selectedPhone === $phone) {
+            $this->selectedPhone = '';
+        }
+    }
+
+    public function unarchiveContact(string $phone): void
+    {
+        DB::table('wa_contacts')->where('phone', $phone)->update(['is_archived' => false]);
+    }
+
+    /** Delete all messages AND the contact row entirely. */
+    public function deleteContact(string $phone): void
+    {
+        DB::table('whatsapp_logs')->where('phone', $phone)->delete();
+        DB::table('whatsapp_leads')->where('phone', $phone)->delete();
+        DB::table('wa_contacts')->where('phone', $phone)->delete();
+        if ($this->selectedPhone === $phone) {
+            $this->selectedPhone = '';
+        }
     }
 
     // ── Lead info popup ───────────────────────────────────────────────────
@@ -651,6 +681,10 @@ class WaInbox extends Component
     public function render()
     {
         $contacts = DB::table('wa_contacts')
+            ->when(!$this->showArchived, fn($q) => $q->where(fn($q2) =>
+                $q2->where('is_archived', false)->orWhereNull('is_archived')
+            ))
+            ->when($this->showArchived, fn($q) => $q->where('is_archived', true))
             ->orderByDesc('last_message_at')
             ->get();
 
@@ -716,6 +750,17 @@ class WaInbox extends Component
             ];
         });
 
+        // Apply search filter (name or phone)
+        if ($this->search !== '') {
+            $s = mb_strtolower(trim($this->search));
+            $conversations = $conversations->filter(function ($c) use ($s) {
+                return str_contains(mb_strtolower($c->name), $s)
+                    || str_contains($c->phone, $s);
+            })->values();
+        }
+
+        $archivedCount = DB::table('wa_contacts')->where('is_archived', true)->count();
+
         $selectedContact = null;
         $messages        = collect();
         $within24h       = false;
@@ -769,6 +814,7 @@ class WaInbox extends Component
             'within24h'         => $within24h,
             'totalUnread'       => (int) $totalUnread,
             'approvedTemplates' => $approvedTemplates,
+            'archivedCount'     => $archivedCount,
         ]);
     }
 }
