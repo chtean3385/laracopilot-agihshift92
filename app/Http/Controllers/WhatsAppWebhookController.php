@@ -253,11 +253,11 @@ class WhatsAppWebhookController extends Controller
                     }
                 }
 
-                // Skip bot messages for unsubscribed contacts
-                $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
-                if ($platform && ($contact?->subscribed ?? true)) {
-                    $this->runBotFlow($phone, $text, $platform);
-                }
+                // Bot flow disabled
+                // $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
+                // if ($platform && ($contact?->subscribed ?? true)) {
+                //     $this->runBotFlow($phone, $text, $platform);
+                // }
             }
         }
 
