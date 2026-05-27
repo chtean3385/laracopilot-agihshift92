@@ -247,12 +247,43 @@ class WhatsAppController extends Controller
             'approval_status'         => 'nullable|in:pending,approved,rejected',
             'is_active'               => 'nullable|boolean',
             'has_document_attachment' => 'nullable|boolean',
+            'header_image'            => 'nullable|image|max:5120',
+            'header_media_url'        => 'nullable|string|max:500',
         ]);
 
         $data['is_active']               = $request->boolean('is_active');
-        $data['has_document_attachment'] = ($data['trigger_event'] ?? $template->trigger_event) === 'checkout.done'
+        $data['has_document_attachment'] = ($template->trigger_event) === 'checkout.done'
             ? $request->boolean('has_document_attachment')
             : false;
+
+        // Handle header image upload
+        if ($request->hasFile('header_image')) {
+            $file     = $request->file('header_image');
+            $ext      = strtolower($file->getClientOriginalExtension());
+            $filename = 'wa_header_' . $id . '_' . time() . '.' . $ext;
+            $dir      = public_path('uploads/whatsapp-headers');
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            // Delete previous header image for this template if stored locally
+            if ($template->header_media_url && str_contains($template->header_media_url, 'uploads/whatsapp-headers/')) {
+                $oldPath = public_path(parse_url($template->header_media_url, PHP_URL_PATH));
+                if (file_exists($oldPath)) @unlink($oldPath);
+            }
+            $file->move($dir, $filename);
+            $data['header_media_url'] = url('uploads/whatsapp-headers/' . $filename);
+            $data['header_format']    = 'image';
+        } elseif (empty($data['header_media_url'])) {
+            // User cleared the image
+            $data['header_media_url'] = null;
+            $data['header_format']    = 'none';
+        } else {
+            // Preserve existing URL; don't overwrite header_format
+            unset($data['header_format']);
+        }
+
+        // Don't pass the file field to Eloquent
+        unset($data['header_image']);
 
         // ── Auto-version when body text changes ─────────────────────────
         $bodyChanged = trim($data['message_body']) !== trim($template->message_body ?? '');

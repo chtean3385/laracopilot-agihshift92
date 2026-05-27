@@ -176,7 +176,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                 </label>
 
                 {{-- Edit --}}
-                <button onclick="openEditModal({{ $t->id }}, '{{ addslashes($t->trigger_event) }}', '{{ addslashes($t->template_name) }}', {!! json_encode($t->message_body) !!}, '{{ $t->approval_status }}', {{ $t->is_active ? 'true' : 'false' }}, {{ $t->has_document_attachment ? 'true' : 'false' }})"
+                <button onclick="openEditModal({{ $t->id }}, '{{ addslashes($t->trigger_event) }}', '{{ addslashes($t->template_name) }}', {!! json_encode($t->message_body) !!}, '{{ $t->approval_status }}', {{ $t->is_active ? 'true' : 'false' }}, {{ $t->has_document_attachment ? 'true' : 'false' }}, {!! json_encode($t->header_media_url) !!})"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -261,7 +261,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     <span id="pt-track-{{ $pdfT->id }}" style="position:absolute;inset:0;border-radius:24px;background:{{ $pdfT->is_active ? '#25d366' : '#e2e8f0' }};transition:background .2s;"></span>
                     <span id="pt-thumb-{{ $pdfT->id }}" style="position:absolute;left:{{ $pdfT->is_active ? '22px' : '2px' }};top:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s;"></span>
                 </label>
-                <button onclick="openEditModal({{ $pdfT->id }}, '{{ addslashes($pdfT->trigger_event) }}', '{{ addslashes($pdfT->template_name) }}', {!! json_encode($pdfT->message_body) !!}, '{{ $pdfT->approval_status }}', {{ $pdfT->is_active ? 'true' : 'false' }}, true)"
+                <button onclick="openEditModal({{ $pdfT->id }}, '{{ addslashes($pdfT->trigger_event) }}', '{{ addslashes($pdfT->template_name) }}', {!! json_encode($pdfT->message_body) !!}, '{{ $pdfT->approval_status }}', {{ $pdfT->is_active ? 'true' : 'false' }}, true, {!! json_encode($pdfT->header_media_url) !!})"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fef3c7;color:#92400e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -337,7 +337,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     <span id="toggle-{{ $ct->id }}" style="position:absolute;inset:0;border-radius:12px;background:{{ $ct->is_active ? '#25D366' : '#d1d5db' }};transition:background .2s;"></span>
                     <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;{{ $ct->is_active ? 'transform:translateX(20px)' : '' }}"></span>
                 </label>
-                <button onclick="openEditModal({{ $ct->id }}, '{{ addslashes($ct->trigger_event) }}', '{{ addslashes($ct->template_name) }}', {!! json_encode($ct->message_body) !!}, '{{ $ct->approval_status }}', {{ $ct->is_active ? 'true' : 'false' }})"
+                <button onclick="openEditModal({{ $ct->id }}, '{{ addslashes($ct->trigger_event) }}', '{{ addslashes($ct->template_name) }}', {!! json_encode($ct->message_body) !!}, '{{ $ct->approval_status }}', {{ $ct->is_active ? 'true' : 'false' }}, false, {!! json_encode($ct->header_media_url) !!})"
                     style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -456,10 +456,9 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
             <div style="font-size:17px;font-weight:800;color:#1e293b;"><i class="fas fa-edit" style="color:#7c3aed;margin-right:8px;"></i>Edit Template</div>
             <button onclick="closeEditModal()" style="background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;">×</button>
         </div>
-        <form id="editForm" method="POST" style="padding:24px 28px;">
+        <form id="editForm" method="POST" enctype="multipart/form-data" style="padding:24px 28px;">
             @csrf
             @method('PUT')
-            <input type="hidden" name="_method" value="PUT">
             <div style="display:grid;gap:18px;">
                 <div>
                     <label style="display:block;font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">Trigger Event</label>
@@ -496,6 +495,35 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" id="edit-active" value="1" style="width:18px;height:18px;cursor:pointer;">
                 </div>
+                {{-- Header Image (for image-header templates used in blast) --}}
+                <div style="border:1px solid #e0f2fe;border-radius:12px;padding:14px 16px;background:#f0f9ff;">
+                    <div style="font-size:13px;font-weight:700;color:#0369a1;margin-bottom:10px;">
+                        <i class="fas fa-image" style="margin-right:6px;"></i>Header Image
+                        <span style="font-size:11px;font-weight:500;color:#64748b;margin-left:6px;">Optional — for templates with an image header in Meta</span>
+                    </div>
+                    {{-- Current image preview --}}
+                    <div id="edit-header-wrap" style="display:none;margin-bottom:10px;">
+                        <img id="edit-header-preview" src="" alt="Header image preview"
+                            style="max-width:100%;max-height:160px;border-radius:10px;border:1px solid #bae6fd;object-fit:cover;display:block;">
+                        <button type="button" onclick="clearHeaderImg()"
+                            style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-times"></i> Remove image
+                        </button>
+                    </div>
+                    {{-- Hidden field holds current/cleared URL --}}
+                    <input type="hidden" name="header_media_url" id="edit-header-url">
+                    {{-- File upload --}}
+                    <label style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:#0ea5e9;color:#fff;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                        <i class="fas fa-upload"></i> Upload image
+                        <input type="file" name="header_image" id="edit-header-file" accept="image/png,image/jpeg,image/jpg,image/webp"
+                            style="display:none;" onchange="previewHeaderImg(this)">
+                    </label>
+                    <div style="font-size:11px;color:#64748b;margin-top:7px;">
+                        <i class="fas fa-info-circle"></i> Upload the same image that is used in your Meta template header. Max 5 MB. PNG/JPG/WebP.
+                        When blasting, this image URL will be sent automatically — no manual URL entry needed.
+                    </div>
+                </div>
+
                 {{-- PDF attachment toggle (only shown for checkout.done templates) --}}
                 <div id="edit-pdf-row" style="display:none;align-items:flex-start;gap:12px;padding:12px 14px;background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;">
                     <input type="hidden" name="has_document_attachment" value="0">
@@ -560,7 +588,7 @@ function closeCreateModal() {
 
 var _editOriginalBody = '';
 
-function openEditModal(id, event, name, body, status, active, hasDocAttachment) {
+function openEditModal(id, event, name, body, status, active, hasDocAttachment, headerImgUrl) {
     document.getElementById('editForm').action = '/platform/whatsapp/templates/' + id;
     document.getElementById('edit-event-display').value = allEvents[event] || event;
     document.getElementById('edit-name').value = name;
@@ -583,10 +611,48 @@ function openEditModal(id, event, name, body, status, active, hasDocAttachment) 
         pdfCheck.checked = false;
     }
 
+    // Header image
+    const headerWrap    = document.getElementById('edit-header-wrap');
+    const headerPreview = document.getElementById('edit-header-preview');
+    const headerUrl     = document.getElementById('edit-header-url');
+    const headerFile    = document.getElementById('edit-header-file');
+    headerFile.value = ''; // clear any stale file selection
+    if (headerImgUrl) {
+        headerPreview.src   = headerImgUrl;
+        headerUrl.value     = headerImgUrl;
+        headerWrap.style.display = 'block';
+    } else {
+        headerPreview.src   = '';
+        headerUrl.value     = '';
+        headerWrap.style.display = 'none';
+    }
+
     document.getElementById('editModal').style.display = 'flex';
 }
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
+}
+
+function previewHeaderImg(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('edit-header-preview');
+        const wrap    = document.getElementById('edit-header-wrap');
+        preview.src = e.target.result;
+        wrap.style.display = 'block';
+        // Clear stored URL so the controller knows to use the new file
+        document.getElementById('edit-header-url').value = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearHeaderImg() {
+    document.getElementById('edit-header-preview').src = '';
+    document.getElementById('edit-header-url').value   = '';
+    document.getElementById('edit-header-file').value  = '';
+    document.getElementById('edit-header-wrap').style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', function () {
