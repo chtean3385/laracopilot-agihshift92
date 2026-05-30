@@ -370,18 +370,20 @@ class HotelController extends Controller
             ]);
 
             DB::table('settings')->insert([
-                'hotel_id'        => $newHotelId,
-                'resort_name'     => $data['new_hotel_name'],
-                'address'         => '',
-                'phone'           => '',
-                'email'           => '',
-                'tax_rate'        => '12',
-                'currency'        => 'INR',
-                'currency_symbol' => 'Rs',
-                'check_in_time'   => '12:00',
-                'check_out_time'  => '11:00',
-                'created_at'      => now(),
-                'updated_at'      => now(),
+                'hotel_id'            => $newHotelId,
+                'resort_name'         => $data['new_hotel_name'],
+                'address'             => '',
+                'phone'               => '',
+                'email'               => '',
+                'tax_rate'            => '12',
+                'currency'            => 'INR',
+                'currency_symbol'     => 'Rs',
+                'check_in_time'       => '12:00',
+                'check_out_time'      => '11:00',
+                'qr_checkin_enabled'  => false,
+                'qr_checkout_enabled' => false,
+                'created_at'          => now(),
+                'updated_at'          => now(),
             ]);
 
             foreach ([

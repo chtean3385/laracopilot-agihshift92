@@ -33,6 +33,8 @@ class SettingController extends Controller
                 'check_in_time'       => '14:00',
                 'check_out_time'      => '11:00',
                 'cancellation_policy' => 'Free cancellation up to 48 hours before check-in.',
+                'qr_checkin_enabled'  => false,
+                'qr_checkout_enabled' => false,
             ]);
         }
 
