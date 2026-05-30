@@ -64,6 +64,7 @@
 
         <form id="checkinForm" action="{{ route('guest.checkin.store', $slug) }}" method="POST" enctype="multipart/form-data">
             @csrf
+            <input type="hidden" name="booking_ref" value="{{ $bookingRef ?? '' }}">
 
             {{-- Step 1: Phone --}}
             <div class="step active" id="step1">

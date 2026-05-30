@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Hotel;
+use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\GuestCheckinRequest;
 use App\Models\Setting;
@@ -12,11 +13,12 @@ use Illuminate\Support\Facades\Storage;
 
 class GuestCheckinController extends Controller
 {
-    public function show(string $slug)
+    public function show(Request $request, string $slug)
     {
         $hotel = Hotel::where('slug', $slug)->where('status', 'active')->firstOrFail();
         $settings = Setting::where('hotel_id', $hotel->id)->first();
-        return view('guest.checkin', compact('hotel', 'settings', 'slug'));
+        $bookingRef = $request->query('ref', '');
+        return view('guest.checkin', compact('hotel', 'settings', 'slug', 'bookingRef'));
     }
 
     public function lookup(Request $request, string $slug)
@@ -63,14 +65,12 @@ class GuestCheckinController extends Controller
         $reuseDocRequested = $request->boolean('reuse_id_document');
         $reuseSigRequested = $request->boolean('reuse_signature');
 
-        $existingCustomer = null;
-        if ($reuseDocRequested || $reuseSigRequested) {
-            $existingCustomer = Customer::withoutGlobalScopes()
-                ->where('hotel_id', $hotel->id)
-                ->where('phone', trim($request->input('phone', '')))
-                ->whereNull('deleted_at')
-                ->first();
-        }
+        // Always look up existing customer by phone so we can update their profile.
+        $existingCustomer = Customer::withoutGlobalScopes()
+            ->where('hotel_id', $hotel->id)
+            ->where('phone', trim($request->input('phone', '')))
+            ->whereNull('deleted_at')
+            ->first();
 
         $reuseDoc = $reuseDocRequested && $existingCustomer && !empty($existingCustomer->id_document_path);
         $reuseSig = $reuseSigRequested && $existingCustomer && !empty($existingCustomer->signature);
@@ -92,18 +92,14 @@ class GuestCheckinController extends Controller
             'additional_guests.*.name'      => 'required_with:additional_guests|string|max:255',
             'additional_guests.*.id_type'   => 'nullable|string|max:100',
             'additional_guests.*.id_number' => 'nullable|string|max:100',
+            'booking_ref'         => 'nullable|string|max:50',
         ]);
 
         // Resolve ID document path — new upload takes priority, otherwise reuse from customer profile
         if ($request->hasFile('id_document')) {
             $docPath = $request->file('id_document')->store('guest-checkin-docs/' . $hotel->id, 'public');
-        } elseif ($reuseDoc) {
-            $existing = Customer::withoutGlobalScopes()
-                ->where('hotel_id', $hotel->id)
-                ->where('phone', $validated['phone'])
-                ->whereNull('deleted_at')
-                ->value('id_document_path');
-            $docPath = $existing ?? null;
+        } elseif ($reuseDoc && $existingCustomer) {
+            $docPath = $existingCustomer->id_document_path;
         } else {
             $docPath = null;
         }
@@ -111,55 +107,135 @@ class GuestCheckinController extends Controller
         // Resolve signature — new drawing takes priority, otherwise reuse from customer profile
         if (!empty($validated['signature_data'])) {
             $sigData = $validated['signature_data'];
-        } elseif ($reuseSig) {
-            $sigData = Customer::withoutGlobalScopes()
-                ->where('hotel_id', $hotel->id)
-                ->where('phone', $validated['phone'])
-                ->whereNull('deleted_at')
-                ->value('signature') ?? null;
+        } elseif ($reuseSig && $existingCustomer) {
+            $sigData = $existingCustomer->signature;
         } else {
             $sigData = null;
         }
 
-        GuestCheckinRequest::create([
-            'hotel_id'            => $hotel->id,
-            'name'                => $validated['name'],
-            'phone'               => $validated['phone'],
-            'email'               => $validated['email'] ?? null,
-            'id_type'             => $validated['id_type'] ?? null,
-            'id_number'           => $validated['id_number'] ?? null,
-            'address'             => $validated['address'] ?? null,
-            'date_of_birth'       => $validated['date_of_birth'] ?? null,
-            'id_document_path'    => $docPath,
-            'signature_data'      => $sigData,
-            'additional_guests'   => $validated['additional_guests'] ?? null,
-            'requested_check_in'  => $validated['requested_check_in'] ?? null,
-            'requested_check_out' => $validated['requested_check_out'] ?? null,
-            'guests_count'        => $validated['guests_count'] ?? 1,
-            'status'              => 'pending',
-        ]);
+        // ── Look up existing booking by ref (from the WhatsApp link) ──────────────
+        $linkedBooking  = null;
+        $linkedBookingId = null;
+        $bookingRef = trim($validated['booking_ref'] ?? '');
+        if ($bookingRef) {
+            $linkedBooking = Booking::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->where('booking_number', $bookingRef)
+                ->first();
+            $linkedBookingId = $linkedBooking?->id;
+        }
 
-        // Fire push notification to all hotel staff devices
-        try {
-            $fcm    = app(FcmService::class);
-            $tokens = $fcm->getTokensForHotel($hotel->id);
-            if (!empty($tokens)) {
-                $fcm->sendToTokens(
-                    $tokens,
-                    '🛎️ New QR Check-In Request',
-                    $validated['name'] . ' has submitted a self check-in form. Assign a room now.',
-                    ['url' => url('/qr-arrivals')]
-                );
+        // ── Update (or create) the Customer profile immediately ───────────────────
+        // This is the fix for "guest fills form but profile stays empty".
+        $profileData = [
+            'name'          => $validated['name'],
+            'email'         => $validated['email'] ?? null,
+            'id_type'       => $validated['id_type'] ?? null,
+            'id_number'     => $validated['id_number'] ?? null,
+            'address'       => $validated['address'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+        ];
+        if ($docPath)  $profileData['id_document_path'] = $docPath;
+        if ($sigData)  $profileData['signature']        = $sigData;
+
+        if ($existingCustomer) {
+            // Only overwrite fields the guest actually provided (don't blank out existing data).
+            $updateData = array_filter($profileData, fn($v) => $v !== null && $v !== '');
+            $existingCustomer->update($updateData);
+            $customerId = $existingCustomer->id;
+        } else {
+            // New guest — create the Customer record right now.
+            $newCustomer = Customer::create(array_merge($profileData, [
+                'hotel_id' => $hotel->id,
+                'phone'    => $validated['phone'],
+            ]));
+            $customerId = $newCustomer->id;
+        }
+
+        // ── Determine status: if linked to an existing booking → auto-converted ───
+        // No need for staff to "assign room" — room is already in the booking.
+        // Prevent duplicate QR requests for the same booking_ref.
+        if ($linkedBookingId) {
+            $existingQr = GuestCheckinRequest::where('hotel_id', $hotel->id)
+                ->where('booking_id', $linkedBookingId)
+                ->first();
+
+            if ($existingQr) {
+                // Already submitted for this booking — just update the record.
+                $existingQr->update([
+                    'name'             => $validated['name'],
+                    'email'            => $validated['email'] ?? null,
+                    'id_type'          => $validated['id_type'] ?? null,
+                    'id_number'        => $validated['id_number'] ?? null,
+                    'address'          => $validated['address'] ?? null,
+                    'date_of_birth'    => $validated['date_of_birth'] ?? null,
+                    'id_document_path' => $docPath ?? $existingQr->id_document_path,
+                    'signature_data'   => $sigData ?? $existingQr->signature_data,
+                    'customer_id'      => $customerId,
+                    'status'           => 'converted',
+                ]);
+                $qrRecord = $existingQr;
+            } else {
+                $qrRecord = GuestCheckinRequest::create([
+                    'hotel_id'            => $hotel->id,
+                    'name'                => $validated['name'],
+                    'phone'               => $validated['phone'],
+                    'email'               => $validated['email'] ?? null,
+                    'id_type'             => $validated['id_type'] ?? null,
+                    'id_number'           => $validated['id_number'] ?? null,
+                    'address'             => $validated['address'] ?? null,
+                    'date_of_birth'       => $validated['date_of_birth'] ?? null,
+                    'id_document_path'    => $docPath,
+                    'signature_data'      => $sigData,
+                    'additional_guests'   => $validated['additional_guests'] ?? null,
+                    'requested_check_in'  => $linkedBooking->check_in_date ?? null,
+                    'requested_check_out' => $linkedBooking->check_out_date ?? null,
+                    'guests_count'        => $validated['guests_count'] ?? 1,
+                    'customer_id'         => $customerId,
+                    'booking_id'          => $linkedBookingId,
+                    'status'              => 'converted', // Room already assigned in booking
+                ]);
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('[GuestCheckin] FCM push failed: ' . $e->getMessage());
+        } else {
+            // No booking ref — walk-in / new request; staff will assign a room.
+            $qrRecord = GuestCheckinRequest::create([
+                'hotel_id'            => $hotel->id,
+                'name'                => $validated['name'],
+                'phone'               => $validated['phone'],
+                'email'               => $validated['email'] ?? null,
+                'id_type'             => $validated['id_type'] ?? null,
+                'id_number'           => $validated['id_number'] ?? null,
+                'address'             => $validated['address'] ?? null,
+                'date_of_birth'       => $validated['date_of_birth'] ?? null,
+                'id_document_path'    => $docPath,
+                'signature_data'      => $sigData,
+                'additional_guests'   => $validated['additional_guests'] ?? null,
+                'requested_check_in'  => $validated['requested_check_in'] ?? null,
+                'requested_check_out' => $validated['requested_check_out'] ?? null,
+                'guests_count'        => $validated['guests_count'] ?? 1,
+                'customer_id'         => $customerId,
+                'status'              => 'pending',
+            ]);
+
+            // Notify staff only for walk-in (pending) requests — booked guests don't need room assignment.
+            try {
+                $fcm    = app(FcmService::class);
+                $tokens = $fcm->getTokensForHotel($hotel->id);
+                if (!empty($tokens)) {
+                    $fcm->sendToTokens(
+                        $tokens,
+                        '🛎️ New QR Check-In Request',
+                        $validated['name'] . ' has submitted a self check-in form. Assign a room now.',
+                        ['url' => url('/qr-arrivals')]
+                    );
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('[GuestCheckin] FCM push failed: ' . $e->getMessage());
+            }
         }
 
         $settings = Setting::where('hotel_id', $hotel->id)->first();
-        $refId = GuestCheckinRequest::where('hotel_id', $hotel->id)
-            ->where('phone', $validated['phone'])
-            ->orderByDesc('id')
-            ->value('id');
+        $refId    = $qrRecord->id;
 
         return view('guest.checkin-success', compact('hotel', 'settings', 'validated', 'refId'));
     }

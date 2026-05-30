@@ -74,7 +74,8 @@ class MessageBuilder
         }
         $base = rtrim($base, '/');
 
-        return $base . '/g/checkin/' . $hotel->slug;
+        // Append booking number so the guest form links back to this specific booking.
+        return $base . '/g/checkin/' . $hotel->slug . '?ref=' . urlencode($booking->booking_number);
     }
 
     public static function build(string $template, Booking $booking): string
