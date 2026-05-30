@@ -26,6 +26,12 @@ class MessageBuilder
         $advPaid    = (float) ($booking->advance_payment ?? 0);
         $balanceDue = max(0, $grandTotal - $advPaid);
 
+        // hotel_contact_number: prefer settings, fall back to hotel.phone
+        $hotel = Hotel::withoutGlobalScopes()->find($booking->hotel_id);
+        $contactNumber = $settings->contact_number
+            ?? $hotel?->phone
+            ?? '';
+
         return [
             'guest_name'           => $customer->name ?? '',
             'hotel_name'           => $hotelName,
@@ -41,7 +47,7 @@ class MessageBuilder
             'payment_method'       => $lastPayment ? ucfirst(str_replace('_', ' ', $lastPayment->payment_method ?? '')) : '',
             'nights'               => (string) ($booking->nights ?? ''),
             'adults'               => (string) ($booking->adults ?? ''),
-            'hotel_contact_number' => $settings->contact_number ?? '',
+            'hotel_contact_number' => $contactNumber,
             'hotel_location'       => $settings->hotel_location ?? '',
             'payment_link'         => '',
             'guest_checkin_link'   => self::buildCheckinLink($booking),
@@ -54,7 +60,20 @@ class MessageBuilder
         if (!$hotel || empty($hotel->slug)) {
             return '';
         }
-        return url('/g/checkin/' . $hotel->slug);
+
+        // Build a publicly accessible URL.
+        // In production APP_URL is the real domain (e.g. https://resort.dreamstechnology.in).
+        // In dev on Replit, APP_URL may be localhost/0.0.0.0 — fall back to REPLIT_DEV_DOMAIN.
+        $base = config('app.url', '');
+        if (empty($base) || str_contains($base, 'localhost') || str_contains($base, '0.0.0.0')) {
+            $replitDomain = env('REPLIT_DEV_DOMAIN', '');
+            if ($replitDomain) {
+                $base = 'https://' . $replitDomain;
+            }
+        }
+        $base = rtrim($base, '/');
+
+        return $base . '/g/checkin/' . $hotel->slug;
     }
 
     public static function build(string $template, Booking $booking): string
