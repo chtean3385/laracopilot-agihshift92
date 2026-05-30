@@ -989,9 +989,19 @@
                     </a>
                     @endif
                     @if($opsChildren['checkin'])
-                    <a href="{{ route('checkin.index') }}" class="nav-link {{ request()->routeIs('checkin.*') ? 'active' : '' }}">
+                    <a href="{{ route('checkin.index') }}" class="nav-link {{ request()->routeIs('checkin.*') && !request()->routeIs('qr-arrivals.*') ? 'active' : '' }}">
                         <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
                         Check-In
+                    </a>
+                    @php
+                        $qrPendingCount = \App\Models\GuestCheckinRequest::where('hotel_id', (int)(session('crm_hotel_id') ?? session('crm_sa_hotel_filter')))->where('status', 'pending')->count();
+                    @endphp
+                    <a href="{{ route('qr-arrivals.index') }}" class="nav-link {{ request()->routeIs('qr-arrivals.*') ? 'active' : '' }}" style="position:relative;">
+                        <span class="icon"><i class="fas fa-qrcode"></i></span>
+                        QR Arrivals
+                        @if($qrPendingCount > 0)
+                        <span class="nav-badge">{{ $qrPendingCount }}</span>
+                        @endif
                     </a>
                     @endif
                     @if($opsChildren['checkout'])

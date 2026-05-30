@@ -64,6 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'book/*',
             'widget/*',
             'pricing/enquire',
+            'g/*',
         ]);
         $middleware->alias([
             'permission'     => \App\Http\Middleware\PermissionMiddleware::class,

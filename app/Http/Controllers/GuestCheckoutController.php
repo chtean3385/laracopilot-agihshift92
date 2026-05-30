@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Booking;
+use App\Models\Setting;
+use App\Models\PaymentLinkConfig;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+
+class GuestCheckoutController extends Controller
+{
+    public function show(string $token)
+    {
+        $booking = Booking::where('checkout_token', $token)
+            ->with(['customer', 'room', 'extraCharges', 'bookingAddOns'])
+            ->firstOrFail();
+
+        // Only allow checkout view for active bookings
+        if (!in_array($booking->status, ['confirmed', 'checked_in'])) {
+            abort(410, 'This booking has already been checked out.');
+        }
+
+        $settings   = Setting::where('hotel_id', $booking->hotel_id)->first();
+        $upiConfig  = PaymentLinkConfig::withoutGlobalScopes()
+            ->where('hotel_id', $booking->hotel_id)
+            ->first();
+
+        // Compute bill summary (mirrors CheckOutController::show logic)
+        $pricingType       = $booking->room?->pricing_type ?? ($booking->whole_hotel_pricing_type ?? 'per_night');
+        $extraChargesTotal = $booking->extraCharges->sum('total_price');
+
+        if ($pricingType === 'per_night') {
+            $checkinDate  = Carbon::parse($booking->actual_checkin_at ?? $booking->check_in_date)->startOfDay();
+            $checkoutDate = Carbon::parse($booking->check_out_date)->startOfDay();
+            $actualNights = max(1, $checkinDate->diffInDays($checkoutDate));
+            if ($booking->price_overridden || $booking->is_whole_hotel) {
+                $roomCost     = max(0, (float) $booking->total_amount - $extraChargesTotal);
+                $mealCost     = 0;
+                $extraBedCost = 0;
+            } else {
+                $roomCost     = $actualNights * ($booking->room?->price_per_night ?? 0);
+                $mealCost     = (float) ($booking->meal_cost ?? 0);
+                $extraBedCost = (float) ($booking->extra_bed_cost ?? 0);
+            }
+            $actualTotal = $roomCost + $mealCost + $extraBedCost + $extraChargesTotal;
+        } elseif ($pricingType === 'per_hour') {
+            $actualNights = 0;
+            $mealCost     = 0;
+            $extraBedCost = 0;
+            $roomCost     = (float) $booking->total_amount;
+            $actualTotal  = $roomCost + $extraChargesTotal;
+        } else {
+            $actualNights = 0;
+            $mealCost     = 0;
+            $extraBedCost = 0;
+            $roomCost     = max(0, (float) $booking->total_amount - $extraChargesTotal);
+            $actualTotal  = $roomCost + $extraChargesTotal;
+        }
+
+        $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
+        $gstAmount  = round($actualTotal * ($taxRate / 100), 2);
+        $grandTotal = $actualTotal + $gstAmount;
+        $totalPaid  = $booking->payments()->where('status', 'completed')->sum('amount');
+        $balanceDue = max(0, $grandTotal - $totalPaid);
+
+        return view('guest.checkout', compact(
+            'booking', 'settings', 'upiConfig', 'token',
+            'pricingType', 'roomCost', 'mealCost', 'extraBedCost',
+            'extraChargesTotal', 'actualTotal', 'taxRate', 'gstAmount',
+            'grandTotal', 'totalPaid', 'balanceDue'
+        ));
+    }
+
+    public function submit(Request $request, string $token)
+    {
+        $booking = Booking::where('checkout_token', $token)->firstOrFail();
+
+        if (!in_array($booking->status, ['confirmed', 'checked_in'])) {
+            abort(410, 'This booking has already been checked out.');
+        }
+
+        $request->validate([
+            'payment_method' => 'required|in:upi,cash,card',
+            'payment_ref'    => 'nullable|string|max:200',
+        ]);
+
+        $booking->update([
+            'guest_payment_method'       => $request->payment_method,
+            'guest_payment_ref'          => $request->payment_ref,
+            'guest_checkout_submitted_at'=> now(),
+        ]);
+
+        $settings = Setting::where('hotel_id', $booking->hotel_id)->first();
+        return view('guest.checkout-success', compact('booking', 'settings'));
+    }
+}

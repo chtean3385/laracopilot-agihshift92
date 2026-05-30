@@ -47,6 +47,7 @@ class Booking extends Model
         'extra_beds', 'extra_bed_cost',
         'source', 'ota_ref', 'ota_name', 'ota_conflict', 'external_booking_id',
         'is_whole_hotel', 'whole_hotel_pricing_type',
+        'checkout_token', 'guest_payment_method', 'guest_payment_ref', 'guest_checkout_submitted_at',
     ];
 
     protected $casts = [

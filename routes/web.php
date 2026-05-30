@@ -166,6 +166,15 @@ Route::get('/checkin',       [CheckInController::class, 'index']  )->name('check
 Route::get('/checkin/{id}',  [CheckInController::class, 'show']   )->name('checkin.show');
 Route::post('/checkin/{id}', [CheckInController::class, 'process'])->middleware('permission:checkin.process')->name('checkin.process');
 
+// ── QR Self-Service Check-In (Admin) ────────────────────────────────────────
+Route::middleware('permission:checkin.process')->prefix('qr-arrivals')->name('qr-arrivals.')->group(function () {
+    Route::get('/',              [\App\Http\Controllers\Admin\QrCheckinAdminController::class, 'index']   )->name('index');
+    Route::get('/print-qr',     [\App\Http\Controllers\Admin\QrCheckinAdminController::class, 'printQr'] )->name('print-qr');
+    Route::get('/{id}',         [\App\Http\Controllers\Admin\QrCheckinAdminController::class, 'show']    )->name('show');
+    Route::post('/{id}/assign', [\App\Http\Controllers\Admin\QrCheckinAdminController::class, 'assign']  )->name('assign');
+    Route::post('/{id}/cancel', [\App\Http\Controllers\Admin\QrCheckinAdminController::class, 'cancel']  )->name('cancel');
+});
+
 // ── Check-Out ──────────────────────────────────────────────────────────────
 Route::get('/checkout',            [CheckOutController::class, 'index']  )->name('checkout.index');
 Route::get('/checkout/{id}',       [CheckOutController::class, 'show']   )->name('checkout.show');
@@ -409,6 +418,13 @@ Route::withoutMiddleware([
      * Route::post('/menu/{slug}/order',                  [FoodMenuPublicController::class, 'order'] )->name('public.food-menu.order');
      * Route::get( '/menu/{slug}/{room}',                 [FoodMenuPublicController::class, 'show']  )->name('public.food-menu.show')->where('room', '[A-Za-z0-9_\-]+');
      */
+
+    // ── Guest Self-Service Check-In & Check-Out (QR flow) ─────────────────
+    Route::get( '/g/checkin/{slug}',          [\App\Http\Controllers\GuestCheckinController::class,  'show']   )->name('guest.checkin.show');
+    Route::get( '/g/checkin/{slug}/lookup',   [\App\Http\Controllers\GuestCheckinController::class,  'lookup'] )->name('guest.checkin.lookup');
+    Route::post('/g/checkin/{slug}',          [\App\Http\Controllers\GuestCheckinController::class,  'store']  )->name('guest.checkin.store');
+    Route::get( '/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'show']   )->name('guest.checkout.show');
+    Route::post('/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'submit'] )->name('guest.checkout.submit');
 
     // ── Public Restaurant Menu (QR scan-to-order) ──
     Route::get( '/r/{slug}',                       [\App\Http\Controllers\RestaurantPublicController::class, 'show']      )->name('public.restaurant.show');
