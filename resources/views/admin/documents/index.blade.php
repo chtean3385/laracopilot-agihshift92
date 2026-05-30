@@ -35,13 +35,22 @@
                     <div style="font-size:11px;color:#94a3b8;margin-top:2px;">{{ $doc->created_at->format('d M Y') }}</div>
                 </div>
             </div>
+            {{-- Image preview for JPG/PNG files --}}
+            @php $isImage = in_array(strtolower($doc->file_type ?? ''), ['image/jpeg','image/jpg','image/png','image/webp']); @endphp
+            @if($isImage)
+            <div style="margin-bottom:12px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;background:#f8fafc;text-align:center;">
+                <img src="{{ route('documents.download', $doc->id) }}" alt="{{ $doc->document_type }}"
+                     style="max-width:100%;max-height:180px;object-fit:contain;display:block;margin:0 auto;cursor:pointer;"
+                     onclick="window.open(this.src,'_blank')">
+            </div>
+            @endif
             <div style="font-size:11px;color:#94a3b8;margin-bottom:14px;">{{ $doc->file_name }} &nbsp;({{ number_format($doc->file_size / 1024, 1) }} KB)</div>
             @if($doc->notes)
             <div style="font-size:12px;color:#64748b;background:#f8fafc;border-radius:8px;padding:8px 10px;margin-bottom:12px;">{{ $doc->notes }}</div>
             @endif
             <div style="display:flex;gap:8px;">
-                <a href="{{ route('documents.download', $doc->id) }}" style="flex:1;text-align:center;background:#dbeafe;color:#1d4ed8;padding:8px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">
-                    <i class="fas fa-download mr-1"></i>Download
+                <a href="{{ route('documents.download', $doc->id) }}" target="_blank" style="flex:1;text-align:center;background:#dbeafe;color:#1d4ed8;padding:8px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">
+                    <i class="fas fa-eye mr-1"></i>View / Download
                 </a>
                 <form action="{{ route('documents.destroy', $doc->id) }}" method="POST">
                     @csrf

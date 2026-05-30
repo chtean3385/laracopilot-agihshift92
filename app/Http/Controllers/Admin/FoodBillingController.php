@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Module;
+use App\Services\WhatsApp\WhatsAppService;
 
 class FoodBillingController extends Controller
 {
@@ -47,5 +48,26 @@ class FoodBillingController extends Controller
         ];
 
         return view('admin.food-billing.show', compact('booking', 'categories'));
+    }
+
+    public function sendWhatsApp(Booking $booking)
+    {
+        if (!session('crm_logged_in')) return redirect()->route('login');
+        abort_unless(Module::isEnabled('extra-billing'), 403);
+        $hotelId = session('crm_hotel_id') ?: session('crm_sa_hotel_filter');
+        $bookingHotelId = $booking->hotel_id ?? $booking->room?->hotel_id;
+        abort_unless((int)($bookingHotelId ?? 0) === (int)$hotelId, 403);
+
+        $booking->load(['room', 'customer', 'extraCharges', 'invoice', 'payments']);
+
+        $sent = WhatsAppService::sendForEvent('restaurant.bill', $booking);
+
+        if ($sent) {
+            return redirect()->route('food-billing.show', $booking)
+                ->with('success', 'Restaurant bill sent to ' . ($booking->customer?->name ?? 'guest') . ' via WhatsApp!');
+        }
+
+        return redirect()->route('food-billing.show', $booking)
+            ->with('error', 'WhatsApp not sent — check WhatsApp module settings or template approval status.');
     }
 }

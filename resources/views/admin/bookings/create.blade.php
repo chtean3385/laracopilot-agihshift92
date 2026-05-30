@@ -552,11 +552,6 @@
                             <input type="text" id="qg_phone" name="phone" class="form-input" placeholder="9876543210" required>
                         </div>
                     </div>
-                    {{-- Row 2: Email --}}
-                    <div>
-                        <label class="form-label">Email <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
-                        <input type="email" id="qg_email" name="email" class="form-input" placeholder="guest@email.com">
-                    </div>
                     {{-- Row 3: ID Type + ID Number --}}
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -581,13 +576,7 @@
                                 oninput="this.value=this.value.toUpperCase()">
                         </div>
                     </div>
-                    {{-- Row 4: Upload Document --}}
-                    <div>
-                        <label class="form-label">Upload Document <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
-                        <input type="file" name="documents[]" id="qg_documents" multiple accept=".jpg,.jpeg,.png,.pdf"
-                            class="form-input" style="padding:6px;">
-                        <p class="text-xs text-gray-400 mt-0.5">JPG, PNG or PDF · Max 5 MB each</p>
-                    </div>
+                    {{-- Guest can upload ID doc after booking via WhatsApp link --}}
                 </div>
             </div>
             {{-- Fixed footer with buttons --}}

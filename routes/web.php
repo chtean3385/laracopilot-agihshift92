@@ -158,8 +158,9 @@ Route::get('/bookings/{id}',                 [BookingController::class, 'show'] 
 Route::post('/bookings/{booking}/extra-charges',                [BookingExtraChargeController::class, 'store']  )->name('bookings.extra_charges.store');
 Route::delete('/bookings/{booking}/extra-charges/{charge}',    [BookingExtraChargeController::class, 'destroy'])->name('bookings.extra_charges.destroy');
 
-Route::get('/food-billing',           [FoodBillingController::class, 'index'])->name('food-billing.index');
-Route::get('/food-billing/{booking}', [FoodBillingController::class, 'show']) ->name('food-billing.show');
+Route::get('/food-billing',                               [FoodBillingController::class, 'index'])       ->name('food-billing.index');
+Route::get('/food-billing/{booking}',                     [FoodBillingController::class, 'show'])        ->name('food-billing.show');
+Route::post('/food-billing/{booking}/send-whatsapp',      [FoodBillingController::class, 'sendWhatsApp'])->name('food-billing.send-whatsapp');
 
 // ── Check-In ───────────────────────────────────────────────────────────────
 Route::get('/checkin',       [CheckInController::class, 'index']  )->name('checkin.index');

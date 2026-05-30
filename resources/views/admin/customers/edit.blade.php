@@ -81,6 +81,33 @@
                     </div>
                 </div>
 
+                {{-- Travel Details --}}
+                <div class="md:col-span-2 border-t border-gray-100 pt-4">
+                    <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-plane text-cyan-500 mr-2"></i>Travel Details <span class="text-xs text-gray-400 font-normal">(for police report / guest register)</span></h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="form-label">Arriving From (City)</label>
+                            <input type="text" name="arrival_city" value="{{ old('arrival_city', $customer->arrival_city) }}" class="form-input" placeholder="e.g. Mumbai">
+                        </div>
+                        <div>
+                            <label class="form-label">Purpose of Travel</label>
+                            <select name="travel_reason" class="form-input">
+                                <option value="">Select reason</option>
+                                <option value="Leisure" {{ old('travel_reason', $customer->travel_reason) == 'Leisure' ? 'selected' : '' }}>Leisure / Vacation</option>
+                                <option value="Business" {{ old('travel_reason', $customer->travel_reason) == 'Business' ? 'selected' : '' }}>Business</option>
+                                <option value="Wedding" {{ old('travel_reason', $customer->travel_reason) == 'Wedding' ? 'selected' : '' }}>Wedding / Event</option>
+                                <option value="Medical" {{ old('travel_reason', $customer->travel_reason) == 'Medical' ? 'selected' : '' }}>Medical</option>
+                                <option value="Transit" {{ old('travel_reason', $customer->travel_reason) == 'Transit' ? 'selected' : '' }}>Transit</option>
+                                <option value="Other" {{ old('travel_reason', $customer->travel_reason) == 'Other' ? 'selected' : '' }}>Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Departing To (City)</label>
+                            <input type="text" name="dispatch_city" value="{{ old('dispatch_city', $customer->dispatch_city) }}" class="form-input" placeholder="e.g. Goa">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="md:col-span-2">
                     <label class="form-label">Notes</label>
                     <textarea name="notes" rows="3" class="form-input">{{ old('notes', $customer->notes) }}</textarea>

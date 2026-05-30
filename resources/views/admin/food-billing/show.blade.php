@@ -65,6 +65,18 @@
             @endforeach
         </div>
     </div>
+    @if($booking->extraCharges->count() > 0 && $booking->customer?->phone)
+    <form method="POST" action="{{ route('food-billing.send-whatsapp', $booking) }}" class="mb-4">
+        @csrf
+        <button type="submit"
+            onclick="return confirm('Send bill summary to {{ $booking->customer->name }} via WhatsApp?')"
+            style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(22,163,74,.25);width:100%;">
+            <i class="fab fa-whatsapp" style="font-size:16px;"></i>
+            Send Bill to Guest via WhatsApp
+        </button>
+    </form>
+    @endif
+
     @else
     <div class="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-4 text-sm text-amber-700 mb-4">
         <i class="fas fa-info-circle mr-2"></i>No food or extra charges added yet for this room.

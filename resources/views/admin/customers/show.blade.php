@@ -169,6 +169,44 @@
                 </div>
             </div>
 
+            {{-- Travel Details --}}
+            @if($customer->arrival_city || $customer->travel_reason || $customer->dispatch_city)
+            <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">
+                <div style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-plane" style="color:#06b6d4;"></i> Travel Details
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    @if($customer->arrival_city)
+                    <div class="info-row">
+                        <div class="info-icon" style="background:#ecfeff;"><i class="fas fa-plane-arrival" style="color:#0891b2;font-size:12px;"></i></div>
+                        <div>
+                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">Arriving From</div>
+                            <div style="font-size:13px;color:#1e293b;font-weight:600;">{{ $customer->arrival_city }}</div>
+                        </div>
+                    </div>
+                    @endif
+                    @if($customer->travel_reason)
+                    <div class="info-row">
+                        <div class="info-icon" style="background:#fef3c7;"><i class="fas fa-briefcase" style="color:#d97706;font-size:12px;"></i></div>
+                        <div>
+                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">Purpose of Travel</div>
+                            <div style="font-size:13px;color:#1e293b;font-weight:600;">{{ $customer->travel_reason }}</div>
+                        </div>
+                    </div>
+                    @endif
+                    @if($customer->dispatch_city)
+                    <div class="info-row">
+                        <div class="info-icon" style="background:#f0fdf4;"><i class="fas fa-plane-departure" style="color:#16a34a;font-size:12px;"></i></div>
+                        <div>
+                            <div style="font-size:11px;color:#94a3b8;font-weight:600;">Departing To</div>
+                            <div style="font-size:13px;color:#1e293b;font-weight:600;">{{ $customer->dispatch_city }}</div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             {{-- Corporate Billing --}}
             @if($customer->company_name || $customer->gstin)
             <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;">

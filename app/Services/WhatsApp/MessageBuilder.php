@@ -3,6 +3,7 @@
 namespace App\Services\WhatsApp;
 
 use App\Models\Booking;
+use App\Models\Hotel;
 use App\Models\Setting;
 
 class MessageBuilder
@@ -43,7 +44,17 @@ class MessageBuilder
             'hotel_contact_number' => $settings->contact_number ?? '',
             'hotel_location'       => $settings->hotel_location ?? '',
             'payment_link'         => '',
+            'guest_checkin_link'   => self::buildCheckinLink($booking),
         ];
+    }
+
+    public static function buildCheckinLink(Booking $booking): string
+    {
+        $hotel = Hotel::withoutGlobalScopes()->find($booking->hotel_id);
+        if (!$hotel || empty($hotel->slug)) {
+            return '';
+        }
+        return url('/g/checkin/' . $hotel->slug);
     }
 
     public static function build(string $template, Booking $booking): string

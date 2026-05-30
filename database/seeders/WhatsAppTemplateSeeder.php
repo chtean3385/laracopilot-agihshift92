@@ -83,6 +83,24 @@ class WhatsAppTemplateSeeder extends Seeder
                 'meta_status'      => 'not_submitted',
                 'is_active'        => false,
             ],
+            [
+                'trigger_event'    => 'booking.details_request',
+                'template_name'    => 'booking_details_link',
+                'message_body'     => "Hi {{guest_name}}, your Booking {{booking_number}} is confirmed at {{hotel_name}} from {{check_in_date}} to {{check_out_date}}.\n\nPlease fill in your guest details before arrival using the link below — this will make your check-in faster:\n{{guest_checkin_link}}\n\nThank you for booking with {{hotel_name}}. Feel free to contact us at {{hotel_contact_number}}.\n\nRegards,\nHotel Manager",
+                'approval_status'  => 'pending',
+                'meta_template_id' => null,
+                'meta_status'      => 'not_submitted',
+                'is_active'        => false,
+            ],
+            [
+                'trigger_event'    => 'restaurant.bill',
+                'template_name'    => 'restaurant_bill_receipt',
+                'message_body'     => "Restaurant Bill — {{hotel_name}} 🍽️\n\nDear {{guest_name}},\n\nYour restaurant bill for Booking {{booking_number}} has been settled.\nAmount Paid: {{amount_paid}} via {{payment_method}}.\n\nThank you for dining with us. We hope you enjoyed your meal!\n\nFor any queries, contact us at {{hotel_contact_number}}.",
+                'approval_status'  => 'pending',
+                'meta_template_id' => null,
+                'meta_status'      => 'not_submitted',
+                'is_active'        => false,
+            ],
         ];
 
         foreach ($globalTemplates as $tpl) {
@@ -216,6 +234,20 @@ class WhatsAppTemplateSeeder extends Seeder
                 'template_name'  => 'Feedback Request',
                 'message_body'   => "Dear {{guest_name}},\n\nThank you for staying with us at {{hotel_name}}! \ud83d\ude4f\n\nWe hope you had a pleasant stay from {{check_in_date}} to {{check_out_date}}.\n\nWe'd love to hear your feedback to help us serve you better. Please share your experience whenever you get a moment.\n\nWe look forward to welcoming you again! \ud83c\udf1f",
                 'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{check_in_date}}, {{check_out_date}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'booking.details_request',
+                'template_name'  => 'Booking Confirmation + Details Link',
+                'message_body'   => "Hi {{guest_name}}, your Booking {{booking_number}} is confirmed at {{hotel_name}} from {{check_in_date}} to {{check_out_date}}.\n\nPlease fill in your guest details before arrival using the link below — this will make your check-in faster:\n{{guest_checkin_link}}\n\nThank you for booking with {{hotel_name}}. Feel free to contact us at {{hotel_contact_number}}.\n\nRegards,\nHotel Manager",
+                'variables_hint' => '{{guest_name}}, {{booking_number}}, {{hotel_name}}, {{check_in_date}}, {{check_out_date}}, {{guest_checkin_link}}, {{hotel_contact_number}}',
+                'is_active'      => true,
+            ],
+            [
+                'trigger_event'  => 'restaurant.bill',
+                'template_name'  => 'Restaurant Bill Receipt',
+                'message_body'   => "Restaurant Bill — {{hotel_name}} 🍽️\n\nDear {{guest_name}},\n\nYour restaurant bill for Booking {{booking_number}} has been settled.\nAmount Paid: {{amount_paid}} via {{payment_method}}.\n\nThank you for dining with us. We hope you enjoyed your meal!\n\nFor any queries, contact us at {{hotel_contact_number}}.",
+                'variables_hint' => '{{guest_name}}, {{hotel_name}}, {{booking_number}}, {{amount_paid}}, {{payment_method}}, {{hotel_contact_number}}',
                 'is_active'      => true,
             ],
         ];

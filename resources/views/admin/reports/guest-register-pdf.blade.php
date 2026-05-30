@@ -46,15 +46,18 @@
     <table>
         <thead>
             <tr>
-                <th style="width:18%;">Name</th>
-                <th style="width:8%;">Relation</th>
-                <th style="width:8%;">Age/Sex</th>
-                <th style="width:10%;">Nationality</th>
-                <th style="width:10%;">ID Type</th>
-                <th style="width:14%;">ID Number</th>
-                <th style="width:7%;">Sign</th>
-                <th style="width:7%;">ID Doc</th>
-                <th style="width:18%;">Signature</th>
+                <th style="width:16%;">Name</th>
+                <th style="width:7%;">Relation</th>
+                <th style="width:7%;">Age/Sex</th>
+                <th style="width:9%;">Nationality</th>
+                <th style="width:9%;">ID Type</th>
+                <th style="width:12%;">ID Number</th>
+                <th style="width:9%;">Arrived From</th>
+                <th style="width:9%;">Purpose</th>
+                <th style="width:8%;">Departing To</th>
+                <th style="width:5%;">Sign</th>
+                <th style="width:5%;">ID Doc</th>
+                <th style="width:4%;">Sig.</th>
             </tr>
         </thead>
         <tbody>
@@ -63,8 +66,11 @@
                 <td>Self</td>
                 <td>{{ $booking->customer->age ? $booking->customer->age.' yrs' : '-' }}</td>
                 <td>{{ $booking->customer->nationality ?? 'Indian' }}</td>
-                <td>{{ ucfirst($booking->customer->id_type ?? '-') }}</td>
+                <td>{{ ucfirst(str_replace('_',' ',$booking->customer->id_type ?? '-')) }}</td>
                 <td>{{ $booking->customer->id_number ?? '-' }}</td>
+                <td>{{ $booking->customer->arrival_city ?? '-' }}</td>
+                <td>{{ $booking->customer->travel_reason ?? '-' }}</td>
+                <td>{{ $booking->customer->dispatch_city ?? '-' }}</td>
                 <td>{{ $booking->customer?->signature ? 'Yes' : 'No' }}</td>
                 <td>{{ ($booking->customer && $booking->customer->documents->isNotEmpty()) ? 'Yes' : 'No' }}</td>
                 <td><span class="signbox"></span></td>
@@ -77,6 +83,9 @@
                 <td>{{ $guest->nationality ?? 'Indian' }}</td>
                 <td>{{ \App\Models\BookingGuest::idTypes()[$guest->id_type] ?? ($guest->id_type ?? '-') }}</td>
                 <td>{{ $guest->id_number ?? '-' }}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
                 <td>{{ $guest->signature ? 'Yes' : 'No' }}</td>
                 <td>{{ $guest->id_document_path ? 'Yes' : 'No' }}</td>
                 <td><span class="signbox"></span></td>

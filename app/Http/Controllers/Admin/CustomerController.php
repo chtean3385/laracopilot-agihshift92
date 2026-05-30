@@ -57,6 +57,9 @@ class CustomerController extends Controller
             'gstin'         => 'nullable|string|max:15',
             'id_number'     => 'required_with:id_type|nullable|string|max:50',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'arrival_city'  => 'nullable|string|max:100',
+            'travel_reason' => 'nullable|string|max:100',
+            'dispatch_city' => 'nullable|string|max:100',
         ]);
 
         // Check if a soft-deleted guest exists with the same phone or email in this hotel
@@ -123,6 +126,9 @@ class CustomerController extends Controller
             'gstin'         => 'nullable|string|max:15',
             'id_number'     => 'required_with:id_type|nullable|string|max:50',
             'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'arrival_city'  => 'nullable|string|max:100',
+            'travel_reason' => 'nullable|string|max:100',
+            'dispatch_city' => 'nullable|string|max:100',
         ]);
         $customer->update($validated);
         $this->saveDocuments($request, $customer->id, $validated['id_type']);
