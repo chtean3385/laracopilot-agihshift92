@@ -426,6 +426,14 @@ Route::withoutMiddleware([
     Route::get( '/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'show']   )->name('guest.checkout.show');
     Route::post('/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'submit'] )->name('guest.checkout.submit')->middleware('throttle:10,1');
 
+    // ── Desk Self-Checkout (QR at reception — phone number lookup) ────────────
+    Route::get( '/g/desk-checkout/{slug}',                    [\App\Http\Controllers\GuestDeskCheckoutController::class, 'show']               )->name('guest.desk-checkout.show');
+    Route::get( '/g/desk-checkout/{slug}/success',            [\App\Http\Controllers\GuestDeskCheckoutController::class, 'success']             )->name('guest.desk-checkout.success');
+    Route::get( '/g/desk-checkout/{slug}/lookup',             [\App\Http\Controllers\GuestDeskCheckoutController::class, 'lookup']              )->name('guest.desk-checkout.lookup')->middleware('throttle:20,1');
+    Route::post('/g/desk-checkout/{slug}/submit',             [\App\Http\Controllers\GuestDeskCheckoutController::class, 'submit']              )->name('guest.desk-checkout.submit')->middleware('throttle:10,1');
+    Route::post('/g/desk-checkout/{slug}/razorpay-link',      [\App\Http\Controllers\GuestDeskCheckoutController::class, 'createRazorpayLink']  )->name('guest.desk-checkout.razorpay-link')->middleware('throttle:5,1');
+    Route::get( '/g/desk-checkout/{slug}/razorpay-callback',  [\App\Http\Controllers\GuestDeskCheckoutController::class, 'razorpayCallback']    )->name('guest.desk-checkout.razorpay-callback');
+
     // ── Public Restaurant Menu (QR scan-to-order) ──
     Route::get( '/r/{slug}',                       [\App\Http\Controllers\RestaurantPublicController::class, 'show']      )->name('public.restaurant.show');
     Route::get( '/r/{slug}/order/{number}',        [\App\Http\Controllers\RestaurantPublicController::class, 'status']    )->name('public.restaurant.status');

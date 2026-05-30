@@ -210,11 +210,12 @@ class QrCheckinAdminController extends Controller
     {
         if ($r = $this->requireAuth()) return $r;
 
-        $hotelId = session('crm_hotel_id') ?? session('crm_sa_hotel_filter');
-        $hotel   = Hotel::findOrFail($hotelId);
-        $settings = Setting::where('hotel_id', $hotelId)->first();
-        $url = url('/g/checkin/' . $hotel->slug);
+        $hotelId     = session('crm_hotel_id') ?? session('crm_sa_hotel_filter');
+        $hotel       = Hotel::findOrFail($hotelId);
+        $settings    = Setting::where('hotel_id', $hotelId)->first();
+        $checkinUrl  = url('/g/checkin/' . $hotel->slug);
+        $checkoutUrl = url('/g/desk-checkout/' . $hotel->slug);
 
-        return view('admin.qr-arrivals.print-qr', compact('hotel', 'settings', 'url'));
+        return view('admin.qr-arrivals.print-qr', compact('hotel', 'settings', 'checkinUrl', 'checkoutUrl'));
     }
 }
