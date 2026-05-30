@@ -8,6 +8,7 @@ use App\Models\GuestCheckinRequest;
 use App\Models\Setting;
 use App\Services\FcmService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class GuestCheckinController extends Controller
 {
@@ -36,20 +37,27 @@ class GuestCheckinController extends Controller
         }
 
         return response()->json([
-            'found'     => true,
-            'name'      => $customer->name,
-            'email'     => $customer->email ?? '',
-            'address'   => $customer->address ?? '',
-            'id_type'   => $customer->id_type ?? '',
-            'id_number' => $customer->id_number ?? '',
-            'dob'       => $customer->date_of_birth?->format('Y-m-d') ?? '',
-            'message'   => 'Welcome back! Your details have been filled in.',
+            'found'        => true,
+            'name'         => $customer->name,
+            'email'        => $customer->email ?? '',
+            'address'      => $customer->address ?? '',
+            'id_type'      => $customer->id_type ?? '',
+            'id_number'    => $customer->id_number ?? '',
+            'dob'          => $customer->date_of_birth?->format('Y-m-d') ?? '',
+            'id_doc_url'   => $customer->id_document_path
+                ? Storage::url($customer->id_document_path)
+                : null,
+            'has_signature' => !empty($customer->signature),
+            'message'      => 'Welcome back! Your details have been filled in.',
         ]);
     }
 
     public function store(Request $request, string $slug)
     {
         $hotel = Hotel::where('slug', $slug)->where('status', 'active')->firstOrFail();
+
+        $reuseDoc = $request->boolean('reuse_id_document');
+        $reuseSig = $request->boolean('reuse_signature');
 
         $validated = $request->validate([
             'name'                => 'required|string|max:255',
@@ -59,8 +67,8 @@ class GuestCheckinController extends Controller
             'id_number'           => 'nullable|string|max:100',
             'address'             => 'nullable|string|max:500',
             'date_of_birth'       => 'nullable|date',
-            'id_document'         => 'required|file|mimes:jpg,jpeg,png,pdf,heic,heif|max:5120',
-            'signature_data'      => 'required|string',
+            'id_document'         => ($reuseDoc ? 'nullable' : 'required') . '|file|mimes:jpg,jpeg,png,pdf,heic,heif|max:5120',
+            'signature_data'      => ($reuseSig ? 'nullable' : 'required') . '|string',
             'requested_check_in'  => 'nullable|date',
             'requested_check_out' => 'nullable|date|after_or_equal:requested_check_in',
             'guests_count'        => 'nullable|integer|min:1|max:50',
@@ -70,8 +78,32 @@ class GuestCheckinController extends Controller
             'additional_guests.*.id_number' => 'nullable|string|max:100',
         ]);
 
-        // Store the uploaded ID document
-        $docPath = $request->file('id_document')->store('guest-checkin-docs/' . $hotel->id, 'public');
+        // Resolve ID document path — new upload takes priority, otherwise reuse from customer profile
+        if ($request->hasFile('id_document')) {
+            $docPath = $request->file('id_document')->store('guest-checkin-docs/' . $hotel->id, 'public');
+        } elseif ($reuseDoc) {
+            $existing = Customer::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->where('phone', $validated['phone'])
+                ->whereNull('deleted_at')
+                ->value('id_document_path');
+            $docPath = $existing ?? null;
+        } else {
+            $docPath = null;
+        }
+
+        // Resolve signature — new drawing takes priority, otherwise reuse from customer profile
+        if (!empty($validated['signature_data'])) {
+            $sigData = $validated['signature_data'];
+        } elseif ($reuseSig) {
+            $sigData = Customer::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->where('phone', $validated['phone'])
+                ->whereNull('deleted_at')
+                ->value('signature') ?? null;
+        } else {
+            $sigData = null;
+        }
 
         GuestCheckinRequest::create([
             'hotel_id'            => $hotel->id,
@@ -83,7 +115,7 @@ class GuestCheckinController extends Controller
             'address'             => $validated['address'] ?? null,
             'date_of_birth'       => $validated['date_of_birth'] ?? null,
             'id_document_path'    => $docPath,
-            'signature_data'      => $validated['signature_data'],
+            'signature_data'      => $sigData,
             'additional_guests'   => $validated['additional_guests'] ?? null,
             'requested_check_in'  => $validated['requested_check_in'] ?? null,
             'requested_check_out' => $validated['requested_check_out'] ?? null,

@@ -341,16 +341,24 @@ function openQrModal(row, focusAssign) {
     document.getElementById('qrModalCheckout').textContent = req.checkout_label || '—';
     document.getElementById('qrModalGuests').textContent = req.guests_count + ' guest(s)';
 
-    // Additional guests
+    // Additional guests — use textContent to avoid XSS from guest-submitted data
     var addWrap = document.getElementById('qrModalAdditionalWrap');
     var addDiv  = document.getElementById('qrModalAdditional');
-    addDiv.innerHTML = '';
+    addDiv.textContent = '';
     if (req.additional && req.additional.length) {
         req.additional.forEach(function(g) {
             var div = document.createElement('div');
             div.style.cssText = 'background:#f8fafc;border-radius:8px;padding:8px 12px;font-size:12px;';
-            div.innerHTML = '<span style="font-weight:700;color:#1e293b;">' + g.name + '</span>'
-                + (g.id_type ? ' <span style="color:#64748b;">· ' + g.id_type + ': ' + (g.id_number||'—') + '</span>' : '');
+            var nameSpan = document.createElement('span');
+            nameSpan.style.cssText = 'font-weight:700;color:#1e293b;';
+            nameSpan.textContent = g.name || '—';
+            div.appendChild(nameSpan);
+            if (g.id_type) {
+                var idSpan = document.createElement('span');
+                idSpan.style.cssText = 'color:#64748b;';
+                idSpan.textContent = ' · ' + g.id_type + ': ' + (g.id_number || '—');
+                div.appendChild(idSpan);
+            }
             addDiv.appendChild(div);
         });
         addWrap.style.display = '';
@@ -425,8 +433,17 @@ function qrRecalcTotal() {
     var total  = nights * price;
 
     preview.style.display = '';
-    preview.innerHTML = '<i class="fas fa-calculator" style="margin-right:6px;"></i>'
-        + nights + ' night(s) × ₹' + price.toLocaleString('en-IN') + ' = <strong>₹' + total.toLocaleString('en-IN') + '</strong>';
+    preview.textContent = '';
+    var calcIcon = document.createElement('i');
+    calcIcon.className = 'fas fa-calculator';
+    calcIcon.style.marginRight = '6px';
+    preview.appendChild(calcIcon);
+    preview.appendChild(document.createTextNode(
+        nights + ' night(s) × ₹' + price.toLocaleString('en-IN') + ' = '
+    ));
+    var boldTotal = document.createElement('strong');
+    boldTotal.textContent = '₹' + total.toLocaleString('en-IN');
+    preview.appendChild(boldTotal);
 }
 
 function qrCancelRequest() {

@@ -136,7 +136,14 @@
                         <input type="text" name="id_number" id="idNumberInput" class="input-field" placeholder="e.g. XXXX-XXXX-XXXX">
                     </div>
                     <div>
-                        <label class="required" style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:5px;" data-i18n="doc_upload_label">Upload ID Document Photo</label>
+                        {{-- Returning guest: existing doc on file --}}
+                        <div id="existingDocBanner" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
+                            <div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:6px;"><i class="fas fa-check-circle" style="margin-right:5px;"></i><span data-i18n="doc_on_file">ID document on file from your last visit</span></div>
+                            <img id="existingDocImg" src="" alt="Existing ID" style="max-height:100px;border-radius:8px;object-fit:contain;border:1px solid #bbf7d0;display:block;margin-bottom:8px;">
+                            <div style="font-size:12px;color:#15803d;" data-i18n="doc_reuse_hint">We'll reuse your document. Tap below only if you want to upload a new one.</div>
+                        </div>
+
+                        <label id="docUploadLabel" style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:5px;" data-i18n="doc_upload_label">Upload ID Document Photo</label>
                         <div id="uploadArea" onclick="document.getElementById('docFile').click()"
                             style="border:2px dashed #cbd5e1;border-radius:14px;padding:24px;text-align:center;cursor:pointer;background:#fafafa;transition:border-color .2s;"
                             onmouseenter="this.style.borderColor='#6366f1'" onmouseleave="this.style.borderColor='#cbd5e1'">
@@ -148,6 +155,7 @@
                             <img id="docPreview" class="preview-img" style="display:none;margin:0 auto;">
                         </div>
                         <input type="file" name="id_document" id="docFile" accept="image/*,.pdf,.heic,.heif" capture="environment" style="display:none;" onchange="handleDocUpload(this)">
+                        <input type="hidden" name="reuse_id_document" id="reuseDocInput" value="0">
                         <p id="docError" style="color:#ef4444;font-size:12px;margin-top:6px;display:none;" data-i18n="doc_required">Please upload your ID document to continue.</p>
                     </div>
                 </div>
@@ -163,8 +171,14 @@
                     <h2 style="font-weight:800;font-size:18px;color:#1e293b;" data-i18n="step4_title">Digital Signature</h2>
                     <p style="font-size:13px;color:#64748b;margin-top:4px;" data-i18n="step4_sub">Sign in the box below using your finger or stylus</p>
                 </div>
+                {{-- Returning guest: existing signature on file --}}
+                <div id="existingSigBanner" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+                    <div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:4px;"><i class="fas fa-check-circle" style="margin-right:5px;"></i><span data-i18n="sig_on_file">Signature on file from your last visit — will be reused</span></div>
+                    <div style="font-size:12px;color:#15803d;" data-i18n="sig_reuse_hint">Sign below only if you want to provide a new signature, otherwise leave blank and continue.</div>
+                </div>
                 <canvas id="sigCanvas" width="432" height="180"></canvas>
                 <input type="hidden" name="signature_data" id="sigData">
+                <input type="hidden" name="reuse_signature" id="reuseSigInput" value="0">
                 <p id="sigError" style="color:#ef4444;font-size:12px;margin-top:6px;display:none;" data-i18n="sig_required">Please provide your signature.</p>
                 <div style="display:flex;gap:10px;margin-top:10px;">
                     <button type="button" onclick="clearSig()" style="flex:1;padding:10px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;"><i class="fas fa-eraser" style="margin-right:5px;"></i><span data-i18n="clear">Clear</span></button>
@@ -249,6 +263,11 @@ var TRANS = {
         passport: 'Passport', driving: 'Driving License', voter: 'Voter ID', other: 'Other',
         name_required: 'Please enter your name.',
         doc_uploaded: 'Document uploaded.',
+        doc_on_file: 'ID document on file from your last visit',
+        doc_reuse_hint: "We'll reuse your document. Tap below only if you want to upload a new one.",
+        doc_upload_optional: 'Upload New ID Document (optional)',
+        sig_on_file: 'Signature on file from your last visit — will be reused',
+        sig_reuse_hint: 'Sign below only if you want to provide a new signature, otherwise leave blank and continue.',
     },
     hi: {
         subtitle: 'अतिथि चेक-इन', step: 'चरण', step1_title: 'अपना फोन नंबर दर्ज करें',
@@ -272,6 +291,11 @@ var TRANS = {
         passport: 'पासपोर्ट', driving: 'ड्राइविंग लाइसेंस', voter: 'मतदाता पहचान पत्र', other: 'अन्य',
         name_required: 'कृपया अपना नाम दर्ज करें।',
         doc_uploaded: 'दस्तावेज़ अपलोड किया गया।',
+        doc_on_file: 'पिछली यात्रा से पहचान पत्र उपलब्ध है',
+        doc_reuse_hint: 'हम आपका पुराना दस्तावेज़ उपयोग करेंगे। नया अपलोड करना हो तो नीचे टैप करें।',
+        doc_upload_optional: 'नया पहचान पत्र अपलोड करें (वैकल्पिक)',
+        sig_on_file: 'पिछली यात्रा का हस्ताक्षर उपलब्ध — पुनः उपयोग किया जाएगा',
+        sig_reuse_hint: 'यदि नया हस्ताक्षर देना हो तो नीचे हस्ताक्षर करें, अन्यथा खाली छोड़कर आगे बढ़ें।',
     }
 };
 
@@ -281,6 +305,8 @@ var totalSteps  = 6;
 var docUploaded = false;
 var sigDrawn    = false;
 var guestCount  = 0;
+var existingDocOnFile       = false;
+var existingSignatureOnFile = false;
 
 function t(key) { return TRANS[currentLang][key] || TRANS['en'][key] || key; }
 
@@ -335,8 +361,47 @@ function doLookup(phone) {
                 document.getElementById('idTypeInput').value  = d.id_type || '';
                 document.getElementById('idNumberInput').value= d.id_number || '';
                 document.getElementById('dobInput').value     = d.dob || '';
-                showLookupMsg(t('continue') === 'Continue' ? '👋 Welcome back! Your details have been filled in.' : '👋 आपका स्वागत है! आपका विवरण भर दिया गया है।', 'success');
+
+                // Returning guest — pre-load existing ID doc if available
+                if (d.id_doc_url) {
+                    existingDocOnFile = true;
+                    document.getElementById('existingDocBanner').style.display = 'block';
+                    document.getElementById('existingDocImg').src = d.id_doc_url;
+                    document.getElementById('reuseDocInput').value = '1';
+                    // Make the upload area optional (label no longer marked required)
+                    document.getElementById('docUploadLabel').classList.remove('required');
+                    document.getElementById('docUploadLabel').setAttribute('data-i18n', 'doc_upload_optional');
+                    document.getElementById('docUploadLabel').textContent = t('doc_upload_optional');
+                } else {
+                    existingDocOnFile = false;
+                    document.getElementById('existingDocBanner').style.display = 'none';
+                    document.getElementById('reuseDocInput').value = '0';
+                    document.getElementById('docUploadLabel').classList.add('required');
+                    document.getElementById('docUploadLabel').setAttribute('data-i18n', 'doc_upload_label');
+                    document.getElementById('docUploadLabel').textContent = t('doc_upload_label');
+                }
+
+                // Returning guest — existing signature on file
+                if (d.has_signature) {
+                    existingSignatureOnFile = true;
+                    document.getElementById('existingSigBanner').style.display = 'block';
+                    document.getElementById('reuseSigInput').value = '1';
+                } else {
+                    existingSignatureOnFile = false;
+                    document.getElementById('existingSigBanner').style.display = 'none';
+                    document.getElementById('reuseSigInput').value = '0';
+                }
+
+                showLookupMsg(currentLang === 'hi' ? '👋 आपका स्वागत है! आपका विवरण भर दिया गया है।' : '👋 Welcome back! Your details have been filled in.', 'success');
             } else {
+                // New guest — reset any returning-guest state
+                existingDocOnFile = false;
+                existingSignatureOnFile = false;
+                document.getElementById('existingDocBanner').style.display = 'none';
+                document.getElementById('existingSigBanner').style.display = 'none';
+                document.getElementById('reuseDocInput').value = '0';
+                document.getElementById('reuseSigInput').value = '0';
+                document.getElementById('docUploadLabel').classList.add('required');
                 showLookupMsg(currentLang === 'hi' ? '🙏 पहली बार आपका स्वागत है!' : '🙏 Welcome! First time with us.', 'info');
             }
         }).catch(function() {});
@@ -379,11 +444,16 @@ function handleDocUpload(input) {
 }
 
 function validateStep3() {
-    if (!docUploaded) {
+    // Allow proceed if existing doc is on file (no new upload required)
+    if (!docUploaded && !existingDocOnFile) {
         document.getElementById('docError').style.display = 'block';
         return;
     }
     document.getElementById('docError').style.display = 'none';
+    // If a new file was uploaded, disable the reuse flag
+    if (docUploaded) {
+        document.getElementById('reuseDocInput').value = '0';
+    }
     nextStep();
 }
 
@@ -430,14 +500,24 @@ window.clearSig = function() {
 };
 
 function validateStep4() {
-    if (!sigDrawn) {
-        document.getElementById('sigError').style.display = 'block';
+    // If guest drew a new signature, capture it
+    if (sigDrawn) {
+        var canvas = document.getElementById('sigCanvas');
+        document.getElementById('sigData').value = canvas.toDataURL('image/png');
+        document.getElementById('reuseSigInput').value = '0';
+        document.getElementById('sigError').style.display = 'none';
+        nextStep();
         return;
     }
-    document.getElementById('sigError').style.display = 'none';
-    var canvas = document.getElementById('sigCanvas');
-    document.getElementById('sigData').value = canvas.toDataURL('image/png');
-    nextStep();
+    // Allow proceed if existing signature is on file
+    if (existingSignatureOnFile) {
+        document.getElementById('sigData').value = '';
+        document.getElementById('reuseSigInput').value = '1';
+        document.getElementById('sigError').style.display = 'none';
+        nextStep();
+        return;
+    }
+    document.getElementById('sigError').style.display = 'block';
 }
 
 // ── Step 5: Additional guests ──
