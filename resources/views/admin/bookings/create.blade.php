@@ -1254,11 +1254,13 @@
         });
 
         _typeFiltered.forEach(function(room) {
-            const isUnavailable = unavailableIds.includes(parseInt(room.value));
+            // Skip booked rooms entirely — do not add them as disabled options.
+            // Server-side store() enforces this too, but removing from the UI
+            // prevents staff from accidentally selecting them at all.
+            if (unavailableIds.includes(parseInt(room.value))) return;
             const opt = document.createElement('option');
             opt.value       = room.value;
-            opt.disabled    = isUnavailable;
-            opt.textContent = room.text + (isUnavailable ? ' — Booked' : '');
+            opt.textContent = room.text;
             Object.entries(room.dataset).forEach(function(kv) { opt.dataset[kv[0]] = kv[1]; });
             sel.appendChild(opt);
         });

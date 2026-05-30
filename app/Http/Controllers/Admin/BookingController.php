@@ -297,6 +297,23 @@ class BookingController extends Controller
             if ($whBlock) {
                 return back()->withInput()->withErrors(['check_in_date' => 'Blocked by whole-hotel reservation ' . $whBlock->booking_number . '. Individual room bookings cannot be created for this period.']);
             }
+
+            // ── Per-night room overlap guard (prevents double-booking) ──────────
+            // Check every requested room for overlapping confirmed/checked_in bookings.
+            $conflictingBookings = Booking::whereIn('room_id', $roomIds)
+                ->whereNotIn('status', ['cancelled', 'checked_out'])
+                ->where('check_in_date', '<', $coDate)
+                ->where('check_out_date', '>', $ciDate)
+                ->with('room')
+                ->get();
+
+            if ($conflictingBookings->isNotEmpty()) {
+                $msgs = $conflictingBookings->map(function ($b) {
+                    $roomNum = $b->room?->room_number ?? $b->room_id;
+                    return "Room {$roomNum} is already booked for these dates (Booking #{$b->booking_number})";
+                })->unique()->implode('; ');
+                return back()->withInput()->withErrors(['room_ids' => $msgs]);
+            }
         }
 
         $bookingPrefix   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
