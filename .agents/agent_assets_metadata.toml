@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "sfDgvrdJOnDJwDqEiB7Jv"
+uri = "file://public/images/bg-navy-gold.png"
+type = "image"
+title = "Abstract navy and gold texture"
