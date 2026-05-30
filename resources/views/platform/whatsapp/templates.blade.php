@@ -567,7 +567,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     style="padding:10px 20px;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
                     Cancel
                 </button>
-                <button type="submit"
+                <button type="submit" id="editSaveBtn"
                     style="padding:10px 20px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-save"></i> Save Changes
                 </button>
@@ -693,19 +693,40 @@ function clearHeaderImg() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Body-change notice
     document.getElementById('edit-body').addEventListener('input', function () {
         var changed = this.value.trim() !== _editOriginalBody.trim();
         document.getElementById('edit-body-changed-notice').style.display = changed ? 'block' : 'none';
         document.getElementById('edit-status-note').style.display = changed ? 'block' : 'none';
     });
+
+    // Edit form submit — confirm before auto-versioning
+    document.getElementById('editForm').addEventListener('submit', function (e) {
+        var currentBody = document.getElementById('edit-body').value.trim();
+        var bodyChanged  = currentBody !== _editOriginalBody.trim();
+        if (bodyChanged) {
+            var ok = confirm(
+                "You changed the template body text.\n\n" +
+                "Saving will create a NEW VERSION (e.g. _v2, _v3) and reset the approval status to Pending — you'll need to re-submit to Meta.\n\n" +
+                "Click OK to save with a new version, or Cancel to go back and undo your text changes."
+            );
+            if (!ok) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
 });
 
 function toggleTemplate(id, checkbox) {
-    const track = document.getElementById('pt-track-' + id);
+    // Visual elements may differ between standard and custom template sections
+    const track = document.getElementById('pt-track-' + id) || document.getElementById('toggle-' + id);
     const thumb = document.getElementById('pt-thumb-' + id);
     const active = checkbox.checked;
-    track.style.background = active ? '#25d366' : '#e2e8f0';
-    thumb.style.left = active ? '22px' : '2px';
+
+    // Optimistically update UI
+    if (track) track.style.background = active ? '#25d366' : '#e2e8f0';
+    if (thumb) thumb.style.left = active ? '22px' : '2px';
 
     fetch('/platform/whatsapp/templates/' + id + '/toggle', {
         method: 'POST',
@@ -713,10 +734,24 @@ function toggleTemplate(id, checkbox) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',
         }
-    }).catch(() => {
+    })
+    .then(function(res) {
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        return res.json();
+    })
+    .then(function(data) {
+        // Sync UI to actual server state
+        var serverActive = data.is_active;
+        checkbox.checked = serverActive;
+        if (track) track.style.background = serverActive ? '#25d366' : '#e2e8f0';
+        if (thumb) thumb.style.left = serverActive ? '22px' : '2px';
+    })
+    .catch(function() {
+        // Revert on any failure
         checkbox.checked = !active;
-        track.style.background = !active ? '#25d366' : '#e2e8f0';
-        thumb.style.left = !active ? '22px' : '2px';
+        if (track) track.style.background = !active ? '#25d366' : '#e2e8f0';
+        if (thumb) thumb.style.left = !active ? '22px' : '2px';
+        alert('Could not save — please refresh and try again.');
     });
 }
 
