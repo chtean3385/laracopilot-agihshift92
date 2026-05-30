@@ -1236,8 +1236,12 @@
     function updateRoomDropdown(unavailableIds) {
         const currentVal = roomTS.getValue();
 
-        // 1. Rebuild the underlying <select> options with correct disabled state
-        //    AND restore all data-* attributes from our snapshot.
+        // IMPORTANT ORDER: destroy TomSelect FIRST — it restores the original
+        // <select> HTML on destroy(), which would overwrite any DOM changes we
+        // made before calling destroy(). Rebuild the <select> AFTER destroy().
+        roomTS.destroy();
+
+        // Rebuild the underlying <select> from our snapshot, skipping booked rooms.
         const sel = document.getElementById('roomSelect');
         const placeholder = sel.options[0]; // keep the empty placeholder
         sel.innerHTML = '';
@@ -1255,8 +1259,7 @@
 
         _typeFiltered.forEach(function(room) {
             // Skip booked rooms entirely — do not add them as disabled options.
-            // Server-side store() enforces this too, but removing from the UI
-            // prevents staff from accidentally selecting them at all.
+            // Server-side store() also enforces this as a hard guard.
             if (unavailableIds.includes(parseInt(room.value))) return;
             const opt = document.createElement('option');
             opt.value       = room.value;
@@ -1265,9 +1268,7 @@
             sel.appendChild(opt);
         });
 
-        // 2. Destroy old TomSelect and recreate from the updated <select>
-        //    Using the same `let roomTS` variable so no stale references exist.
-        roomTS.destroy();
+        // Recreate TomSelect from the freshly rebuilt <select>.
         roomTS = new TomSelect('#roomSelect', {
             plugins: ['remove_button'],
             allowEmptyOption: false,

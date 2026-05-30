@@ -87,6 +87,18 @@ class WhatsAppTemplate extends Model
         return array_values(array_unique($matches[1]));
     }
 
+    /**
+     * Returns variable names in order of appearance INCLUDING duplicates.
+     * Use this when building positional parameters for the Meta template API,
+     * because Meta counts each {{var}} occurrence as a separate positional slot.
+     * e.g. if {{hotel_name}} appears twice, this returns it twice (positions 3 and 7).
+     */
+    public function extractVariablesInOrder(): array
+    {
+        preg_match_all('/\{\{(\w+)\}\}/', $this->message_body ?? '', $matches);
+        return $matches[1]; // NOT unique — preserves duplicates and order
+    }
+
     public static function allEvents(): array
     {
         return [

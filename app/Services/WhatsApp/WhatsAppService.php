@@ -160,11 +160,12 @@ class WhatsAppService
                     Log::warning('WhatsApp sendForEvent skipped: no approved global platform template for event', $context);
                     return false;
                 }
-                // Send using the Meta template API with positional parameters
-                $vars      = MessageBuilder::buildVars($booking);
-                $varNames  = $template->extractVariableNames();
-                $params    = [];
-                foreach ($varNames as $name) {
+                // Send using the Meta template API with positional parameters.
+                // Use extractVariablesInOrder() (not unique) so duplicate {{var}} occurrences
+                // each map to their own positional slot, matching Meta's parameter count.
+                $vars   = MessageBuilder::buildVars($booking);
+                $params = [];
+                foreach ($template->extractVariablesInOrder() as $name) {
                     $params[] = $vars[$name] ?? '';
                 }
                 $sent = static::sendWithTemplate($provider, $phone, $template, $params, $booking, $context);
@@ -181,10 +182,9 @@ class WhatsAppService
                     $globalTemplate = WhatsAppTemplate::globalForEvent($event);
                     if ($globalTemplate) {
                         Log::info('WhatsApp sendForEvent: using global platform template fallback', $context);
-                        $vars     = MessageBuilder::buildVars($booking);
-                        $varNames = $globalTemplate->extractVariableNames();
-                        $params   = [];
-                        foreach ($varNames as $name) {
+                        $vars   = MessageBuilder::buildVars($booking);
+                        $params = [];
+                        foreach ($globalTemplate->extractVariablesInOrder() as $name) {
                             $params[] = $vars[$name] ?? '';
                         }
                         return static::sendWithTemplate($provider, $phone, $globalTemplate, $params, $booking, $context);
@@ -197,10 +197,9 @@ class WhatsAppService
                 }
                 if ($template->approval_status === 'approved' && !empty($template->template_name)) {
                     // Send as Meta template if approved
-                    $vars     = MessageBuilder::buildVars($booking);
-                    $varNames = $template->extractVariableNames();
-                    $params   = [];
-                    foreach ($varNames as $name) {
+                    $vars   = MessageBuilder::buildVars($booking);
+                    $params = [];
+                    foreach ($template->extractVariablesInOrder() as $name) {
                         $params[] = $vars[$name] ?? '';
                     }
                     $sent = static::sendWithTemplate($provider, $phone, $template, $params, $booking, $context);
