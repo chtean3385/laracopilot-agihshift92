@@ -163,7 +163,7 @@ class CustomerController extends Controller
             'name'         => 'required|string|max:255',
             'phone'        => ['required', 'string', 'max:20', Rule::unique('customers', 'phone')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
             'email'        => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
-            'id_type'      => 'required|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
+            'id_type'      => 'nullable|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
             'id_number'    => 'nullable|string|max:50',
             'documents.*'  => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
         ]);
@@ -191,7 +191,7 @@ class CustomerController extends Controller
         $validated['country']     = 'India';
         $validated['nationality'] = 'Indian';
         $customer = Customer::create($validated);
-        $this->saveDocuments($request, $customer->id, $validated['id_type']);
+        $this->saveDocuments($request, $customer->id, $validated['id_type'] ?? null);
         ActivityLogger::log('Created', 'Guest', 'Quick-created guest: ' . $customer->name . ' (' . $customer->phone . ')');
         return response()->json([
             'id'    => $customer->id,
