@@ -767,7 +767,7 @@
                                         @if($pco->guest_payment_ref)
                                             &nbsp;·&nbsp; Ref: {{ $pco->guest_payment_ref }}
                                         @endif
-                                        &nbsp;·&nbsp; {{ $pco->guest_checkout_submitted_at?->diffForHumans() }}
+                                        &nbsp;·&nbsp; {{ $pco->guest_checkout_submitted_at ? \Carbon\Carbon::parse($pco->guest_checkout_submitted_at)->diffForHumans() : '' }}
                                     </div>
                                 </div>
                                 <span style="background:#fff;color:#047857;font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px;white-space:nowrap;">Check Out →</span>
