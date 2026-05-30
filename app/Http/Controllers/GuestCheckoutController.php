@@ -66,7 +66,14 @@ class GuestCheckoutController extends Controller
         $gstAmount  = round($actualTotal * ($taxRate / 100), 2);
         $grandTotal = $actualTotal + $gstAmount;
         $totalPaid  = $booking->payments()->where('status', 'completed')->sum('amount');
-        $balanceDue = max(0, $grandTotal - $totalPaid);
+
+        // Use the stored balance_due from the booking as the authoritative due amount so
+        // the guest always sees the same figure staff see (which may include overrides).
+        // Fall back to computed value only when the stored field is null/zero.
+        $computedBalance = max(0, $grandTotal - $totalPaid);
+        $balanceDue = ($booking->balance_due !== null && $booking->balance_due > 0)
+            ? (float) $booking->balance_due
+            : $computedBalance;
 
         return view('guest.checkout', compact(
             'booking', 'settings', 'upiConfig', 'token',

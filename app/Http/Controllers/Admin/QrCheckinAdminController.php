@@ -160,8 +160,9 @@ class QrCheckinAdminController extends Controller
             ]);
         }
 
-        // Mark the room as confirmed/occupied
-        $room->update(['status' => 'occupied']);
+        // Room moves to 'confirmed' (reserved) — it becomes 'occupied' at actual check-in,
+        // matching the standard booking lifecycle and preventing premature inventory lock.
+        $room->update(['status' => 'confirmed']);
 
         // Mark request as converted
         $guestRequest->update([

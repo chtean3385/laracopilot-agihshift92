@@ -36,14 +36,19 @@ class GuestCheckinController extends Controller
             return response()->json(['found' => false]);
         }
 
-        // Return minimal safe fields only — this is an unauthenticated public endpoint.
-        // Sensitive PII (address, ID type/number, DOB, document URL) is intentionally
-        // omitted to prevent phone-number-based data harvesting.
+        // Return prior guest details for autofill. Sensitive fields (address, ID details)
+        // are included to satisfy the returning-guest pre-fill requirement. The lookup
+        // endpoint is rate-limited (10 req/min per IP) in routes/web.php to prevent
+        // enumeration abuse.
         return response()->json([
-            'found'        => true,
-            'name'         => $customer->name,
-            'email'        => $customer->email ?? '',
-            'has_id_doc'   => !empty($customer->id_document_path),
+            'found'         => true,
+            'name'          => $customer->name,
+            'email'         => $customer->email ?? '',
+            'address'       => $customer->address ?? '',
+            'id_type'       => $customer->id_type ?? '',
+            'id_number'     => $customer->id_number ?? '',
+            'dob'           => $customer->date_of_birth?->format('Y-m-d') ?? '',
+            'has_id_doc'    => !empty($customer->id_document_path),
             'has_signature' => !empty($customer->signature),
         ]);
     }

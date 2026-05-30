@@ -354,10 +354,13 @@ function doLookup(phone) {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.found) {
-                // Pre-fill only name and email — sensitive fields (address, ID, DOB)
-                // are not returned by the server to protect guest PII on this public endpoint.
-                document.getElementById('nameInput').value  = d.name || '';
-                document.getElementById('emailInput').value = d.email || '';
+                // Pre-fill returning guest details — endpoint is rate-limited server-side
+                document.getElementById('nameInput').value    = d.name || '';
+                document.getElementById('emailInput').value   = d.email || '';
+                document.getElementById('addressInput').value = d.address || '';
+                document.getElementById('idTypeInput').value  = d.id_type || '';
+                document.getElementById('idNumberInput').value= d.id_number || '';
+                document.getElementById('dobInput').value     = d.dob || '';
 
                 // Returning guest — existing ID doc on file
                 if (d.has_id_doc) {
