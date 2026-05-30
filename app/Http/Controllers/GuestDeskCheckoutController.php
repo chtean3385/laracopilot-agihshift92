@@ -144,7 +144,7 @@ class GuestDeskCheckoutController extends Controller
         ]);
     }
 
-    // ── Submit payment intent (UPI screenshot / cash / card) ────────────────
+    // ── Submit payment intent (UPI with ref = auto-checkout; cash/card = staff confirms) ─
     public function submit(Request $request, string $slug)
     {
         $hotel = Hotel::where('slug', $slug)->where('status', 'active')->firstOrFail();
@@ -162,24 +162,65 @@ class GuestDeskCheckoutController extends Controller
             ->with(['customer', 'room'])
             ->firstOrFail();
 
-        $booking->update([
-            'guest_payment_method'        => $request->payment_method,
-            'guest_payment_ref'           => $request->payment_ref,
-            'guest_checkout_submitted_at' => now(),
-        ]);
+        $totalPaid  = $booking->payments()->where('status', 'completed')->sum('amount');
+        $balanceDue = ($booking->balance_due !== null && $booking->balance_due > 0)
+                      ? (float) $booking->balance_due
+                      : max(0, (float) $booking->total_amount - $totalPaid);
 
-        // Push notification to hotel staff
+        // ── Auto-checkout: UPI + transaction ID provided ─────────────────────
+        $autoCheckedOut = false;
+        if ($request->payment_method === 'upi' && trim($request->payment_ref ?? '') !== '') {
+            if ($balanceDue > 0) {
+                Payment::create([
+                    'hotel_id'       => $hotel->id,
+                    'booking_id'     => $booking->id,
+                    'customer_id'    => $booking->customer_id,
+                    'amount'         => $balanceDue,
+                    'payment_method' => 'upi',
+                    'payment_type'   => 'checkout',
+                    'status'         => 'completed',
+                    'notes'          => 'Guest desk self-checkout via UPI. Transaction ID: ' . $request->payment_ref,
+                    'transaction_id' => $request->payment_ref,
+                ]);
+            }
+
+            $booking->update([
+                'status'                      => 'checked_out',
+                'actual_checkout_at'          => now(),
+                'balance_due'                 => 0,
+                'payment_status'              => 'paid',
+                'guest_payment_method'        => 'upi',
+                'guest_payment_ref'           => $request->payment_ref,
+                'guest_checkout_submitted_at' => now(),
+            ]);
+
+            if ($booking->room) {
+                $booking->room->update(['status' => 'available']);
+            }
+
+            $autoCheckedOut = true;
+        } else {
+            // Cash / card — record intent; staff must confirm
+            $booking->update([
+                'guest_payment_method'        => $request->payment_method,
+                'guest_payment_ref'           => $request->payment_ref,
+                'guest_checkout_submitted_at' => now(),
+            ]);
+        }
+
+        // FCM push to hotel staff
         try {
             $fcm    = app(FcmService::class);
             $tokens = $fcm->getTokensForHotel($hotel->id);
             if (!empty($tokens)) {
-                $guestName  = $booking->customer?->name ?? 'Guest';
-                $roomNum    = $booking->room?->room_number ?? '—';
-                $method     = strtoupper($request->payment_method);
+                $guestName = $booking->customer?->name ?? 'Guest';
+                $roomNum   = $booking->room?->room_number ?? '—';
                 $fcm->sendToTokens(
                     $tokens,
-                    '🚪 Guest Checkout Request',
-                    $guestName . ' (Room ' . $roomNum . ') submitted checkout — ' . $method . '. Please verify and check out.',
+                    $autoCheckedOut ? '✅ Guest Auto-Checked Out' : '🚪 Checkout Request',
+                    $autoCheckedOut
+                        ? $guestName . ' (Room ' . $roomNum . ') paid via UPI and has been auto checked-out.'
+                        : $guestName . ' (Room ' . $roomNum . ') submitted checkout — ' . strtoupper($request->payment_method) . '. Please verify.',
                     ['url' => url('/checkout/' . $booking->id)]
                 );
             }
@@ -187,7 +228,10 @@ class GuestDeskCheckoutController extends Controller
             Log::warning('[DeskCheckout] FCM push failed: ' . $e->getMessage());
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success'         => true,
+            'auto_checked_out'=> $autoCheckedOut,
+        ]);
     }
 
     // ── Create Razorpay payment link for auto-checkout ───────────────────────

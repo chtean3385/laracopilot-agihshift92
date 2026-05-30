@@ -197,20 +197,36 @@
     </div>
 
     {{-- ══════════════════════════════════════════════════════════ --}}
-    {{-- Screen 3: Success --}}
+    {{-- Screen 3a: AUTO checked-out (UPI + txn ID) --}}
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    <div class="screen" id="screenAutoOut" style="padding:36px 24px;text-align:center;">
+        <div style="width:72px;height:72px;background:linear-gradient(135deg,#10b981,#059669);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 8px 24px rgba(16,185,129,.4);">
+            <i class="fas fa-check" style="color:#fff;font-size:30px;"></i>
+        </div>
+        <h2 style="font-weight:900;font-size:24px;color:#1e293b;margin:0 0 10px;">You're Checked Out!</h2>
+        <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0 0 16px;">
+            Your UPI payment has been recorded and your checkout is <strong style="color:#10b981;">complete</strong>. No staff action needed.
+        </p>
+        <div id="autoOutTxnBlock" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.06em;">UPI Transaction ID</div>
+            <div id="autoOutTxnVal" style="font-family:monospace;font-size:16px;font-weight:800;color:#1e293b;margin-top:4px;"></div>
+        </div>
+        <div style="background:#fef9c3;border:1.5px solid #fde68a;border-radius:12px;padding:12px 16px;font-size:13px;color:#92400e;font-weight:600;">
+            Please return your room key to the front desk.
+        </div>
+    </div>
+
+    {{-- ══════════════════════════════════════════════════════════ --}}
+    {{-- Screen 3b: Cash/Card — staff confirms --}}
     {{-- ══════════════════════════════════════════════════════════ --}}
     <div class="screen" id="screenSuccess" style="padding:36px 24px;text-align:center;">
-        <div style="width:72px;height:72px;background:linear-gradient(135deg,#10b981,#059669);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
-            <i class="fas fa-check" style="color:#fff;font-size:30px;"></i>
+        <div style="width:72px;height:72px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+            <i class="fas fa-clock" style="color:#fff;font-size:28px;"></i>
         </div>
         <h2 style="font-weight:900;font-size:22px;color:#1e293b;margin:0 0 10px;" data-i18n="success_title">Request Submitted!</h2>
         <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0 0 20px;" data-i18n="success_msg">
-            Our team has been notified. Please hand over the room key at the front desk and we'll complete your checkout shortly.
+            Our team has been notified. Please settle payment and hand over the room key at the front desk.
         </p>
-        <div id="successUpiRef" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px;margin-bottom:16px;">
-            <div style="font-size:12px;font-weight:700;color:#16a34a;" data-i18n="txn_recorded">Transaction ID Recorded</div>
-            <div id="successUpiRefVal" style="font-family:monospace;font-size:14px;font-weight:700;color:#1e293b;margin-top:4px;"></div>
-        </div>
         <div style="background:#fef9c3;border:1.5px solid #fde68a;border-radius:12px;padding:12px 16px;font-size:13px;color:#92400e;font-weight:600;" data-i18n="success_key_note">
             Please return your room key to the front desk.
         </div>
@@ -455,11 +471,17 @@ function submitCheckout() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
         if (d.success) {
-            if (upiRef) {
-                document.getElementById('successUpiRef').style.display = 'block';
-                document.getElementById('successUpiRefVal').textContent = upiRef;
+            if (d.auto_checked_out) {
+                // UPI paid + auto checked out
+                if (upiRef) {
+                    document.getElementById('autoOutTxnBlock').style.display = 'block';
+                    document.getElementById('autoOutTxnVal').textContent = upiRef;
+                }
+                showScreen('screenAutoOut');
+            } else {
+                // Cash/card — staff will confirm
+                showScreen('screenSuccess');
             }
-            showScreen('screenSuccess');
         } else {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>' + t('submit_checkout');
