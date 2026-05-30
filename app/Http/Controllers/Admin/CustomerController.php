@@ -219,7 +219,7 @@ class CustomerController extends Controller
         return $query->first();
     }
 
-    private function saveDocuments(Request $request, int $customerId, string $idType): void
+    private function saveDocuments(Request $request, int $customerId, ?string $idType): void
     {
         if (!$request->hasFile('documents')) return;
         $typeMap = [
