@@ -24,7 +24,16 @@ class GuestCheckoutController extends Controller
             abort(410, 'This booking has already been checked out.');
         }
 
-        $settings   = Setting::where('hotel_id', $booking->hotel_id)->first();
+        $settings = Setting::where('hotel_id', $booking->hotel_id)->first();
+
+        // If QR checkout is disabled for this hotel, show a friendly message instead.
+        if ($settings && $settings->qr_checkout_enabled === false) {
+            return response(view('guest.qr-disabled', [
+                'title'   => 'Self Check-Out Not Available',
+                'message' => 'This hotel processes checkout at the front desk. Please visit our reception and our team will take care of you right away!',
+                'icon'    => 'fa-sign-out-alt',
+            ]), 200);
+        }
         $upiConfig  = PaymentLinkConfig::withoutGlobalScopes()
             ->where('hotel_id', $booking->hotel_id)
             ->first();

@@ -512,7 +512,11 @@ class BookingController extends Controller
         $roomLabel = count($roomIds) > 1 ? count($roomIds) . ' rooms' : 'Room ' . $room->room_number;
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — ' . $roomLabel . ' (' . $pricingType . ')');
         WhatsAppService::sendForEvent('booking.created', $booking);
-        WhatsAppService::sendForEvent('booking.details_request', $booking);
+        // Only send the self-checkin link template when QR check-in is enabled for this hotel.
+        $hotelSettingsForWa = \App\Models\Setting::where('hotel_id', $booking->hotel_id)->first();
+        if (!$hotelSettingsForWa || $hotelSettingsForWa->qr_checkin_enabled !== false) {
+            WhatsAppService::sendForEvent('booking.details_request', $booking);
+        }
         WhatsAppService::sendOwnerAlert($booking);
         $successMsg = count($allNumbers) > 1
             ? 'Group booking created for ' . count($allNumbers) . ' rooms! #' . $booking->booking_number
@@ -931,7 +935,10 @@ class BookingController extends Controller
             $customer  = Customer::find($bookingData['customer_id']);
             ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa' . $slotLabel . ' (' . $allRooms->count() . ' rooms)');
             WhatsAppService::sendForEvent('booking.created', $booking);
-            WhatsAppService::sendForEvent('booking.details_request', $booking);
+            $hotelSettingsForWa = \App\Models\Setting::where('hotel_id', $booking->hotel_id)->first();
+            if (!$hotelSettingsForWa || $hotelSettingsForWa->qr_checkin_enabled !== false) {
+                WhatsAppService::sendForEvent('booking.details_request', $booking);
+            }
             WhatsAppService::sendOwnerAlert($booking);
             return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
         }
@@ -1022,7 +1029,10 @@ class BookingController extends Controller
         $customer = Customer::find($bookingData['customer_id']);
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa (' . $allRooms->count() . ' rooms)');
         WhatsAppService::sendForEvent('booking.created', $booking);
-        WhatsAppService::sendForEvent('booking.details_request', $booking);
+        $hotelSettingsForWa = \App\Models\Setting::where('hotel_id', $booking->hotel_id)->first();
+        if (!$hotelSettingsForWa || $hotelSettingsForWa->qr_checkin_enabled !== false) {
+            WhatsAppService::sendForEvent('booking.details_request', $booking);
+        }
         WhatsAppService::sendOwnerAlert($booking);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
     }

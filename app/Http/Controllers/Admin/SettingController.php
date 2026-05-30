@@ -61,6 +61,10 @@ class SettingController extends Controller
 
         $data = $request->except(['_token', '_method', 'logo']);
 
+        // Checkboxes are not submitted when unchecked — explicitly cast them to bool.
+        $data['qr_checkin_enabled']  = $request->boolean('qr_checkin_enabled');
+        $data['qr_checkout_enabled'] = $request->boolean('qr_checkout_enabled');
+
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
             if ($settings->logo && Storage::disk('public')->exists($settings->logo)) {
                 Storage::disk('public')->delete($settings->logo);

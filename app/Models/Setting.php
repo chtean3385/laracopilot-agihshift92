@@ -17,6 +17,12 @@ class Setting extends Model
         'invoice_style', 'contact_number', 'hotel_location', 'state_code',
         'hsn_room', 'hsn_food',
         'bank_name', 'bank_account_number', 'bank_ifsc',
+        'qr_checkin_enabled', 'qr_checkout_enabled',
+    ];
+
+    protected $casts = [
+        'qr_checkin_enabled'  => 'boolean',
+        'qr_checkout_enabled' => 'boolean',
     ];
 
     /**

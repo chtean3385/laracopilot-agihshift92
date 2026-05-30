@@ -197,6 +197,42 @@
                 </div>
             </div>
 
+            {{-- Guest Self-Service (QR) --}}
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-qrcode text-violet-500 mr-2"></i>Guest Self-Service (QR)</h4>
+                <p class="text-xs text-gray-400 mb-4">When enabled, guests can scan a QR code to fill in their own check-in details or submit a checkout request. Turn these off if you prefer staff to handle all check-in/out manually.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- QR Check-In toggle --}}
+                    <label class="flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all {{ ($settings->qr_checkin_enabled ?? true) ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-gray-50' }}" id="qr-checkin-label">
+                        <div>
+                            <div class="font-bold text-gray-700 text-sm"><i class="fas fa-door-open mr-1 text-violet-500"></i> QR Self Check-In</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Guests scan QR → fill travel details → staff assigns room. Also controls the WhatsApp self-checkin link sent on booking.</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <input type="hidden" name="qr_checkin_enabled" value="0">
+                            <input type="checkbox" name="qr_checkin_enabled" value="1" id="qr-checkin-toggle"
+                                {{ ($settings->qr_checkin_enabled ?? true) ? 'checked' : '' }}
+                                class="w-5 h-5 rounded accent-violet-600"
+                                onchange="document.getElementById('qr-checkin-label').className=this.checked?'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-violet-400 bg-violet-50':'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-gray-200 bg-gray-50'">
+                        </div>
+                    </label>
+                    {{-- QR Check-Out toggle --}}
+                    <label class="flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all {{ ($settings->qr_checkout_enabled ?? true) ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-gray-50' }}" id="qr-checkout-label">
+                        <div>
+                            <div class="font-bold text-gray-700 text-sm"><i class="fas fa-sign-out-alt mr-1 text-violet-500"></i> QR Self Check-Out</div>
+                            <div class="text-xs text-gray-400 mt-0.5">Guests access a checkout page via link/QR to submit their payment intent. Staff still confirms and completes the checkout.</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <input type="hidden" name="qr_checkout_enabled" value="0">
+                            <input type="checkbox" name="qr_checkout_enabled" value="1" id="qr-checkout-toggle"
+                                {{ ($settings->qr_checkout_enabled ?? true) ? 'checked' : '' }}
+                                class="w-5 h-5 rounded accent-violet-600"
+                                onchange="document.getElementById('qr-checkout-label').className=this.checked?'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-violet-400 bg-violet-50':'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-gray-200 bg-gray-50'">
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div class="flex justify-end mt-6 pt-6 border-t border-gray-100">
                 <button type="submit" class="btn-primary"><i class="fas fa-save mr-2"></i>Save Settings</button>
             </div>

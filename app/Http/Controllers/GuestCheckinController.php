@@ -17,6 +17,16 @@ class GuestCheckinController extends Controller
     {
         $hotel = Hotel::where('slug', $slug)->where('status', 'active')->firstOrFail();
         $settings = Setting::where('hotel_id', $hotel->id)->first();
+
+        // If the hotel has disabled QR self check-in, return a friendly message.
+        if ($settings && $settings->qr_checkin_enabled === false) {
+            return response(view('guest.qr-disabled', [
+                'title'   => 'Self Check-In Not Available',
+                'message' => 'This hotel handles check-in at the front desk. Please speak to our staff on arrival — we\'re happy to assist!',
+                'icon'    => 'fa-door-open',
+            ]), 200);
+        }
+
         $bookingRef = $request->query('ref', '');
         return view('guest.checkin', compact('hotel', 'settings', 'slug', 'bookingRef'));
     }
