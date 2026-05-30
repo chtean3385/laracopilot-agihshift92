@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Support\AnalyticsCache;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BookingExtraCharge;
+use Illuminate\Support\Str;
 
 class Booking extends Model
 {
@@ -27,6 +28,12 @@ class Booking extends Model
                 AnalyticsCache::bump((int) $orig);
             }
         };
+
+        static::creating(function (self $booking) {
+            if (empty($booking->checkout_token)) {
+                $booking->checkout_token = (string) Str::uuid();
+            }
+        });
 
         static::created($bump);
         static::updated($bump);

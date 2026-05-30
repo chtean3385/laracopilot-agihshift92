@@ -421,10 +421,10 @@ Route::withoutMiddleware([
 
     // ── Guest Self-Service Check-In & Check-Out (QR flow) ─────────────────
     Route::get( '/g/checkin/{slug}',          [\App\Http\Controllers\GuestCheckinController::class,  'show']   )->name('guest.checkin.show');
-    Route::get( '/g/checkin/{slug}/lookup',   [\App\Http\Controllers\GuestCheckinController::class,  'lookup'] )->name('guest.checkin.lookup');
-    Route::post('/g/checkin/{slug}',          [\App\Http\Controllers\GuestCheckinController::class,  'store']  )->name('guest.checkin.store');
+    Route::get( '/g/checkin/{slug}/lookup',   [\App\Http\Controllers\GuestCheckinController::class,  'lookup'] )->name('guest.checkin.lookup')->middleware('throttle:30,1');
+    Route::post('/g/checkin/{slug}',          [\App\Http\Controllers\GuestCheckinController::class,  'store']  )->name('guest.checkin.store')->middleware('throttle:10,1');
     Route::get( '/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'show']   )->name('guest.checkout.show');
-    Route::post('/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'submit'] )->name('guest.checkout.submit');
+    Route::post('/g/checkout/{token}',        [\App\Http\Controllers\GuestCheckoutController::class, 'submit'] )->name('guest.checkout.submit')->middleware('throttle:10,1');
 
     // ── Public Restaurant Menu (QR scan-to-order) ──
     Route::get( '/r/{slug}',                       [\App\Http\Controllers\RestaurantPublicController::class, 'show']      )->name('public.restaurant.show');

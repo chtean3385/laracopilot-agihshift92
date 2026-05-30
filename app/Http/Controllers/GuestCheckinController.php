@@ -39,10 +39,6 @@ class GuestCheckinController extends Controller
             'found'   => true,
             'name'    => $customer->name,
             'email'   => $customer->email ?? '',
-            'address' => $customer->address ?? '',
-            'id_type' => $customer->id_type ?? '',
-            'id_number'=> $customer->id_number ?? '',
-            'dob'     => $customer->date_of_birth?->format('Y-m-d') ?? '',
             'message' => 'Welcome back! Your details have been filled in.',
         ]);
     }
@@ -108,6 +104,11 @@ class GuestCheckinController extends Controller
         }
 
         $settings = Setting::where('hotel_id', $hotel->id)->first();
-        return view('guest.checkin-success', compact('hotel', 'settings', 'validated'));
+        $refId = GuestCheckinRequest::where('hotel_id', $hotel->id)
+            ->where('phone', $validated['phone'])
+            ->orderByDesc('id')
+            ->value('id');
+
+        return view('guest.checkin-success', compact('hotel', 'settings', 'validated', 'refId'));
     }
 }

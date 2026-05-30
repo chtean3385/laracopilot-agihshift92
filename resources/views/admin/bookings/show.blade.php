@@ -53,6 +53,12 @@
             @endif
             @if($booking->status == 'checked_in')
                 <a href="{{ route('checkout.show', $booking->id) }}" class="bg-amber-500 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-amber-600 text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Process Check-Out</a>
+                @if($booking->checkout_token)
+                <button onclick="document.getElementById('bkGuestQrModal').style.display='flex'"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">
+                    <i class="fas fa-qrcode"></i> Guest Checkout QR
+                </button>
+                @endif
             @endif
             @if($booking->invoice)
                 <a href="{{ route('invoices.show', $booking->invoice->id) }}" class="btn-secondary text-sm"><i class="fas fa-file-invoice mr-2"></i>View Invoice</a>
@@ -825,6 +831,27 @@ document.getElementById('pathikModal').addEventListener('click', function(e) {
                 </button>
             </div>
         </form>
+    </div>
+</div>
+@endif
+
+{{-- Guest Checkout QR Modal --}}
+@if($booking->checkout_token)
+<div id="bkGuestQrModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:#fff;border-radius:20px;padding:28px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+        <div style="font-weight:800;color:#1e293b;font-size:16px;margin-bottom:4px;"><i class="fas fa-qrcode" style="color:#10b981;margin-right:8px;"></i>Guest Self-Checkout QR</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:16px;">Guest scans this to view bill &amp; confirm payment</div>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ urlencode(route('guest.checkout.show', $booking->checkout_token)) }}&bgcolor=ffffff&color=0f172a&qzone=1"
+            alt="Checkout QR" style="width:200px;height:200px;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:12px;">
+        <div style="font-size:11px;color:#94a3b8;word-break:break-all;margin-bottom:14px;">{{ route('guest.checkout.show', $booking->checkout_token) }}</div>
+        @if($booking->guest_checkout_submitted_at)
+        <div style="background:#ecfdf5;border-radius:10px;padding:10px;font-size:12px;color:#166534;font-weight:600;margin-bottom:12px;">
+            <i class="fas fa-check-circle" style="margin-right:4px;"></i>Guest confirmed payment
+            <div style="font-weight:400;color:#15803d;margin-top:2px;">{{ ucfirst($booking->guest_payment_method ?? '—') }}{{ $booking->guest_payment_ref ? ' · Ref: ' . $booking->guest_payment_ref : '' }}</div>
+        </div>
+        @endif
+        <button onclick="document.getElementById('bkGuestQrModal').style.display='none'"
+            style="width:100%;padding:10px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">Close</button>
     </div>
 </div>
 @endif

@@ -23,6 +23,13 @@
         <i class="fas fa-check" style="color:#fff;font-size:32px;"></i>
     </div>
     <h1 style="font-weight:900;font-size:22px;color:#1e293b;margin-bottom:8px;" data-i18n="title">Request Received!</h1>
+    @if($refId)
+    <div style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <i class="fas fa-hashtag" style="color:#3b82f6;font-size:14px;"></i>
+        <span style="font-size:13px;color:#1e40af;font-weight:700;" data-i18n="ref_label">Reference No.</span>
+        <span style="font-size:18px;font-weight:900;color:#1d4ed8;letter-spacing:.04em;">QR-{{ str_pad($refId, 5, '0', STR_PAD_LEFT) }}</span>
+    </div>
+    @endif
     <p style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:20px;" data-i18n="subtitle">
         Thank you, <strong>{{ $validated['name'] }}</strong>! Your check-in request has been submitted successfully. Our team will assign you a room and send a WhatsApp confirmation shortly.
     </p>
