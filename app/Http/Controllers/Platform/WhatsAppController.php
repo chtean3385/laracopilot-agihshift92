@@ -123,7 +123,7 @@ class WhatsAppController extends Controller
         // event-slot indicators (showing which events have a template set).
         $standardKeyed = $standardTemplates->where('has_document_attachment', false)->keyBy('trigger_event');
 
-        $customTemplates = $allTemplates->whereNotIn('trigger_event', array_keys($allEvents))->values();
+        $customTemplates = $allTemplates->whereNotIn('trigger_event', array_keys($allEvents))->where('trigger_event', '!=', 'manual')->values();
         $platform        = PlatformWhatsAppSetting::instance();
 
         return view('platform.whatsapp.templates', compact(
