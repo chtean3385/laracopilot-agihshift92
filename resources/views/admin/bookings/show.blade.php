@@ -53,12 +53,12 @@
             @endif
             @if($booking->status == 'checked_in')
                 <a href="{{ route('checkout.show', $booking->id) }}" class="bg-amber-500 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-amber-600 text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Process Check-Out</a>
-                @if($booking->checkout_token)
+            @endif
+            @if(in_array($booking->status, ['confirmed', 'checked_in']) && $booking->checkout_token)
                 <button onclick="document.getElementById('bkGuestQrModal').style.display='flex'"
                     style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">
                     <i class="fas fa-qrcode"></i> Guest Checkout QR
                 </button>
-                @endif
             @endif
             @if($booking->invoice)
                 <a href="{{ route('invoices.show', $booking->invoice->id) }}" class="btn-secondary text-sm"><i class="fas fa-file-invoice mr-2"></i>View Invoice</a>

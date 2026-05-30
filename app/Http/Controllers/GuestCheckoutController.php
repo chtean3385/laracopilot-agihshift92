@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
-use App\Models\RestaurantBill;
 use App\Models\Setting;
 use App\Models\PaymentLinkConfig;
 use Carbon\Carbon;
@@ -16,13 +15,6 @@ class GuestCheckoutController extends Controller
         $booking = Booking::where('checkout_token', $token)
             ->with(['customer', 'room', 'extraCharges', 'bookingAddOns'])
             ->firstOrFail();
-
-        // Load restaurant charges linked to this booking
-        $restaurantBills     = RestaurantBill::withoutGlobalScopes()
-            ->where('booking_id', $booking->id)
-            ->where('status', 'paid')
-            ->get();
-        $restaurantChargesTotal = $restaurantBills->sum('total_amount');
 
         // Only allow checkout view for active bookings
         if (!in_array($booking->status, ['confirmed', 'checked_in'])) {
@@ -66,7 +58,9 @@ class GuestCheckoutController extends Controller
             $actualTotal  = $roomCost + $extraChargesTotal;
         }
 
-        $actualTotal += $restaurantChargesTotal;
+        // Note: restaurant charges billed to a room flow through booking_extra_charges
+        // (pushed there by RestaurantBillController) and are already included in
+        // $extraChargesTotal above — no separate aggregation needed.
 
         $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
         $gstAmount  = round($actualTotal * ($taxRate / 100), 2);
@@ -77,7 +71,7 @@ class GuestCheckoutController extends Controller
         return view('guest.checkout', compact(
             'booking', 'settings', 'upiConfig', 'token',
             'pricingType', 'roomCost', 'mealCost', 'extraBedCost',
-            'extraChargesTotal', 'restaurantBills', 'restaurantChargesTotal',
+            'extraChargesTotal',
             'actualTotal', 'taxRate', 'gstAmount',
             'grandTotal', 'totalPaid', 'balanceDue'
         ));
