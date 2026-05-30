@@ -727,6 +727,57 @@
                     </a>
                 </div>
                 @endif
+
+                {{-- Pending guest self-checkout requests --}}
+                @php
+                    $hotelIdForCheckout = (int)(session('crm_hotel_id') ?? session('crm_sa_hotel_filter'));
+                    $pendingCheckouts = \App\Models\Booking::where('hotel_id', $hotelIdForCheckout)
+                        ->whereNotNull('guest_checkout_submitted_at')
+                        ->whereIn('status', ['confirmed', 'checked_in'])
+                        ->with(['customer', 'room'])
+                        ->orderByDesc('guest_checkout_submitted_at')
+                        ->get();
+                @endphp
+                @if($pendingCheckouts->count() > 0)
+                <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#064e3b,#065f46,#047857);box-shadow:0 8px 32px rgba(4,120,87,.4);animation:pulse-dirty 2.5s infinite;margin-bottom:4px;">
+                    <div style="position:absolute;right:-40px;top:-40px;width:170px;height:170px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
+                    <div style="padding:18px 24px 14px;">
+                        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-door-open" style="color:#fff;font-size:22px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px;">
+                                    {{ $pendingCheckouts->count() }} Guest{{ $pendingCheckouts->count() === 1 ? '' : 's' }} Requesting Check-Out
+                                </div>
+                                <div style="font-size:13px;color:rgba(255,255,255,.8);">Review payment details and complete checkout from the booking page.</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            @foreach($pendingCheckouts as $pco)
+                            <a href="{{ route('checkout.show', $pco->id) }}" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px 16px;text-decoration:none;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-user" style="color:#fff;font-size:15px;"></i>
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:14px;font-weight:800;color:#fff;">{{ $pco->customer?->name ?? 'Guest' }}</div>
+                                    <div style="font-size:12px;color:rgba(255,255,255,.75);">
+                                        Room {{ $pco->room?->room_number ?? '—' }} &nbsp;·&nbsp;
+                                        {{ strtoupper($pco->guest_payment_method ?? '—') }}
+                                        @if($pco->guest_payment_ref)
+                                            &nbsp;·&nbsp; Ref: {{ $pco->guest_payment_ref }}
+                                        @endif
+                                        &nbsp;·&nbsp; {{ $pco->guest_checkout_submitted_at?->diffForHumans() }}
+                                    </div>
+                                </div>
+                                <span style="background:#fff;color:#047857;font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px;white-space:nowrap;">Check Out →</span>
+                            </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 @endCanDo
                 @if($epEnabled && $epConflicts > 0)
                 <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#7f1d1d,#b91c1c,#dc2626);box-shadow:0 8px 32px rgba(220,38,38,.45);animation:pulse-dirty 2s infinite;margin-bottom:4px;">

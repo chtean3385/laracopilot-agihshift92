@@ -102,69 +102,31 @@ class GuestCheckoutController extends Controller
             'payment_ref'    => 'nullable|string|max:200',
         ]);
 
-        $settings      = Setting::where('hotel_id', $booking->hotel_id)->first();
-        $totalPaid     = $booking->payments()->where('status', 'completed')->sum('amount');
-        $balanceDue    = ($booking->balance_due !== null && $booking->balance_due > 0)
-                         ? (float) $booking->balance_due
-                         : max(0, (float) $booking->total_amount - $totalPaid);
+        $settings = Setting::where('hotel_id', $booking->hotel_id)->first();
 
-        // ── Auto-checkout: UPI with a transaction ID = payment verified by guest ──
-        $autoCheckedOut = false;
-        if ($request->payment_method === 'upi' && trim($request->payment_ref ?? '') !== '') {
-            // Record the payment
-            if ($balanceDue > 0) {
-                Payment::create([
-                    'hotel_id'       => $booking->hotel_id,
-                    'booking_id'     => $booking->id,
-                    'customer_id'    => $booking->customer_id,
-                    'amount'         => $balanceDue,
-                    'payment_method' => 'upi',
-                    'payment_type'   => 'checkout',
-                    'status'         => 'completed',
-                    'notes'          => 'Guest self-checkout via UPI scan. Transaction ID: ' . $request->payment_ref,
-                    'transaction_id' => $request->payment_ref,
-                ]);
-            }
+        // ── Save guest checkout intent — do NOT auto-checkout or record payment ──
+        // Staff (manager/admin) must review and complete the checkout manually from
+        // the bookings page. This prevents erroneous checkouts where guests submit
+        // payment info but haven't actually settled their bill.
+        $booking->update([
+            'guest_payment_method'        => $request->payment_method,
+            'guest_payment_ref'           => $request->payment_ref ?? null,
+            'guest_checkout_submitted_at' => now(),
+        ]);
 
-            // Auto-checkout the booking
-            $booking->update([
-                'status'                      => 'checked_out',
-                'actual_checkout_at'          => now(),
-                'balance_due'                 => 0,
-                'payment_status'              => 'paid',
-                'guest_payment_method'        => 'upi',
-                'guest_payment_ref'           => $request->payment_ref,
-                'guest_checkout_submitted_at' => now(),
-            ]);
-
-            // Free the room
-            if ($booking->room) {
-                $booking->room->update(['status' => 'available']);
-            }
-
-            $autoCheckedOut = true;
-        } else {
-            // Cash / card — just record intent; staff confirms manually
-            $booking->update([
-                'guest_payment_method'        => $request->payment_method,
-                'guest_payment_ref'           => $request->payment_ref,
-                'guest_checkout_submitted_at' => now(),
-            ]);
-        }
-
-        // Notify staff via FCM push
+        // Notify hotel staff via FCM push so they can process it promptly.
         try {
             $fcm    = app(FcmService::class);
             $tokens = $fcm->getTokensForHotel($booking->hotel_id);
             if (!empty($tokens)) {
-                $guestName = $booking->customer?->name ?? 'Guest';
-                $roomNum   = $booking->room?->room_number ?? '—';
+                $guestName  = $booking->customer?->name ?? 'Guest';
+                $roomNum    = $booking->room?->room_number ?? '—';
+                $method     = strtoupper($request->payment_method);
+                $ref        = $request->payment_ref ? ' (Ref: ' . $request->payment_ref . ')' : '';
                 $fcm->sendToTokens(
                     $tokens,
-                    $autoCheckedOut ? '✅ Guest Auto-Checked Out' : '🚪 Checkout Request',
-                    $autoCheckedOut
-                        ? $guestName . ' (Room ' . $roomNum . ') paid via UPI and has been auto checked-out.'
-                        : $guestName . ' (Room ' . $roomNum . ') submitted checkout — ' . strtoupper($request->payment_method) . '. Please confirm.',
+                    '🚪 Checkout Request — Action Required',
+                    $guestName . ' | Room ' . $roomNum . ' | ' . $method . $ref . ' — please confirm & check out.',
                     ['url' => url('/checkout/' . $booking->id)]
                 );
             }
@@ -172,6 +134,6 @@ class GuestCheckoutController extends Controller
             Log::warning('[GuestCheckout] FCM push failed: ' . $e->getMessage());
         }
 
-        return view('guest.checkout-success', compact('booking', 'settings', 'autoCheckedOut'));
+        return view('guest.checkout-success', compact('booking', 'settings'));
     }
 }
