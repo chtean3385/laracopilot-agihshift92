@@ -310,7 +310,13 @@ class BookingController extends Controller
 
         if ($pricingType === 'per_slot') {
             $slot          = \App\Models\HotelTimeSlot::findOrFail($validated['time_slot_id']);
-            $totalAmount   = $slot->base_price;
+            // Pre-calculate per-room slot amounts (mirrors per_night extraRoomTotals pattern)
+            $extraRoomTotals = [];
+            foreach (array_slice($roomIds, 1) as $extraRoomId) {
+                $extraRoomTotals[(int) $extraRoomId] = $slot->base_price;
+            }
+            // Total = slot price × number of rooms (not just 1 room)
+            $totalAmount   = $slot->base_price * count($roomIds);
             $advancePayment= $validated['advance_payment'] ?? 0;
             $slotNights    = max(0, Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date'])));
             $bookingData   = [
@@ -478,9 +484,8 @@ class BookingController extends Controller
                 $extraData['advance_payment']  = 0;             // all payment on primary
                 $extraData['price_overridden'] = false;
                 // Store per-room amount for display in the rooms breakdown
-                $extraData['total_amount']     = $pricingType === 'per_night'
-                    ? ($extraRoomTotals[(int) $extraRoomId] ?? 0)
-                    : 0;
+                // per_night and per_slot both populate $extraRoomTotals; per_hour stays 0
+                $extraData['total_amount']     = $extraRoomTotals[(int) $extraRoomId] ?? 0;
                 $extraData['balance_due']      = 0;             // billing handled by primary
                 $extraData['payment_status']   = 'pending';
                 $extraBooking = Booking::create($extraData);

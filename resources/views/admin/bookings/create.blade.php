@@ -634,6 +634,7 @@
             updatePricingUI();
             updateMealOptions();
             calculateTotal();
+            calculateSlotTotal();   // recalculate slot total when rooms are added/removed
             refreshAvailableSlots();
         }
     });
@@ -772,7 +773,10 @@
     function calculateSlotTotal() {
         const slotSel = document.getElementById('timeSlotSelect');
         const slotOpt = slotSel ? slotSel.options[slotSel.selectedIndex] : null;
-        let total = slotOpt ? parseFloat(slotOpt.dataset.price || 0) : 0;
+        // Count selected rooms so multi-room group bookings price correctly
+        const roomEl    = document.getElementById('roomSelect');
+        const roomCount = roomEl ? Math.max(1, Array.from(roomEl.options).filter(o => o.selected && o.value).length) : 1;
+        let total = slotOpt ? parseFloat(slotOpt.dataset.price || 0) * roomCount : 0;
         document.querySelectorAll('.addon-check:checked').forEach(cb => { total += parseFloat(cb.dataset.price || 0); });
         const el = document.getElementById('slotTotalDisplay');
         if (el) el.textContent = total > 0 ? '₹' + total.toLocaleString('en-IN') : '—';
@@ -1328,6 +1332,7 @@
                 updatePricingUI();
                 updateMealOptions();
                 calculateTotal();
+                calculateSlotTotal();   // recalculate slot total when rooms are added/removed
                 refreshAvailableSlots();
             }
         });
