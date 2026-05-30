@@ -16,6 +16,7 @@ class Customer extends Model
         'country', 'id_type', 'id_number', 'date_of_birth', 'age',
         'nationality', 'notes', 'signature',
         'company_name', 'gstin',
+        'arrival_city', 'travel_reason', 'dispatch_city',
     ];
 
     protected $casts = [
