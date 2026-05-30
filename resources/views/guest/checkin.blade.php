@@ -59,7 +59,7 @@
             <div class="progress-fill" id="progressFill" style="width:16.6%;"></div>
         </div>
         <div style="font-size:12px;color:#94a3b8;text-align:right;margin-top:-14px;margin-bottom:14px;">
-            <span id="stepLabel" data-i18n="step">Step</span> <span id="stepNum">1</span> / 6
+            <span id="stepLabel" data-i18n="step">Step</span> <span id="stepNum">1</span> / <span id="totalStepsLabel">6</span>
         </div>
 
         <form id="checkinForm" action="{{ route('guest.checkin.store', $slug) }}" method="POST" enctype="multipart/form-data">
@@ -234,11 +234,11 @@
                 </button>
                 <div style="display:flex;gap:10px;margin-top:18px;">
                     <button type="button" class="btn-secondary" onclick="prevStep()"><i class="fas fa-arrow-left" style="margin-right:6px;"></i><span data-i18n="back">Back</span></button>
-                    <button type="button" class="btn-primary" onclick="nextStep()" data-i18n="continue">Continue</button>
+                    <button type="button" class="btn-primary" onclick="hasBookingRef ? document.getElementById('checkinForm').submit() : nextStep()" data-i18n="continue">Continue</button>
                 </div>
             </div>
 
-            {{-- Step 6: Dates --}}
+            {{-- Step 6: Dates (only shown for walk-in guests with no booking ref) --}}
             <div class="step" id="step6">
                 <div style="margin-bottom:18px;">
                     <h2 style="font-weight:800;font-size:18px;color:#1e293b;" data-i18n="step6_title">Stay Details</h2>
@@ -344,8 +344,10 @@ var TRANS = {
 };
 
 var currentLang = (navigator.language || 'en').startsWith('hi') ? 'hi' : 'en';
-var currentStep = 1;
-var totalSteps  = 6;
+var currentStep   = 1;
+var hasBookingRef = {{ $bookingRef ? 'true' : 'false' }};
+var totalSteps    = hasBookingRef ? 5 : 6;
+document.getElementById('totalStepsLabel').textContent = totalSteps;
 var docUploaded = false;
 var sigDrawn    = false;
 var guestCount  = 0;
