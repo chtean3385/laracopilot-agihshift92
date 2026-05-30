@@ -52,7 +52,12 @@ class QrCheckinAdminController extends Controller
         $requests = $query->paginate(15)->withQueryString();
         $pendingCount = GuestCheckinRequest::where('hotel_id', $hotelId)->where('status', 'pending')->count();
 
-        return view('admin.qr-arrivals.index', compact('requests', 'pendingCount'));
+        $availableRooms = Room::where('hotel_id', $hotelId)
+            ->where('status', 'available')
+            ->orderBy('room_number')
+            ->get(['id', 'room_number', 'type', 'price_per_night']);
+
+        return view('admin.qr-arrivals.index', compact('requests', 'pendingCount', 'availableRooms'));
     }
 
     public function show($id)

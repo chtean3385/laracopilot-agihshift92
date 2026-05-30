@@ -6,6 +6,7 @@ use App\Models\Hotel;
 use App\Models\Customer;
 use App\Models\GuestCheckinRequest;
 use App\Models\Setting;
+use App\Services\FcmService;
 use Illuminate\Http\Request;
 
 class GuestCheckinController extends Controller
@@ -89,6 +90,22 @@ class GuestCheckinController extends Controller
             'guests_count'        => $validated['guests_count'] ?? 1,
             'status'              => 'pending',
         ]);
+
+        // Fire push notification to all hotel staff devices
+        try {
+            $fcm    = app(FcmService::class);
+            $tokens = $fcm->getTokensForHotel($hotel->id);
+            if (!empty($tokens)) {
+                $fcm->sendToTokens(
+                    $tokens,
+                    '🛎️ New QR Check-In Request',
+                    $validated['name'] . ' has submitted a self check-in form. Assign a room now.',
+                    ['url' => url('/qr-arrivals')]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[GuestCheckin] FCM push failed: ' . $e->getMessage());
+        }
 
         $settings = Setting::where('hotel_id', $hotel->id)->first();
         return view('guest.checkin-success', compact('hotel', 'settings', 'validated'));

@@ -699,6 +699,33 @@
                     }
                     $epNewToday = $epNewQuery ? $epNewQuery->count() : 0;
                 @endphp
+                @canDo('checkin.process')
+                @php
+                    $qrDashPending = \App\Models\GuestCheckinRequest::where('hotel_id', (int)(session('crm_hotel_id') ?? session('crm_sa_hotel_filter')))->where('status', 'pending')->count();
+                @endphp
+                @if($qrDashPending > 0)
+                <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#1e3a5f,#1d4ed8,#2563eb);box-shadow:0 8px 32px rgba(37,99,235,.4);animation:pulse-dirty 2.5s infinite;margin-bottom:4px;">
+                    <div style="position:absolute;right:-40px;top:-40px;width:170px;height:170px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
+                    <div style="position:absolute;left:70px;bottom:-50px;width:130px;height:130px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
+                    <a href="{{ route('qr-arrivals.index') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
+                        <div style="position:relative;flex-shrink:0;">
+                            <div style="position:absolute;inset:0;background:rgba(255,255,255,.2);border-radius:18px;animation:pulse-dirty 1.8s infinite;"></div>
+                            <div style="position:relative;width:62px;height:62px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:18px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-qrcode" style="color:#fff;font-size:26px;"></i>
+                            </div>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                                <span style="font-size:19px;font-weight:900;color:#fff;letter-spacing:-.3px;">{{ $qrDashPending }} Guest{{ $qrDashPending === 1 ? '' : 's' }} Waiting — QR Self Check-In</span>
+                                <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;padding:3px 12px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;">Assign Room</span>
+                            </div>
+                            <div style="font-size:14px;color:rgba(255,255,255,.85);">Guest{{ $qrDashPending === 1 ? '' : 's' }} submitted details via QR scan — click to review &amp; assign a room.</div>
+                        </div>
+                        <div style="flex-shrink:0;background:#fff;color:#1d4ed8;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">Review <i class="fas fa-arrow-right"></i></div>
+                    </a>
+                </div>
+                @endif
+                @endCanDo
                 @if($epEnabled && $epConflicts > 0)
                 <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#7f1d1d,#b91c1c,#dc2626);box-shadow:0 8px 32px rgba(220,38,38,.45);animation:pulse-dirty 2s infinite;margin-bottom:4px;">
                     <div style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
