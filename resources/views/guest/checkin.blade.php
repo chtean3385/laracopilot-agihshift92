@@ -106,6 +106,38 @@
                         <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:5px;" data-i18n="address_label">Address</label>
                         <textarea name="address" id="addressInput" class="input-field" rows="2" placeholder="Street, City, State" style="resize:none;"></textarea>
                     </div>
+
+                    {{-- Travel Details --}}
+                    <div style="margin-top:6px;padding-top:14px;border-top:1px solid #e2e8f0;">
+                        <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">
+                            <i class="fas fa-plane" style="margin-right:5px;"></i><span data-i18n="travel_section">Travel Details</span>
+                            <span style="font-weight:400;color:#94a3b8;font-size:11px;text-transform:none;margin-left:4px;" data-i18n="travel_section_sub">(for police report / guest register)</span>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:12px;">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                                <div>
+                                    <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:5px;" data-i18n="arriving_from">Arriving From (City)</label>
+                                    <input type="text" name="arrival_city" id="arrivalCityInput" class="input-field" placeholder="e.g. Mumbai">
+                                </div>
+                                <div>
+                                    <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:5px;" data-i18n="departing_to">Departing To (City)</label>
+                                    <input type="text" name="dispatch_city" id="dispatchCityInput" class="input-field" placeholder="e.g. Goa">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:5px;" data-i18n="purpose_of_travel">Purpose of Travel</label>
+                                <select name="travel_reason" id="travelReasonInput" class="input-field">
+                                    <option value="" data-i18n="select_reason">Select reason</option>
+                                    <option value="Leisure" data-i18n="travel_leisure">Leisure / Vacation</option>
+                                    <option value="Business" data-i18n="travel_business">Business</option>
+                                    <option value="Wedding" data-i18n="travel_wedding">Wedding / Event</option>
+                                    <option value="Medical" data-i18n="travel_medical">Medical</option>
+                                    <option value="Transit" data-i18n="travel_transit">Transit</option>
+                                    <option value="Other" data-i18n="travel_other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div style="display:flex;gap:10px;margin-top:18px;">
                     <button type="button" class="btn-secondary" onclick="prevStep()"><i class="fas fa-arrow-left" style="margin-right:6px;"></i><span data-i18n="back">Back</span></button>
@@ -248,6 +280,12 @@ var TRANS = {
         continue: 'Continue', back: 'Back', step2_title: 'Personal Details',
         step2_sub: 'Please verify or complete your information', name_label: 'Full Name',
         email_label: 'Email (optional)', dob_label: 'Date of Birth', address_label: 'Address',
+        travel_section: 'Travel Details', travel_section_sub: '(for police report / guest register)',
+        arriving_from: 'Arriving From (City)', departing_to: 'Departing To (City)',
+        purpose_of_travel: 'Purpose of Travel', select_reason: 'Select reason',
+        travel_leisure: 'Leisure / Vacation', travel_business: 'Business',
+        travel_wedding: 'Wedding / Event', travel_medical: 'Medical',
+        travel_transit: 'Transit', travel_other: 'Other',
         step3_title: 'ID Verification', step3_sub: 'Government ID required for all guests',
         id_type_label: 'ID Type', id_number_label: 'ID Number', doc_upload_label: 'Upload ID Document Photo',
         tap_upload: 'Tap to upload or take photo', file_hint: 'JPG, PNG, PDF up to 5 MB',
@@ -275,6 +313,12 @@ var TRANS = {
         continue: 'आगे बढ़ें', back: 'वापस', step2_title: 'व्यक्तिगत विवरण',
         step2_sub: 'कृपया अपनी जानकारी सत्यापित करें', name_label: 'पूरा नाम',
         email_label: 'ईमेल (वैकल्पिक)', dob_label: 'जन्म तिथि', address_label: 'पता',
+        travel_section: 'यात्रा विवरण', travel_section_sub: '(पुलिस रिपोर्ट / गेस्ट रजिस्टर के लिए)',
+        arriving_from: 'आने वाला शहर', departing_to: 'जाने वाला शहर',
+        purpose_of_travel: 'यात्रा का उद्देश्य', select_reason: 'कारण चुनें',
+        travel_leisure: 'अवकाश / छुट्टी', travel_business: 'व्यापार',
+        travel_wedding: 'विवाह / कार्यक्रम', travel_medical: 'चिकित्सा',
+        travel_transit: 'ट्रांजिट', travel_other: 'अन्य',
         step3_title: 'पहचान सत्यापन', step3_sub: 'सभी अतिथियों के लिए सरकारी पहचान पत्र आवश्यक',
         id_type_label: 'पहचान पत्र प्रकार', id_number_label: 'पहचान पत्र संख्या',
         doc_upload_label: 'पहचान पत्र की फोटो अपलोड करें',
@@ -356,12 +400,15 @@ function doLookup(phone) {
         .then(function(d) {
             if (d.found) {
                 // Pre-fill returning guest details — endpoint is rate-limited server-side
-                document.getElementById('nameInput').value    = d.name || '';
-                document.getElementById('emailInput').value   = d.email || '';
-                document.getElementById('addressInput').value = d.address || '';
-                document.getElementById('idTypeInput').value  = d.id_type || '';
-                document.getElementById('idNumberInput').value= d.id_number || '';
-                document.getElementById('dobInput').value     = d.dob || '';
+                document.getElementById('nameInput').value        = d.name || '';
+                document.getElementById('emailInput').value       = d.email || '';
+                document.getElementById('addressInput').value     = d.address || '';
+                document.getElementById('idTypeInput').value      = d.id_type || '';
+                document.getElementById('idNumberInput').value    = d.id_number || '';
+                document.getElementById('dobInput').value         = d.dob || '';
+                document.getElementById('arrivalCityInput').value = d.arrival_city || '';
+                document.getElementById('dispatchCityInput').value= d.dispatch_city || '';
+                document.getElementById('travelReasonInput').value= d.travel_reason || '';
 
                 // Returning guest — existing ID doc on file
                 if (d.has_id_doc) {

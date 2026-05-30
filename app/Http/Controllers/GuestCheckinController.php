@@ -52,6 +52,9 @@ class GuestCheckinController extends Controller
             'dob'           => $customer->date_of_birth?->format('Y-m-d') ?? '',
             'has_id_doc'    => !empty($customer->id_document_path),
             'has_signature' => !empty($customer->signature),
+            'arrival_city'  => $customer->arrival_city ?? '',
+            'dispatch_city' => $customer->dispatch_city ?? '',
+            'travel_reason' => $customer->travel_reason ?? '',
         ]);
     }
 
@@ -93,6 +96,9 @@ class GuestCheckinController extends Controller
             'additional_guests.*.id_type'   => 'nullable|string|max:100',
             'additional_guests.*.id_number' => 'nullable|string|max:100',
             'booking_ref'         => 'nullable|string|max:50',
+            'arrival_city'        => 'nullable|string|max:100',
+            'dispatch_city'       => 'nullable|string|max:100',
+            'travel_reason'       => 'nullable|string|max:100',
         ]);
 
         // Resolve ID document path — new upload takes priority, otherwise reuse from customer profile
@@ -134,6 +140,9 @@ class GuestCheckinController extends Controller
             'id_number'     => $validated['id_number'] ?? null,
             'address'       => $validated['address'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'arrival_city'  => $validated['arrival_city'] ?? null,
+            'dispatch_city' => $validated['dispatch_city'] ?? null,
+            'travel_reason' => $validated['travel_reason'] ?? null,
         ];
         if ($docPath)  $profileData['id_document_path'] = $docPath;
         if ($sigData)  $profileData['signature']        = $sigData;
