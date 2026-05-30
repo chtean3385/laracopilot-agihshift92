@@ -36,19 +36,15 @@ class GuestCheckinController extends Controller
             return response()->json(['found' => false]);
         }
 
+        // Return minimal safe fields only — this is an unauthenticated public endpoint.
+        // Sensitive PII (address, ID type/number, DOB, document URL) is intentionally
+        // omitted to prevent phone-number-based data harvesting.
         return response()->json([
             'found'        => true,
             'name'         => $customer->name,
             'email'        => $customer->email ?? '',
-            'address'      => $customer->address ?? '',
-            'id_type'      => $customer->id_type ?? '',
-            'id_number'    => $customer->id_number ?? '',
-            'dob'          => $customer->date_of_birth?->format('Y-m-d') ?? '',
-            'id_doc_url'   => $customer->id_document_path
-                ? Storage::url($customer->id_document_path)
-                : null,
+            'has_id_doc'   => !empty($customer->id_document_path),
             'has_signature' => !empty($customer->signature),
-            'message'      => 'Welcome back! Your details have been filled in.',
         ]);
     }
 
@@ -56,8 +52,23 @@ class GuestCheckinController extends Controller
     {
         $hotel = Hotel::where('slug', $slug)->where('status', 'active')->firstOrFail();
 
-        $reuseDoc = $request->boolean('reuse_id_document');
-        $reuseSig = $request->boolean('reuse_signature');
+        // Verify reuse flags server-side — client cannot bypass mandatory fields by
+        // spoofing these flags; we only honour them if the customer actually has
+        // a stored artifact in the database.
+        $reuseDocRequested = $request->boolean('reuse_id_document');
+        $reuseSigRequested = $request->boolean('reuse_signature');
+
+        $existingCustomer = null;
+        if ($reuseDocRequested || $reuseSigRequested) {
+            $existingCustomer = Customer::withoutGlobalScopes()
+                ->where('hotel_id', $hotel->id)
+                ->where('phone', trim($request->input('phone', '')))
+                ->whereNull('deleted_at')
+                ->first();
+        }
+
+        $reuseDoc = $reuseDocRequested && $existingCustomer && !empty($existingCustomer->id_document_path);
+        $reuseSig = $reuseSigRequested && $existingCustomer && !empty($existingCustomer->signature);
 
         $validated = $request->validate([
             'name'                => 'required|string|max:255',

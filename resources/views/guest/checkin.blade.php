@@ -138,8 +138,7 @@
                     <div>
                         {{-- Returning guest: existing doc on file --}}
                         <div id="existingDocBanner" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
-                            <div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:6px;"><i class="fas fa-check-circle" style="margin-right:5px;"></i><span data-i18n="doc_on_file">ID document on file from your last visit</span></div>
-                            <img id="existingDocImg" src="" alt="Existing ID" style="max-height:100px;border-radius:8px;object-fit:contain;border:1px solid #bbf7d0;display:block;margin-bottom:8px;">
+                            <div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:4px;"><i class="fas fa-check-circle" style="margin-right:5px;"></i><span data-i18n="doc_on_file">ID document on file from your last visit</span></div>
                             <div style="font-size:12px;color:#15803d;" data-i18n="doc_reuse_hint">We'll reuse your document. Tap below only if you want to upload a new one.</div>
                         </div>
 
@@ -355,20 +354,16 @@ function doLookup(phone) {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.found) {
-                document.getElementById('nameInput').value    = d.name || '';
-                document.getElementById('emailInput').value   = d.email || '';
-                document.getElementById('addressInput').value = d.address || '';
-                document.getElementById('idTypeInput').value  = d.id_type || '';
-                document.getElementById('idNumberInput').value= d.id_number || '';
-                document.getElementById('dobInput').value     = d.dob || '';
+                // Pre-fill only name and email — sensitive fields (address, ID, DOB)
+                // are not returned by the server to protect guest PII on this public endpoint.
+                document.getElementById('nameInput').value  = d.name || '';
+                document.getElementById('emailInput').value = d.email || '';
 
-                // Returning guest — pre-load existing ID doc if available
-                if (d.id_doc_url) {
+                // Returning guest — existing ID doc on file
+                if (d.has_id_doc) {
                     existingDocOnFile = true;
                     document.getElementById('existingDocBanner').style.display = 'block';
-                    document.getElementById('existingDocImg').src = d.id_doc_url;
                     document.getElementById('reuseDocInput').value = '1';
-                    // Make the upload area optional (label no longer marked required)
                     document.getElementById('docUploadLabel').classList.remove('required');
                     document.getElementById('docUploadLabel').setAttribute('data-i18n', 'doc_upload_optional');
                     document.getElementById('docUploadLabel').textContent = t('doc_upload_optional');
@@ -392,7 +387,7 @@ function doLookup(phone) {
                     document.getElementById('reuseSigInput').value = '0';
                 }
 
-                showLookupMsg(currentLang === 'hi' ? '👋 आपका स्वागत है! आपका विवरण भर दिया गया है।' : '👋 Welcome back! Your details have been filled in.', 'success');
+                showLookupMsg(currentLang === 'hi' ? '👋 आपका स्वागत है! आपका विवरण भरा गया है।' : '👋 Welcome back! Your name has been filled in.', 'success');
             } else {
                 // New guest — reset any returning-guest state
                 existingDocOnFile = false;
