@@ -1023,6 +1023,7 @@
 
 @if(\App\Models\Module::isEnabled('restaurant'))
 @canDo('restaurant.view')
+<div class="nav-section">Restaurant</div>
 @php
     $restaurantPending = \App\Services\PermissionService::check('restaurant.orders')
         ? \App\Models\RestaurantOrder::where('approval_status', 'pending')->count()

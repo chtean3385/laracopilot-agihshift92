@@ -608,7 +608,8 @@
                     }
                 @endphp
 
-                {{-- ⚙ Customize bar ──────────────────────────────────────────────── --}}
+                {{-- ⚙ Customize bar — hidden for restaurant-only roles (only 2 widgets) --}}
+                @if(!$isRestaurantOnly)
                 <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:4px;flex-wrap:wrap;">
                     @if($dashIsPersonal)
                     <span style="font-size:11px;color:#94a3b8;font-weight:600;background:#f8fafc;border-radius:8px;padding:4px 10px;border:1px solid #f1f5f9;">
@@ -678,6 +679,7 @@
                         @endforeach
                     </div>
                 </div>
+                @endif{{-- !isRestaurantOnly — customize bar & panel --}}
 
                 {{-- ── OTA Email Alerts — OUTSIDE dbMain so JS reorder can't push them down ── --}}
                 @php

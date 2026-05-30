@@ -36,10 +36,14 @@ class GuestCheckinController extends Controller
         }
 
         return response()->json([
-            'found'   => true,
-            'name'    => $customer->name,
-            'email'   => $customer->email ?? '',
-            'message' => 'Welcome back! Your details have been filled in.',
+            'found'     => true,
+            'name'      => $customer->name,
+            'email'     => $customer->email ?? '',
+            'address'   => $customer->address ?? '',
+            'id_type'   => $customer->id_type ?? '',
+            'id_number' => $customer->id_number ?? '',
+            'dob'       => $customer->date_of_birth?->format('Y-m-d') ?? '',
+            'message'   => 'Welcome back! Your details have been filled in.',
         ]);
     }
 

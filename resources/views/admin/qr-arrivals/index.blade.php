@@ -86,7 +86,7 @@
                         ];
                     @endphp
                     <tr style="border-top:1px solid #f1f5f9;{{ $req->status === 'pending' ? 'background:#fafaf8;' : '' }}"
-                        class="qr-row" data-req='{!! json_encode($reqData) !!}'>
+                        class="qr-row" data-req="{{ base64_encode(json_encode($reqData)) }}">
                         <td style="padding:12px 16px;color:#94a3b8;font-size:12px;">{{ $req->id }}</td>
                         <td style="padding:12px 16px;">
                             <div style="font-weight:700;color:#1e293b;">{{ $req->name }}</div>
@@ -320,7 +320,7 @@
 var qrAvailableRooms = {!! json_encode($availableRooms->map(fn($r) => ['id' => $r->id, 'price' => $r->price_per_night ?? 0])->keyBy('id')) !!};
 
 function openQrModal(row, focusAssign) {
-    var req = JSON.parse(row.dataset.req);
+    var req = JSON.parse(atob(row.dataset.req));
 
     // Header
     document.getElementById('qrModalName').textContent = req.name;
