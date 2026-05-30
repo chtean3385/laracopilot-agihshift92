@@ -90,12 +90,14 @@ class WhatsAppTemplate extends Model
     public static function allEvents(): array
     {
         return [
-            'booking.created'    => 'Booking Confirmed',
-            'checkin.tomorrow'   => 'Check-In Reminder (Day Before)',
-            'checkin.done'       => 'Arrival Welcome (On Check-In)',
-            'payment.received'   => 'Payment Received',
-            'checkout.done'      => 'Check-Out Thank You + Bill',
-            'feedback.request'   => 'Feedback Request (2 Days After Stay)',
+            'booking.created'        => 'Booking Confirmed',
+            'booking.details_request' => 'Booking Confirmation + Guest Details Link',
+            'checkin.tomorrow'       => 'Check-In Reminder (Day Before)',
+            'checkin.done'           => 'Arrival Welcome (On Check-In)',
+            'payment.received'       => 'Payment Received',
+            'checkout.done'          => 'Check-Out Thank You + Bill',
+            'feedback.request'       => 'Feedback Request (2 Days After Stay)',
+            'restaurant.bill'        => 'Restaurant Bill Receipt',
             'ota_booking_confirmed'  => 'OTA Booking Confirmed (Email Parser)',
             'ota_booking_conflict'   => 'OTA Booking Conflict (Email Parser)',
             'booking.alert.owner'    => 'New Booking — Owner Alert (Internal)',
