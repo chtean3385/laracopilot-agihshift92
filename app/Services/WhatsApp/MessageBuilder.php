@@ -62,13 +62,14 @@ class MessageBuilder
         }
 
         // Build a publicly accessible URL.
-        // In production APP_URL is the real domain (e.g. https://resort.dreamstechnology.in).
-        // In dev on Replit, APP_URL may be localhost/0.0.0.0 — fall back to REPLIT_DEV_DOMAIN.
+        // Production: APP_URL secret = https://resort.dreamstechnology.in (set in Replit secrets).
+        // Dev (Replit): APP_URL may still be localhost/0.0.0.0 — fall back to REPLIT_DEV_DOMAIN.
+        // Use getenv() as the primary read (works in queue workers + CLI, not just web requests).
         $base = config('app.url', '');
         if (empty($base) || str_contains($base, 'localhost') || str_contains($base, '0.0.0.0')) {
-            $replitDomain = env('REPLIT_DEV_DOMAIN', '');
+            $replitDomain = getenv('REPLIT_DEV_DOMAIN') ?: env('REPLIT_DEV_DOMAIN', '');
             if ($replitDomain) {
-                $base = 'https://' . $replitDomain;
+                $base = 'https://' . ltrim($replitDomain, 'https://');
             }
         }
         $base = rtrim($base, '/');
