@@ -1,19 +1,16 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        // Change column defaults to false so new rows default to OFF.
-        Schema::table('settings', function (Blueprint $table) {
-            $table->boolean('qr_checkin_enabled')->default(false)->change();
-            $table->boolean('qr_checkout_enabled')->default(false)->change();
-        });
+        // Use raw SQL to avoid any doctrine/dbal requirement.
+        // ALTER COLUMN ... SET DEFAULT works on all PostgreSQL versions.
+        DB::statement('ALTER TABLE settings ALTER COLUMN qr_checkin_enabled SET DEFAULT false');
+        DB::statement('ALTER TABLE settings ALTER COLUMN qr_checkout_enabled SET DEFAULT false');
 
         // Flip all existing hotel settings to OFF (opt-in, not opt-out).
         DB::table('settings')->update([
@@ -24,9 +21,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('settings', function (Blueprint $table) {
-            $table->boolean('qr_checkin_enabled')->default(true)->change();
-            $table->boolean('qr_checkout_enabled')->default(true)->change();
-        });
+        DB::statement('ALTER TABLE settings ALTER COLUMN qr_checkin_enabled SET DEFAULT true');
+        DB::statement('ALTER TABLE settings ALTER COLUMN qr_checkout_enabled SET DEFAULT true');
     }
 };
