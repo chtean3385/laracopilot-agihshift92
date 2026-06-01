@@ -134,6 +134,29 @@ class WaLeadBot
                 return;
             }
 
+            // ── Marketing template button click interceptors ─────────────────
+            // "Book Demo" / "Call Me Back" are button titles on our outbound
+            // marketing templates. They must be handled here — before the state
+            // machine — so clicking a button mid-flow never corrupts a step answer.
+            if (in_array($upper, ['BOOK DEMO', 'BOOK A DEMO', 'SCHEDULE DEMO', 'SCHEDULE A DEMO'])) {
+                self::send($platform, $phone,
+                    "🎉 Great choice!\n\n" .
+                    "Our team will get in touch to schedule your personalised demo shortly.\n\n" .
+                    "📞 You may receive a call from our team at *+91 97252 25519*.\n\n" .
+                    "We look forward to showing you Dreams Hotel CRM! 🏨"
+                );
+                return;
+            }
+
+            if (in_array($upper, ['CALL ME BACK', 'CALLBACK', 'CALL BACK', 'CALL ME'])) {
+                self::send($platform, $phone,
+                    "📞 Noted! Our team will call you back shortly.\n\n" .
+                    "You may receive a call from *+91 97252 25519*.\n\n" .
+                    "We look forward to connecting with you! 😊"
+                );
+                return;
+            }
+
             // ── Form-lead trigger: website form submission message ────────────
             // When someone messages exactly "Hello! I filled in your form…"
             // send the follow_up_after_lead approved template instead of the
