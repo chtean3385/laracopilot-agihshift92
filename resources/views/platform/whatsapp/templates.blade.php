@@ -180,7 +180,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     data-id="{{ $t->id }}"
                     data-event="{{ $t->trigger_event }}"
                     data-name="{{ $t->template_name }}"
-                    data-body="{{ htmlspecialchars($t->message_body ?? '', ENT_QUOTES) }}"
+                    data-body="{{ $t->message_body ?? '' }}"
                     data-status="{{ $t->approval_status }}"
                     data-active="{{ $t->is_active ? '1' : '0' }}"
                     data-pdf="{{ $t->has_document_attachment ? '1' : '0' }}"
@@ -273,7 +273,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     data-id="{{ $pdfT->id }}"
                     data-event="{{ $pdfT->trigger_event }}"
                     data-name="{{ $pdfT->template_name }}"
-                    data-body="{{ htmlspecialchars($pdfT->message_body ?? '', ENT_QUOTES) }}"
+                    data-body="{{ $pdfT->message_body ?? '' }}"
                     data-status="{{ $pdfT->approval_status }}"
                     data-active="{{ $pdfT->is_active ? '1' : '0' }}"
                     data-pdf="1"
@@ -357,7 +357,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     data-id="{{ $ct->id }}"
                     data-event="{{ $ct->trigger_event }}"
                     data-name="{{ $ct->template_name }}"
-                    data-body="{{ htmlspecialchars($ct->message_body ?? '', ENT_QUOTES) }}"
+                    data-body="{{ $ct->message_body ?? '' }}"
                     data-status="{{ $ct->approval_status }}"
                     data-active="{{ $ct->is_active ? '1' : '0' }}"
                     data-pdf="0"
@@ -416,7 +416,7 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
             <div style="font-size:17px;font-weight:800;color:#1e293b;"><i class="fas fa-plus" style="color:#25D366;margin-right:8px;"></i>New Global Template</div>
             <button onclick="closeCreateModal()" style="background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;">×</button>
         </div>
-        <form id="createForm" action="{{ route('platform.whatsapp.template.store') }}" method="POST" style="padding:24px 28px;">
+        <form id="createForm" action="{{ route('platform.whatsapp.template.store') }}" method="POST" enctype="multipart/form-data" style="padding:24px 28px;">
             @csrf
             <div style="display:grid;gap:18px;">
                 <div>
@@ -450,6 +450,31 @@ $eventMetaDefault = ['fas fa-bolt', 'linear-gradient(135deg,#64748b,#475569)', '
                     <textarea name="message_body" id="create-body" required rows="9"
                         style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;resize:vertical;box-sizing:border-box;color:#1e293b;"
                         placeholder="Hi @{{guest_name}}, welcome to @{{hotel_name}}! ..."></textarea>
+                </div>
+                {{-- Header Image --}}
+                <div style="border:1px solid #e0f2fe;border-radius:12px;padding:14px 16px;background:#f0f9ff;">
+                    <div style="font-size:13px;font-weight:700;color:#0369a1;margin-bottom:10px;">
+                        <i class="fas fa-image" style="margin-right:6px;"></i>Header Image
+                        <span style="font-size:11px;font-weight:500;color:#64748b;margin-left:6px;">Optional — for templates that have an image header in Meta</span>
+                    </div>
+                    <div id="create-header-wrap" style="display:none;margin-bottom:10px;">
+                        <img id="create-header-preview" src="" alt="Header image preview"
+                            style="max-width:100%;max-height:160px;border-radius:10px;border:1px solid #bae6fd;object-fit:cover;display:block;">
+                        <button type="button" onclick="clearCreateHeaderImg()"
+                            style="margin-top:6px;display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-times"></i> Remove image
+                        </button>
+                    </div>
+                    <input type="hidden" name="header_media_url" id="create-header-url">
+                    <label style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:#0ea5e9;color:#fff;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+                        <i class="fas fa-upload"></i> Upload image
+                        <input type="file" name="header_image" id="create-header-file" accept="image/png,image/jpeg,image/jpg,image/webp"
+                            style="display:none;" onchange="previewCreateHeaderImg(this)">
+                    </label>
+                    <div style="font-size:11px;color:#64748b;margin-top:7px;">
+                        <i class="fas fa-info-circle"></i> Upload the same image used in your Meta template header. Max 5 MB. PNG/JPG/WebP.
+                        This URL is used automatically when sending this template.
+                    </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <label style="font-size:13px;font-weight:700;color:#374151;">Active</label>
@@ -608,6 +633,26 @@ function openCreateModal(presetEvent) {
 function closeCreateModal() {
     document.getElementById('createModal').style.display = 'none';
     document.getElementById('custom-event-wrap').style.display = 'none';
+    clearCreateHeaderImg();
+}
+
+function previewCreateHeaderImg(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('create-header-preview').src = e.target.result;
+        document.getElementById('create-header-wrap').style.display = 'block';
+        document.getElementById('create-header-url').value = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearCreateHeaderImg() {
+    document.getElementById('create-header-preview').src = '';
+    document.getElementById('create-header-url').value   = '';
+    document.getElementById('create-header-file').value  = '';
+    document.getElementById('create-header-wrap').style.display = 'none';
 }
 
 var _editOriginalBody = '';

@@ -139,16 +139,37 @@ class WhatsAppController extends Controller
             : $request->input('trigger_event');
 
         $data = $request->merge(['trigger_event' => $triggerEvent])->validate([
-            'trigger_event' => 'required|string|max:120',
-            'template_name' => 'required|string|max:120',
-            'message_body'  => 'required|string',
-            'is_active'     => 'nullable|boolean',
+            'trigger_event'   => 'required|string|max:120',
+            'template_name'   => 'required|string|max:120',
+            'message_body'    => 'required|string',
+            'is_active'       => 'nullable|boolean',
+            'header_image'    => 'nullable|image|max:5120',
+            'header_media_url'=> 'nullable|string|max:500',
         ]);
 
         $data['is_active']       = $request->boolean('is_active');
         $data['hotel_id']        = null;
         $data['approval_status'] = 'pending';
         $data['meta_status']     = 'not_submitted';
+
+        // Handle header image upload for new templates
+        if ($request->hasFile('header_image')) {
+            $file     = $request->file('header_image');
+            $ext      = strtolower($file->getClientOriginalExtension());
+            $filename = 'wa_header_new_' . time() . '.' . $ext;
+            $dir      = public_path('uploads/whatsapp-headers');
+            if (!is_dir($dir)) { mkdir($dir, 0755, true); }
+            $file->move($dir, $filename);
+            $data['header_media_url'] = url('uploads/whatsapp-headers/' . $filename);
+            $data['header_format']    = 'image';
+        } elseif (!empty($data['header_media_url'])) {
+            $data['header_format'] = 'image';
+        } else {
+            $data['header_media_url'] = null;
+            $data['header_format']    = 'none';
+        }
+
+        unset($data['header_image']);
 
         WhatsAppTemplate::withoutGlobalScopes()->create($data);
 
@@ -390,7 +411,9 @@ class WhatsAppController extends Controller
             $data['approval_status'] = 'pending';
             $data['meta_status']    = 'not_submitted';
         } else {
-            $data['approval_status'] = $data['approval_status'] ?? $template->approval_status;
+            // Body unchanged — always preserve the existing DB status regardless of what the form sends.
+            // This prevents an accidental reset to 'pending' when only the header image or active flag changed.
+            $data['approval_status'] = $template->approval_status;
         }
 
         $template->update($data);
