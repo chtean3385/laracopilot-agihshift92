@@ -184,20 +184,21 @@ class WaLeadBot
                 return;
             }
 
-            // Entry triggers: HI / HELLO / DEMO start the flow (or any unrecognised state)
+            // Entry triggers: HI / HELLO / HEY / DEMO always restart the flow,
+            // even if the contact is already mid-flow. This prevents "Book Demo"
+            // button clicks or stray messages from permanently corrupting state.
             $isEntryTrigger = in_array($upper, ['HI', 'HELLO', 'HEY', 'DEMO']);
             $inFlow         = str_starts_with($state, 'lead_step_');
 
-            // New / unknown state or explicit entry trigger — start the flow
-            if (empty($state) || (!$inFlow && $isEntryTrigger)) {
+            // Empty state OR explicit greeting → always restart from step 1
+            if (empty($state) || $isEntryTrigger) {
                 self::send($platform, $phone, self::MSG_GREETING);
                 self::setState($phone, 'lead_step_1');
-                // Create or initialize the leads row
                 self::upsertLead($phone, ['current_step' => 'step_1', 'last_message_at' => now()]);
                 return;
             }
 
-            // If not in flow and not an entry trigger, silently ignore to avoid confusing partial inputs
+            // Not in flow and not an entry trigger — silently ignore
             if (!$inFlow) return;
 
             // Process each step
