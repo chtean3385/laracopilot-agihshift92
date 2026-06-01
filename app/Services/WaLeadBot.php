@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\Log;
  *
  * State machine via wa_contacts.bot_state (prefixed lead_step_*).
  * All collected data is upserted into whatsapp_leads in real time.
+ *
+ * FIXES v2:
+ *  1. Button clicks (Book Demo / Call Me Back) mid-flow no longer corrupt step
+ *     answers — bot re-asks the pending question after acknowledging the button.
+ *  2. "Hi / Hello / Hey" mid-flow no longer wipes collected data — only restarts
+ *     when the contact has NO active state (empty or terminal states).
+ *  3. Form-lead prefix is now intercepted BEFORE every other check so it can
+ *     never bleed into a step answer regardless of current state.
+ *  4. DEMO bare keyword now only starts/restarts when NOT already in-flow,
+ *     preventing accidental mid-flow resets.
+ *  5. All marketing-template button strings are exhaustively normalised and
+ *     checked as the very first thing so they can never fall through to steps.
  */
 class WaLeadBot
 {
@@ -89,6 +101,12 @@ class WaLeadBot
     // Exact prefix sent by website lead-capture forms
     private const FORM_LEAD_PREFIX = 'Hello! I filled in your form and would like to know more about your business.';
 
+    // Thank-you reply sent when the form-lead prefix is detected
+    private const MSG_FORM_THANK_YOU =
+        "🙏 Thank you for reaching out!\n\n" .
+        "We've received your enquiry and our team will get back to you shortly.\n\n" .
+        "_In the meantime, feel free to say *Hi* to learn more about Dreams Hotel CRM! 😊_";
+
     private const MSG_HOT_ADMIN =
         "🔥 *HOT LEAD ALERT!*\n\n" .
         "👤 *Name:* {name}\n" .
@@ -100,6 +118,21 @@ class WaLeadBot
         "📅 *Demo:* {demo}\n" .
         "📞 *Phone:* {phone}\n\n" .
         "_Act fast — they want to implement IMMEDIATELY!_ 🚀";
+
+    // ── Marketing-template button labels (normalised uppercase) ───────────────
+    // Add any new button titles here so they are intercepted globally.
+    private const BUTTON_BOOK_DEMO = [
+        'BOOK DEMO', 'BOOK A DEMO', 'SCHEDULE DEMO', 'SCHEDULE A DEMO',
+    ];
+    private const BUTTON_CALL_BACK = [
+        'CALL ME BACK', 'CALLBACK', 'CALL BACK', 'CALL ME',
+    ];
+
+    // ── Step → pending-question map (used to re-ask after button intercept) ──
+    private const STEP_REPROMPT = [
+        'lead_step_1' => self::MSG_GREETING,          // waiting for name
+        // steps 2–8 are dynamic (contain {placeholders}), handled in self::repromptStep()
+    ];
 
     // ── Entry point ──────────────────────────────────────────────────────────
 
@@ -114,95 +147,125 @@ class WaLeadBot
         $text = trim($text ?? '');
 
         try {
-            // Fetch or create contact row
+            // Fetch contact row — bail if unknown
             $contact = DB::table('wa_contacts')->where('phone', $phone)->first();
             if (!$contact) return;
 
-            // ── Global keyword overrides ─────────────────────────────────────
+            $upper        = strtoupper(preg_replace('/\s+/', ' ', $text));
+            $currentState = $contact->bot_state ?? '';
+            $inFlow       = str_starts_with($currentState, 'lead_step_');
 
-            $upper = strtoupper(preg_replace('/\s+/', ' ', $text));
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 0 — Form-lead prefix (HIGHEST priority, checked first)
+            // Must be before EVERYTHING else so it can never corrupt a step.
+            // ════════════════════════════════════════════════════════════════
+            if (stripos($text, self::FORM_LEAD_PREFIX) === 0) {
+                self::handleFormLead($phone, $contact, $platform);
+                return;
+            }
 
-            // OPT-OUT keywords (checked before video to ensure correct routing)
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 1 — Hard opt-out / nurture keywords (global, any state)
+            // ════════════════════════════════════════════════════════════════
             if (in_array($upper, ['STOP', 'UNSUBSCRIBE', 'NO'])) {
                 self::optOut($phone, $platform);
                 return;
             }
-
-            // MAYBE LATER variants
             if (in_array($upper, ['MAYBE LATER', 'LATER', 'NOT NOW', 'NOT INTERESTED'])) {
                 self::nurture($phone, $platform);
                 return;
             }
 
-            // ── Marketing template button click interceptors ─────────────────
-            // "Book Demo" / "Call Me Back" are button titles on our outbound
-            // marketing templates. They must be handled here — before the state
-            // machine — so clicking a button mid-flow never corrupts a step answer.
-            if (in_array($upper, ['BOOK DEMO', 'BOOK A DEMO', 'SCHEDULE DEMO', 'SCHEDULE A DEMO'])) {
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 2 — Marketing-template button intercepts
+            // These must be caught BEFORE the state machine. When the user is
+            // mid-flow we acknowledge AND re-ask the pending question so the
+            // flow is never abandoned.
+            // ════════════════════════════════════════════════════════════════
+            if (in_array($upper, self::BUTTON_BOOK_DEMO)) {
                 self::send($platform, $phone,
                     "🎉 Great choice!\n\n" .
                     "Our team will get in touch to schedule your personalised demo shortly.\n\n" .
                     "📞 You may receive a call from our team at *+91 97252 25519*.\n\n" .
                     "We look forward to showing you Dreams Hotel CRM! 🏨"
                 );
+                // If mid-flow: re-ask the current pending question so the
+                // qualification can continue uninterrupted.
+                if ($inFlow) {
+                    self::repromptStep($phone, $currentState, $platform);
+                }
                 return;
             }
 
-            if (in_array($upper, ['CALL ME BACK', 'CALLBACK', 'CALL BACK', 'CALL ME'])) {
+            if (in_array($upper, self::BUTTON_CALL_BACK)) {
                 self::send($platform, $phone,
                     "📞 Noted! Our team will call you back shortly.\n\n" .
                     "You may receive a call from *+91 97252 25519*.\n\n" .
                     "We look forward to connecting with you! 😊"
                 );
+                if ($inFlow) {
+                    self::repromptStep($phone, $currentState, $platform);
+                }
                 return;
             }
 
-            // ── Form-lead trigger: website form submission message ────────────
-            // When someone messages exactly "Hello! I filled in your form…"
-            // send the follow_up_after_lead approved template instead of the
-            // normal greeting bot, then wait — they can still say "hi" later
-            // to begin the full qualification flow.
-            $currentState = $contact->bot_state ?? '';
-            $alreadyInFlow = str_starts_with($currentState, 'lead_step_')
-                          || in_array($currentState, ['lead_completed', 'opted_out']);
-            if (!$alreadyInFlow && stripos(trim($text), self::FORM_LEAD_PREFIX) === 0) {
-                self::sendFollowUpAfterLead($phone, $contact, $platform);
-                return;
-            }
-
-            // ── State machine ────────────────────────────────────────────────
-
-            $state = $contact->bot_state ?? '';
-
-            // Contacts that have already completed or opted out — ignore
-            if (in_array($state, ['lead_completed', 'opted_out', 'nurture'])) return;
-
-            // VIDEO keyword — send video without resetting step (only when already in-flow)
-            // DEMO VIDEO (two words) always sends video; bare DEMO starts the flow
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 3 — Video / demo-video keyword (works in any state)
+            // ════════════════════════════════════════════════════════════════
             if (in_array($upper, ['VIDEO', 'YOUTUBE', 'DEMO VIDEO'])) {
                 self::send($platform, $phone, self::MSG_VIDEO);
                 return;
             }
 
-            // Entry triggers: HI / HELLO / HEY / DEMO always restart the flow,
-            // even if the contact is already mid-flow. This prevents "Book Demo"
-            // button clicks or stray messages from permanently corrupting state.
-            $isEntryTrigger = in_array($upper, ['HI', 'HELLO', 'HEY', 'DEMO']);
-            $inFlow         = str_starts_with($state, 'lead_step_');
-
-            // Empty state OR explicit greeting → always restart from step 1
-            if (empty($state) || $isEntryTrigger) {
-                self::send($platform, $phone, self::MSG_GREETING);
-                self::setState($phone, 'lead_step_1');
-                self::upsertLead($phone, ['current_step' => 'step_1', 'last_message_at' => now()]);
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 4 — Terminal / non-flow states
+            // ════════════════════════════════════════════════════════════════
+            if (in_array($currentState, ['lead_completed', 'opted_out', 'nurture'])) {
+                // Silently ignore — user has finished or unsubscribed.
+                // (They can still trigger a full restart via Hi/Hello below
+                //  only when state is empty, which won't be the case here.)
                 return;
             }
 
-            // Not in flow and not an entry trigger — silently ignore
-            if (!$inFlow) return;
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 5 — Entry triggers: Hi / Hello / Hey
+            //
+            // KEY CHANGE: "Hi/Hello/Hey" now only restarts the flow when the
+            // contact is NOT already mid-flow. This prevents accidental wipes.
+            // "DEMO" bare keyword also only starts when not in-flow.
+            // ════════════════════════════════════════════════════════════════
+            $isGreeting = in_array($upper, ['HI', 'HELLO', 'HEY', 'START']);
+            $isDemoStart = ($upper === 'DEMO');
 
-            // Process each step
-            match ($state) {
+            if ($isGreeting || $isDemoStart) {
+                if (!$inFlow) {
+                    // Fresh start (or coming back after terminal state reset)
+                    self::send($platform, $phone, self::MSG_GREETING);
+                    self::setState($phone, 'lead_step_1');
+                    self::upsertLead($phone, ['current_step' => 'step_1', 'last_message_at' => now()]);
+                    return;
+                }
+                // Already mid-flow: treat "hi" as noise — re-ask pending question
+                // so the user knows where they are, rather than silently ignoring.
+                self::repromptStep($phone, $currentState, $platform);
+                return;
+            }
+
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 6 — Unrecognised message outside any flow
+            // ════════════════════════════════════════════════════════════════
+            if (!$inFlow) {
+                // Not in a flow and not a known trigger — invite them to start.
+                self::send($platform, $phone,
+                    "👋 Hello! Type *Hi* to learn how Dreams Hotel CRM can help your property 🏨"
+                );
+                return;
+            }
+
+            // ════════════════════════════════════════════════════════════════
+            // LAYER 7 — Active flow state machine
+            // ════════════════════════════════════════════════════════════════
+            match ($currentState) {
                 'lead_step_1' => self::handleStep1($phone, $text, $platform),
                 'lead_step_2' => self::handleStep2($phone, $text, $platform),
                 'lead_step_3' => self::handleStep3($phone, $text, $platform),
@@ -221,6 +284,66 @@ class WaLeadBot
         }
     }
 
+    // ── Form-lead handler ────────────────────────────────────────────────────
+
+    /**
+     * Called when the inbound message starts with the website form-lead prefix.
+     *
+     * Behaviour:
+     *  - If NOT yet in flow AND follow_up not already sent → send the approved
+     *    follow_up_after_lead template and mark state as 'follow_up_sent'.
+     *  - If already in flow → send a simple thank-you text (never corrupt step).
+     *  - If follow_up already sent → send a simple thank-you text (idempotent).
+     */
+    private static function handleFormLead(string $phone, object $contact, object $platform): void
+    {
+        $currentState = $contact->bot_state ?? '';
+        $inFlow       = str_starts_with($currentState, 'lead_step_');
+
+        if (!$inFlow && $currentState !== 'follow_up_sent') {
+            // First time — send the approved template
+            self::sendFollowUpAfterLead($phone, $contact, $platform);
+        } else {
+            // Mid-flow or already sent — just send a polite thank-you text,
+            // never touch the bot_state or lead data.
+            self::send($platform, $phone, self::MSG_FORM_THANK_YOU);
+        }
+    }
+
+    // ── Re-prompt helper ─────────────────────────────────────────────────────
+
+    /**
+     * Re-send the question that corresponds to the current bot state.
+     * Called after a button intercept so the user knows where they are.
+     */
+    private static function repromptStep(string $phone, string $state, object $platform): void
+    {
+        // Fetch lead data for personalisation
+        $lead  = DB::table('whatsapp_leads')->where('phone', $phone)->first();
+        $name  = $lead?->name ?? 'there';
+        $hotel = $lead?->hotel_name ?? 'your property';
+        $rooms = $lead?->room_count ?? '—';
+
+        $msg = match ($state) {
+            'lead_step_1' => self::MSG_GREETING,
+            'lead_step_2' => str_replace('{name}', $name, self::MSG_ASK_HOTEL),
+            'lead_step_3' => str_replace('{hotel}', $hotel, self::MSG_ASK_ROOMS),
+            'lead_step_4' => str_replace('{rooms}', $rooms, self::MSG_ASK_SOFTWARE),
+            'lead_step_5' => self::MSG_ASK_ROLE,
+            'lead_step_6' => self::MSG_ASK_CITY,
+            'lead_step_7' => self::MSG_ASK_TIMELINE,
+            'lead_step_8' => str_replace('{hotel}', $hotel, self::MSG_ASK_DEMO),
+            default       => null,
+        };
+
+        if ($msg) {
+            // Small preamble so the re-prompt doesn't feel abrupt
+            self::send($platform, $phone,
+                "_(To continue your demo booking, please answer the question below 👇)_\n\n" . $msg
+            );
+        }
+    }
+
     // ── Step handlers ────────────────────────────────────────────────────────
 
     /** Step 1: Received name */
@@ -229,7 +352,6 @@ class WaLeadBot
         if (empty($text)) return;
 
         $name = ucwords(strtolower(trim($text)));
-        // Update the contact display name so the inbox shows the real name
         DB::table('wa_contacts')->where('phone', $phone)->update([
             'display_name' => $name,
             'updated_at'   => now(),
@@ -255,7 +377,6 @@ class WaLeadBot
     {
         if (empty($text)) return;
 
-        // Accept any numeric or text answer
         $rooms = trim($text);
         self::upsertLead($phone, ['room_count' => $rooms, 'current_step' => 'step_4', 'last_message_at' => now()]);
         self::setState($phone, 'lead_step_4');
@@ -279,17 +400,16 @@ class WaLeadBot
         if (empty($text)) return;
 
         $roleMap = [
-            '1' => 'Owner',
-            '2' => 'Manager',
-            '3' => 'Staff / Receptionist',
-            'owner'   => 'Owner',
-            'manager' => 'Manager',
-            'staff'   => 'Staff / Receptionist',
+            '1'      => 'Owner',
+            '2'      => 'Manager',
+            '3'      => 'Staff / Receptionist',
+            'owner'  => 'Owner',
+            'manager'=> 'Manager',
+            'staff'  => 'Staff / Receptionist',
         ];
         $lower = strtolower(trim($text));
         $role  = $roleMap[$text] ?? $roleMap[$lower] ?? null;
 
-        // Fuzzy match
         if (!$role) {
             foreach (['owner', 'manager', 'staff', 'receptionist'] as $keyword) {
                 if (str_contains($lower, $keyword)) {
@@ -298,7 +418,6 @@ class WaLeadBot
                 }
             }
         }
-        // Fall back to raw input if unrecognized
         if (!$role) $role = ucwords(strtolower(trim($text)));
 
         self::upsertLead($phone, ['role' => $role, 'current_step' => 'step_6', 'last_message_at' => now()]);
@@ -340,8 +459,7 @@ class WaLeadBot
             }
         }
 
-        // Fetch lead for hotel name to personalise next message
-        $lead = DB::table('whatsapp_leads')->where('phone', $phone)->first();
+        $lead  = DB::table('whatsapp_leads')->where('phone', $phone)->first();
         $hotel = $lead?->hotel_name ?? 'your property';
 
         self::upsertLead($phone, ['implementation_timeline' => $timeline, 'current_step' => 'step_8', 'last_message_at' => now()]);
@@ -355,8 +473,6 @@ class WaLeadBot
         if (empty($text)) return;
 
         $demo = trim($text);
-
-        // Fetch full lead for scoring and notification
         $lead = DB::table('whatsapp_leads')->where('phone', $phone)->first();
 
         // ── Lead scoring ─────────────────────────────────────────────────────
@@ -367,12 +483,9 @@ class WaLeadBot
         $isOwner     = str_contains($role, 'owner');
         $isManager   = str_contains($role, 'manager');
         $isImmediate = str_contains($timeline, 'immediate') || str_contains($timeline, 'asap');
-        $isBig       = $rooms >= 20;   // 20+ rooms
-        $isMedium    = $rooms >= 5 && $rooms < 20; // 5–19 rooms
+        $isBig       = $rooms >= 20;
+        $isMedium    = $rooms >= 5 && $rooms < 20;
 
-        // HOT = owner + 20+ rooms + immediate
-        // WARM = manager OR 5–19 rooms (and not hot)
-        // COLD = everything else
         if ($isOwner && $isBig && $isImmediate) {
             $score = 'hot';
         } elseif ($isManager || $isMedium) {
@@ -381,7 +494,6 @@ class WaLeadBot
             $score = 'cold';
         }
 
-        // Persist final step with both lead_status and lead_score
         self::upsertLead($phone, [
             'demo_datetime'   => $demo,
             'lead_status'     => $score,
@@ -390,14 +502,12 @@ class WaLeadBot
             'last_message_at' => now(),
         ]);
 
-        // Update wa_contacts with lead score so inbox shows the badge
         DB::table('wa_contacts')->where('phone', $phone)->update([
             'lead_status' => $score,
             'bot_state'   => 'lead_completed',
             'updated_at'  => now(),
         ]);
 
-        // Build and send completion message
         $msg = self::MSG_COMPLETION;
         $msg = str_replace('{name}',     $lead?->name ?? 'there',                $msg);
         $msg = str_replace('{hotel}',    $lead?->hotel_name ?? 'your hotel',     $msg);
@@ -408,7 +518,6 @@ class WaLeadBot
         $msg = str_replace('{demo}',     $demo,                                  $msg);
         self::send($platform, $phone, $msg);
 
-        // Notify admin for HOT leads
         if ($score === 'hot') {
             self::notifyAdmin($platform, $phone, $lead, $demo);
         }
@@ -417,22 +526,12 @@ class WaLeadBot
     // ── Form-lead follow-up template sender ─────────────────────────────────
 
     /**
-     * Send the `follow_up_after_lead` approved Meta template when a contact's
-     * first message matches the website form-submission prefix.
-     *
-     * - Sets bot_state to 'follow_up_sent' so the template doesn't re-fire on
-     *   every subsequent message.
-     * - Passes the contact's display_name as {{1}} if the template needs it
-     *   (falls back to an empty array so it also works with no-variable templates).
-     * - The contact can still say "hi" later to start the full lead-qual flow.
+     * Send the `follow_up_after_lead` approved Meta template.
+     * Only fires once per contact (idempotency guard on bot_state).
      */
     private static function sendFollowUpAfterLead(string $phone, object $contact, object $platform): void
     {
-        // Only fire once per contact — if already sent, skip
-        if ($contact->bot_state === 'follow_up_sent') return;
-
-        $name = $contact->display_name ?? null;
-        // Pass name as {{1}} when available; send with no body params otherwise
+        $name   = $contact->display_name ?? null;
         $params = $name ? [$name] : [];
 
         $numericPhone = preg_replace('/[^0-9]/', '', $phone);
@@ -467,13 +566,11 @@ class WaLeadBot
             Log::error("WaLeadBot: follow_up_after_lead exception for {$phone}: " . $e->getMessage());
         }
 
-        // Mark state so this branch doesn't re-fire on follow-up messages
         DB::table('wa_contacts')->where('phone', $phone)->update([
             'bot_state'  => 'follow_up_sent',
             'updated_at' => now(),
         ]);
 
-        // Ensure a lead row exists so this person appears in the leads table
         self::upsertLead($phone, ['current_step' => 'follow_up', 'last_message_at' => now()]);
     }
 
@@ -508,7 +605,6 @@ class WaLeadBot
 
     public static function notifyAdmin(object $platform, string $phone, ?object $lead, string $demo): void
     {
-        // Fetch configured admin notify phone
         $adminPhone = DB::table('platform_whatsapp_settings')->value('admin_notify_phone');
         if (!$adminPhone) {
             Log::info("WaLeadBot: HOT lead from {$phone} — no admin_notify_phone configured, skipping alert.");
@@ -556,9 +652,6 @@ class WaLeadBot
         ]);
     }
 
-    /**
-     * Insert or update the whatsapp_leads row for this phone.
-     */
     private static function upsertLead(string $phone, array $fields): void
     {
         $existing = DB::table('whatsapp_leads')->where('phone', $phone)->first();
@@ -573,9 +666,6 @@ class WaLeadBot
         }
     }
 
-    /**
-     * Send a WhatsApp text message via the Meta API.
-     */
     private static function send(object $platform, string $phone, string $text): void
     {
         $numericPhone = preg_replace('/[^0-9]/', '', $phone);
