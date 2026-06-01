@@ -5,5 +5,9 @@
 @section('page-subtitle', 'Two-way conversations with hotel owners')
 
 @section('content')
-@livewire('platform.wa-inbox')
+<div id="wa-inbox-root" style="min-height:500px;"></div>
 @endsection
+
+@push('scripts')
+@vite('resources/js/platform-wa-inbox.jsx')
+@endpush

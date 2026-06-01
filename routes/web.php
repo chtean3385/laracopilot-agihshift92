@@ -677,8 +677,26 @@ Route::prefix('platform')->middleware('platform.admin')->group(function () {
     Route::get('/analytics/campaigns', [\App\Http\Controllers\Platform\AnalyticsController::class, 'campaigns']    )->name('platform.analytics.campaigns');
     Route::post('/analytics/campaigns',[\App\Http\Controllers\Platform\AnalyticsController::class, 'sendCampaign'] )->name('platform.analytics.campaigns.send');
 
-    // WA Inbox (Task #54)
+    // WA Inbox (Task #54 + #136 React rewrite)
     Route::get('/wa-inbox', fn() => view('platform.wa-inbox.index'))->name('platform.wa-inbox');
+
+    // WA Inbox JSON API
+    Route::prefix('wa-inbox/api')->group(function () {
+        $c = \App\Http\Controllers\Platform\WaInboxApiController::class;
+        Route::get('/config',                           [$c, 'config']);
+        Route::get('/contacts',                         [$c, 'contacts']);
+        Route::get('/messages/{phone}',                 [$c, 'messages'])->where('phone', '.*');
+        Route::post('/send',                            [$c, 'send']);
+        Route::post('/send-template',                   [$c, 'sendTemplate']);
+        Route::post('/blast',                           [$c, 'blast']);
+        Route::patch('/contacts/{phone}',               [$c, 'updateContact'])->where('phone', '.*');
+        Route::post('/contacts/{phone}/archive',        [$c, 'archive'])->where('phone', '.*');
+        Route::post('/contacts/{phone}/unarchive',      [$c, 'unarchive'])->where('phone', '.*');
+        Route::delete('/contacts/{phone}',              [$c, 'deleteContact'])->where('phone', '.*');
+        Route::post('/contacts/{phone}/toggle-subscribe',[$c, 'toggleSubscribe'])->where('phone', '.*');
+        Route::get('/templates',                        [$c, 'templates']);
+        Route::get('/leads/{phone}',                    [$c, 'leadInfo'])->where('phone', '.*');
+    });
 
     // WhatsApp Billing
     Route::get('/whatsapp/billing',                         [\App\Http\Controllers\Platform\WhatsAppBillingController::class, 'index']     )->name('platform.whatsapp.billing');
