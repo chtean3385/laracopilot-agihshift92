@@ -90,34 +90,47 @@ class DashboardController extends Controller
             }
 
             try {
-                $maintenanceRooms = Room::where('status', 'maintenance')->count();
-                $totalRooms       = Room::count();
+                // Single query for all room status counts (was 4 separate COUNT queries)
+                $roomCounts = Room::selectRaw("
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'maintenance' THEN 1 ELSE 0 END) as maintenance,
+                    SUM(CASE WHEN status = 'dirty'       THEN 1 ELSE 0 END) as dirty,
+                    SUM(CASE WHEN status = 'available'   THEN 1 ELSE 0 END) as available,
+                    SUM(CASE WHEN status = 'occupied'    THEN 1 ELSE 0 END) as occupied
+                ")->first();
+                $totalRooms       = (int)($roomCounts->total ?? 0);
+                $maintenanceRooms = (int)($roomCounts->maintenance ?? 0);
+                $dirtyRooms       = (int)($roomCounts->dirty ?? 0);
                 $nonMaintenanceRooms = $totalRooms - $maintenanceRooms;
                 $wholeHotelActiveToday = Booking::where('is_whole_hotel', true)
                     ->whereNotIn('status', ['cancelled', 'checked_out'])
                     ->where('check_in_date', '<=', $today->toDateString())
                     ->where('check_out_date', '>', $today->toDateString())
                     ->exists();
-                $dirtyRooms = Room::where('status', 'dirty')->count();
                 if ($wholeHotelActiveToday) {
                     $occupiedRooms  = $nonMaintenanceRooms;
                     $availableRooms = 0;
                 } else {
-                    $availableRooms = Room::where('status', 'available')->count();
-                    $occupiedRooms  = Room::where('status', 'occupied')->count();
+                    $availableRooms = (int)($roomCounts->available ?? 0);
+                    $occupiedRooms  = (int)($roomCounts->occupied ?? 0);
                 }
             } catch (\Exception $e) {
                 $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = $dirtyRooms = 0;
             }
 
             try {
-                $monthRevenue = Payment::whereMonth('created_at', $today->month)
+                // Single query for both month and today revenue (was 2 separate SUM queries)
+                $revenueStats = Payment::where('status', 'completed')
                     ->whereYear('created_at', $today->year)
-                    ->where('status', 'completed')
-                    ->sum('amount');
-                $todayRevenue = Payment::whereDate('created_at', $today)
-                    ->where('status', 'completed')
-                    ->sum('amount');
+                    ->whereMonth('created_at', $today->month)
+                    ->selectRaw(
+                        "SUM(amount) as month_total,
+                         SUM(CASE WHEN DATE(created_at) = ? THEN amount ELSE 0 END) as today_total",
+                        [$today->toDateString()]
+                    )
+                    ->first();
+                $monthRevenue = (float)($revenueStats->month_total ?? 0);
+                $todayRevenue = (float)($revenueStats->today_total ?? 0);
             } catch (\Exception $e) {
                 $monthRevenue = $todayRevenue = 0;
             }
@@ -448,16 +461,15 @@ class DashboardController extends Controller
         // ── Dashboard preferences (per-user, fallback to hotel default) ─────────
         $userId  = (int) session('crm_user_id');
 
-        $dashPref = DashboardPreference::where('hotel_id', $hotelId)
-            ->where('user_id', $userId)
-            ->first();
-
-        if (!$dashPref) {
-            $dashPref = DashboardPreference::where('hotel_id', $hotelId)
-                ->whereNull('user_id')
-                ->where('is_hotel_default', true)
-                ->first();
-        }
+        // Single query for both user preference and hotel default (was 2 queries)
+        $allDashPrefs = DashboardPreference::where('hotel_id', $hotelId)
+            ->where(fn($q) => $q
+                ->where('user_id', $userId)
+                ->orWhere(fn($q2) => $q2->whereNull('user_id')->where('is_hotel_default', true))
+            )
+            ->get();
+        $dashPref = $allDashPrefs->firstWhere('user_id', $userId)
+            ?? $allDashPrefs->first(fn($p) => is_null($p->user_id));
 
         $allWidgetKeys = [
             'kpi-row-1', 'shortcuts-actions-pair',
@@ -469,10 +481,8 @@ class DashboardController extends Controller
         $dashWidgetOrder   = $dashPref?->preferences['widget_order']   ?? $allWidgetKeys;
         $dashHiddenWidgets = $dashPref?->preferences['hidden_widgets']  ?? [];
         $dashIsPersonal    = $dashPref && $dashPref->user_id !== null;
-        $dashHotelDefault  = DashboardPreference::where('hotel_id', $hotelId)
-            ->whereNull('user_id')
-            ->where('is_hotel_default', true)
-            ->first();
+        // Reuse the already-loaded collection — no extra query needed
+        $dashHotelDefault  = $allDashPrefs->first(fn($p) => is_null($p->user_id) && $p->is_hotel_default);
 
         return view('admin.dashboard', compact(
             'todayCheckins', 'todayCheckouts', 'availableRooms', 'occupiedRooms',

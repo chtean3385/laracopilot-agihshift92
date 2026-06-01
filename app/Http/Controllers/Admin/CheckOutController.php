@@ -75,7 +75,7 @@ class CheckOutController extends Controller
                                  ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
                 $actualMinutes  = Carbon::parse($checkinAt)->diffInMinutes(now());
                 $hoursBooked    = max(1, (int) ceil($actualMinutes / 60));
-                $addOnTotal     = $booking->bookingAddOns()->sum('price');
+                $addOnTotal     = $booking->bookingAddOns->sum('price'); // use loaded relation — no extra query
                 $baseHourlyRate = $booking->is_whole_hotel
                     ? \App\Models\Room::where('hotel_id', $booking->hotel_id)->where('status', '!=', 'maintenance')->sum('hourly_rate')
                     : ($booking->room?->hourly_rate ?? 0);
@@ -181,7 +181,7 @@ class CheckOutController extends Controller
                 $booking->update(['hours_booked' => $actualHours]);
             } elseif ($request->filled('override_hours') && (int) $request->override_hours >= 1) {
                 $actualHours     = (int) $request->override_hours;
-                $addOnTotal      = $booking->bookingAddOns()->sum('price');
+                $addOnTotal      = $booking->bookingAddOns->sum('price'); // use loaded relation — no extra query
                 $baseHourlyRate  = $booking->is_whole_hotel
                     ? \App\Models\Room::where('hotel_id', $booking->hotel_id)->where('status', '!=', 'maintenance')->sum('hourly_rate')
                     : ($booking->room?->hourly_rate ?? 0);
@@ -192,7 +192,7 @@ class CheckOutController extends Controller
                                  ?? Carbon::parse($booking->check_in_date . ' ' . ($booking->slot_start_time ?? '00:00'));
                 $actualMinutes = Carbon::parse($checkinAt)->diffInMinutes(now());
                 $actualHours   = max(1, (int) ceil($actualMinutes / 60));
-                $addOnTotal      = $booking->bookingAddOns()->sum('price');
+                $addOnTotal      = $booking->bookingAddOns->sum('price'); // use loaded relation — no extra query
                 $baseHourlyRate  = $booking->is_whole_hotel
                     ? \App\Models\Room::where('hotel_id', $booking->hotel_id)->where('status', '!=', 'maintenance')->sum('hourly_rate')
                     : ($booking->room?->hourly_rate ?? 0);
@@ -202,7 +202,8 @@ class CheckOutController extends Controller
             $booking->refresh();
         }
 
-        $totalPaid = $booking->payments()->where('status', 'completed')->sum('amount');
+        // Use already-eager-loaded payments collection — avoids an extra query
+        $totalPaid = $booking->payments->where('status', 'completed')->sum('amount');
 
         $settings   = Setting::where('hotel_id', $booking->hotel_id)->first();
         $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;
