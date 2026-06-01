@@ -204,7 +204,7 @@ class WaInboxApiController extends Controller
             'type'              => 'template',
             'template'          => [
                 'name'       => $template->template_name,
-                'language'   => ['code' => 'en_US'],
+                'language'   => ['code' => 'en'],   // templates submitted to Meta with 'en', not 'en_US'
                 'components' => $parameters ? [['type' => 'body', 'parameters' => $parameters]] : [],
             ],
         ];
@@ -301,7 +301,7 @@ class WaInboxApiController extends Controller
                 'messaging_product' => 'whatsapp',
                 'to'                => $numericPhone,
                 'type'              => 'template',
-                'template'          => ['name' => $template->template_name, 'language' => ['code' => 'en_US']],
+                'template'          => ['name' => $template->template_name, 'language' => ['code' => 'en']],   // must match submission language
             ];
             if (!empty($components)) {
                 $payload['template']['components'] = $components;
