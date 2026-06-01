@@ -15,10 +15,11 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 ## Stack
 - **Framework:** Laravel 12 (PHP 8.2)
 - **Frontend:** Blade templates, Tailwind CSS (CDN), Font Awesome, Livewire 4
+- **SPA (Platform WA Inbox):** React 18 + Vite (pnpm) + `@vitejs/plugin-react-swc` — WhatsApp Inbox at `/platform/wa-inbox`; Blade page mounts `<div id="wa-inbox-root">`, built assets served via `public/build/`
 - **Database:** PostgreSQL (Replit managed for dev and production)
 - **ORM:** Eloquent
 - **Validation:** Laravel's built-in validation
-- **Build Tool:** Composer
+- **Build Tool:** Composer (PHP) + pnpm/Vite (JS SPA assets)
 
 ## Where things live
 - **Application Logic:** `app/`
@@ -33,6 +34,11 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **Service Providers:** `app/Providers/`
 - **Middleware:** `app/Http/Middleware/`
 - **Installer Files:** `app/Http/Controllers/InstallerController.php`, `app/Http/Middleware/CheckNotInstalled.php`, `resources/views/installer/index.blade.php`
+- **WA Inbox SPA Source:** `resources/js/wa-inbox/` (React components + entry point)
+- **WA Inbox Built Assets:** `public/build/` (Vite output — committed, served by Laravel)
+- **WA Inbox API Controller:** `app/Http/Controllers/Platform/WaInboxApiController.php`
+- **Vite Config:** `vite.config.js` (pnpm; entry: `resources/js/wa-inbox/main.jsx`)
+- **Scheduler:** `routes/console.php` (Laravel 12 style — `Schedule::command()`/`Schedule::call()`)
 
 ## Architecture decisions
 - **Multi-tenancy:** Implemented via a `BelongsToHotel` trait on all 16 data models, leveraging a `HotelContext` singleton and `SetHotelContext` middleware to automatically scope queries to the active hotel.
@@ -62,6 +68,9 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **JS in Blade:** Use `{!! json_encode($var) !!}` for raw output in JavaScript to prevent double-encoding issues.
 - **CSRF Token:** For webhooks, CSRF validation must be explicitly disabled via `validateCsrfTokens(except: ['webhook/*'])` in `bootstrap/app.php`.
 - **Responsive Grids:** Avoid inline `grid-template-columns` styles as they override media queries; use classes instead.
+- **Livewire 4 — single root element:** A `<style>` tag placed *before* the root `<div>` in a Livewire component silently kills ALL `wire:click` events on the page. Always place `<style>` inside the root element or after it.
+- **Eager-loaded relations — collection vs query:** When a relation is already loaded via `with()`, use `$model->relation->sum()` (collection, zero extra queries) not `$model->relation()->sum()` (fires a new DB query). The parentheses version silently duplicates the query.
+- **WA Template data-body encoding:** Never wrap `data-body` in Blade's `{{ }}` — use `{!! $var !!}` or a plain PHP `htmlspecialchars()` call. Double-encoding corrupts template variable placeholders like `{{1}}`.
 
 ## Pointers
 - **Laravel Documentation:** `https://laravel.com/docs/12.x`
@@ -238,6 +247,8 @@ URL: `/platform/dashboard`
 12. **currentHotelId() in UserController**: Falls back to `session('crm_sa_hotel_filter')` when `crm_hotel_id` is null — fixes SA-created user linking
 13. **Nested forms are invalid HTML**: Sub-forms (trial/suspend/etc) must be placed OUTSIDE the main `<form>` tag or they silently submit the outer form instead
 14. **CSS responsive grids**: Never put `grid-template-columns` in inline `style=""` — inline styles override media queries. Use a class + `<style>` block instead.
+15. **Eager-loaded relations — no duplicate queries**: When a relation is loaded via `with()`, use `$model->relation` (collection), not `$model->relation()` (new query builder). The parentheses form fires a redundant DB round-trip.
+16. **WA template approval_status**: When saving a WhatsApp template without changing the body, always preserve the existing `approval_status` from the DB — never reset it to `pending`. Only reset `approval_status` to `pending` when the message body itself changes.
 
 ---
 
@@ -257,6 +268,16 @@ URL: `/platform/dashboard`
 | `platform_2fa_pending_user_id` | set during 2FA verification step |
 
 ### Platform Routes
+- `GET /platform/wa-inbox` — WhatsApp Inbox React SPA (full-screen conversation view)
+- `GET /platform/api/wa/conversations` — JSON: paginated conversation list
+- `GET /platform/api/wa/conversations/{id}` — JSON: single conversation detail
+- `GET /platform/api/wa/conversations/{id}/messages` — JSON: messages in conversation
+- `POST /platform/api/wa/conversations/{id}/send` — JSON: send text message
+- `POST /platform/api/wa/conversations/{id}/send-template` — JSON: send approved template
+- `POST /platform/api/wa/conversations/{id}/mark-read` — JSON: mark conversation read
+- `GET /platform/api/wa/templates` — JSON: approved templates list
+- `GET /platform/api/wa/stats` — JSON: inbox stats (unread count, etc.)
+- (5 more JSON API endpoints under `/platform/api/wa/` for bulk blast, assignment, etc.)
 - `GET /platform/login` — Platform admin login
 - `GET /platform/2fa` — TOTP verification step
 - `GET /platform/dashboard` — SaaS KPI dashboard (MRR, ARR, subscriptions)
@@ -295,6 +316,7 @@ URL: `/platform/dashboard`
 - **Hotel Delete** — Requires `suspended` status; hard deletes all related data in dependency order
 - **Add User to Hotel** — Via `POST /platform/hotels/{id}/users`; sets as hotel admin if checked
 - **Onboarding Email** — Auto-sent on hotel creation + manual "Send Email" button on hotels list; beautiful HTML template with login credentials, login URL (`https://resort.dreamstechnology.in/login`), quick-start guide, Dreams Technology branding
+- **WhatsApp Inbox SPA** — React 18 SPA at `/platform/wa-inbox`; full conversation view with message threading; send free-text or approved templates; bulk-blast up to 200 contacts; 14 JSON API endpoints via `WaInboxApiController`; built with Vite + `@vitejs/plugin-react-swc` (pnpm); Blade wrapper mounts `<div id="wa-inbox-root">`
 
 ### Hotel Index — columns
 HOTEL | PLAN | SUBSCRIPTION | STATUS | EXPIRY | ROOMS | BOOKINGS | USERS | CREATED | ACTIONS
@@ -447,3 +469,6 @@ Stored in `platform_plans` table (DB-driven). Fallback to `config/plans.php`.
 | 2026-05-30 | v1.0.25 | `pending` | QR Self-Service Check-In & Check-Out: public `/g/checkin/{slug}` 6-step wizard (EN/HI, signature, ID upload), `/g/checkout/{token}` guest bill view with UPI QR; admin QR Arrivals queue (`/qr-arrivals`) with assign/cancel; sidebar QR Arrivals link with live pending badge; Guest Checkout QR modal on checkout show page; migrations for `guest_checkin_requests` table and checkout token fields on bookings. |
 | 2026-05-30 | v1.0.26 | `pending` | QR Arrivals UX: inline quick-assign modal on index page (no navigation needed — view guest details, signature, ID doc, assign room & dates, recalculate total, cancel all in one modal); blue pulsing dashboard banner for pending QR requests (gated by checkin.process permission); Firebase push notification fired to all hotel staff devices on new QR check-in submission. |
 | 2026-05-30 | v1.0.27 | `pending` | Per-role dashboard & sidebar: sidebar "Restaurant" section label added; Customize bar hidden for restaurant-only users; QR code-review fixes — base64 data-req (XSS), restaurant charges in checkout bill, full auto-fill fields in lookup, checkout_token auto-gen in Booking::boot, booking-show checkout QR modal, success-view reference number (QR-XXXXX). |
+| 2026-05-30 | v1.0.28 | `pending` | WA Inbox React SPA at `/platform/wa-inbox`: React 18 + Vite (pnpm + @vitejs/plugin-react-swc); 14 JSON API routes via `WaInboxApiController`; conversation list, threaded message view, free-text & template send, bulk blast (up to 200 contacts); Blade page mounts `<div id="wa-inbox-root">`. |
+| 2026-05-30 | v1.0.29 | `pending` | WA Templates: fix double-encoding bug on `data-body` ({{ }} → {!! !!}); `templateSave` now preserves DB `approval_status` when body is unchanged (prevents false pending resets); header image upload field added to Create Template modal. |
+| 2026-06-01 | v1.0.30 | `8604237` | Perf: DB keep-alive scheduler (`SELECT 1` every 4 min via `Schedule::call()`) prevents Neon cold-start; Dashboard: 4 Room `COUNT` queries → 1 `GROUP BY`; 2 Payment `SUM` queries → 1 conditional `SUM(CASE WHEN)`; 3 `DashboardPreference` queries → 1; CheckOut: 3 `relation()` new-query calls → `relation` collection access (no extra queries). |
