@@ -86,6 +86,9 @@ class WaLeadBot
         "_Meanwhile, check out what we offer:_\n" .
         "📹 https://www.youtube.com/watch?v=oULMSxUb9fA";
 
+    // Exact prefix sent by website lead-capture forms
+    private const FORM_LEAD_PREFIX = 'Hello! I filled in your form and would like to know more about your business.';
+
     private const MSG_HOT_ADMIN =
         "🔥 *HOT LEAD ALERT!*\n\n" .
         "👤 *Name:* {name}\n" .
@@ -128,6 +131,19 @@ class WaLeadBot
             // MAYBE LATER variants
             if (in_array($upper, ['MAYBE LATER', 'LATER', 'NOT NOW', 'NOT INTERESTED'])) {
                 self::nurture($phone, $platform);
+                return;
+            }
+
+            // ── Form-lead trigger: website form submission message ────────────
+            // When someone messages exactly "Hello! I filled in your form…"
+            // send the follow_up_after_lead approved template instead of the
+            // normal greeting bot, then wait — they can still say "hi" later
+            // to begin the full qualification flow.
+            $currentState = $contact->bot_state ?? '';
+            $alreadyInFlow = str_starts_with($currentState, 'lead_step_')
+                          || in_array($currentState, ['lead_completed', 'opted_out']);
+            if (!$alreadyInFlow && stripos(trim($text), self::FORM_LEAD_PREFIX) === 0) {
+                self::sendFollowUpAfterLead($phone, $contact, $platform);
                 return;
             }
 
@@ -372,6 +388,69 @@ class WaLeadBot
         if ($score === 'hot') {
             self::notifyAdmin($platform, $phone, $lead, $demo);
         }
+    }
+
+    // ── Form-lead follow-up template sender ─────────────────────────────────
+
+    /**
+     * Send the `follow_up_after_lead` approved Meta template when a contact's
+     * first message matches the website form-submission prefix.
+     *
+     * - Sets bot_state to 'follow_up_sent' so the template doesn't re-fire on
+     *   every subsequent message.
+     * - Passes the contact's display_name as {{1}} if the template needs it
+     *   (falls back to an empty array so it also works with no-variable templates).
+     * - The contact can still say "hi" later to start the full lead-qual flow.
+     */
+    private static function sendFollowUpAfterLead(string $phone, object $contact, object $platform): void
+    {
+        // Only fire once per contact — if already sent, skip
+        if ($contact->bot_state === 'follow_up_sent') return;
+
+        $name = $contact->display_name ?? null;
+        // Pass name as {{1}} when available; send with no body params otherwise
+        $params = $name ? [$name] : [];
+
+        $numericPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (strlen($numericPhone) === 10) $numericPhone = '91' . $numericPhone;
+
+        $parameters = array_map(fn($val) => ['type' => 'text', 'text' => (string) $val], $params);
+
+        $payload = [
+            'messaging_product' => 'whatsapp',
+            'to'                => $numericPhone,
+            'type'              => 'template',
+            'template'          => [
+                'name'       => 'follow_up_after_lead',
+                'language'   => ['code' => 'en_US'],
+                'components' => $parameters
+                    ? [['type' => 'body', 'parameters' => $parameters]]
+                    : [],
+            ],
+        ];
+
+        try {
+            $response = Http::timeout(10)
+                ->withToken($platform->saas_token)
+                ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", $payload);
+
+            if ($response->successful()) {
+                Log::info("WaLeadBot: follow_up_after_lead template sent to {$phone}");
+            } else {
+                Log::warning("WaLeadBot: follow_up_after_lead template failed for {$phone}", ['error' => $response->json()]);
+            }
+        } catch (\Throwable $e) {
+            Log::error("WaLeadBot: follow_up_after_lead exception for {$phone}: " . $e->getMessage());
+        }
+
+        // Mark state so this branch doesn't re-fire on follow-up messages
+        DB::table('wa_contacts')->where('phone', $phone)->update([
+            'bot_state'  => 'follow_up_sent',
+            'updated_at' => now(),
+        ]);
+
+        // Ensure a lead row exists so this person appears in the leads table
+        self::upsertLead($phone, ['current_step' => 'follow_up', 'last_message_at' => now()]);
     }
 
     // ── Opt-out / Nurture ────────────────────────────────────────────────────
