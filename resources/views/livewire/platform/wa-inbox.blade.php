@@ -475,7 +475,24 @@
 
                 @if(!$blastDone)
 
-                {{-- Step 1: Template selector --}}
+                {{-- Mode toggle tabs --}}
+                <div style="display:flex;background:#f1f5f9;border-radius:10px;padding:3px;gap:2px;">
+                    <button wire:click="switchBlastMode('manual')"
+                            style="flex:1;padding:7px 0;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+                                   {{ $blastMode === 'manual' ? 'background:#fff;color:#7c3aed;box-shadow:0 1px 4px rgba(0,0,0,.1);' : 'background:transparent;color:#64748b;' }}">
+                        <i class="fas fa-list" style="margin-right:5px;font-size:11px;"></i> Manual Blast
+                    </button>
+                    <button wire:click="switchBlastMode('csv')"
+                            style="flex:1;padding:7px 0;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+                                   {{ $blastMode === 'csv' ? 'background:#fff;color:#059669;box-shadow:0 1px 4px rgba(0,0,0,.1);' : 'background:transparent;color:#64748b;' }}">
+                        <i class="fas fa-file-csv" style="margin-right:5px;font-size:11px;"></i> CSV Campaign
+                        @if(!empty($csvLeads))
+                        <span style="background:#059669;color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;margin-left:4px;">{{ count($csvLeads) }}</span>
+                        @endif
+                    </button>
+                </div>
+
+                {{-- Step 1: Template selector (shared by both modes) --}}
                 <div>
                     <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">
                         <span style="background:#7c3aed;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">1</span>
@@ -525,12 +542,15 @@
                 </div>
                 @endif
 
+                {{-- ── MANUAL MODE ─────────────────────────────────────────────── --}}
+                @if($blastMode === 'manual')
+
                 {{-- Variable inputs --}}
                 @if(!empty($blastVarNames))
                 <div>
                     <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px;">
                         <span style="background:#7c3aed;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">2</span>
-                        Fill Template Variables
+                        Fill Template Variables <span style="font-weight:400;color:#94a3b8;">(same values sent to all numbers)</span>
                     </label>
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         @foreach($blastVarNames as $idx => $varName)
@@ -549,7 +569,7 @@
                 </div>
                 @endif
 
-                {{-- Step: Phone numbers --}}
+                {{-- Phone numbers textarea --}}
                 <div>
                     <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">
                         <span style="background:#7c3aed;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">{{ empty($blastVarNames) ? '2' : '3' }}</span>
@@ -567,7 +587,7 @@
                     </div>
                 </div>
 
-                {{-- Actions --}}
+                {{-- Manual actions --}}
                 <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
                     <button wire:click="closeBlast"
                             style="height:40px;padding:0 20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">
@@ -575,17 +595,137 @@
                     </button>
                     <button wire:click="sendBlast"
                             wire:loading.attr="disabled"
-                            style="height:40px;padding:0 24px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:7px;transition:opacity .15s;"
+                            style="height:40px;padding:0 24px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:7px;"
                             onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
                         <span wire:loading.remove wire:target="sendBlast">
                             <i class="fas fa-paper-plane"></i>
                             Send to {{ $lineCount }} Number{{ $lineCount !== 1 ? 's' : '' }}
                         </span>
                         <span wire:loading wire:target="sendBlast">
-                            <i class="fas fa-spinner fa-spin"></i> Sending… (this may take a moment)
+                            <i class="fas fa-spinner fa-spin"></i> Sending…
                         </span>
                     </button>
                 </div>
+
+                @else
+                {{-- ── CSV CAMPAIGN MODE ────────────────────────────────────────── --}}
+
+                {{-- CSV error --}}
+                @if($csvError)
+                <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:13px;color:#b91c1c;font-weight:600;">
+                    <i class="fas fa-exclamation-circle"></i> {{ $csvError }}
+                </div>
+                @endif
+
+                {{-- File upload area --}}
+                @if(empty($csvLeads))
+                <div>
+                    <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px;">
+                        <span style="background:#059669;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">2</span>
+                        Upload Leads CSV
+                    </label>
+                    <div id="wa-csv-drop"
+                         style="border:2px dashed #d1fae5;border-radius:12px;padding:28px 20px;text-align:center;background:#f0fdf4;cursor:pointer;transition:border-color .15s;"
+                         onclick="document.getElementById('wa-csv-input').click()"
+                         ondragover="event.preventDefault();this.style.borderColor='#059669'"
+                         ondragleave="this.style.borderColor='#d1fae5'"
+                         ondrop="event.preventDefault();this.style.borderColor='#d1fae5';waHandleCsvFile(event.dataTransfer.files[0])">
+                        <i class="fas fa-file-csv" style="font-size:32px;color:#059669;margin-bottom:10px;display:block;"></i>
+                        <div style="font-size:13px;font-weight:700;color:#065f46;">Click to upload or drag & drop your CSV</div>
+                        <div style="font-size:11px;color:#6b7280;margin-top:6px;">Accepts .csv files · Required column: <code>phone</code></div>
+                        <div style="font-size:11px;color:#6b7280;margin-top:3px;">Optional columns: full_name, what_best, how_many_rooms, when_do_you_plan_to_implement, city</div>
+                    </div>
+                    <input type="file" id="wa-csv-input" accept=".csv,text/csv" style="display:none;"
+                           onchange="waHandleCsvFile(this.files[0])">
+
+                    {{-- CSV format hint --}}
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;color:#1e40af;line-height:1.7;">
+                        <strong><i class="fas fa-info-circle"></i> Expected CSV columns (header row required):</strong><br>
+                        <code style="background:#dbeafe;padding:2px 5px;border-radius:4px;">phone, full_name, what_best, how_many_rooms, when_do_you_plan_to_implement, city</code><br>
+                        Columns are auto-mapped to template variables {{1}}–{{5}}.
+                        The <code>phone</code> column is required; all others are optional.
+                    </div>
+                </div>
+                @else
+
+                {{-- Leads loaded — show preview table --}}
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <label style="font-size:12px;font-weight:700;color:#374151;">
+                            <span style="background:#059669;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:5px;">2</span>
+                            Leads Loaded
+                            <span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:2px 10px;font-size:11px;margin-left:6px;font-weight:700;">{{ count($csvLeads) }} leads</span>
+                        </label>
+                        <button wire:click="clearCsv"
+                                style="height:28px;padding:0 12px;background:#fee2e2;border:1px solid #fecaca;border-radius:8px;font-size:11px;font-weight:600;color:#b91c1c;cursor:pointer;">
+                            <i class="fas fa-times" style="margin-right:4px;"></i> Clear
+                        </button>
+                    </div>
+
+                    {{-- Preview table — first 5 rows --}}
+                    <div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;font-size:11px;">
+                        <div style="background:#f8fafc;padding:7px 10px;font-weight:700;color:#94a3b8;letter-spacing:.4px;border-bottom:1px solid #e2e8f0;display:grid;grid-template-columns:140px 1fr 100px 80px;gap:8px;">
+                            <span>NAME</span><span>PHONE</span><span>CITY</span><span>ROOMS</span>
+                        </div>
+                        @foreach(array_slice($csvLeads, 0, 5) as $lead)
+                        <div style="padding:7px 10px;border-bottom:1px solid #f1f5f9;display:grid;grid-template-columns:140px 1fr 100px 80px;gap:8px;color:#374151;">
+                            <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $lead['name'] ?: '—' }}</span>
+                            <span style="font-family:monospace;color:#64748b;">{{ $lead['raw_phone'] }}</span>
+                            <span>{{ $lead['vars'][4] ?? '—' }}</span>
+                            <span>{{ $lead['vars'][2] ?? '—' }}</span>
+                        </div>
+                        @endforeach
+                        @if(count($csvLeads) > 5)
+                        <div style="padding:7px 10px;color:#94a3b8;font-size:11px;font-style:italic;">
+                            … and {{ count($csvLeads) - 5 }} more leads
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Detected columns badge --}}
+                    @if(!empty($csvHeaders))
+                    <div style="margin-top:8px;font-size:11px;color:#64748b;">
+                        <i class="fas fa-columns" style="margin-right:3px;"></i>
+                        Detected columns:
+                        @foreach($csvHeaders as $h)
+                        <span style="background:#f1f5f9;border-radius:4px;padding:1px 5px;margin-left:3px;font-family:monospace;">{{ $h }}</span>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+                @endif
+
+                {{-- Personalization note for CSV mode --}}
+                @if(!empty($csvLeads))
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:12px;color:#15803d;">
+                    <i class="fas fa-magic"></i> <strong>Personalised messages:</strong>
+                    Each lead will receive a unique message with their own name, property type, room count, timeline, and city filled into the template variables.
+                </div>
+                @endif
+
+                {{-- CSV actions --}}
+                <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
+                    <button wire:click="closeBlast"
+                            style="height:40px;padding:0 20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;color:#475569;cursor:pointer;">
+                        Cancel
+                    </button>
+                    @if(!empty($csvLeads))
+                    <button wire:click="sendBlast"
+                            wire:loading.attr="disabled"
+                            style="height:40px;padding:0 24px;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:7px;"
+                            onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        <span wire:loading.remove wire:target="sendBlast">
+                            <i class="fas fa-rocket"></i>
+                            Send Campaign to {{ count($csvLeads) }} Leads
+                        </span>
+                        <span wire:loading wire:target="sendBlast">
+                            <i class="fas fa-spinner fa-spin"></i> Sending campaign… please wait
+                        </span>
+                    </button>
+                    @endif
+                </div>
+
+                @endif {{-- end blastMode === 'csv' --}}
 
                 @else
 
@@ -598,7 +738,7 @@
                 <div style="background:{{ $failCount === 0 ? '#f0fdf4' : '#fffbeb' }};border:1px solid {{ $failCount === 0 ? '#bbf7d0' : '#fde68a' }};border-radius:12px;padding:14px 16px;">
                     <div style="font-size:14px;font-weight:800;color:{{ $failCount === 0 ? '#15803d' : '#92400e' }};margin-bottom:4px;">
                         <i class="fas fa-{{ $failCount === 0 ? 'check-circle' : 'exclamation-triangle' }}"></i>
-                        Blast Complete
+                        {{ $blastMode === 'csv' ? 'Campaign' : 'Blast' }} Complete
                     </div>
                     <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
                         <div style="text-align:center;">
@@ -627,20 +767,24 @@
                     <ul style="margin:5px 0 0 16px;padding:0;">
                         <li>Template must be <strong>approved</strong> in Meta Business Manager (not just in this system)</li>
                         <li>Recipient must have an active WhatsApp account on that number</li>
-                        <li>First-time contacts must have messaged your number in the last 24h <em>or</em> the template must be a utility/marketing category</li>
+                        <li>Marketing templates require the contact to have opted in</li>
                     </ul>
                     To verify template status: <strong>WA Templates → Sync from Meta</strong>.
-                    Messages sent are logged in the inbox — click the contact on the left to view.
                 </div>
 
-                {{-- Per-number results --}}
-                <div style="max-height:200px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:10px;">
+                {{-- Per-number results (shows name for CSV campaigns) --}}
+                <div style="max-height:220px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:10px;">
                     @foreach($blastResults as $r)
                     <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f8fafc;font-size:12px;">
                         <i class="fas fa-{{ $r['status'] === 'sent' ? 'check-circle' : ($r['status'] === 'skip' ? 'minus-circle' : 'times-circle') }}"
                            style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#f59e0b' : '#dc2626') }};font-size:14px;flex-shrink:0;"></i>
-                        <span style="font-family:monospace;color:#374151;flex:1;">{{ $r['phone'] }}</span>
-                        <span style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#92400e' : '#dc2626') }};font-weight:600;">
+                        <div style="flex:1;min-width:0;">
+                            @if(!empty($r['name']))
+                            <div style="font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $r['name'] }}</div>
+                            @endif
+                            <div style="font-family:monospace;color:#64748b;font-size:11px;">{{ $r['phone'] }}</div>
+                        </div>
+                        <span style="color:{{ $r['status'] === 'sent' ? '#15803d' : ($r['status'] === 'skip' ? '#92400e' : '#dc2626') }};font-weight:600;flex-shrink:0;">
                             {{ $r['status'] === 'sent' ? 'Accepted ✓' : $r['msg'] }}
                         </span>
                     </div>
@@ -874,6 +1018,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
 Livewire.on('wa-scroll-to-bottom', window.waScrollToBottom);
 Livewire.on('wa-clear-attachment', window.waClearAttachment);
+
+// ── CSV Campaign upload ────────────────────────────────────────────────────
+window.waHandleCsvFile = function (file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+        alert('Please upload a .csv file.');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        alert('CSV file is too large. Maximum 5 MB.');
+        return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+        @this.call('processCsvData', e.target.result);
+    };
+    reader.onerror = function () {
+        alert('Could not read the file. Please try again.');
+    };
+    reader.readAsText(file, 'UTF-8');
+    // Reset input so the same file can be re-uploaded if needed
+    var inp = document.getElementById('wa-csv-input');
+    if (inp) inp.value = '';
+};
 
 // Intercept send button click to route to attachment send when ready
 document.addEventListener('click', function (e) {

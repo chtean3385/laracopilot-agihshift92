@@ -32,18 +32,24 @@ class WaInbox extends Component
     public array  $leadInfo       = [];
 
     // ── Bulk Blast state ──────────────────────────────────────────────────
-    public bool   $showBlast        = false;
-    public string $blastNumbers     = '';
-    public int    $blastTemplateId  = 0;
-    public array  $blastVars        = [];
-    public array  $blastVarNames    = [];
-    public string $blastPreview     = '';
-    public string $blastHeaderUrl   = '';   // image/video/document URL for media-header templates
-    public string $blastHeaderFormat = '';  // none|text|image|video|document
-    public array  $blastResults     = [];
-    public bool   $blasting         = false;
-    public bool   $blastDone        = false;
-    public string $blastError       = '';
+    public bool   $showBlast         = false;
+    public string $blastNumbers      = '';
+    public int    $blastTemplateId   = 0;
+    public array  $blastVars         = [];
+    public array  $blastVarNames     = [];
+    public string $blastPreview      = '';
+    public string $blastHeaderUrl    = '';   // image/video/document URL for media-header templates
+    public string $blastHeaderFormat = '';   // none|text|image|video|document
+    public array  $blastResults      = [];
+    public bool   $blasting          = false;
+    public bool   $blastDone         = false;
+    public string $blastError        = '';
+
+    // ── CSV Campaign Blast state ───────────────────────────────────────────
+    public string $blastMode   = 'manual'; // 'manual' | 'csv'
+    public array  $csvLeads    = [];       // [{phone, raw_phone, name, vars:[v1..v5]}]
+    public string $csvError    = '';
+    public array  $csvHeaders  = [];       // detected column headers from uploaded CSV
 
     public function mount(): void
     {
@@ -343,18 +349,131 @@ class WaInbox extends Component
 
     public function openBlast(): void
     {
-        $this->showBlast          = true;
-        $this->blastNumbers       = '';
-        $this->blastTemplateId    = 0;
-        $this->blastVars          = [];
-        $this->blastVarNames      = [];
-        $this->blastPreview       = '';
-        $this->blastHeaderUrl     = '';
-        $this->blastHeaderFormat  = '';
-        $this->blastResults       = [];
-        $this->blasting           = false;
-        $this->blastDone          = false;
-        $this->blastError         = '';
+        $this->showBlast         = true;
+        $this->blastNumbers      = '';
+        $this->blastTemplateId   = 0;
+        $this->blastVars         = [];
+        $this->blastVarNames     = [];
+        $this->blastPreview      = '';
+        $this->blastHeaderUrl    = '';
+        $this->blastHeaderFormat = '';
+        $this->blastResults      = [];
+        $this->blasting          = false;
+        $this->blastDone         = false;
+        $this->blastError        = '';
+        // CSV state
+        $this->blastMode         = 'manual';
+        $this->csvLeads          = [];
+        $this->csvError          = '';
+        $this->csvHeaders        = [];
+    }
+
+    public function switchBlastMode(string $mode): void
+    {
+        $this->blastMode    = in_array($mode, ['manual', 'csv']) ? $mode : 'manual';
+        $this->blastError   = '';
+        $this->csvError     = '';
+        $this->blastResults = [];
+        $this->blastDone    = false;
+    }
+
+    /**
+     * Called from JS FileReader — receives raw CSV text and parses it into $csvLeads.
+     * Auto-detects phone column and maps named columns to template variable positions.
+     */
+    public function processCsvData(string $csvContent): void
+    {
+        $this->csvError  = '';
+        $this->csvLeads  = [];
+        $this->csvHeaders = [];
+
+        // Normalise line endings
+        $csvContent = str_replace(["\r\n", "\r"], "\n", $csvContent);
+        $lines      = array_values(array_filter(array_map('trim', explode("\n", $csvContent))));
+
+        if (count($lines) < 2) {
+            $this->csvError = 'CSV must have a header row and at least one data row.';
+            return;
+        }
+
+        // Parse header row (first line)
+        $rawHeaders = str_getcsv(array_shift($lines));
+        $headers    = array_map(fn($h) => mb_strtolower(trim((string)$h)), $rawHeaders);
+        $this->csvHeaders = $headers;
+
+        // Find phone column (required)
+        $phoneIdx = null;
+        $phoneAliases = ['phone', 'mobile', 'phone_number', 'mobile_number', 'whatsapp', 'contact', 'number', 'ph'];
+        foreach ($headers as $i => $h) {
+            if (in_array($h, $phoneAliases)) { $phoneIdx = $i; break; }
+        }
+        if ($phoneIdx === null) {
+            $this->csvError = 'No phone column found. Name a column: phone, mobile, phone_number, or whatsapp.';
+            return;
+        }
+
+        // Map column names → template variable positions {{1}}–{{5}}
+        // {{1}}=full_name, {{2}}=what_best, {{3}}=how_many_rooms, {{4}}=when_do_you_plan_to_implement, {{5}}=city
+        $varAliases = [
+            0 => ['full_name', 'name', 'customer_name', 'lead_name', 'contact_name', 'first_name'],
+            1 => ['what_best', 'property_type', 'hotel_type', 'type', 'property', 'what_best_describe'],
+            2 => ['how_many_rooms', 'rooms', 'room_count', 'total_rooms', 'no_of_rooms', 'num_rooms'],
+            3 => ['when_do_you_plan_to_implement', 'timeline', 'plan', 'implementation_timeline', 'when', 'plan_to_implement'],
+            4 => ['city', 'location', 'area', 'region'],
+        ];
+
+        $colToVar = []; // header_index → var_position (0-indexed, maps to {{1}}–{{5}})
+        $nameIdx  = null;
+        foreach ($varAliases as $varPos => $candidates) {
+            foreach ($headers as $i => $h) {
+                if (in_array($h, $candidates)) {
+                    $colToVar[$i] = $varPos;
+                    if ($varPos === 0) $nameIdx = $i;
+                    break;
+                }
+            }
+        }
+
+        // Parse data rows
+        $leads  = [];
+        foreach ($lines as $line) {
+            if (trim($line) === '') continue;
+            $row = str_getcsv($line);
+
+            $rawPhone = trim($row[$phoneIdx] ?? '');
+            if ($rawPhone === '') continue;
+
+            $phone = preg_replace('/[^0-9]/', '', $rawPhone);
+            if (strlen($phone) === 10) $phone = '91' . $phone;
+            if (strlen($phone) < 10 || strlen($phone) > 15) continue; // skip invalid
+
+            // Build vars array indexed 0–4 (corresponds to {{1}}–{{5}})
+            $vars = ['', '', '', '', ''];
+            foreach ($colToVar as $colIdx => $varPos) {
+                $vars[$varPos] = trim($row[$colIdx] ?? '');
+            }
+
+            $leads[] = [
+                'phone'     => $phone,
+                'raw_phone' => $rawPhone,
+                'name'      => ($nameIdx !== null ? trim($row[$nameIdx] ?? '') : '') ?: $rawPhone,
+                'vars'      => $vars,
+            ];
+        }
+
+        if (empty($leads)) {
+            $this->csvError = 'No valid rows found. Check that your phone numbers are in the phone column.';
+            return;
+        }
+
+        $this->csvLeads = $leads;
+    }
+
+    public function clearCsv(): void
+    {
+        $this->csvLeads  = [];
+        $this->csvError  = '';
+        $this->csvHeaders = [];
     }
 
     public function closeBlast(): void
@@ -402,7 +521,7 @@ class WaInbox extends Component
 
     public function sendBlast(): void
     {
-        $this->blastError  = '';
+        $this->blastError   = '';
         $this->blastResults = [];
 
         // Validate template
@@ -421,7 +540,140 @@ class WaInbox extends Component
             return;
         }
 
-        // Validate phone numbers
+        $platform = PlatformWhatsAppSetting::instance();
+        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
+            $this->blastError = 'Platform WhatsApp credentials are not configured.';
+            return;
+        }
+
+        // ── CSV campaign mode ─────────────────────────────────────────────
+        if ($this->blastMode === 'csv') {
+            if (empty($this->csvLeads)) {
+                $this->blastError = 'No leads loaded. Please upload a CSV file first.';
+                return;
+            }
+            if (count($this->csvLeads) > 500) {
+                $this->blastError = 'Maximum 500 leads per campaign. Please split into smaller batches.';
+                return;
+            }
+
+            $this->blasting = true;
+            $results        = [];
+            $metaBody       = $template->convertBodyForMeta();
+            preg_match_all('/\{\{(\d+)\}\}/', $metaBody, $posMatches);
+            $paramCount = empty($posMatches[1]) ? 0 : max(array_map('intval', $posMatches[1]));
+
+            // Build header component once (same for all leads — media doesn't change per row)
+            $headerComponents = [];
+            $headerFmt        = $template->header_format ?? 'none';
+            if (in_array($headerFmt, ['image', 'video', 'document'])) {
+                $mediaVal = trim($this->blastHeaderUrl);
+                if ($mediaVal) {
+                    $mediaId = str_starts_with($mediaVal, 'http')
+                        ? $this->uploadHeaderMedia($mediaVal, $headerFmt, $platform)
+                        : $mediaVal;
+                    if (!$mediaId) {
+                        $this->blastError = 'Could not upload header media to WhatsApp.';
+                        $this->blasting   = false;
+                        return;
+                    }
+                    $headerComponents[] = [
+                        'type'       => 'header',
+                        'parameters' => [['type' => $headerFmt, $headerFmt => ['id' => $mediaId]]],
+                    ];
+                }
+            }
+
+            foreach ($this->csvLeads as $lead) {
+                $phone = $lead['phone'];
+                $name  = $lead['name'];
+                $vars  = $lead['vars'] ?? [];
+
+                // Build per-lead body component with this lead's own variable values
+                $components = $headerComponents;
+                if ($paramCount > 0) {
+                    $params = [];
+                    for ($i = 0; $i < $paramCount; $i++) {
+                        $val      = trim($vars[$i] ?? '');
+                        $params[] = ['type' => 'text', 'text' => $val ?: '-'];
+                    }
+                    $components[] = ['type' => 'body', 'parameters' => $params];
+                }
+
+                $payload = [
+                    'messaging_product' => 'whatsapp',
+                    'to'                => $phone,
+                    'type'              => 'template',
+                    'template'          => ['name' => $template->template_name, 'language' => ['code' => 'en_US']],
+                ];
+                if (!empty($components)) {
+                    $payload['template']['components'] = $components;
+                }
+
+                try {
+                    $response = Http::timeout(12)
+                        ->withToken($platform->saas_token)
+                        ->post("https://graph.facebook.com/v22.0/{$platform->saas_phone_number_id}/messages", $payload);
+
+                    $body = $response->json();
+
+                    if ($response->successful() && isset($body['messages'])) {
+                        $results[] = ['phone' => $lead['raw_phone'], 'name' => $name, 'status' => 'sent', 'msg' => 'Sent'];
+
+                        $preview = '📨 Campaign: ' . $template->template_name;
+                        DB::table('whatsapp_logs')->insert([
+                            'direction'  => 'outgoing',
+                            'event_type' => 'message_sent',
+                            'phone'      => $phone,
+                            'hotel_id'   => null,
+                            'status'     => 'ok',
+                            'payload'    => json_encode($body),
+                            'notes'      => $preview,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        // Upsert wa_contacts — use the lead's real name as display_name
+                        $existing = DB::table('wa_contacts')->where('phone', $phone)->first();
+                        if ($existing) {
+                            DB::table('wa_contacts')->where('phone', $phone)->update([
+                                'display_name'         => $name ?: ($existing->display_name ?? $phone),
+                                'last_message_preview' => $preview,
+                                'last_message_at'      => now(),
+                                'updated_at'           => now(),
+                            ]);
+                        } else {
+                            DB::table('wa_contacts')->insert([
+                                'phone'                => $phone,
+                                'contact_type'         => 'unknown',
+                                'display_name'         => $name ?: $phone,
+                                'subscribed'           => true,
+                                'last_message_preview' => $preview,
+                                'last_message_at'      => now(),
+                                'unread_count'         => 0,
+                                'created_at'           => now(),
+                                'updated_at'           => now(),
+                            ]);
+                        }
+                    } else {
+                        $errMsg    = $body['error']['error_user_msg'] ?? $body['error']['message'] ?? 'API error';
+                        $results[] = ['phone' => $lead['raw_phone'], 'name' => $name, 'status' => 'fail', 'msg' => $errMsg];
+                    }
+                } catch (\Throwable $e) {
+                    $results[]  = ['phone' => $lead['raw_phone'], 'name' => $name, 'status' => 'fail', 'msg' => $e->getMessage()];
+                    Log::error('WaInbox CSV blast exception for ' . $phone . ': ' . $e->getMessage());
+                }
+
+                usleep(150000); // 150 ms pause — avoid Meta rate limits
+            }
+
+            $this->blastResults = $results;
+            $this->blasting     = false;
+            $this->blastDone    = true;
+            return;
+        }
+
+        // ── Manual mode ───────────────────────────────────────────────────
         $lines = array_filter(array_map('trim', explode("\n", $this->blastNumbers)));
         if (empty($lines)) {
             $this->blastError = 'Please enter at least one phone number.';
@@ -432,31 +684,21 @@ class WaInbox extends Component
             return;
         }
 
-        $platform = PlatformWhatsAppSetting::instance();
-        if (!$platform?->saas_token || !$platform?->saas_phone_number_id) {
-            $this->blastError = 'Platform WhatsApp credentials are not configured.';
-            return;
-        }
-
         // Build Meta template components
         $metaBody   = $template->convertBodyForMeta();
         preg_match_all('/\{\{(\d+)\}\}/', $metaBody, $posMatches);
         $paramCount = empty($posMatches[1]) ? 0 : max(array_map('intval', $posMatches[1]));
 
-        $components    = [];
-        $headerFmt     = $template->header_format ?? 'none';
-        $headerMediaTypes = ['image', 'video', 'document'];
+        $components   = [];
+        $headerFmt    = $template->header_format ?? 'none';
 
         // Add header component for media-header templates (image/video/document).
         // We MUST upload via Meta's Media API first to get a stable media_id —
         // signed CDN URLs (scontent.whatsapp.net) expire and return 403 when
         // Meta tries to re-download them via the link approach.
-        if (in_array($headerFmt, $headerMediaTypes)) {
+        if (in_array($headerFmt, ['image', 'video', 'document'])) {
             $mediaVal = trim($this->blastHeaderUrl);
             if ($mediaVal) {
-                // If stored value is already a media_id (numeric or non-URL handle
-                // e.g. "1234567890" set by sync), use it directly — no upload needed.
-                // If it's a URL (http...), upload it first to get a fresh media_id.
                 if (!str_starts_with($mediaVal, 'http')) {
                     $mediaId = $mediaVal; // already a meta media_id
                 } else {
@@ -470,12 +712,7 @@ class WaInbox extends Component
                 }
                 $components[] = [
                     'type'       => 'header',
-                    'parameters' => [
-                        [
-                            'type'     => $headerFmt,
-                            $headerFmt => ['id' => $mediaId],
-                        ],
-                    ],
+                    'parameters' => [['type' => $headerFmt, $headerFmt => ['id' => $mediaId]]],
                 ];
             }
         }
@@ -497,7 +734,7 @@ class WaInbox extends Component
             if (strlen($phone) === 10) $phone = '91' . $phone;
 
             if (strlen($phone) < 10 || strlen($phone) > 15) {
-                $results[] = ['phone' => $rawPhone, 'status' => 'skip', 'msg' => 'Invalid number'];
+                $results[] = ['phone' => $rawPhone, 'name' => '', 'status' => 'skip', 'msg' => 'Invalid number'];
                 continue;
             }
 
@@ -505,10 +742,7 @@ class WaInbox extends Component
                 'messaging_product' => 'whatsapp',
                 'to'                => $phone,
                 'type'              => 'template',
-                'template'          => [
-                    'name'       => $template->template_name,
-                    'language'   => ['code' => 'en_US'],
-                ],
+                'template'          => ['name' => $template->template_name, 'language' => ['code' => 'en_US']],
             ];
             if (!empty($components)) {
                 $payload['template']['components'] = $components;
@@ -522,9 +756,8 @@ class WaInbox extends Component
                 $body = $response->json();
 
                 if ($response->successful() && isset($body['messages'])) {
-                    $results[] = ['phone' => $rawPhone, 'status' => 'sent', 'msg' => 'Sent'];
+                    $results[] = ['phone' => $rawPhone, 'name' => '', 'status' => 'sent', 'msg' => 'Sent'];
 
-                    // Log the outgoing message
                     $preview = '📨 Blast: ' . $template->template_name;
                     DB::table('whatsapp_logs')->insert([
                         'direction'  => 'outgoing',
@@ -549,27 +782,26 @@ class WaInbox extends Component
                     } else {
                         DB::table('wa_contacts')->insert([
                             'phone'                => $phone,
-                            'contact_type'        => 'unknown',
-                            'display_name'        => $phone,
-                            'subscribed'          => true,
-                            'last_message_preview'=> $preview,
-                            'last_message_at'     => now(),
-                            'unread_count'        => 0,
-                            'created_at'          => now(),
-                            'updated_at'          => now(),
+                            'contact_type'         => 'unknown',
+                            'display_name'         => $phone,
+                            'subscribed'           => true,
+                            'last_message_preview' => $preview,
+                            'last_message_at'      => now(),
+                            'unread_count'         => 0,
+                            'created_at'           => now(),
+                            'updated_at'           => now(),
                         ]);
                     }
                 } else {
                     $errMsg    = $body['error']['error_user_msg'] ?? $body['error']['message'] ?? 'API error';
-                    $results[] = ['phone' => $rawPhone, 'status' => 'fail', 'msg' => $errMsg];
+                    $results[] = ['phone' => $rawPhone, 'name' => '', 'status' => 'fail', 'msg' => $errMsg];
                 }
             } catch (\Throwable $e) {
-                $results[]  = ['phone' => $rawPhone, 'status' => 'fail', 'msg' => $e->getMessage()];
+                $results[]  = ['phone' => $rawPhone, 'name' => '', 'status' => 'fail', 'msg' => $e->getMessage()];
                 Log::error('WaInbox blast exception for ' . $phone . ': ' . $e->getMessage());
             }
 
-            // Small pause to avoid Meta rate limits
-            usleep(150000); // 150 ms
+            usleep(150000); // 150 ms pause — avoid Meta rate limits
         }
 
         $this->blastResults = $results;
