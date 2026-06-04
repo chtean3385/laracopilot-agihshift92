@@ -63,4 +63,4 @@ echo "[start.sh] PHP-FPM started (socket: $RUN_DIR/php-fpm.sock)"
 
 # ── Start nginx (foreground — keeps the container alive) ──────────────────────
 echo "[start.sh] Starting nginx on port 5000..."
-exec nix-shell -p nginx --run "nginx -e $RUN_DIR/nginx-error.log -c $RUN_DIR/nginx.conf -g 'daemon off;'"
+exec nginx -e "$RUN_DIR/nginx-error.log" -c "$RUN_DIR/nginx.conf" -g 'daemon off;'
