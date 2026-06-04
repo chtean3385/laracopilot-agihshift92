@@ -233,7 +233,7 @@ class DashboardController extends Controller
                     try {
                         $hotel = Hotel::find($hotelId);
                         if ($hotel && $hotel->email) {
-                            Mail::to($hotel->email)->send(new HotelFullAlertMail(
+                            Mail::to($hotel->email)->queue(new HotelFullAlertMail(
                                 hotelName:     $hotel->name,
                                 totalRooms:    $totalRooms,
                                 occupiedRooms: $occupiedRooms,

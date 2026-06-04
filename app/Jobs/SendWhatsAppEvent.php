@@ -39,7 +39,11 @@ class SendWhatsAppEvent implements ShouldQueue
             return;
         }
 
-        WhatsAppService::sendForEvent($this->event, $booking);
+        if ($this->event === 'owner.alert') {
+            WhatsAppService::sendOwnerAlert($booking);
+        } else {
+            WhatsAppService::sendForEvent($this->event, $booking);
+        }
     }
 
     public function failed(\Throwable $exception): void

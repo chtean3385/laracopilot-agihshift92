@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Room;
 use App\Models\Payment;
 use App\Services\ActivityLogger;
+use App\Jobs\SendWhatsAppEvent;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -511,13 +512,13 @@ class BookingController extends Controller
         $customer = Customer::find($bookingData['customer_id']);
         $roomLabel = count($roomIds) > 1 ? count($roomIds) . ' rooms' : 'Room ' . $room->room_number;
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — ' . $roomLabel . ' (' . $pricingType . ')');
-        WhatsAppService::sendForEvent('booking.created', $booking);
+        SendWhatsAppEvent::dispatch('booking.created', $booking->id, $booking->hotel_id);
         // Only send the self-checkin link template when QR check-in is enabled for this hotel.
         $hotelSettingsForWa = \App\Models\Setting::where('hotel_id', $booking->hotel_id)->first();
         if (!$hotelSettingsForWa || $hotelSettingsForWa->qr_checkin_enabled !== false) {
-            WhatsAppService::sendForEvent('booking.details_request', $booking);
+            SendWhatsAppEvent::dispatch('booking.details_request', $booking->id, $booking->hotel_id);
         }
-        WhatsAppService::sendOwnerAlert($booking);
+        SendWhatsAppEvent::dispatch('owner.alert', $booking->id, $booking->hotel_id);
         $successMsg = count($allNumbers) > 1
             ? 'Group booking created for ' . count($allNumbers) . ' rooms! #' . $booking->booking_number
             : 'Booking created! #' . $booking->booking_number;
@@ -934,12 +935,12 @@ class BookingController extends Controller
             $slotLabel = $targetSlot ? ' — ' . $targetSlot->name . ' slot' : '';
             $customer  = Customer::find($bookingData['customer_id']);
             ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa' . $slotLabel . ' (' . $allRooms->count() . ' rooms)');
-            WhatsAppService::sendForEvent('booking.created', $booking);
+            SendWhatsAppEvent::dispatch('booking.created', $booking->id, $booking->hotel_id);
             $hotelSettingsForWa = \App\Models\Setting::where('hotel_id', $booking->hotel_id)->first();
             if (!$hotelSettingsForWa || $hotelSettingsForWa->qr_checkin_enabled !== false) {
-                WhatsAppService::sendForEvent('booking.details_request', $booking);
+                SendWhatsAppEvent::dispatch('booking.details_request', $booking->id, $booking->hotel_id);
             }
-            WhatsAppService::sendOwnerAlert($booking);
+            SendWhatsAppEvent::dispatch('owner.alert', $booking->id, $booking->hotel_id);
             return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
         }
 
@@ -1028,12 +1029,12 @@ class BookingController extends Controller
 
         $customer = Customer::find($bookingData['customer_id']);
         ActivityLogger::log('Created', 'Booking', 'Booking #' . $booking->booking_number . ' created for ' . ($customer->name ?? 'guest') . ' — Whole Hotel / Villa (' . $allRooms->count() . ' rooms)');
-        WhatsAppService::sendForEvent('booking.created', $booking);
+        SendWhatsAppEvent::dispatch('booking.created', $booking->id, $booking->hotel_id);
         $hotelSettingsForWa = \App\Models\Setting::where('hotel_id', $booking->hotel_id)->first();
         if (!$hotelSettingsForWa || $hotelSettingsForWa->qr_checkin_enabled !== false) {
-            WhatsAppService::sendForEvent('booking.details_request', $booking);
+            SendWhatsAppEvent::dispatch('booking.details_request', $booking->id, $booking->hotel_id);
         }
-        WhatsAppService::sendOwnerAlert($booking);
+        SendWhatsAppEvent::dispatch('owner.alert', $booking->id, $booking->hotel_id);
         return redirect()->route('bookings.show', $booking->id)->with('success', 'Whole-Hotel booking created! #' . $booking->booking_number);
     }
 

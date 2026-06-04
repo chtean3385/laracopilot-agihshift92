@@ -13,7 +13,8 @@ foreach ([
     'DB_USERNAME','DB_PASSWORD','DB_SSLMODE',
     // App
     'APP_ENV','APP_DEBUG','APP_URL','APP_KEY',
-    'SESSION_DRIVER','CACHE_STORE',
+    'SESSION_DRIVER','CACHE_STORE','QUEUE_CONNECTION','REDIS_CLIENT',
+    'REDIS_HOST','REDIS_PORT','REDIS_PASSWORD',
     // WhatsApp platform credentials (seeded into platform_whatsapp_settings on first boot)
     'WA_SAAS_TOKEN','WA_SAAS_PHONE_NUMBER_ID','WA_SAAS_WABA_ID',
     'WA_META_APP_ID','WA_META_APP_SECRET','WA_META_CONFIG_ID','WA_WEBHOOK_VERIFY_TOKEN',

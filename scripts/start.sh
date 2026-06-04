@@ -41,6 +41,13 @@ sed -e "s|__APP_DIR__|$APP_DIR|g" \
     -e "s|__RUN_DIR__|$RUN_DIR|g" \
     "$APP_DIR/scripts/nginx.conf.template" > "$RUN_DIR/nginx.conf"
 
+# ── Start Redis (cache + queue backend) ───────────────────────────────────────
+echo "[start.sh] Starting Redis..."
+redis-server --daemonize yes --port 6379 --loglevel warning --save "" \
+    --pidfile "$RUN_DIR/redis.pid" --logfile "$RUN_DIR/redis.log"
+sleep 1
+echo "[start.sh] Redis started"
+
 # ── Start queue worker in background ─────────────────────────────────────────
 echo "[start.sh] Starting queue worker..."
 php artisan queue:work --sleep=3 --tries=3 --timeout=60 --queue=default >> "$RUN_DIR/queue.log" 2>&1 &
