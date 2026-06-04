@@ -41,6 +41,12 @@ sed -e "s|__APP_DIR__|$APP_DIR|g" \
     -e "s|__RUN_DIR__|$RUN_DIR|g" \
     "$APP_DIR/scripts/nginx.conf.template" > "$RUN_DIR/nginx.conf"
 
+# ── Kill any stale FPM / Redis processes from a previous run ─────────────────
+pkill -f "php-fpm" 2>/dev/null || true
+pkill -f "redis-server" 2>/dev/null || true
+rm -f "$RUN_DIR/php-fpm.sock" "$RUN_DIR/php-fpm.pid" "$RUN_DIR/redis.pid"
+sleep 1
+
 # ── Start Redis (cache + queue backend) ───────────────────────────────────────
 echo "[start.sh] Starting Redis..."
 redis-server --daemonize yes --port 6379 --loglevel warning --save "" \

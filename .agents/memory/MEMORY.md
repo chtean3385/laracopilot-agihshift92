@@ -1,1 +1,2 @@
 - [Livewire 4 single root element](livewire4-single-root.md) — a <style> tag BEFORE the root <div> silently kills ALL wire:click events in the component.
+- [Predis Redis client config](predis-client-config.md) — REDIS_CLIENT must be hardcoded to 'predis' in config/database.php; env() resolves to phpredis from .env, crashing queue workers.
