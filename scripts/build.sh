@@ -3,9 +3,6 @@ set -e
 
 echo "[build.sh] Starting build..."
 
-# Tell bootstrap/app.php to use file/sync drivers (no Redis in build container)
-export ARTISAN_BUILD=1
-
 echo "[build.sh] Installing PHP dependencies..."
 composer install --no-dev --optimize-autoloader
 

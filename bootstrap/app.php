@@ -4,16 +4,23 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-// During the Replit build phase, Redis is not available.
-// Pre-set file/sync drivers BEFORE the bridging loop so it skips them
-// (the loop only writes vars that are not already in $_ENV).
-if (PHP_SAPI === 'cli' && (getenv('ARTISAN_BUILD') === '1')) {
-    foreach (['SESSION_DRIVER' => 'file', 'CACHE_STORE' => 'file',
-              'CACHE_DRIVER' => 'file', 'QUEUE_CONNECTION' => 'sync'] as $_bk => $_bv) {
-        putenv("{$_bk}={$_bv}");
-        $_ENV[$_bk] = $_SERVER[$_bk] = $_bv;
+// When running CLI artisan commands (build or queue worker boot), check if Redis
+// is actually reachable. If not (e.g. build container), force file/sync drivers
+// BEFORE the bridging loop below — the loop skips keys already in $_ENV.
+// ECONNREFUSED is instant so this adds zero perceptible latency.
+if (PHP_SAPI === 'cli') {
+    $_redis_sock = @fsockopen('127.0.0.1', 6379, $_redis_errno, $_redis_errstr, 0.5);
+    if (!$_redis_sock) {
+        foreach (['SESSION_DRIVER' => 'file', 'CACHE_STORE' => 'file',
+                  'CACHE_DRIVER'   => 'file', 'QUEUE_CONNECTION' => 'sync'] as $_bk => $_bv) {
+            putenv("{$_bk}={$_bv}");
+            $_ENV[$_bk] = $_SERVER[$_bk] = $_bv;
+        }
+        unset($_bk, $_bv);
+    } else {
+        fclose($_redis_sock);
     }
-    unset($_bk, $_bv);
+    unset($_redis_sock, $_redis_errno, $_redis_errstr);
 }
 
 // Copy OS-level env vars (injected by Replit) into $_ENV before phpdotenv runs.
