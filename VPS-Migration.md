@@ -46,6 +46,12 @@ sudo apt install -y php8.2-fpm php8.2-cli php8.2-pgsql php8.2-mbstring \
 sudo apt install -y postgresql-16
 sudo systemctl enable --now postgresql
 
+# Redis (queue + cache + sessions)
+sudo apt install -y redis-server
+sudo systemctl enable --now redis-server
+# Verify:
+redis-cli ping   # should return PONG
+
 # Create DB and user (replace STRONG_PASSWORD)
 sudo -u postgres psql -c "CREATE USER hotelcrm_user WITH PASSWORD 'STRONG_PASSWORD';"
 sudo -u postgres createdb -O hotelcrm_user hotelcrm
@@ -105,6 +111,15 @@ DB_DATABASE=hotelcrm
 DB_USERNAME=hotelcrm_user
 DB_PASSWORD=STRONG_PASSWORD
 DB_SSLMODE=           # leave blank — local connection needs no SSL
+
+# Redis (queue, cache, sessions)
+QUEUE_CONNECTION=redis
+CACHE_STORE=redis
+SESSION_DRIVER=redis
+REDIS_CLIENT=predis   # predis/predis is a Composer package — no ext-redis C extension needed
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=null
 ```
 > Copy all other secrets (APP_KEY, MAIL_*, WA_*, FIREBASE_*, FCM_*) from Replit Secrets as-is.
 
@@ -380,14 +395,17 @@ sudo nano /etc/supervisor/conf.d/hotelcrm-worker.conf
 
 ```ini
 [program:hotelcrm-worker]
-command=php /var/www/hotelcrm/artisan queue:work --sleep=3 --tries=3 --timeout=60
+command=php /var/www/hotelcrm/artisan queue:work --sleep=3 --tries=3 --timeout=60 --queue=default
 directory=/var/www/hotelcrm
 user=deploy
 autostart=true
 autorestart=true
+numprocs=2
 redirect_stderr=true
 stdout_logfile=/var/log/hotelcrm-worker.log
 ```
+
+> **Note:** Redis must be running before Supervisor starts the worker. Since `redis-server` is a systemd service (enabled above), it starts automatically on boot — Supervisor workers start after it.
 
 ```bash
 sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl start hotelcrm-worker

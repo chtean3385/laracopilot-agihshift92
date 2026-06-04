@@ -17,6 +17,8 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **Frontend:** Blade templates, Tailwind CSS (CDN), Font Awesome, Livewire 4
 - **SPA (Platform WA Inbox):** React 18 + Vite (pnpm) + `@vitejs/plugin-react-swc` — WhatsApp Inbox at `/platform/wa-inbox`; Blade page mounts `<div id="wa-inbox-root">`, built assets served via `public/build/`
 - **Database:** PostgreSQL (Replit managed for dev and production)
+- **Queue / Cache / Sessions:** Redis — `predis/predis` (pure PHP, no C extension); started in `scripts/start.sh` before queue worker; `QUEUE_CONNECTION=redis`, `CACHE_STORE=redis`, `SESSION_DRIVER=redis`
+- **Background Jobs:** `App\Jobs\SendWhatsAppEvent` — handles all WA notifications + owner alerts async; `Mail::queue()` for hotel-full alert emails
 - **ORM:** Eloquent
 - **Validation:** Laravel's built-in validation
 - **Build Tool:** Composer (PHP) + pnpm/Vite (JS SPA assets)
@@ -46,6 +48,7 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **Dynamic RBAC:** Role-Based Access Control is database-driven and configurable per hotel, with permissions loaded into the session on login.
 - **Idempotent Provisioning:** The `app:safe-migrate` command and hotel creation logic are designed to be idempotent, ensuring that schema changes and initial data seeding (users, roles, modules, settings) do not overwrite manual configurations on existing entities.
 - **Configurable Modules:** Key features like WhatsApp, Payment Links, Pathik integration, and Channel Manager are implemented as toggleable modules, managed via feature flags.
+- **Async WhatsApp & Email:** All WhatsApp notifications (booking created, payment received, owner alerts, check-in/out, restaurant bill) are dispatched via `SendWhatsAppEvent` job — zero blocking API calls on user-facing requests. Hotel-full alert emails use `Mail::queue()`. Queue worker runs as background process started in `scripts/start.sh`.
 
 ## Product
 - **Hotel CRM:** Guest management, rooms, bookings, check-in/out, payments, invoices, reports, RBAC, activity audit logging, WhatsApp messaging, Guest Register, Pathik autofill, OTA Channel Manager, Payment Links.
@@ -71,6 +74,8 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 - **Livewire 4 — single root element:** A `<style>` tag placed *before* the root `<div>` in a Livewire component silently kills ALL `wire:click` events on the page. Always place `<style>` inside the root element or after it.
 - **Eager-loaded relations — collection vs query:** When a relation is already loaded via `with()`, use `$model->relation->sum()` (collection, zero extra queries) not `$model->relation()->sum()` (fires a new DB query). The parentheses version silently duplicates the query.
 - **WA Template data-body encoding:** Never wrap `data-body` in Blade's `{{ }}` — use `{!! $var !!}` or a plain PHP `htmlspecialchars()` call. Double-encoding corrupts template variable placeholders like `{{1}}`.
+- **Redis client must be hardcoded:** In `config/database.php`, the Redis client is `'client' => 'predis'` — hardcoded, never `env('REDIS_CLIENT')`. The `.env` has `REDIS_CLIENT=phpredis` and Replit env vars aren't always visible via `getenv()` in shell-launched PHP processes (queue workers), so the env() call resolves to `phpredis` which lacks the C extension and crashes the worker.
+- **WA jobs need hotel context:** `SendWhatsAppEvent` must call `app(HotelContext::class)->setHotel($this->hotelId)` before any DB query — there is no HTTP session in a queue worker. The `BelongsToHotel` trait and `Module::isEnabled()` both rely on this singleton being set.
 
 ## Pointers
 - **Laravel Documentation:** `https://laravel.com/docs/12.x`
@@ -119,7 +124,8 @@ The correct logic: permission assignment is **inside** the `if (!$existing)` blo
 - **Framework**: Laravel 12 (PHP 8.2)
 - **Database (dev)**: Replit managed PostgreSQL (`heliumdb` on host `helium:5432`) — credentials set as Replit dev env vars (`DB_HOST=helium`, `DB_DATABASE=heliumdb`, `DB_USERNAME=postgres`, `DB_PASSWORD=password`, `DB_PORT=5432`). The `.env` has `DB_CONNECTION=pgsql`. Run migrations with `php artisan migrate --force`.
 - **Database (production)**: Replit managed PostgreSQL for production (host `ep-fancy-scene-anzx2eyx.c...`, database `neondb`) — credentials stored as Replit production secrets (`PGHOST`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `DATABASE_URL`). Build command: `php artisan app:safe-migrate`.
-- **bootstrap/app.php**: Copies DB env vars from `getenv()` into `$_ENV` before phpdotenv runs — this bridges Replit's secret injection (process env) into Laravel's `env()` function. List includes: `DB_CONNECTION`, `DATABASE_URL`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SSLMODE`.
+- **bootstrap/app.php**: Copies OS-level env vars from `getenv()` into `$_ENV` before phpdotenv runs — bridges Replit's secret injection into Laravel's `env()` function. Bridged vars: `DB_*`, `APP_*`, `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION`, `REDIS_CLIENT`, `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `WA_*`, `FIREBASE_*`, `MAIL_PASSWORD`, `CRON_SECRET`, `MAILGUN_WEBHOOK_SIGNING_KEY`.
+- **Redis**: `redis-server` started in `scripts/start.sh` (before queue worker). Client: `predis/predis` (pure PHP — no `ext-redis` C extension needed). `config/database.php` hardcodes `'client' => 'predis'`. Queue, cache, and session all use Redis.
 - **config/database.php pgsql**: Falls back to `getenv('PGHOST')`, `getenv('PGDATABASE')` etc. if `DB_HOST`/`DB_DATABASE` env vars are not set — covers production where secrets use PG* naming.
 - **Frontend**: Blade templates + Tailwind CSS (CDN) + Font Awesome + Livewire 4
 - **Authentication**: Custom session-based auth — two separate auth flows (Hotel CRM + Platform Admin)
