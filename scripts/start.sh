@@ -31,6 +31,9 @@ pm.max_spare_servers = 10
 pm.max_requests = 500
 clear_env = no
 php_admin_value[error_log] = $RUN_DIR/php-fpm-www.log
+php_admin_value[upload_max_filesize] = 20M
+php_admin_value[post_max_size] = 25M
+php_admin_value[memory_limit] = 256M
 PHPFPMEOF
 
 # ── Nginx config (replace placeholders in template) ──────────────────────────
