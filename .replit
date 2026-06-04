@@ -76,9 +76,9 @@ localPort = 6379
 externalPort = 3000
 
 [deployment]
-deploymentTarget = "vm"
+deploymentTarget = "autoscale"
 run = ["bash", "scripts/start.sh"]
-build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan optimize && php artisan app:safe-migrate"]
+build = ["bash", "scripts/build.sh"]
 
 [postMerge]
 path = "scripts/post-merge.sh"

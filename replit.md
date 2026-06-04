@@ -3,7 +3,7 @@ A multi-tenant SaaS platform for hotel/resort management, offering guest, room, 
 
 ## Run & Operate
 - **Run:** `php artisan serve --host=0.0.0.0 --port=5000` (development) or `bash scripts/start.sh` (production)
-- **Build:** `composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan optimize && php artisan app:safe-migrate`
+- **Build:** `bash scripts/build.sh` (starts Redis, installs deps, clears + warms caches, runs migrations)
 - **Typecheck:** _Populate as you build_
 - **Codegen:** _Populate as you build_
 - **DB Push:** `php artisan app:safe-migrate` (handles migrations and idempotent seeding)
@@ -102,7 +102,7 @@ Setting `publicDir = "public"` causes Replit autoscale to treat the app as a sta
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "scripts/start.sh"]
-build = ["bash", "-c", "composer install --no-dev --optimize-autoloader && php artisan config:clear && php artisan cache:clear && php artisan optimize && php artisan app:safe-migrate"]
+build = ["bash", "scripts/build.sh"]
 ```
 
 **If deployment fails with "no run command" or app not starting:**
