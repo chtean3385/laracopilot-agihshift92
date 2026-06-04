@@ -24,5 +24,12 @@ php artisan queue:work --sleep=3 --tries=3 --timeout=60 --queue=default 2>&1 &
 QUEUE_PID=$!
 echo "[start.sh] Queue worker started (PID ${QUEUE_PID})"
 
+# Start the Laravel scheduler so the DB keep-alive ping (every 4 min) and
+# any other scheduled tasks run on production as well as in dev.
+echo "[start.sh] Starting scheduler in background..."
+php artisan schedule:work 2>&1 &
+SCHEDULER_PID=$!
+echo "[start.sh] Scheduler started (PID ${SCHEDULER_PID})"
+
 echo "[start.sh] Launching server on 0.0.0.0:5000 ..."
 exec php artisan serve --host=0.0.0.0 --port=5000
