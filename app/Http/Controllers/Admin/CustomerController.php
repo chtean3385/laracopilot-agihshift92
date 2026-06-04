@@ -56,7 +56,7 @@ class CustomerController extends Controller
             'company_name'  => 'nullable|string|max:255',
             'gstin'         => 'nullable|string|max:15',
             'id_number'     => 'required_with:id_type|nullable|string|max:50',
-            'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'documents.*'   => 'nullable|file|max:1024|mimes:jpg,jpeg,png,pdf',
             'arrival_city'  => 'nullable|string|max:100',
             'travel_reason' => 'nullable|string|max:100',
             'dispatch_city' => 'nullable|string|max:100',
@@ -125,7 +125,7 @@ class CustomerController extends Controller
             'company_name'  => 'nullable|string|max:255',
             'gstin'         => 'nullable|string|max:15',
             'id_number'     => 'required_with:id_type|nullable|string|max:50',
-            'documents.*'   => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'documents.*'   => 'nullable|file|max:1024|mimes:jpg,jpeg,png,pdf',
             'arrival_city'  => 'nullable|string|max:100',
             'travel_reason' => 'nullable|string|max:100',
             'dispatch_city' => 'nullable|string|max:100',
@@ -165,7 +165,7 @@ class CustomerController extends Controller
             'email'        => ['nullable', 'email', Rule::unique('customers', 'email')->where('hotel_id', $hotelId)->whereNull('deleted_at')],
             'id_type'      => 'nullable|in:aadhaar,passport,driving_license,voter_id,pan_card,visa,other',
             'id_number'    => 'nullable|string|max:50',
-            'documents.*'  => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'documents.*'  => 'nullable|file|max:1024|mimes:jpg,jpeg,png,pdf',
         ]);
 
         // Check if a soft-deleted guest exists with the same phone or email in this hotel

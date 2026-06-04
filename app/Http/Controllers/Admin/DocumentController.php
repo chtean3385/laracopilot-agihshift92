@@ -34,7 +34,7 @@ class DocumentController extends Controller
         $request->validate([
             'document_type'   => 'required|string|max:100',
             'document_number' => 'nullable|string|max:100',
-            'file'            => 'required|file|max:5120|mimes:jpg,jpeg,png,pdf',
+            'file'            => 'required|file|max:1024|mimes:jpg,jpeg,png,pdf',
             'notes'           => 'nullable|string',
         ]);
 

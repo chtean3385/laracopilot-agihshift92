@@ -26,7 +26,7 @@ class BookingGuestController extends Controller
             'dob'         => 'nullable|date',
             'relation'    => 'nullable|string|max:40',
             'notes'       => 'nullable|string|max:255',
-            'document'    => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'document'    => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:1024',
         ]);
 
         $guestData = $validated;
@@ -88,7 +88,7 @@ class BookingGuestController extends Controller
     {
         if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
 
-        $request->validate(['document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120']);
+        $request->validate(['document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:1024']);
 
         $guest = BookingGuest::where('booking_id', $bookingId)->findOrFail($guestId);
         $file  = $request->file('document');

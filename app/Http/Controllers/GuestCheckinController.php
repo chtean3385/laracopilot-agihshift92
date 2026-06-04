@@ -96,7 +96,7 @@ class GuestCheckinController extends Controller
             'id_number'           => 'nullable|string|max:100',
             'address'             => 'nullable|string|max:500',
             'date_of_birth'       => 'nullable|date',
-            'id_document'         => ($reuseDoc ? 'nullable' : 'required') . '|file|mimes:jpg,jpeg,png,pdf,heic,heif|max:5120',
+            'id_document'         => ($reuseDoc ? 'nullable' : 'required') . '|file|mimes:jpg,jpeg,png,pdf,heic,heif|max:1024',
             'signature_data'      => ($reuseSig ? 'nullable' : 'required') . '|string',
             'requested_check_in'  => 'nullable|date',
             'requested_check_out' => 'nullable|date|after_or_equal:requested_check_in',
