@@ -4,6 +4,18 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+// During the Replit build phase, Redis is not available.
+// Pre-set file/sync drivers BEFORE the bridging loop so it skips them
+// (the loop only writes vars that are not already in $_ENV).
+if (PHP_SAPI === 'cli' && (getenv('ARTISAN_BUILD') === '1')) {
+    foreach (['SESSION_DRIVER' => 'file', 'CACHE_STORE' => 'file',
+              'CACHE_DRIVER' => 'file', 'QUEUE_CONNECTION' => 'sync'] as $_bk => $_bv) {
+        putenv("{$_bk}={$_bv}");
+        $_ENV[$_bk] = $_SERVER[$_bk] = $_bv;
+    }
+    unset($_bk, $_bv);
+}
+
 // Copy OS-level env vars (injected by Replit) into $_ENV before phpdotenv runs.
 // phpdotenv (createImmutable) checks $_ENV for existing vars — not getenv() —
 // so without this, it silently overwrites Replit's injected vars with .env values.
