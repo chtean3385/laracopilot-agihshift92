@@ -9,6 +9,7 @@ class CustomerDocument extends Model
     protected $fillable = [
         'customer_id', 'document_type', 'document_number',
         'file_name', 'file_path', 'file_type', 'file_size', 'notes',
+        'file_content',
     ];
 
     public function customer()

@@ -111,13 +111,19 @@ class GuestCheckinController extends Controller
             'travel_reason'       => 'nullable|string|max:100',
         ]);
 
-        // Resolve ID document path — new upload takes priority, otherwise reuse from customer profile
+        // Resolve ID document — store bytes in DB (survives deployments)
+        $docContent = null;
+        $docMime    = null;
+        $docPath    = null;
         if ($request->hasFile('id_document')) {
-            $docPath = $request->file('id_document')->store('guest-checkin-docs/' . $hotel->id, 'public');
+            $idFile     = $request->file('id_document');
+            $docContent = base64_encode(file_get_contents($idFile->getRealPath()));
+            $docMime    = $idFile->getMimeType();
+            $docPath    = '';
         } elseif ($reuseDoc && $existingCustomer) {
-            $docPath = $existingCustomer->id_document_path;
-        } else {
-            $docPath = null;
+            $docContent = $existingCustomer->id_document_content ?? null;
+            $docMime    = $existingCustomer->id_document_mime ?? null;
+            $docPath    = '';
         }
 
         // Resolve signature — new drawing takes priority, otherwise reuse from customer profile
@@ -154,8 +160,10 @@ class GuestCheckinController extends Controller
             'dispatch_city' => $validated['dispatch_city'] ?? null,
             'travel_reason' => $validated['travel_reason'] ?? null,
         ];
-        if ($docPath)  $profileData['id_document_path'] = $docPath;
-        if ($sigData)  $profileData['signature']        = $sigData;
+        if ($docPath !== null) $profileData['id_document_path']    = $docPath;
+        if ($docContent)      $profileData['id_document_content'] = $docContent;
+        if ($docMime)         $profileData['id_document_mime']    = $docMime;
+        if ($sigData)         $profileData['signature']           = $sigData;
 
         if ($existingCustomer) {
             // Only overwrite fields the guest actually provided (don't blank out existing data).
@@ -188,8 +196,10 @@ class GuestCheckinController extends Controller
                     'id_number'        => $validated['id_number'] ?? null,
                     'address'          => $validated['address'] ?? null,
                     'date_of_birth'    => $validated['date_of_birth'] ?? null,
-                    'id_document_path' => $docPath ?? $existingQr->id_document_path,
-                    'signature_data'   => $sigData ?? $existingQr->signature_data,
+                    'id_document_path'    => $docPath ?? $existingQr->id_document_path,
+                    'id_document_content' => $docContent ?? $existingQr->id_document_content,
+                    'id_document_mime'    => $docMime    ?? $existingQr->id_document_mime,
+                    'signature_data'      => $sigData    ?? $existingQr->signature_data,
                     'customer_id'      => $customerId,
                     'status'           => 'converted',
                 ]);
@@ -205,6 +215,8 @@ class GuestCheckinController extends Controller
                     'address'             => $validated['address'] ?? null,
                     'date_of_birth'       => $validated['date_of_birth'] ?? null,
                     'id_document_path'    => $docPath,
+                    'id_document_content' => $docContent,
+                    'id_document_mime'    => $docMime,
                     'signature_data'      => $sigData,
                     'additional_guests'   => $validated['additional_guests'] ?? null,
                     'requested_check_in'  => $linkedBooking->check_in_date ?? null,
@@ -227,6 +239,8 @@ class GuestCheckinController extends Controller
                 'address'             => $validated['address'] ?? null,
                 'date_of_birth'       => $validated['date_of_birth'] ?? null,
                 'id_document_path'    => $docPath,
+                'id_document_content' => $docContent,
+                'id_document_mime'    => $docMime,
                 'signature_data'      => $sigData,
                 'additional_guests'   => $validated['additional_guests'] ?? null,
                 'requested_check_in'  => $validated['requested_check_in'] ?? null,

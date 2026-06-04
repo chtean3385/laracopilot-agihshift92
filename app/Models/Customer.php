@@ -17,6 +17,7 @@ class Customer extends Model
         'nationality', 'notes', 'signature',
         'company_name', 'gstin',
         'arrival_city', 'travel_reason', 'dispatch_city',
+        'id_document_content', 'id_document_mime',
     ];
 
     protected $casts = [

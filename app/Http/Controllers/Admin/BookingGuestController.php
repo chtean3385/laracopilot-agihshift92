@@ -31,15 +31,16 @@ class BookingGuestController extends Controller
 
         $guestData = $validated;
         unset($guestData['document']);
-        
+
         $guest = BookingGuest::create(array_merge($guestData, ['booking_id' => $bookingId]));
 
         if ($request->hasFile('document')) {
             $file = $request->file('document');
-            $path = $file->store('guest-docs/' . $bookingId, 'public');
             $guest->update([
-                'id_document_path' => $path,
-                'id_document_name' => $file->getClientOriginalName(),
+                'id_document_path'    => '',
+                'id_document_name'    => $file->getClientOriginalName(),
+                'id_document_content' => base64_encode(file_get_contents($file->getRealPath())),
+                'id_document_mime'    => $file->getMimeType(),
             ]);
         }
 
@@ -56,9 +57,9 @@ class BookingGuestController extends Controller
     {
         if (!session('crm_logged_in')) return response()->json(['error' => 'Unauthenticated'], 401);
 
-        $guest = BookingGuest::where('booking_id', $bookingId)->findOrFail($guestId);
+        $guest   = BookingGuest::where('booking_id', $bookingId)->findOrFail($guestId);
         $booking = Booking::findOrFail($bookingId);
-        $name = $guest->name;
+        $name    = $guest->name;
         $guest->delete();
 
         ActivityLogger::log('Removed Guest', 'Booking', 'Removed guest ' . $name . ' from Booking #' . $booking->booking_number);
@@ -90,17 +91,13 @@ class BookingGuestController extends Controller
         $request->validate(['document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120']);
 
         $guest = BookingGuest::where('booking_id', $bookingId)->findOrFail($guestId);
-
-        if ($guest->id_document_path && \Storage::disk('public')->exists($guest->id_document_path)) {
-            \Storage::disk('public')->delete($guest->id_document_path);
-        }
-
-        $file = $request->file('document');
-        $path = $file->store('guest-docs/' . $bookingId, 'public');
+        $file  = $request->file('document');
 
         $guest->update([
-            'id_document_path' => $path,
-            'id_document_name' => $file->getClientOriginalName(),
+            'id_document_path'    => '',
+            'id_document_name'    => $file->getClientOriginalName(),
+            'id_document_content' => base64_encode(file_get_contents($file->getRealPath())),
+            'id_document_mime'    => $file->getMimeType(),
         ]);
 
         ActivityLogger::log('Document Uploaded', 'Booking', 'ID document uploaded for guest ' . $guest->name);
@@ -114,10 +111,18 @@ class BookingGuestController extends Controller
 
         $guest = BookingGuest::where('booking_id', $bookingId)->findOrFail($guestId);
 
-        if (!$guest->id_document_path || !\Storage::disk('public')->exists($guest->id_document_path)) {
-            return back()->with('error', 'Document not found.');
+        if (empty($guest->id_document_content)) {
+            return back()->with('error', 'Document not available. Please re-upload.');
         }
 
-        return \Storage::disk('public')->download($guest->id_document_path, $guest->id_document_name ?? 'document');
+        $bytes    = base64_decode($guest->id_document_content);
+        $mimeType = $guest->id_document_mime ?: 'application/octet-stream';
+        $fileName = $guest->id_document_name ?: 'document';
+
+        return response($bytes, 200, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+            'Content-Length'      => strlen($bytes),
+        ]);
     }
 }

@@ -234,15 +234,14 @@ class CustomerController extends Controller
         $docType = $typeMap[$idType] ?? 'Other';
         foreach ($request->file('documents') as $file) {
             if (!$file || !$file->isValid()) continue;
-            $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
-            $filePath = $file->storeAs('documents/' . $customerId, $fileName, 'public');
             CustomerDocument::create([
                 'customer_id'   => $customerId,
                 'document_type' => $docType,
                 'file_name'     => $file->getClientOriginalName(),
-                'file_path'     => $filePath,
-                'file_type'     => $file->getClientMimeType(),
+                'file_path'     => '',
+                'file_type'     => $file->getMimeType(),
                 'file_size'     => $file->getSize(),
+                'file_content'  => base64_encode(file_get_contents($file->getRealPath())),
             ]);
         }
     }

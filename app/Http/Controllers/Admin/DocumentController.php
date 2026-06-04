@@ -7,7 +7,6 @@ use App\Models\Customer;
 use App\Models\CustomerDocument;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class DocumentController extends Controller
 {
@@ -41,19 +40,21 @@ class DocumentController extends Controller
 
         $customer = Customer::findOrFail($customerId);
         $file     = $request->file('file');
-        $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
-        $filePath = $file->storeAs('documents/' . $customerId, $fileName, 'public');
 
+        // Store file bytes as base64 in Neon DB — survives every deployment
         CustomerDocument::create([
             'customer_id'     => $customerId,
             'document_type'   => $request->document_type,
             'document_number' => $request->document_number,
             'file_name'       => $file->getClientOriginalName(),
-            'file_path'       => $filePath,
-            'file_type'       => $file->getClientMimeType(),
+            'file_path'       => '',
+            'file_type'       => $file->getMimeType(),
             'file_size'       => $file->getSize(),
             'notes'           => $request->notes,
+            'file_content'    => base64_encode(file_get_contents($file->getRealPath())),
         ]);
+
+        ActivityLogger::log('Uploaded', 'Document', 'Uploaded ' . $request->document_type . ' for ' . $customer->name);
 
         return redirect()->route('documents.index', $customerId)
             ->with('success', 'Document uploaded successfully!');
@@ -62,11 +63,21 @@ class DocumentController extends Controller
     public function download($id)
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
+
         $document = CustomerDocument::findOrFail($id);
-        if (!Storage::disk('public')->exists($document->file_path)) {
-            return back()->with('error', 'File not found on server.');
+
+        if (empty($document->file_content)) {
+            return back()->with('error', 'This file is no longer available. Please re-upload it.');
         }
-        return Storage::disk('public')->download($document->file_path, $document->file_name);
+
+        $bytes    = base64_decode($document->file_content);
+        $mimeType = $document->file_type ?: 'application/octet-stream';
+
+        return response($bytes, 200, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $document->file_name . '"',
+            'Content-Length'      => strlen($bytes),
+        ]);
     }
 
     public function destroy($id)
@@ -76,7 +87,6 @@ class DocumentController extends Controller
         $customerId = $document->customer_id;
         $docName    = $document->file_name;
         ActivityLogger::log('Deleted', 'Document', 'Deleted document: ' . $docName . ' (Customer ID: ' . $customerId . ')');
-        Storage::disk('public')->delete($document->file_path);
         $document->delete();
         return redirect()->route('documents.index', $customerId)
             ->with('success', 'Document deleted.');

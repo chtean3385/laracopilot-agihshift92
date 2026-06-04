@@ -11,7 +11,8 @@ class BookingGuest extends Model
     protected $fillable = [
         'booking_id', 'name', 'age', 'gender', 'nationality',
         'id_type', 'id_number', 'dob', 'relation',
-        'signature', 'id_document_path', 'id_document_name', 'notes',
+        'signature', 'id_document_path', 'id_document_name',
+        'id_document_content', 'id_document_mime', 'notes',
     ];
 
     protected $casts = [
