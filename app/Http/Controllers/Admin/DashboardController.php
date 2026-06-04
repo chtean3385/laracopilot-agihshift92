@@ -37,6 +37,32 @@ class DashboardController extends Controller
         // ── Per-role data scope ────────────────────────────────────────────────
         $isRestaurantOnly = PermissionService::isRestaurantOnly();
 
+        // ── Dashboard preferences (loaded FIRST so we can skip disabled widget queries) ──
+        $userId = (int) session('crm_user_id');
+        $allWidgetKeys = [
+            'kpi-row-1', 'shortcuts-actions-pair',
+            'revenue-trend',
+            'slot-availability', 'booking-calendar',
+            'arrivals-departures', 'recent-room-pair', 'live-activity',
+        ];
+        try {
+            $allDashPrefs = DashboardPreference::where('hotel_id', $hotelId)
+                ->where(fn($q) => $q
+                    ->where('user_id', $userId)
+                    ->orWhere(fn($q2) => $q2->whereNull('user_id')->where('is_hotel_default', true))
+                )
+                ->get();
+            $dashPref = $allDashPrefs->firstWhere('user_id', $userId)
+                ?? $allDashPrefs->first(fn($p) => is_null($p->user_id));
+        } catch (\Exception $e) {
+            $allDashPrefs = collect();
+            $dashPref = null;
+        }
+        $dashWidgetOrder   = $dashPref?->preferences['widget_order']   ?? $allWidgetKeys;
+        $dashHiddenWidgets = $dashPref?->preferences['hidden_widgets']  ?? [];
+        $dashIsPersonal    = $dashPref && $dashPref->user_id !== null;
+        $dashHotelDefault  = $allDashPrefs->first(fn($p) => is_null($p->user_id) && $p->is_hotel_default);
+
         // ── Hotel-wide data (skipped for restaurant-only users) ──────────────
         $todayCheckins    = collect();
         $todayCheckouts   = collect();
@@ -71,22 +97,25 @@ class DashboardController extends Controller
         $nextMonth = $calStart->copy()->addMonth();
 
         if (!$isRestaurantOnly) {
-            try {
-                $todayCheckins = Booking::with(['customer', 'room'])
-                    ->whereDate('check_in_date', $today)
-                    ->where('status', 'confirmed')
-                    ->get();
-            } catch (\Exception $e) {
-                $todayCheckins = collect();
-            }
+            // ── Arrivals & Departures (skip queries if widget is hidden) ──────
+            if (!in_array('arrivals-departures', $dashHiddenWidgets)) {
+                try {
+                    $todayCheckins = Booking::with(['customer', 'room'])
+                        ->whereDate('check_in_date', $today)
+                        ->where('status', 'confirmed')
+                        ->get();
+                } catch (\Exception $e) {
+                    $todayCheckins = collect();
+                }
 
-            try {
-                $todayCheckouts = Booking::with(['customer', 'room'])
-                    ->whereDate('check_out_date', $today)
-                    ->where('status', 'checked_in')
-                    ->get();
-            } catch (\Exception $e) {
-                $todayCheckouts = collect();
+                try {
+                    $todayCheckouts = Booking::with(['customer', 'room'])
+                        ->whereDate('check_out_date', $today)
+                        ->where('status', 'checked_in')
+                        ->get();
+                } catch (\Exception $e) {
+                    $todayCheckouts = collect();
+                }
             }
 
             try {
@@ -118,73 +147,79 @@ class DashboardController extends Controller
                 $availableRooms = $occupiedRooms = $maintenanceRooms = $totalRooms = $dirtyRooms = 0;
             }
 
-            try {
-                // Single query for both month and today revenue (was 2 separate SUM queries)
-                $revenueStats = Payment::where('status', 'completed')
-                    ->whereYear('created_at', $today->year)
-                    ->whereMonth('created_at', $today->month)
-                    ->selectRaw(
-                        "SUM(amount) as month_total,
-                         SUM(CASE WHEN DATE(created_at) = ? THEN amount ELSE 0 END) as today_total",
-                        [$today->toDateString()]
-                    )
-                    ->first();
-                $monthRevenue = (float)($revenueStats->month_total ?? 0);
-                $todayRevenue = (float)($revenueStats->today_total ?? 0);
-            } catch (\Exception $e) {
-                $monthRevenue = $todayRevenue = 0;
+            // ── KPI Stats (skip revenue/pending/customer queries if widget is hidden) ──
+            if (!in_array('kpi-row-1', $dashHiddenWidgets)) {
+                try {
+                    // Single query for both month and today revenue (was 2 separate SUM queries)
+                    $revenueStats = Payment::where('status', 'completed')
+                        ->whereYear('created_at', $today->year)
+                        ->whereMonth('created_at', $today->month)
+                        ->selectRaw(
+                            "SUM(amount) as month_total,
+                             SUM(CASE WHEN DATE(created_at) = ? THEN amount ELSE 0 END) as today_total",
+                            [$today->toDateString()]
+                        )
+                        ->first();
+                    $monthRevenue = (float)($revenueStats->month_total ?? 0);
+                    $todayRevenue = (float)($revenueStats->today_total ?? 0);
+                } catch (\Exception $e) {
+                    $monthRevenue = $todayRevenue = 0;
+                }
+
+                try {
+                    $pendingPayments = Booking::whereIn('payment_status', ['pending', 'partial'])->count();
+                } catch (\Exception $e) {
+                    $pendingPayments = 0;
+                }
+
+                try {
+                    $websitePendingCount = Module::isEnabled('booking-widget')
+                        ? Booking::where('status', 'website_pending')->count()
+                        : 0;
+                } catch (\Exception $e) {
+                    $websitePendingCount = 0;
+                }
+
+                try {
+                    $otaPendingCount = Module::isEnabled('ota_whatsapp_sync')
+                        ? \App\Models\OtaImportedBooking::where('hotel_id', $hotelId)
+                            ->where('status', 'pending')
+                            ->count()
+                        : 0;
+                } catch (\Exception $e) {
+                    $otaPendingCount = 0;
+                }
+
+                try {
+                    $lowStockCount = Module::isEnabled('inventory')
+                        ? \App\Models\InventoryItem::where('is_active', true)
+                            ->whereRaw('current_stock <= reorder_level AND reorder_level > 0')
+                            ->count()
+                        : 0;
+                } catch (\Exception $e) {
+                    $lowStockCount = 0;
+                }
+
+                try {
+                    $totalCustomers    = Customer::count();
+                    $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
+                        ->whereYear('created_at', $today->year)
+                        ->count();
+                } catch (\Exception $e) {
+                    $totalCustomers = $newCustomersMonth = 0;
+                }
             }
 
-            try {
-                $pendingPayments = Booking::whereIn('payment_status', ['pending', 'partial'])->count();
-            } catch (\Exception $e) {
-                $pendingPayments = 0;
-            }
-
-            try {
-                $websitePendingCount = Module::isEnabled('booking-widget')
-                    ? Booking::where('status', 'website_pending')->count()
-                    : 0;
-            } catch (\Exception $e) {
-                $websitePendingCount = 0;
-            }
-
-            try {
-                $otaPendingCount = Module::isEnabled('ota_whatsapp_sync')
-                    ? \App\Models\OtaImportedBooking::where('hotel_id', $hotelId)
-                        ->where('status', 'pending')
-                        ->count()
-                    : 0;
-            } catch (\Exception $e) {
-                $otaPendingCount = 0;
-            }
-
-            try {
-                $lowStockCount = Module::isEnabled('inventory')
-                    ? \App\Models\InventoryItem::where('is_active', true)
-                        ->whereRaw('current_stock <= reorder_level AND reorder_level > 0')
-                        ->count()
-                    : 0;
-            } catch (\Exception $e) {
-                $lowStockCount = 0;
-            }
-
-            try {
-                $totalCustomers    = Customer::count();
-                $newCustomersMonth = Customer::whereMonth('created_at', $today->month)
-                    ->whereYear('created_at', $today->year)
-                    ->count();
-            } catch (\Exception $e) {
-                $totalCustomers = $newCustomersMonth = 0;
-            }
-
-            try {
-                $recentBookings = Booking::with(['customer' => fn($q) => $q->withTrashed(), 'room'])
-                    ->orderBy('created_at', 'desc')
-                    ->take(5)
-                    ->get();
-            } catch (\Exception $e) {
-                $recentBookings = collect();
+            // ── Recent Bookings + Room Availability (skip if widget hidden) ───
+            if (!in_array('recent-room-pair', $dashHiddenWidgets)) {
+                try {
+                    $recentBookings = Booking::with(['customer' => fn($q) => $q->withTrashed(), 'room'])
+                        ->orderBy('created_at', 'desc')
+                        ->take(5)
+                        ->get();
+                } catch (\Exception $e) {
+                    $recentBookings = collect();
+                }
             }
 
             $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
@@ -211,29 +246,32 @@ class DashboardController extends Controller
                 }
             }
 
-            // Weekly revenue chart
-            try {
-                $revenueByDay = Payment::where('status', 'completed')
-                    ->where('created_at', '>=', Carbon::today()->subDays(6)->startOfDay())
-                    ->selectRaw("DATE(created_at) as day, SUM(amount) as total")
-                    ->groupBy('day')
-                    ->pluck('total', 'day');
-            } catch (\Exception $e) {
-                $revenueByDay = collect();
-            }
-            for ($i = 6; $i >= 0; $i--) {
-                $date = Carbon::today()->subDays($i);
-                $weeklyRevenue[] = [
-                    'day'     => $date->format('D'),
-                    'date'    => $date->format('d'),
-                    'label'   => $date->format('D, d M'),
-                    'amount'  => (float) ($revenueByDay[$date->toDateString()] ?? 0),
-                    'isToday' => $date->isToday(),
-                ];
+            // ── Weekly Revenue Chart (skip if widget hidden) ──────────────────
+            if (!in_array('revenue-trend', $dashHiddenWidgets)) {
+                try {
+                    $revenueByDay = Payment::where('status', 'completed')
+                        ->where('created_at', '>=', Carbon::today()->subDays(6)->startOfDay())
+                        ->selectRaw("DATE(created_at) as day, SUM(amount) as total")
+                        ->groupBy('day')
+                        ->pluck('total', 'day');
+                } catch (\Exception $e) {
+                    $revenueByDay = collect();
+                }
+                for ($i = 6; $i >= 0; $i--) {
+                    $date = Carbon::today()->subDays($i);
+                    $weeklyRevenue[] = [
+                        'day'     => $date->format('D'),
+                        'date'    => $date->format('d'),
+                        'label'   => $date->format('D, d M'),
+                        'amount'  => (float) ($revenueByDay[$date->toDateString()] ?? 0),
+                        'isToday' => $date->isToday(),
+                    ];
+                }
             }
 
-            // ── Slot Availability Widget ──────────────────────────────────────
-            if (Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing')) {
+            // ── Slot Availability Widget (skip if widget hidden) ──────────────
+            if (!in_array('slot-availability', $dashHiddenWidgets) &&
+                (Module::isEnabled('time-slot-pricing') || Module::isEnabled('hourly-pricing'))) {
                 try {
                     if (request('slot_week')) {
                         $slotWeekStart = Carbon::parse(request('slot_week'))->startOfWeek(Carbon::MONDAY);
@@ -314,7 +352,8 @@ class DashboardController extends Controller
                 }
             }
 
-            // ── Booking Calendar ──────────────────────────────────────────────
+            // ── Booking Calendar (skip if widget hidden) ──────────────────────
+            if (!in_array('booking-calendar', $dashHiddenWidgets)) {
             try {
                 $calYear  = (int) request('cal_year',  $today->year);
                 $calMonth = (int) request('cal_month', $today->month);
@@ -390,6 +429,7 @@ class DashboardController extends Controller
             } catch (\Exception $e) {
                 $calWeeks = [];
             }
+            } // end booking-calendar guard
 
             // ── Dirty rooms list for Today's Agenda modal ─────────────────────
             $dirtyRoomsList = Room::where('status', 'dirty')
@@ -457,32 +497,6 @@ class DashboardController extends Controller
                 // silently skip — never crash the dashboard
             }
         }
-
-        // ── Dashboard preferences (per-user, fallback to hotel default) ─────────
-        $userId  = (int) session('crm_user_id');
-
-        // Single query for both user preference and hotel default (was 2 queries)
-        $allDashPrefs = DashboardPreference::where('hotel_id', $hotelId)
-            ->where(fn($q) => $q
-                ->where('user_id', $userId)
-                ->orWhere(fn($q2) => $q2->whereNull('user_id')->where('is_hotel_default', true))
-            )
-            ->get();
-        $dashPref = $allDashPrefs->firstWhere('user_id', $userId)
-            ?? $allDashPrefs->first(fn($p) => is_null($p->user_id));
-
-        $allWidgetKeys = [
-            'kpi-row-1', 'shortcuts-actions-pair',
-            'revenue-trend',
-            'slot-availability', 'booking-calendar',
-            'arrivals-departures', 'recent-room-pair', 'live-activity',
-        ];
-
-        $dashWidgetOrder   = $dashPref?->preferences['widget_order']   ?? $allWidgetKeys;
-        $dashHiddenWidgets = $dashPref?->preferences['hidden_widgets']  ?? [];
-        $dashIsPersonal    = $dashPref && $dashPref->user_id !== null;
-        // Reuse the already-loaded collection — no extra query needed
-        $dashHotelDefault  = $allDashPrefs->first(fn($p) => is_null($p->user_id) && $p->is_hotel_default);
 
         return view('admin.dashboard', compact(
             'todayCheckins', 'todayCheckouts', 'availableRooms', 'occupiedRooms',

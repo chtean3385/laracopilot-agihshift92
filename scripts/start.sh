@@ -1,35 +1,63 @@
 #!/bin/bash
 set -e
 
-echo "[start.sh] Starting Laravel application on port 5000..."
+echo "[start.sh] Starting Hotel CRM (nginx + PHP-FPM)..."
 echo "[start.sh] APP_ENV=${APP_ENV:-not set}"
 echo "[start.sh] PHP version: $(php -r 'echo PHP_VERSION;')"
 
-# NOTE: Do NOT run `config:clear` / `config:cache` here.
-# Autoscale containers have a read-only filesystem (only /tmp is writable),
-# so writing to bootstrap/cache/* fails and can corrupt the prebuilt cache.
-# The build phase already runs `php artisan optimize`, so config is cached
-# at image build time with the correct production env.
+APP_DIR="$(pwd)"
+RUN_DIR="/tmp/hotel-crm-run"
+CURRENT_USER="$(whoami)"
 
-echo "[start.sh] Verifying app can bootstrap..."
-php artisan --version 2>&1
+mkdir -p "$RUN_DIR"
 
-# Start queue worker in the background so WhatsApp sends and other async
-# jobs (e.g. notifications) don't block HTTP requests.
-# --sleep=3  : wait 3s before polling when the queue is empty
-# --tries=3  : retry failed jobs up to 3 times
-# --timeout=60 : kill a job that runs longer than 60s
-echo "[start.sh] Starting queue worker in background..."
-php artisan queue:work --sleep=3 --tries=3 --timeout=60 --queue=default 2>&1 &
-QUEUE_PID=$!
-echo "[start.sh] Queue worker started (PID ${QUEUE_PID})"
+# ── PHP-FPM config ────────────────────────────────────────────────────────────
+cat > "$RUN_DIR/php-fpm.conf" << PHPFPMEOF
+[global]
+pid = $RUN_DIR/php-fpm.pid
+error_log = $RUN_DIR/php-fpm-error.log
+daemonize = yes
 
-# Start the Laravel scheduler so the DB keep-alive ping (every 4 min) and
-# any other scheduled tasks run on production as well as in dev.
-echo "[start.sh] Starting scheduler in background..."
-php artisan schedule:work 2>&1 &
-SCHEDULER_PID=$!
-echo "[start.sh] Scheduler started (PID ${SCHEDULER_PID})"
+[www]
+user = $CURRENT_USER
+group = $CURRENT_USER
+listen = $RUN_DIR/php-fpm.sock
+listen.mode = 0666
+pm = dynamic
+pm.max_children = 20
+pm.start_servers = 5
+pm.min_spare_servers = 3
+pm.max_spare_servers = 10
+pm.max_requests = 500
+clear_env = no
+php_admin_value[error_log] = $RUN_DIR/php-fpm-www.log
+PHPFPMEOF
 
-echo "[start.sh] Launching server on 0.0.0.0:5000 ..."
-exec php artisan serve --host=0.0.0.0 --port=5000
+# ── Nginx config (replace placeholders in template) ──────────────────────────
+sed -e "s|__APP_DIR__|$APP_DIR|g" \
+    -e "s|__RUN_DIR__|$RUN_DIR|g" \
+    "$APP_DIR/scripts/nginx.conf.template" > "$RUN_DIR/nginx.conf"
+
+# ── Start queue worker in background ─────────────────────────────────────────
+echo "[start.sh] Starting queue worker..."
+php artisan queue:work --sleep=3 --tries=3 --timeout=60 --queue=default >> "$RUN_DIR/queue.log" 2>&1 &
+echo "[start.sh] Queue worker started (PID $!)"
+
+# ── Start scheduler in background ─────────────────────────────────────────────
+echo "[start.sh] Starting scheduler..."
+php artisan schedule:work >> "$RUN_DIR/scheduler.log" 2>&1 &
+echo "[start.sh] Scheduler started (PID $!)"
+
+# ── Start PHP-FPM (daemonizes itself) ─────────────────────────────────────────
+echo "[start.sh] Starting PHP-FPM..."
+php-fpm -y "$RUN_DIR/php-fpm.conf"
+# Wait for the socket to appear
+for i in 1 2 3 4 5; do
+    [ -S "$RUN_DIR/php-fpm.sock" ] && break
+    sleep 1
+done
+echo "[start.sh] PHP-FPM started (socket: $RUN_DIR/php-fpm.sock)"
+
+# ── Start nginx (foreground — keeps the container alive) ──────────────────────
+echo "[start.sh] Starting nginx on port 5000..."
+exec nix-shell -p nginx --run "nginx -e $RUN_DIR/nginx-error.log -c $RUN_DIR/nginx.conf -g 'daemon off;'"
