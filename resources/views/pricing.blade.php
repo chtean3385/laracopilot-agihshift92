@@ -143,7 +143,7 @@
     }
     </script>
 
-    <!-- META PIXEL — PASTE YOUR CODE HERE WHEN READY
+   
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -153,12 +153,12 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', 'YOUR_PIXEL_ID');
+    fbq('init', '26555899624105514');
     fbq('track', 'PageView');
     </script>
     <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
-    END META PIXEL -->
+    src="https://www.facebook.com/tr?id=26555899624105514&ev=PageView&noscript=1"/></noscript>
+   
     <!-- Google Tag Manager -->
     <script>
     (function(w,d,s,l,i){
