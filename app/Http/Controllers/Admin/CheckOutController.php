@@ -156,6 +156,7 @@ class CheckOutController extends Controller
 
         $booking = Booking::with(['room', 'payments', 'customer', 'extraCharges', 'bookingAddOns', 'groupedBookings.room'])->findOrFail($bookingId);
 
+        $finalPaymentAmount = 0;
         if ($request->final_payment > 0) {
             Payment::create([
                 'booking_id'     => $booking->id,
@@ -167,6 +168,7 @@ class CheckOutController extends Controller
                 'notes'          => 'Final payment at check-out',
                 'transaction_id' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3)) . '-TXN-' . strtoupper(substr(uniqid(), -8)),
             ]);
+            $finalPaymentAmount = (float) $request->final_payment;
         }
 
         // For per_hour rooms: if admin pre-set a flat price, keep it; otherwise calculate from actual hours
@@ -202,8 +204,8 @@ class CheckOutController extends Controller
             $booking->refresh();
         }
 
-        // Use already-eager-loaded payments collection — avoids an extra query
-        $totalPaid = $booking->payments->where('status', 'completed')->sum('amount');
+        // Use already-eager-loaded payments collection + the final payment just created
+        $totalPaid = $booking->payments->where('status', 'completed')->sum('amount') + $finalPaymentAmount;
 
         $settings   = Setting::where('hotel_id', $booking->hotel_id)->first();
         $taxRate    = ($settings && $settings->gst_number && $settings->tax_rate > 0) ? (float) $settings->tax_rate : 0;

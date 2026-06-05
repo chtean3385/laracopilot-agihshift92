@@ -1,2 +1,5 @@
 - [Livewire 4 single root element](livewire4-single-root.md) — a <style> tag BEFORE the root <div> silently kills ALL wire:click events in the component.
 - [Predis Redis client config](predis-client-config.md) — REDIS_CLIENT must be hardcoded to 'predis' in config/database.php; env() resolves to phpredis from .env, crashing queue workers.
+- [View composer N+1 settings](view-composer-n1.md) — View::composer('*') fires for every @include partial; must cache in app container to avoid 30-50 Setting::first() queries per page.
+- [Checkout payment stale collection](checkout-payment-stale.md) — eager-loaded payments collection misses the payment created in the same request; track amount separately and add to sum.
+- [Build order: safe-migrate before optimize](build-order.md) — safe-migrate calls view:clear; run it BEFORE optimize or view cache is wiped immediately after being built.
