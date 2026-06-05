@@ -164,7 +164,7 @@
 
         {{-- Active order info --}}
         @if($table->activeOrder)
-        <div class="mt-2 text-xs text-orange-600 font-medium rt-order">
+        <div class="mt-2 text-xs font-medium rt-order" style="color: #c9a96e;">
             {{ $table->activeOrder->order_number }}<br>
             ₹{{ number_format($table->activeOrder->total, 2) }}
         </div>
@@ -192,12 +192,12 @@
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Table Name <span class="text-red-500">*</span></label>
                 <input type="text" name="name" placeholder="e.g. Table 1, VIP Table, Garden Table"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#c9a96e]" required>
             </div>
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Seating Capacity <span class="text-red-500">*</span></label>
                 <input type="number" name="capacity" value="4" min="1" max="50"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#c9a96e]" required>
             </div>
             <div class="flex gap-3 justify-end">
                 <button type="button" onclick="document.getElementById('addTableModal').classList.add('hidden')"

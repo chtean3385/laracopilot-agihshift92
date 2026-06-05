@@ -8,14 +8,14 @@
     {{-- Header --}}
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-utensils text-amber-500 mr-2"></i>Food Billing</h2>
+            <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-utensils mr-2" style="color: #c9a96e;"></i>Food Billing</h2>
             <p class="text-sm text-gray-500 mt-0.5">Select a checked-in room to add food or extra charges</p>
         </div>
         <span class="text-sm text-gray-400">{{ $bookings->count() }} room{{ $bookings->count() != 1 ? 's' : '' }} checked in</span>
     </div>
 
     @if(session('success'))
-    <div class="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm">
+    <div class="mb-4 px-4 py-3 rounded-xl text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
         <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
     </div>
     @endif
@@ -34,10 +34,10 @@
             $chargeCount = $booking->extraCharges->count();
         @endphp
         <a href="{{ route('food-billing.show', $booking) }}"
-           class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all p-5 flex flex-col gap-3 group">
+           class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-5 flex flex-col gap-3 group" style="--tw-hover-border-color: rgba(201,169,110,.3);">
             <div class="flex items-start justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm" style="background: linear-gradient(135deg, #c9a96e, #b08d56);">
                         {{ $booking->room?->room_number ?? '?' }}
                     </div>
                     <div>
@@ -45,7 +45,7 @@
                         <div class="text-xs text-gray-400">{{ $booking->room?->room_type ?? '' }}</div>
                     </div>
                 </div>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Checked In</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background: rgba(201,169,110,.1); color: #b08d56;">Checked In</span>
             </div>
 
             <div class="flex items-center gap-2">
@@ -60,13 +60,13 @@
 
             <div class="flex items-center justify-between pt-2 border-t border-gray-50">
                 @if($chargeCount > 0)
-                <span class="text-xs text-amber-600 font-semibold">
+                <span class="text-xs font-semibold" style="color: #c9a96e;">
                     <i class="fas fa-receipt mr-1"></i>{{ $chargeCount }} charge{{ $chargeCount != 1 ? 's' : '' }} — ₹{{ number_format($extraTotal) }}
                 </span>
                 @else
                 <span class="text-xs text-gray-400">No charges yet</span>
                 @endif
-                <span class="text-xs text-amber-500 group-hover:text-amber-700 font-semibold">Add Bill <i class="fas fa-arrow-right ml-1"></i></span>
+                <span class="text-xs font-semibold group-hover:text-[#b08d56]" style="color: #c9a96e;">Add Bill <i class="fas fa-arrow-right ml-1"></i></span>
             </div>
         </a>
         @endforeach

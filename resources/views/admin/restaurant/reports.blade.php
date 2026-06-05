@@ -6,7 +6,7 @@
 <div class="content-header">
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
-            <a href="{{ route('reports.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Reports</a>
+            <a href="{{ route('reports.index') }}" class="text-sm hover:underline" style="color: #c9a96e;">← Back to Reports</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-1">📊 Restaurant Reports</h1>
             <p class="text-gray-500 text-sm">Revenue and billing summary</p>
         </div>
@@ -53,11 +53,11 @@
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4">
         <div class="text-sm text-gray-500 mb-1">Direct Bills</div>
-        <div class="text-2xl font-bold text-green-600">{{ $directBills }}</div>
+        <div class="text-2xl font-bold" style="color: #c9a96e;">{{ $directBills }}</div>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4">
         <div class="text-sm text-gray-500 mb-1">Room Bills</div>
-        <div class="text-2xl font-bold text-blue-600">{{ $roomBills }}</div>
+        <div class="text-2xl font-bold" style="color: #c9a96e;">{{ $roomBills }}</div>
     </div>
 </div>
 
@@ -144,9 +144,9 @@
                     <td class="px-4 py-3 text-gray-600">{{ $bill->order->table->name ?? '—' }}</td>
                     <td class="px-4 py-3 text-center">
                         @if($bill->bill_type === 'room')
-                            <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">🛏️ Room</span>
+                            <span class="px-2 py-1 rounded-full text-xs" style="background: rgba(201,169,110,.1); color: #b08d56;">🛏️ Room</span>
                         @else
-                            <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">💵 Direct</span>
+                            <span class="px-2 py-1 rounded-full text-xs" style="background: rgba(122,138,154,.1); color: #7a8a9a;">💵 Direct</span>
                         @endif
                     </td>
                     <td class="px-4 py-3 text-right text-gray-600">₹{{ number_format($bill->subtotal, 2) }}</td>
@@ -155,7 +155,7 @@
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ $bill->created_at->format('d M Y h:i A') }}</td>
                     <td class="px-4 py-3">
                         <a href="{{ route('restaurant.bills.print', $bill->id) }}" target="_blank"
-                            class="text-xs text-blue-600 hover:underline">🖨️ Print</a>
+                            class="text-xs hover:underline" style="color: #c9a96e;">🖨️ Print</a>
                     </td>
                 </tr>
                 @endforeach

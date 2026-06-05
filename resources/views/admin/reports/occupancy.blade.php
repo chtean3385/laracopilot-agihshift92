@@ -90,11 +90,11 @@
                         <td class="px-6 py-3 text-sm">{{ ucfirst($room->type) }}</td>
                         <td class="px-6 py-3 text-sm">
                             @if($room->pricing_type === 'per_slot')
-                                <span class="inline-flex items-center gap-1 text-violet-600">
+                                <span class="inline-flex items-center gap-1" style="color: #c9a96e;">
                                     <i class="fas fa-clock text-xs"></i> Slot
                                 </span>
                             @elseif($room->pricing_type === 'per_hour')
-                                <span class="inline-flex items-center gap-1 text-blue-600">
+                                <span class="inline-flex items-center gap-1" style="color: #c9a96e;">
                                     <i class="fas fa-hourglass-half text-xs"></i> Hourly
                                 </span>
                             @else

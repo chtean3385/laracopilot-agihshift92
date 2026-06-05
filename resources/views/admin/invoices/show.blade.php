@@ -27,17 +27,17 @@
         <div class="flex items-center gap-3 flex-wrap">
             @if($previewBalance > 0)
             <a href="{{ route('payments.create', ['booking_id' => $invoice->booking_id, 'amount' => $previewBalance]) }}"
-               class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm">
+               class="inline-flex items-center gap-2 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm" style="background: linear-gradient(135deg, #c9a96e, #b08d56);">
                 <i class="fas fa-rupee-sign"></i>Collect ₹{{ number_format($previewBalance) }} Outstanding
             </a>
             @endif
             <a href="{{ route('invoices.print', $invoice->id) }}" class="btn-primary text-sm"><i class="fas fa-print mr-2"></i>Print Invoice</a>
             <a href="{{ route('invoices.print-gst', $invoice->id) }}" target="_blank"
-               class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 transition-all">
+               class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all" style="border: 1px solid rgba(201,169,110,.2); background: rgba(201,169,110,.06); color: #b08d56;" onmouseover="this.style.background='rgba(201,169,110,.12)';" onmouseout="this.style.background='rgba(201,169,110,.06)';">
                 <i class="fas fa-file-invoice"></i>GST Bill
             </a>
             <a href="{{ route('invoices.edit', $invoice->id) }}"
-               class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all">
+               class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all" style="border: 1px solid rgba(201,169,110,.3); background: rgba(201,169,110,.08); color: #b08d56;" onmouseover="this.style.background='rgba(201,169,110,.15)';" onmouseout="this.style.background='rgba(201,169,110,.08)';"">
                 <i class="fas fa-edit"></i>Edit Invoice
             </a>
             @canDo('invoices.delete')
@@ -59,13 +59,13 @@
                     @endif
                     <div>
                         <div class="text-2xl font-black">{{ $settings->resort_name ?? 'Azure Paradise Resort' }}</div>
-                        @if($settings && $settings->tagline)<div class="text-cyan-400 text-xs font-semibold mb-0.5">{{ $settings->tagline }}</div>@endif
+                        @if($settings && $settings->tagline)<div class="text-xs font-semibold mb-0.5" style="color: #c9a96e;">{{ $settings->tagline }}</div>@endif
                         <div class="text-slate-400 text-sm mt-1">{{ $settings->address ?? '' }}</div>
                         <div class="text-slate-400 text-sm">{{ $settings->phone ?? '' }} • {{ $settings->email ?? '' }}</div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="text-3xl font-black text-cyan-400">INVOICE</div>
+                    <div class="text-3xl font-black" style="color: #c9a96e;">INVOICE</div>
                     <div class="text-slate-300 font-mono">{{ $invoice->invoice_number }}</div>
                     <div class="text-slate-400 text-sm mt-1">{{ $invoice->issued_at ? $invoice->issued_at->format('d M Y') : now()->format('d M Y') }}</div>
                 </div>
@@ -82,7 +82,7 @@
                 </div>
                 <div class="sm:text-right">
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Booking Details</p>
-                    <p class="font-mono text-cyan-600 font-bold">{{ $invoice->booking->booking_number }}</p>
+                    <p class="font-mono font-bold" style="color: #c9a96e;">{{ $invoice->booking->booking_number }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->is_whole_hotel ? 'Whole Hotel / Villa' : ('Room ' . ($invoice->booking->room?->room_number ?? '')) }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->check_in_date->format('d M Y') }} → {{ $invoice->booking->check_out_date->format('d M Y') }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->nights }} night(s)</p>
@@ -124,38 +124,38 @@
                         <td class="px-4 py-3 text-sm font-bold text-right">₹{{ number_format($invRoomCost) }}</td>
                     </tr>
                     @if($invoice->booking->meal_cost > 0)
-                    <tr class="border-b border-gray-100 bg-amber-50">
-                        <td class="px-4 py-3 text-sm text-amber-700">
-                            <i class="fas fa-utensils mr-1 text-amber-500"></i>Meal Plan —
+                    <tr class="border-b border-gray-100" style="background: rgba(201,169,110,.08);">
+                        <td class="px-4 py-3 text-sm" style="color: #b08d56;">
+                            <i class="fas fa-utensils mr-1" style="color: #c9a96e;"></i>Meal Plan —
                             @if($invoice->booking->meal_breakfast) Breakfast @endif
                             @if($invoice->booking->meal_lunch) Lunch @endif
                             @if($invoice->booking->meal_dinner) Dinner @endif
                         </td>
-                        <td class="px-4 py-3 text-sm text-right text-amber-700">{{ $invoice->booking->nights }} nights</td>
-                        <td class="px-4 py-3 text-sm text-right text-amber-700">—</td>
-                        <td class="px-4 py-3 text-sm font-bold text-right text-amber-700">₹{{ number_format($invoice->booking->meal_cost) }}</td>
+                        <td class="px-4 py-3 text-sm text-right" style="color: #b08d56;">{{ $invoice->booking->nights }} nights</td>
+                        <td class="px-4 py-3 text-sm text-right" style="color: #b08d56;">—</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right" style="color: #b08d56;">₹{{ number_format($invoice->booking->meal_cost) }}</td>
                     </tr>
                     @endif
                     @if($invoice->booking->extra_beds > 0)
-                    <tr class="border-b border-gray-100 bg-blue-50">
-                        <td class="px-4 py-3 text-sm text-blue-700">
-                            <i class="fas fa-bed mr-1 text-blue-500"></i>Extra Beds × {{ $invoice->booking->extra_beds }}
+                    <tr class="border-b border-gray-100" style="background: rgba(122,138,154,.08);">
+                        <td class="px-4 py-3 text-sm" style="color: #7a8a9a;">
+                            <i class="fas fa-bed mr-1" style="color: #7a8a9a;"></i>Extra Beds × {{ $invoice->booking->extra_beds }}
                         </td>
-                        <td class="px-4 py-3 text-sm text-right text-blue-700">{{ $invoice->booking->nights }} nights</td>
-                        <td class="px-4 py-3 text-sm text-right text-blue-700">₹{{ number_format($invoice->booking->room->extra_bed_price ?? 0) }}/bed</td>
-                        <td class="px-4 py-3 text-sm font-bold text-right text-blue-700">₹{{ number_format($invoice->booking->extra_bed_cost) }}</td>
+                        <td class="px-4 py-3 text-sm text-right" style="color: #7a8a9a;">{{ $invoice->booking->nights }} nights</td>
+                        <td class="px-4 py-3 text-sm text-right" style="color: #7a8a9a;">₹{{ number_format($invoice->booking->room->extra_bed_price ?? 0) }}/bed</td>
+                        <td class="px-4 py-3 text-sm font-bold text-right" style="color: #7a8a9a;">₹{{ number_format($invoice->booking->extra_bed_cost) }}</td>
                     </tr>
                     @endif
                     @if($invoice->booking->extraCharges->count() > 0)
-                    <tr class="border-b border-gray-100 bg-amber-50">
-                        <td colspan="4" class="px-4 py-2 text-xs font-bold uppercase tracking-wide text-amber-700">
+                    <tr class="border-b border-gray-100" style="background: rgba(201,169,110,.08);">
+                        <td colspan="4" class="px-4 py-2 text-xs font-bold uppercase tracking-wide" style="color: #b08d56;">
                             Extra Service Charge + Food
                         </td>
                     </tr>
                     @foreach($invoice->booking->extraCharges as $xCharge)
-                    <tr class="border-b border-gray-100 bg-amber-50">
+                    <tr class="border-b border-gray-100" style="background: rgba(201,169,110,.08);">
                         <td class="px-4 py-3 text-sm text-gray-700">
-                            <i class="fas fa-utensils mr-1 text-amber-500"></i>{{ $xCharge->name }}
+                            <i class="fas fa-utensils mr-1" style="color: #c9a96e;"></i>{{ $xCharge->name }}
                             @if($xCharge->notes)<span class="text-gray-400 text-xs ml-1">({{ $xCharge->notes }})</span>@endif
                         </td>
                         <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($xCharge->quantity, ($xCharge->quantity == intval($xCharge->quantity) ? 0 : 2)) }}</td>
@@ -194,33 +194,33 @@
                     @endif
                     @endif
                     <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total</span><span>₹{{ number_format($grandTotal) }}</span></div>
-                    <div class="flex justify-between text-sm text-emerald-600"><span>Amount Paid</span><span>₹{{ number_format($invoice->paid_amount) }}</span></div>
+                    <div class="flex justify-between text-sm" style="color: #c9a96e;"><span>Amount Paid</span><span>₹{{ number_format($invoice->paid_amount) }}</span></div>
                     @if($overpayment > 0)
-                    <div class="flex justify-between text-sm text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">
+                    <div class="flex justify-between text-sm px-2 py-1 rounded-lg" style="color: #b08d56; background: rgba(201,169,110,.08);">
                         <span class="font-medium">Overpayment / Credit Due</span>
                         <span class="font-bold">₹{{ number_format($overpayment) }}</span>
                     </div>
                     @endif
                     <div class="flex justify-between text-lg font-black border-t-2 border-gray-800 pt-2">
                         <span>Balance Due</span>
-                        <span class="{{ $displayBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($displayBalance) }}</span>
+                        <span class="{{ $displayBalance > 0 ? 'text-red-500' : '' }}" style="{{ $displayBalance <= 0 ? 'color: #c9a96e;' : '' }}">₹{{ number_format($displayBalance) }}</span>
                     </div>
                 </div>
             </div>
             @if($invoice->booking->special_requests)
             <div class="mt-6 pt-5 border-t border-gray-100">
-                <div class="bg-amber-50 border border-amber-100 rounded-xl px-5 py-4">
-                    <p class="text-xs font-bold text-amber-700 uppercase mb-1"><i class="fas fa-star mr-1"></i>Special Requests</p>
-                    <p class="text-sm text-amber-700">{{ $invoice->booking->special_requests }}</p>
+                <div class="rounded-xl px-5 py-4" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15);">
+                    <p class="text-xs font-bold uppercase mb-1" style="color: #b08d56;"><i class="fas fa-star mr-1"></i>Special Requests</p>
+                    <p class="text-sm" style="color: #c9a96e;">{{ $invoice->booking->special_requests }}</p>
                 </div>
             </div>
             @endif
             @if($invoice->booking->checkin_notes || $invoice->booking->checkout_notes)
             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 @if($invoice->booking->checkin_notes)
-                <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
-                    <p class="text-xs font-bold text-blue-600 uppercase mb-1"><i class="fas fa-sign-in-alt mr-1"></i>Check-In Notes</p>
-                    <p class="text-sm text-blue-700">{{ $invoice->booking->checkin_notes }}</p>
+                <div class="rounded-xl px-4 py-3" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15);">
+                    <p class="text-xs font-bold uppercase mb-1" style="color: #b08d56;"><i class="fas fa-sign-in-alt mr-1"></i>Check-In Notes</p>
+                    <p class="text-sm" style="color: #c9a96e;">{{ $invoice->booking->checkin_notes }}</p>
                 </div>
                 @endif
                 @if($invoice->booking->checkout_notes)
@@ -233,11 +233,11 @@
             @endif
             <div class="mt-8 pt-6 border-t border-gray-100 text-center">
                 @php $displayStatus = $displayBalance <= 0 ? 'paid' : ($invoice->paid_amount > 0 ? 'partial' : 'unpaid'); @endphp
-                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold {{ $displayStatus == 'paid' ? 'bg-emerald-100 text-emerald-700' : ($displayStatus == 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
+                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold {{ $displayStatus == 'paid' ? '' : ($displayStatus == 'partial' ? '' : 'bg-red-100 text-red-700') }}" style="{{ $displayStatus == 'paid' ? 'background: rgba(201,169,110,.15); color: #b08d56;' : ($displayStatus == 'partial' ? 'background: rgba(201,169,110,.15); color: #b08d56;' : '') }}">
                     {{ strtoupper($displayStatus) }}
                 </span>
                 @if($overpayment > 0)
-                <p class="text-xs text-violet-500 mt-2">Guest has a credit of ₹{{ number_format($overpayment) }} — please process a refund.</p>
+                <p class="text-xs mt-2" style="color: #b08d56;">Guest has a credit of ₹{{ number_format($overpayment) }} — please process a refund.</p>
                 @endif
             </div>
         </div>
@@ -274,10 +274,16 @@
                     <div class="flex-shrink-0 mt-0.5">
                         @php
                             $actionColor = match(strtolower($log->action)) {
-                                'created'  => 'bg-emerald-100 text-emerald-600',
-                                'updated'  => 'bg-blue-100 text-blue-600',
+                                'created'  => '',
+                                'updated'  => '',
                                 'deleted'  => 'bg-red-100 text-red-600',
                                 default    => 'bg-gray-100 text-gray-500',
+                            };
+                            $actionStyle = match(strtolower($log->action)) {
+                                'created'  => 'background: rgba(201,169,110,.1); color: #b08d56;',
+                                'updated'  => 'background: rgba(122,138,154,.1); color: #7a8a9a;',
+                                'deleted'  => '',
+                                default    => '',
                             };
                             $actionIcon = match(strtolower($log->action)) {
                                 'created'  => 'fa-plus',
@@ -286,7 +292,7 @@
                                 default    => 'fa-circle',
                             };
                         @endphp
-                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs {{ $actionColor }}">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs {{ $actionColor }}" style="{{ $actionStyle }}">
                             <i class="fas {{ $actionIcon }}"></i>
                         </span>
                     </div>
@@ -296,7 +302,7 @@
                             @if($log->user_role)
                             <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">{{ $log->user_role }}</span>
                             @endif
-                            <span class="text-xs font-semibold uppercase tracking-wide {{ $actionColor }} px-2 py-0.5 rounded-full">{{ $log->action }}</span>
+                            <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full {{ $actionColor }}" style="{{ $actionStyle }}">{{ $log->action }}</span>
                         </div>
                         <p class="text-sm text-gray-600 leading-relaxed">{{ $log->description }}</p>
                     </div>
@@ -396,19 +402,19 @@ document.addEventListener('DOMContentLoaded', function() {
 {{-- removed: payment modals moved to checkout and payments/create --}}
 <div id="upiQrModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-6 py-4 flex items-center justify-between">
+        <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1a2332, #2a3545);">
             <div class="flex items-center gap-3">
-                <i class="fas fa-qrcode text-white text-xl"></i>
+                <i class="fas fa-qrcode text-xl" style="color: #c9a96e;"></i>
                 <div>
                     <h3 class="font-bold text-white">UPI Payment</h3>
-                    <p class="text-violet-200 text-xs">Scan to pay instantly</p>
+                    <p class="text-xs" style="color: rgba(201,169,110,.7);">Scan to pay instantly</p>
                 </div>
             </div>
             <button onclick="closeUpiModal()" class="text-white/70 hover:text-white transition-colors"><i class="fas fa-times text-lg"></i></button>
         </div>
         <div class="p-6 text-center" id="upiQrBody">
             <div class="flex items-center justify-center h-40">
-                <div class="animate-spin rounded-full h-10 w-10 border-2 border-violet-500 border-t-transparent"></div>
+                <div class="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent" style="border-color: #c9a96e;"></div>
             </div>
         </div>
     </div>
@@ -417,12 +423,12 @@ document.addEventListener('DOMContentLoaded', function() {
 {{-- Razorpay Link Modal --}}
 <div id="rzpModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-500 to-cyan-600 px-6 py-4 flex items-center justify-between">
+        <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1a2332, #2a3545);">
             <div class="flex items-center gap-3">
-                <i class="fas fa-link text-white text-xl"></i>
+                <i class="fas fa-link text-xl" style="color: #c9a96e;"></i>
                 <div>
                     <h3 class="font-bold text-white">Razorpay Payment Link</h3>
-                    <p class="text-blue-200 text-xs">Share link with guest for online payment</p>
+                    <p class="text-xs" style="color: rgba(201,169,110,.7);">Share link with guest for online payment</p>
                 </div>
             </div>
             <button onclick="closeRzpModal()" class="text-white/70 hover:text-white transition-colors"><i class="fas fa-times text-lg"></i></button>
@@ -443,7 +449,7 @@ function showUpiQr(invoiceId) {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     }).then(r => r.json()).then(data => {
         if (data.error) {
-            document.getElementById('upiQrBody').innerHTML = '<div class="text-center py-8"><p class="text-red-500 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>' + data.error + '</p><p class="text-gray-400 text-sm mt-2">Go to <a href="/payment-links/config" class="underline text-violet-500">Payment Links Config</a> to set up UPI.</p></div>';
+            document.getElementById('upiQrBody').innerHTML = '<div class="text-center py-8"><p class="text-red-500 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>' + data.error + '</p><p class="text-gray-400 text-sm mt-2">Go to <a href="/payment-links/config" class="underline" style="color: #c9a96e;">Payment Links Config</a> to set up UPI.</p></div>';
             return;
         }
         document.getElementById('upiQrBody').innerHTML =
@@ -478,7 +484,7 @@ function createRazorpayLink(invoiceId) {
         }
     }).then(r => r.json()).then(data => {
         if (data.error) {
-            document.getElementById('rzpModalBody').innerHTML = '<div class="text-center py-6"><p class="text-red-500 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>' + data.error + '</p><p class="text-gray-400 text-sm mt-2">Go to <a href="/payment-links/config" class="underline text-blue-500">Payment Links Config</a> to set up Razorpay.</p></div>';
+            document.getElementById('rzpModalBody').innerHTML = '<div class="text-center py-6"><p class="text-red-500 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>' + data.error + '</p><p class="text-gray-400 text-sm mt-2">Go to <a href="/payment-links/config" class="underline" style="color: #c9a96e;">Payment Links Config</a> to set up Razorpay.</p></div>';
             return;
         }
         document.getElementById('rzpBtnText').textContent = 'Razorpay Link';
@@ -492,12 +498,12 @@ function showRzpLink(url) {
     document.getElementById('rzpModal').classList.remove('hidden');
     document.getElementById('rzpModalBody').innerHTML =
         '<div class="space-y-4">' +
-        '<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center"><i class="fas fa-check-circle text-emerald-500 text-2xl mb-2"></i><p class="font-bold text-emerald-700">Payment Link Created!</p></div>' +
+        '<div class="rounded-xl p-4 text-center" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15);"><i class="fas fa-check-circle text-2xl mb-2" style="color: #c9a96e;"></i><p class="font-bold" style="color: #b08d56;">Payment Link Created!</p></div>' +
         '<div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center gap-3">' +
         '<input type="text" value="' + url + '" id="rzpLinkInput" readonly class="flex-1 bg-transparent text-sm font-mono text-gray-700 outline-none truncate">' +
-        '<button onclick="copyRzpLink()" class="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"><i class="fas fa-copy mr-1"></i>Copy</button>' +
+        '<button onclick="copyRzpLink()" class="flex-shrink-0 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors" style="background: linear-gradient(135deg, #c9a96e, #b08d56);"><i class="fas fa-copy mr-1"></i>Copy</button>' +
         '</div>' +
-        '<a href="https://wa.me/?text=' + encodeURIComponent('Pay for your booking: ' + url) + '" target="_blank" class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white w-full py-2.5 rounded-xl font-semibold text-sm transition-colors">' +
+        '<a href="https://wa.me/?text=' + encodeURIComponent('Pay for your booking: ' + url) + '" target="_blank" class="flex items-center justify-center gap-2 text-white w-full py-2.5 rounded-xl font-semibold text-sm transition-colors" style="background: linear-gradient(135deg, #1a2332, #2a3545);">' +
         '<i class="fab fa-whatsapp text-lg"></i>Share via WhatsApp</a>' +
         '<button onclick="closeRzpModal()" class="w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">Close</button>' +
         '</div>';
@@ -508,10 +514,10 @@ function copyRzpLink() {
     navigator.clipboard.writeText(input.value).then(() => {
         const btn = input.nextElementSibling;
         btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-        btn.classList.replace('bg-blue-500', 'bg-emerald-500');
+        btn.style.background = 'linear-gradient(135deg, #c9a96e, #b08d56)';
         setTimeout(() => {
             btn.innerHTML = '<i class="fas fa-copy mr-1"></i>Copy';
-            btn.classList.replace('bg-emerald-500', 'bg-blue-500');
+            btn.style.background = 'linear-gradient(135deg, #c9a96e, #b08d56)';
         }, 2000);
     });
 }

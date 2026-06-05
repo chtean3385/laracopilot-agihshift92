@@ -275,7 +275,7 @@
                     flex-wrap: wrap;
                 }
                 .db-card-title { font-weight: 800; color: #1e293b; font-size: 15px; }
-                .db-card-link  { color: #0891b2; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+                .db-card-link  { color: #c9a96e; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
 
                 /* ── Booking list item ── */
                 .booking-row {
@@ -461,7 +461,7 @@
                     <div id="agendaModal" style="background:#fff;border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.25);width:100%;max-width:740px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:agendaSlideIn .35s cubic-bezier(.34,1.56,.64,1) both;">
 
                         {{-- Header --}}
-                        <div style="padding:22px 28px 18px;background:linear-gradient(135deg,#0ea5e9,#7c3aed);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                        <div style="padding:22px 28px 18px;background:linear-gradient(135deg,#1a2332,#2a3545);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
                             <div style="display:flex;align-items:center;gap:14px;">
                                 <div style="width:46px;height:46px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
                                     <i class="fas fa-calendar-day" style="color:#fff;font-size:20px;"></i>
@@ -479,8 +479,8 @@
                         {{-- Summary Strip --}}
                         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
                             <div style="padding:14px 20px;text-align:center;border-right:1px solid #f1f5f9;">
-                                <div style="font-size:28px;font-weight:900;color:#0891b2;line-height:1;">{{ $todayCheckins->count() }}</div>
-                                <div style="font-size:11px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-sign-in-alt" style="color:#06b6d4;margin-right:4px;"></i>Arrivals</div>
+                                <div style="font-size:28px;font-weight:900;color:#c9a96e;line-height:1;">{{ $todayCheckins->count() }}</div>
+                                <div style="font-size:11px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-sign-in-alt" style="color:#c9a96e;margin-right:4px;"></i>Arrivals</div>
                             </div>
                             <div style="padding:14px 20px;text-align:center;border-right:1px solid #f1f5f9;">
                                 <div style="font-size:28px;font-weight:900;color:#d97706;line-height:1;">{{ $todayCheckouts->count() }}</div>
@@ -498,22 +498,22 @@
                             {{-- Arrivals --}}
                             @if($todayCheckins->count() > 0)
                             <div>
-                                <div style="font-size:12px;font-weight:800;color:#0891b2;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                                <div style="font-size:12px;font-weight:800;color:#c9a96e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
                                     <i class="fas fa-sign-in-alt"></i> Today's Arrivals
-                                    <span style="background:#e0f2fe;color:#0891b2;border-radius:20px;padding:1px 9px;font-size:11px;">{{ $todayCheckins->count() }}</span>
+                                    <span style="background:rgba(201,169,110,.12);color:#c9a96e;border-radius:20px;padding:1px 9px;font-size:11px;">{{ $todayCheckins->count() }}</span>
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:8px;">
                                     @foreach($todayCheckins as $bk)
-                                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border-radius:12px;border-left:3px solid #06b6d4;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-radius:12px;border-left:3px solid #c9a96e;">
                                         <div style="display:flex;align-items:center;gap:10px;">
-                                            <div style="width:34px;height:34px;background:linear-gradient(135deg,#06b6d4,#0284c7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;">{{ strtoupper(substr($bk->customer?->name ?? 'G', 0, 1)) }}</div>
+                                            <div style="width:34px;height:34px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0;">{{ strtoupper(substr($bk->customer?->name ?? 'G', 0, 1)) }}</div>
                                             <div>
                                                 <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $bk->customer?->name ?? '(Deleted Guest)' }}</div>
                                                 <div style="font-size:12px;color:#64748b;">{{ $bk->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($bk->room?->room_number ?? '—')) }} &bull; {{ $bk->nights }} night(s)</div>
                                             </div>
                                         </div>
                                         @canDo('checkin.process')
-                                        <a href="{{ route('checkin.show', $bk->id) }}" onclick="closeAgenda()" style="background:linear-gradient(135deg,#06b6d4,#0284c7);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(6,182,212,.3);white-space:nowrap;">Check In</a>
+                                        <a href="{{ route('checkin.show', $bk->id) }}" onclick="closeAgenda()" style="background:linear-gradient(135deg,#c9a96e,#b08d56);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(201,169,110,.3);white-space:nowrap;">Check In</a>
                                         @endCanDo
                                     </div>
                                     @endforeach
@@ -594,13 +594,13 @@
                     $dashRole = session('crm_user_role');
                     $canSetDefault = in_array($dashRole, ['Super Admin', 'Admin']);
                     $widgetMeta = [
-                        'kpi-row-1'          => ['label' => 'KPI Stats — All 8 cards',           'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#06b6d4,#3b82f6)'],
-                        'shortcuts-actions-pair' => ['label' => 'Shortcuts + Quick Actions', 'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#f59e0b,#f97316)'],
-                        'revenue-trend'      => ['label' => 'Revenue Trend & Occupancy chart', 'icon' => 'fa-chart-area', 'bg' => 'linear-gradient(135deg,#10b981,#0ea5e9)'],
-                        'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#7c3aed,#6d28d9)'],
-                        'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#06b6d4,#0891b2)'],
-                        'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#f43f5e,#be185d)'],
-                        'recent-room-pair'   => ['label' => 'Recent Bookings + Room Availability', 'icon' => 'fa-th-large', 'bg' => 'linear-gradient(135deg,#10b981,#0284c7)'],
+                        'kpi-row-1'          => ['label' => 'KPI Stats — All 8 cards',           'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
+                        'shortcuts-actions-pair' => ['label' => 'Shortcuts + Quick Actions', 'icon' => 'fa-th-large',      'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
+                        'revenue-trend'      => ['label' => 'Revenue Trend & Occupancy chart', 'icon' => 'fa-chart-area', 'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
+                        'slot-availability'  => ['label' => 'Slot Availability',               'icon' => 'fa-clock',         'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
+                        'booking-calendar'   => ['label' => 'Booking Calendar',               'icon' => 'fa-calendar-alt',  'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
+                        'arrivals-departures'=> ['label' => 'Today\'s Arrivals & Departures', 'icon' => 'fa-exchange-alt',  'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
+                        'recent-room-pair'   => ['label' => 'Recent Bookings + Room Availability', 'icon' => 'fa-th-large', 'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'],
                     ];
                     $orderedWidgets = collect($dashWidgetOrder)->filter(fn($k) => array_key_exists($k, $widgetMeta))->values()->all();
                     foreach (array_keys($widgetMeta) as $k) {
@@ -608,7 +608,7 @@
                     }
                 @endphp
 
-                {{-- ⚙ Customize bar — hidden for restaurant-only roles (only 2 widgets) --}}
+                {{-- HIDE CUSTOMIZE DASHBOARD (temporary)
                 @if(!$isRestaurantOnly)
                 <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:4px;flex-wrap:wrap;">
                     @if($dashIsPersonal)
@@ -617,7 +617,7 @@
                     </span>
                     @elseif($dashHotelDefault)
                     <span style="font-size:11px;color:#94a3b8;font-weight:600;background:#f8fafc;border-radius:8px;padding:4px 10px;border:1px solid #f1f5f9;">
-                        <i class="fas fa-hotel" style="margin-right:4px;color:#06b6d4;"></i>Hotel default layout
+                        <i class="fas fa-hotel" style="margin-right:4px;color:#c9a96e;"></i>Hotel default layout
                     </span>
                     @endif
                     <div id="dbSaveBadge" class="db-cp-save-badge"><i class="fas fa-check-circle"></i> Saved</div>
@@ -680,6 +680,7 @@
                     </div>
                 </div>
                 @endif{{-- !isRestaurantOnly — customize bar & panel --}}
+                --}}
 
                 {{-- ── OTA Email Alerts — OUTSIDE dbMain so JS reorder can't push them down ── --}}
                 @php
@@ -706,7 +707,7 @@
                     $qrDashPending = \App\Models\GuestCheckinRequest::where('hotel_id', (int)(session('crm_hotel_id') ?? session('crm_sa_hotel_filter')))->where('status', 'pending')->count();
                 @endphp
                 @if($qrDashPending > 0)
-                <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#1e3a5f,#1d4ed8,#2563eb);box-shadow:0 8px 32px rgba(37,99,235,.4);animation:pulse-dirty 2.5s infinite;margin-bottom:4px;">
+                <div style="position:relative;overflow:hidden;border-radius:20px;background:linear-gradient(135deg,#1a2332,#2a3545);box-shadow:0 8px 32px rgba(26,35,50,.4);animation:pulse-dirty 2.5s infinite;margin-bottom:4px;">
                     <div style="position:absolute;right:-40px;top:-40px;width:170px;height:170px;background:rgba(255,255,255,.06);border-radius:50%;pointer-events:none;"></div>
                     <div style="position:absolute;left:70px;bottom:-50px;width:130px;height:130px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none;"></div>
                     <a href="{{ route('qr-arrivals.index') }}" style="display:flex;align-items:center;gap:20px;padding:22px 28px;text-decoration:none;flex-wrap:wrap;">
@@ -723,7 +724,7 @@
                             </div>
                             <div style="font-size:14px;color:rgba(255,255,255,.85);">Guest{{ $qrDashPending === 1 ? '' : 's' }} submitted details via QR scan — click to review &amp; assign a room.</div>
                         </div>
-                        <div style="flex-shrink:0;background:#fff;color:#1d4ed8;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">Review <i class="fas fa-arrow-right"></i></div>
+                        <div style="flex-shrink:0;background:#c9a96e;color:#fff;font-size:14px;font-weight:800;padding:12px 24px;border-radius:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);">Review <i class="fas fa-arrow-right"></i></div>
                     </a>
                 </div>
                 @endif
@@ -864,7 +865,7 @@
                             $dashboardShortcuts[] = ['route' => route('food-billing.index'), 'icon' => 'fa-utensils', 'title' => 'Food Billing', 'sub' => 'Food charges', 'bg' => 'linear-gradient(135deg,#f97316,#ea580c)'];
                         }
                         if (\App\Models\Module::isEnabled('restaurant') && \App\Services\PermissionService::check('restaurant.view')) {
-                            $dashboardShortcuts[] = ['route' => route('restaurant.index'), 'icon' => 'fa-concierge-bell', 'title' => 'Restaurant', 'sub' => 'Table orders', 'bg' => 'linear-gradient(135deg,#f43f5e,#e11d48)'];
+                            $dashboardShortcuts[] = ['route' => route('restaurant.index'), 'icon' => 'fa-concierge-bell', 'title' => 'Restaurant', 'sub' => 'Table orders', 'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'];
                         }
                         if (!$isRestaurantOnly) {
                             if (\App\Models\Module::isEnabled('payment_links')) {
@@ -881,7 +882,7 @@
                                 $dashboardShortcuts[] = ['route' => route('ota-bookings.index'), 'icon' => 'fa-inbox', 'title' => 'OTA Bookings', 'sub' => $otaShortcutSub, 'bg' => 'linear-gradient(135deg,#f59e0b,#d97706)', 'badge' => ($otaPendingCount ?? 0)];
                             }
                             if (\App\Models\Module::isEnabled('email-parser')) {
-                                $dashboardShortcuts[] = ['route' => route('email-parser.config'), 'icon' => 'fa-envelope-open-text', 'title' => 'Email Parser', 'sub' => 'OTA email import', 'bg' => 'linear-gradient(135deg,#0891b2,#0e7490)'];
+                                $dashboardShortcuts[] = ['route' => route('email-parser.config'), 'icon' => 'fa-envelope-open-text', 'title' => 'Email Parser', 'sub' => 'OTA email import', 'bg' => 'linear-gradient(135deg,#c9a96e,#b08d56)'];
                             }
                         }
                     @endphp
@@ -904,7 +905,7 @@
                     @if($isRestaurantOnly)
                     {{-- Restaurant-only KPI row --}}
                     <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
-                        <a href="{{ route('restaurant.orders.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">
+                        <a href="{{ route('restaurant.orders.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-concierge-bell kpi-icon"></i>
                             <div class="kpi-label">Active Orders</div>
@@ -922,21 +923,21 @@
                             <div class="kpi-sub">Needs approval</div>
                         </a>
                         @endif
-                        <a href="{{ route('restaurant.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#10b981,#059669);">
+                        <a href="{{ route('restaurant.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-chair kpi-icon"></i>
                             <div class="kpi-label">Tables</div>
                             <div class="kpi-num" data-count="{{ $restTablesOccupied }}">{{ $restTablesOccupied }}</div>
                             <div class="kpi-sub">{{ $restTablesTotal }} total</div>
                         </a>
-                        <a href="{{ route('restaurant.bills.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+                        <a href="{{ route('restaurant.bills.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#c9a96e,#b08d56);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-rupee-sign kpi-icon"></i>
                             <div class="kpi-label">Food Revenue</div>
                             <div class="kpi-num" data-count="{{ $restTodayRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($restTodayRevenue) }}</div>
                             <div class="kpi-sub">Today</div>
                         </a>
-                        <a href="{{ route('restaurant.menu.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
+                        <a href="{{ route('restaurant.menu.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-utensils kpi-icon"></i>
                             <div class="kpi-label">Menu Items</div>
@@ -947,28 +948,28 @@
                     @else
                     {{-- Standard hotel-wide KPI row --}}
                     <div class="kpi-grid kpi-grid-8" style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;">
-                        <a href="{{ route('checkin.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);">
+                        <a href="{{ route('checkin.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-sign-in-alt kpi-icon"></i>
                             <div class="kpi-label">Check-Ins</div>
                             <div class="kpi-num" data-count="{{ $todayCheckins->count() }}">{{ $todayCheckins->count() }}</div>
                             <div class="kpi-sub">Today</div>
                         </a>
-                        <a href="{{ route('checkout.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
+                        <a href="{{ route('checkout.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-sign-out-alt kpi-icon"></i>
                             <div class="kpi-label">Check-Outs</div>
                             <div class="kpi-num" data-count="{{ $todayCheckouts->count() }}">{{ $todayCheckouts->count() }}</div>
                             <div class="kpi-sub">Today</div>
                         </a>
-                        <a href="{{ route('rooms.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#10b981,#059669);">
+                        <a href="{{ route('rooms.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-door-open kpi-icon"></i>
                             <div class="kpi-label">Available</div>
                             <div class="kpi-num" data-count="{{ $availableRooms }}">{{ $availableRooms }}</div>
                             <div class="kpi-sub">of {{ $totalRooms }} rooms</div>
                         </a>
-                        <a href="{{ route('rooms.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#f43f5e,#be185d);">
+                        <a href="{{ route('rooms.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#c9a96e,#b08d56);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-bed kpi-icon"></i>
                             <div class="kpi-label">Occupied</div>
@@ -987,14 +988,14 @@
                         </a>
                         @endif
                         @canDo('reports.view')
-                        <a href="{{ route('reports.revenue') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#7c3aed,#a855f7);">
+                        <a href="{{ route('reports.revenue') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-rupee-sign kpi-icon"></i>
                             <div class="kpi-label">Today Revenue</div>
                             <div class="kpi-num" data-count="{{ $todayRevenue }}" data-prefix="₹" data-format="currency">₹{{ number_format($todayRevenue) }}</div>
                             <div class="kpi-sub">Collected</div>
                         </a>
-                        <a href="{{ route('reports.revenue') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
+                        <a href="{{ route('reports.revenue') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-chart-line kpi-icon"></i>
                             <div class="kpi-label">Month Revenue</div>
@@ -1002,14 +1003,14 @@
                             <div class="kpi-sub">{{ now()->format('M Y') }}</div>
                         </a>
                         @endCanDo
-                        <a href="{{ route('bookings.index', ['payment_status' => 'pending']) }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#d97706,#b45309);">
+                        <a href="{{ route('bookings.index', ['payment_status' => 'pending']) }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#c9a96e,#b08d56);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-exclamation-triangle kpi-icon"></i>
                             <div class="kpi-label">Pending Pay</div>
                             <div class="kpi-num" data-count="{{ $pendingPayments }}">{{ $pendingPayments }}</div>
                             <div class="kpi-sub">Needs attention</div>
                         </a>
-                        <a href="{{ route('customers.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#0891b2,#0e7490);">
+                        <a href="{{ route('customers.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#1a2332,#2a3545);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-users kpi-icon"></i>
                             <div class="kpi-label">Total Guests</div>
@@ -1017,7 +1018,7 @@
                             <div class="kpi-sub">+{{ $newCustomersMonth }} this month</div>
                         </a>
                         @if(\App\Models\Module::isEnabled('booking-widget') && ($websitePendingCount ?? 0) > 0)
-                        <a href="{{ route('bookings.index') }}?status=website_pending" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#ec4899,#be185d);">
+                        <a href="{{ route('bookings.index') }}?status=website_pending" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#c9a96e,#b08d56);">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <i class="fas fa-globe kpi-icon"></i>
                             <div class="kpi-label">Web Bookings</div>
@@ -1026,7 +1027,7 @@
                         </a>
                         @endif
                         @if(\App\Models\Module::isEnabled('inventory') && ($lowStockCount ?? 0) > 0)
-                        <a href="{{ route('inventory.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#dc2626,#b91c1c);position:relative;">
+                        <a href="{{ route('inventory.index') }}" class="kpi-card kpi-card-sm" style="background:linear-gradient(135deg,#c9a96e,#b08d56);position:relative;">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#fff;border-radius:50%;border:2px solid #dc2626;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#dc2626;z-index:2;line-height:1;">{{ $lowStockCount }}</span>
                             <i class="fas fa-exclamation-triangle kpi-icon"></i>
@@ -1037,7 +1038,7 @@
                         @endif
                         @if(\App\Models\Module::isEnabled('ota_whatsapp_sync'))
                         <a href="{{ route('ota-bookings.index') }}" class="kpi-card kpi-card-sm"
-                           style="background:linear-gradient(135deg,#f59e0b,#d97706);position:relative;{{ ($otaPendingCount ?? 0) > 0 ? 'animation:pulse-dirty 1.8s infinite;' : '' }}">
+                           style="background:linear-gradient(135deg,#1a2332,#2a3545);position:relative;{{ ($otaPendingCount ?? 0) > 0 ? 'animation:pulse-dirty 1.8s infinite;' : '' }}">
                             <div class="kpi-shine"></div><div class="kpi-shine2"></div>
                             @if(($otaPendingCount ?? 0) > 0)
                             <span style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;background:#dc2626;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;animation:dirty-badge-pop 1s ease-in-out infinite;z-index:2;line-height:1;">{{ $otaPendingCount }}</span>
@@ -1058,22 +1059,22 @@
                     <div class="db-card" style="overflow:hidden;padding:0;">
 
                         {{-- Header --}}
-                        <div style="padding:14px 18px;background:linear-gradient(135deg,#fff1f2,#fce7f3);border-bottom:1px solid #fce7f3;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div style="padding:14px 18px;background:linear-gradient(135deg,#1a2332,#2a3545);border-bottom:1px solid rgba(201,169,110,.2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:10px;">
-                                <div style="width:36px;height:36px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(244,63,94,.3);">
+                                <div style="width:36px;height:36px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(201,169,110,.3);">
                                     <i class="fas fa-concierge-bell" style="color:#fff;font-size:14px;"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:15px;">Quick Order</div>
-                                    <div style="font-size:11px;color:#be185d;" id="qtmUpdatedAt">Tap a table to start an order</div>
+                                    <div style="font-weight:800;color:#fff;font-size:15px;">Quick Order</div>
+                                    <div style="font-size:11px;color:#c9a96e;" id="qtmUpdatedAt">Tap a table to start an order</div>
                                 </div>
                             </div>
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <span id="qtmPendingQrBadge" style="display:none;background:#dc2626;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;animation:pulse-dirty 1.8s infinite;">
                                     <i class="fas fa-qrcode"></i> <span id="qtmPendingQrCount">0</span> QR pending
                                 </span>
-                                <span id="qtmSpinner" style="display:none;width:18px;height:18px;border:2px solid #fecdd3;border-top-color:#f43f5e;border-radius:50%;animation:spin 0.7s linear infinite;"></span>
-                                <a href="{{ route('restaurant.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f43f5e;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(244,63,94,.3);">
+                                <span id="qtmSpinner" style="display:none;width:18px;height:18px;border:2px solid rgba(201,169,110,.3);border-top-color:#c9a96e;border-radius:50%;animation:spin 0.7s linear infinite;"></span>
+                                <a href="{{ route('restaurant.index') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#c9a96e;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;box-shadow:0 2px 8px rgba(201,169,110,.3);">
                                     Full View <i class="fas fa-arrow-right" style="font-size:10px;"></i>
                                 </a>
                             </div>
@@ -1113,7 +1114,7 @@
                             <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
                                 <i class="fas fa-chair" style="font-size:2.5rem;margin-bottom:12px;display:block;"></i>
                                 <p style="font-size:14px;font-weight:600;">No tables set up yet</p>
-                                <a href="{{ route('restaurant.index') }}" style="display:inline-block;margin-top:10px;padding:8px 18px;background:#f43f5e;color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;">Go to Restaurant →</a>
+                                <a href="{{ route('restaurant.index') }}" style="display:inline-block;margin-top:10px;padding:8px 18px;background:#c9a96e;color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;">Go to Restaurant →</a>
                             </div>
                         @else
                         <div id="qtmGrid" class="qtm-grid">
@@ -1314,14 +1315,14 @@
                     {{-- ── Revenue Trend & Occupancy ────────────────────────────────── --}}
                     <div data-widget="revenue-trend" class="db-widget-wrap">
                     <div class="db-card" style="overflow:hidden;padding:0;">
-                        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#ecfdf5,#e0f2fe);flex-wrap:wrap;">
+                        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#1a2332,#2a3545);flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:12px;">
-                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#10b981,#0ea5e9);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,.3);">
+                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(201,169,110,.3);">
                                     <i class="fas fa-chart-area" style="color:#fff;font-size:14px;"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:15px;">Revenue & Occupancy Trend</div>
-                                    <div style="font-size:11px;color:#0ea5e9;" id="rtRangeLabel">Last 7 days</div>
+                                    <div style="font-weight:800;color:#fff;font-size:15px;">Revenue & Occupancy Trend</div>
+                                    <div style="font-size:11px;color:#c9a96e;" id="rtRangeLabel">Last 7 days</div>
                                 </div>
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -1332,20 +1333,20 @@
                             </div>
                         </div>
 
-                        <div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;border-bottom:1px solid #f1f5f9;background:#fafbfc;">
+                        <div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;border-bottom:1px solid #f1f5f9;background:#f8fafc;">
                             <div>
                                 <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Total</div>
-                                <div id="rtTotal" style="font-size:18px;font-weight:900;color:#10b981;margin-top:2px;">₹0</div>
+                                <div id="rtTotal" style="font-size:18px;font-weight:900;color:#c9a96e;margin-top:2px;">₹0</div>
                                 <div id="rtTotalDelta" class="rt-delta" style="font-size:11px;font-weight:700;margin-top:3px;color:#94a3b8;">—</div>
                             </div>
                             <div>
                                 <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Avg / Period</div>
-                                <div id="rtAvg" style="font-size:18px;font-weight:900;color:#0ea5e9;margin-top:2px;">₹0</div>
+                                <div id="rtAvg" style="font-size:18px;font-weight:900;color:#b08d56;margin-top:2px;">₹0</div>
                                 <div id="rtAvgDelta" class="rt-delta" style="font-size:11px;font-weight:700;margin-top:3px;color:#94a3b8;">—</div>
                             </div>
                             <div>
                                 <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Peak</div>
-                                <div id="rtPeak" style="font-size:18px;font-weight:900;color:#7c3aed;margin-top:2px;">₹0</div>
+                                <div id="rtPeak" style="font-size:18px;font-weight:900;color:#1a2332;margin-top:2px;">₹0</div>
                                 <div id="rtPeakDelta" class="rt-delta" style="font-size:11px;font-weight:700;margin-top:3px;color:#94a3b8;">—</div>
                             </div>
                         </div>
@@ -1412,7 +1413,7 @@
                                 series: [{ name: 'Occupancy %', data: data }],
                                 xaxis: { categories: labels, labels: { show: false }, axisBorder:{show:false}, axisTicks:{show:false} },
                                 yaxis: { max: 100, labels: { formatter: function(v){ return Math.round(v) + '%'; }, style:{ fontSize:'10px', colors:'#94a3b8' } } },
-                                colors: ['#0ea5e9'],
+                                colors: ['#c9a96e'],
                                 plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
                                 dataLabels: { enabled: false },
                                 grid: { show: false, padding: { left: 0, right: 0, top: 0, bottom: 0 } },
@@ -1526,64 +1527,64 @@
                             <div class="db-card-title" style="margin-bottom:14px;">Quick Actions</div>
                             <div style="display:flex;flex-direction:column;gap:10px;">
                                 @canDo('bookings.create')
-                                <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);" onmouseenter="this.style.background='linear-gradient(135deg,#dbeafe,#bfdbfe)'" onmouseleave="this.style.background='linear-gradient(135deg,#eff6ff,#dbeafe)'">
-                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(59,130,246,.3);flex-shrink:0;">
+                                <a href="{{ route('bookings.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#1a2332,#2a3545);" onmouseenter="this.style.background='linear-gradient(135deg,#2a3545,#3a4555)'" onmouseleave="this.style.background='linear-gradient(135deg,#1a2332,#2a3545)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(201,169,110,.3);flex-shrink:0;">
                                         <i class="fas fa-plus" style="color:#fff;font-size:14px;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight:700;color:#1e40af;font-size:14px;">New Booking</div>
-                                        <div style="font-size:12px;color:#93c5fd;">Create reservation</div>
+                                        <div style="font-weight:700;color:#c9a96e;font-size:14px;">New Booking</div>
+                                        <div style="font-size:12px;color:#7a8a9a;">Create reservation</div>
                                     </div>
-                                    <i class="fas fa-chevron-right" style="color:#93c5fd;font-size:11px;margin-left:auto;"></i>
+                                    <i class="fas fa-chevron-right" style="color:#c9a96e;font-size:11px;margin-left:auto;"></i>
                                 </a>
                                 @endCanDo
                                 @canDo('checkin.process')
-                                <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);" onmouseenter="this.style.background='linear-gradient(135deg,#dcfce7,#bbf7d0)'" onmouseleave="this.style.background='linear-gradient(135deg,#f0fdf4,#dcfce7)'">
-                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(16,185,129,.3);flex-shrink:0;">
+                                <a href="{{ route('checkin.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#1a2332,#2a3545);" onmouseenter="this.style.background='linear-gradient(135deg,#2a3545,#3a4555)'" onmouseleave="this.style.background='linear-gradient(135deg,#1a2332,#2a3545)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(201,169,110,.3);flex-shrink:0;">
                                         <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight:700;color:#065f46;font-size:14px;">Process Check-In</div>
-                                        <div style="font-size:12px;color:#6ee7b7;">{{ $todayCheckins->count() }} pending</div>
+                                        <div style="font-weight:700;color:#c9a96e;font-size:14px;">Process Check-In</div>
+                                        <div style="font-size:12px;color:#7a8a9a;">{{ $todayCheckins->count() }} pending</div>
                                     </div>
-                                    <i class="fas fa-chevron-right" style="color:#6ee7b7;font-size:11px;margin-left:auto;"></i>
+                                    <i class="fas fa-chevron-right" style="color:#c9a96e;font-size:11px;margin-left:auto;"></i>
                                 </a>
                                 @endCanDo
                                 @canDo('checkout.process')
-                                <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);" onmouseenter="this.style.background='linear-gradient(135deg,#fef3c7,#fde68a)'" onmouseleave="this.style.background='linear-gradient(135deg,#fffbeb,#fef3c7)'">
-                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(245,158,11,.3);flex-shrink:0;">
+                                <a href="{{ route('checkout.index') }}" class="qa-btn" style="background:linear-gradient(135deg,#1a2332,#2a3545);" onmouseenter="this.style.background='linear-gradient(135deg,#2a3545,#3a4555)'" onmouseleave="this.style.background='linear-gradient(135deg,#1a2332,#2a3545)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(201,169,110,.3);flex-shrink:0;">
                                         <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight:700;color:#92400e;font-size:14px;">Process Check-Out</div>
-                                        <div style="font-size:12px;color:#fcd34d;">{{ $todayCheckouts->count() }} pending</div>
+                                        <div style="font-weight:700;color:#c9a96e;font-size:14px;">Process Check-Out</div>
+                                        <div style="font-size:12px;color:#7a8a9a;">{{ $todayCheckouts->count() }} pending</div>
                                     </div>
-                                    <i class="fas fa-chevron-right" style="color:#fcd34d;font-size:11px;margin-left:auto;"></i>
+                                    <i class="fas fa-chevron-right" style="color:#c9a96e;font-size:11px;margin-left:auto;"></i>
                                 </a>
                                 @endCanDo
                                 @canDo('guests.create')
-                                <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);" onmouseenter="this.style.background='linear-gradient(135deg,#ede9fe,#ddd6fe)'" onmouseleave="this.style.background='linear-gradient(135deg,#faf5ff,#ede9fe)'">
-                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(139,92,246,.3);flex-shrink:0;">
+                                <a href="{{ route('customers.create') }}" class="qa-btn" style="background:linear-gradient(135deg,#1a2332,#2a3545);" onmouseenter="this.style.background='linear-gradient(135deg,#2a3545,#3a4555)'" onmouseleave="this.style.background='linear-gradient(135deg,#1a2332,#2a3545)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(201,169,110,.3);flex-shrink:0;">
                                         <i class="fas fa-user-plus" style="color:#fff;font-size:14px;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight:700;color:#4c1d95;font-size:14px;">Add Guest</div>
-                                        <div style="font-size:12px;color:#c4b5fd;">New guest profile</div>
+                                        <div style="font-weight:700;color:#c9a96e;font-size:14px;">Add Guest</div>
+                                        <div style="font-size:12px;color:#7a8a9a;">New guest profile</div>
                                     </div>
-                                    <i class="fas fa-chevron-right" style="color:#c4b5fd;font-size:11px;margin-left:auto;"></i>
+                                    <i class="fas fa-chevron-right" style="color:#c9a96e;font-size:11px;margin-left:auto;"></i>
                                 </a>
                                 @endCanDo
                                 @if(\App\Models\Module::isEnabled('extra-billing'))
                                 @canDo('bookings.view')
-                                <a href="{{ route('bookings.index', ['status' => 'checked_in']) }}" class="qa-btn" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);" onmouseenter="this.style.background='linear-gradient(135deg,#ffe4e6,#fecdd3)'" onmouseleave="this.style.background='linear-gradient(135deg,#fff1f2,#ffe4e6)'">
-                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(244,63,94,.3);flex-shrink:0;">
+                                <a href="{{ route('bookings.index', ['status' => 'checked_in']) }}" class="qa-btn" style="background:linear-gradient(135deg,#1a2332,#2a3545);" onmouseenter="this.style.background='linear-gradient(135deg,#2a3545,#3a4555)'" onmouseleave="this.style.background='linear-gradient(135deg,#1a2332,#2a3545)'">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(201,169,110,.3);flex-shrink:0;">
                                         <i class="fas fa-receipt" style="color:#fff;font-size:14px;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight:700;color:#9f1239;font-size:14px;">Post Room Charge</div>
-                                        <div style="font-size:12px;color:#fda4af;">In-house guests</div>
+                                        <div style="font-weight:700;color:#c9a96e;font-size:14px;">Post Room Charge</div>
+                                        <div style="font-size:12px;color:#7a8a9a;">In-house guests</div>
                                     </div>
-                                    <i class="fas fa-chevron-right" style="color:#fda4af;font-size:11px;margin-left:auto;"></i>
+                                    <i class="fas fa-chevron-right" style="color:#c9a96e;font-size:11px;margin-left:auto;"></i>
                                 </a>
                                 @endCanDo
                                 @endif
@@ -1602,51 +1603,51 @@
                     @if($hasSlotModule)
                     {{-- Slot Banner — above the week grid --}}
                     <a href="{{ route('reports.slot_availability') }}"
-                       style="display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#4c1d95,#6d28d9,#7c3aed);border-radius:16px;padding:18px 22px;margin-bottom:14px;text-decoration:none;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 28px rgba(109,40,217,.35);"
-                       onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 36px rgba(109,40,217,.45)'"
-                       onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(109,40,217,.35)'">
+                       style="display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#1a2332,#2a3545);border-radius:16px;padding:18px 22px;margin-bottom:14px;text-decoration:none;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 28px rgba(26,35,50,.35);"
+                       onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 14px 36px rgba(26,35,50,.45)'"
+                       onmouseleave="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(26,35,50,.35)'">
                         <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,.07);border-radius:50%;pointer-events:none;"></div>
                         <div style="position:absolute;right:40px;bottom:-30px;width:70px;height:70px;background:rgba(255,255,255,.05);border-radius:50%;pointer-events:none;"></div>
-                        <div style="width:50px;height:50px;background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,.25);">
-                            <i class="fas fa-calendar-check" style="color:#fff;font-size:20px;"></i>
+                        <div style="width:50px;height:50px;background:rgba(201,169,110,.18);backdrop-filter:blur(4px);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(201,169,110,.25);">
+                            <i class="fas fa-calendar-check" style="color:#c9a96e;font-size:20px;"></i>
                         </div>
                         <div style="flex:1;min-width:0;">
-                            <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;">Slot Availability</div>
-                            <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:3px;">Check real-time room slot status</div>
+                            <div style="font-size:16px;font-weight:800;color:#c9a96e;letter-spacing:-.2px;">Slot Availability</div>
+                            <div style="font-size:12px;color:rgba(201,169,110,.75);margin-top:3px;">Check real-time room slot status</div>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;">
-                                <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:qaSlotPulse 1.6s ease-in-out infinite;"></span>Live
+                            <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(201,169,110,.15);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:#c9a96e;">
+                                <span style="width:7px;height:7px;border-radius:50%;background:#c9a96e;display:inline-block;animation:qaSlotPulse 1.6s ease-in-out infinite;"></span>Live
                             </span>
                             <i class="fas fa-arrow-right" style="color:rgba(255,255,255,.7);font-size:13px;"></i>
                         </div>
                     </a>
                     <style>@keyframes qaSlotPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}</style>
                     <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
-                        <div style="padding:16px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#ede9fe);flex-wrap:wrap;gap:12px;">
+                        <div style="padding:16px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#1a2332,#2a3545);flex-wrap:wrap;gap:12px;">
                             <div style="display:flex;align-items:center;gap:14px;">
-                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,.3);">
+                                <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(201,169,110,.3);">
                                     <i class="fas fa-clock" style="color:#fff;font-size:16px;"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:16px;">Slot Availability — This Week</div>
-                                    <div style="font-size:12px;color:#6d28d9;">{{ $slotWeekStart->format('d M') }} – {{ $slotWeekStart->copy()->addDays(6)->format('d M Y') }}</div>
+                                    <div style="font-weight:800;color:#fff;font-size:16px;">Slot Availability — This Week</div>
+                                    <div style="font-size:12px;color:#c9a96e;">{{ $slotWeekStart->format('d M') }} – {{ $slotWeekStart->copy()->addDays(6)->format('d M Y') }}</div>
                                 </div>
                             </div>
                             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 {{-- Week navigation --}}
                                 <a href="{{ route('dashboard', array_merge(request()->query(), ['slot_week'=>$slotWeekStart->copy()->subWeek()->toDateString()])) }}"
-                                   style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #ddd6fe;color:#7c3aed;text-decoration:none;background:#fff;transition:all .15s;" onmouseenter="this.style.background='#f5f3ff'" onmouseleave="this.style.background='#fff'">
+                                   style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(201,169,110,.3);color:#c9a96e;text-decoration:none;background:transparent;transition:all .15s;" onmouseenter="this.style.background='rgba(201,169,110,.1)'" onmouseleave="this.style.background='transparent'">
                                     <i class="fas fa-chevron-left" style="font-size:11px;"></i>
                                 </a>
                                 <a href="{{ route('dashboard', array_merge(request()->except('slot_week'), [])) }}"
-                                   style="padding:0 12px;height:34px;display:flex;align-items:center;border-radius:10px;border:1px solid #ddd6fe;color:#7c3aed;font-size:13px;font-weight:600;text-decoration:none;background:#fff;transition:all .15s;" onmouseenter="this.style.background='#f5f3ff'" onmouseleave="this.style.background='#fff'">This Week</a>
+                                   style="padding:0 12px;height:34px;display:flex;align-items:center;border-radius:10px;border:1px solid rgba(201,169,110,.3);color:#c9a96e;font-size:13px;font-weight:600;text-decoration:none;background:transparent;transition:all .15s;" onmouseenter="this.style.background='rgba(201,169,110,.1)'" onmouseleave="this.style.background='transparent'">This Week</a>
                                 <a href="{{ route('dashboard', array_merge(request()->query(), ['slot_week'=>$slotWeekStart->copy()->addWeek()->toDateString()])) }}"
-                                   style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #ddd6fe;color:#7c3aed;text-decoration:none;background:#fff;transition:all .15s;" onmouseenter="this.style.background='#f5f3ff'" onmouseleave="this.style.background='#fff'">
+                                   style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(201,169,110,.3);color:#c9a96e;text-decoration:none;background:transparent;transition:all .15s;" onmouseenter="this.style.background='rgba(201,169,110,.1)'" onmouseleave="this.style.background='transparent'">
                                     <i class="fas fa-chevron-right" style="font-size:11px;"></i>
                                 </a>
                                 <a href="{{ route('reports.slot_availability') }}"
-                                   style="padding:0 14px;height:34px;display:flex;align-items:center;gap:6px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 8px rgba(124,58,237,.3);">
+                                   style="padding:0 14px;height:34px;display:flex;align-items:center;gap:6px;border-radius:10px;background:linear-gradient(135deg,#c9a96e,#b08d56);color:#fff;font-size:13px;font-weight:600;text-decoration:none;box-shadow:0 3px 8px rgba(201,169,110,.3);">
                                     <i class="fas fa-external-link-alt" style="font-size:10px;"></i> Full Report
                                 </a>
                             </div>
@@ -1657,9 +1658,9 @@
                                     <tr>
                                         <th style="text-align:left;padding:8px 12px;font-size:12px;font-weight:700;color:#64748b;white-space:nowrap;border-bottom:2px solid #f1f5f9;">Time Slot</th>
                                         @foreach($dashboardSlotAvailability as $day)
-                                        <th style="text-align:center;padding:8px 8px;font-size:12px;font-weight:700;color:{{ $day['isToday'] ? '#7c3aed' : '#64748b' }};white-space:nowrap;border-bottom:2px solid {{ $day['isToday'] ? '#a78bfa' : '#f1f5f9' }};background:{{ $day['isToday'] ? 'linear-gradient(180deg,#f5f3ff,transparent)' : 'transparent' }};">
+                                        <th style="text-align:center;padding:8px 8px;font-size:12px;font-weight:700;color:{{ $day['isToday'] ? '#c9a96e' : '#64748b' }};white-space:nowrap;border-bottom:2px solid {{ $day['isToday'] ? '#c9a96e' : '#f1f5f9' }};background:{{ $day['isToday'] ? 'linear-gradient(180deg,rgba(201,169,110,.08),transparent)' : 'transparent' }};">
                                             <div>{{ $day['label'] }}</div>
-                                            <div style="font-size:10px;font-weight:500;color:{{ $day['isToday'] ? '#8b5cf6' : '#94a3b8' }};">{{ $day['sublabel'] }}</div>
+                                            <div style="font-size:10px;font-weight:500;color:{{ $day['isToday'] ? '#c9a96e' : '#94a3b8' }};">{{ $day['sublabel'] }}</div>
                                         </th>
                                         @endforeach
                                     </tr>
@@ -1676,11 +1677,11 @@
                                             $sd = $day['slots'][$slotIdx] ?? null;
                                             $sdColor = $sd ? $sd['color'] : 'green';
                                             $sdPct = $sd ? $sd['pct'] : 0;
-                                            $bgMap = ['green'=>'#f0fdf4','amber'=>'#fffbeb','red'=>'#fff1f2'];
-                                            $txtMap = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
-                                            $barMap = ['green'=>'#22c55e','amber'=>'#f59e0b','red'=>'#ef4444'];
+                                            $bgMap = ['green'=>'#f0fdf4','amber'=>'rgba(201,169,110,.08)','red'=>'#fff1f2'];
+                                            $txtMap = ['green'=>'#16a34a','amber'=>'#b08d56','red'=>'#dc2626'];
+                                            $barMap = ['green'=>'#22c55e','amber'=>'#c9a96e','red'=>'#ef4444'];
                                         @endphp
-                                        <td style="padding:6px 4px;text-align:center;background:{{ $day['isToday'] ? '#faf5ff' : 'transparent' }};">
+                                        <td style="padding:6px 4px;text-align:center;background:{{ $day['isToday'] ? 'rgba(201,169,110,.06)' : 'transparent' }};">
                                             @if($sd)
                                             @php
                                                 $bookedRooms = $sd['booked_rooms'] ?? [];
@@ -1811,19 +1812,19 @@
 
                         {{-- Right: Room Availability Checker --}}
                         <div class="db-card" style="overflow:hidden;padding:0;">
-                            <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                            <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#1a2332,#2a3545);">
                                 <div style="display:flex;align-items:center;gap:10px;">
-                                    <div style="width:34px;height:34px;background:linear-gradient(135deg,#10b981,#059669);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <div style="width:34px;height:34px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                                         <i class="fas fa-door-open" style="color:#fff;font-size:13px;"></i>
                                     </div>
-                                    <div style="font-weight:800;color:#1e293b;font-size:14px;">Room Availability</div>
+                                    <div style="font-weight:800;color:#fff;font-size:14px;">Room Availability</div>
                                 </div>
                                 <div style="display:flex;align-items:center;gap:8px;">
                                     <input type="date" id="availDatePicker" value="{{ now()->toDateString() }}"
-                                        style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
+                                        style="border:1.5px solid rgba(201,169,110,.3);border-radius:8px;padding:6px 10px;font-size:13px;color:#1e293b;background:#fff;outline:none;cursor:pointer;"
                                         onchange="loadAvailability(this.value)">
                                     <button onclick="loadAvailability(document.getElementById('availDatePicker').value)"
-                                        style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                        style="background:linear-gradient(135deg,#c9a96e,#b08d56);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
                                         <i class="fas fa-search" style="margin-right:5px;"></i>Check
                                     </button>
                                 </div>
@@ -1842,14 +1843,14 @@
                     @canDo('reports.view')
                     <div data-widget="booking-calendar" class="db-widget-wrap">
                             <div style="background:#fff;border-radius:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;overflow:hidden;">
-                            <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);">
+                            <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#1a2332,#2a3545);">
                                 <div style="display:flex;align-items:center;gap:14px;">
-                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(6,182,212,.3);">
+                                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(201,169,110,.3);">
                                         <i class="fas fa-calendar-alt" style="color:#fff;font-size:16px;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight:800;color:#1e293b;font-size:16px;">Booking Calendar</div>
-                                        <div style="font-size:12px;color:#64748b;">{{ $calStart->format('F Y') }} — arrivals &amp; departures</div>
+                                        <div style="font-weight:800;color:#fff;font-size:16px;">Booking Calendar</div>
+                                        <div style="font-size:12px;color:#c9a96e;">{{ $calStart->format('F Y') }} — arrivals &amp; departures</div>
                                     </div>
                                 </div>
                                 <div style="display:flex;align-items:center;gap:6px;">
@@ -1893,7 +1894,7 @@
                                            @if($hasGuests) data-cal-guests="{!! $ttData !!}" @endif
                                            data-ds="{{ $cell['ds'] }}"
                                            onclick="event.preventDefault();openDaySummary('{{ $cell['ds'] }}')">
-                                            <span class="cal-day-num" style="color:{{ $isWhDay ? '#b91c1c' : ($cell['isToday'] ? '#0891b2' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1')) }};">{{ $cell['day'] }}</span>
+                                            <span class="cal-day-num" style="color:{{ $isWhDay ? '#b91c1c' : ($cell['isToday'] ? '#c9a96e' : ($cell['inMonth'] ? '#1e293b' : '#cbd5e1')) }};">{{ $cell['day'] }}</span>
                                             <div style="display:flex;flex-direction:column;gap:3px;margin-top:auto;">
                                                 @if($isWhDay)
                                                 <div style="display:flex;align-items:center;gap:3px;">
@@ -1903,8 +1904,8 @@
                                                 @else
                                                 @if($cell['checkins'] > 0)
                                                 <div style="display:flex;align-items:center;gap:4px;">
-                                                    <span style="width:7px;height:7px;border-radius:50%;background:#06b6d4;flex-shrink:0;"></span>
-                                                    <span style="font-size:11px;color:#0891b2;font-weight:700;line-height:1;">{{ $cell['checkins'] }} in</span>
+                                                    <span style="width:7px;height:7px;border-radius:50%;background:#c9a96e;flex-shrink:0;"></span>
+                                                    <span style="font-size:11px;color:#b08d56;font-weight:700;line-height:1;">{{ $cell['checkins'] }} in</span>
                                                 </div>
                                                 @endif
                                                 @if($cell['checkouts'] > 0)
@@ -1930,10 +1931,10 @@
                                 <div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">Calendar unavailable</div>
                                 @endif
                                 <div style="display:flex;align-items:center;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9;">
-                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#06b6d4;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-in</span></div>
-                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-out</span></div>
-                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">In-house</span></div>
-                                    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;"><span style="width:10px;height:10px;border-radius:50%;border:2px solid #22d3ee;background:#ecfeff;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Today</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#c9a96e;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-in</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#b08d56;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Check-out</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#1a2332;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">In-house</span></div>
+                                    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;"><span style="width:10px;height:10px;border-radius:50%;border:2px solid #c9a96e;background:#f8fafc;display:inline-block;"></span><span style="font-size:12px;color:#64748b;">Today</span></div>
                                 </div>
                             </div>
                         </div>
@@ -1949,20 +1950,20 @@
                         @if($todayCheckins->count() > 0)
                         <div class="db-card">
                             <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-sign-in-alt" style="color:#fff;font-size:14px;"></i>
                                 </div>
                                 <div style="font-weight:800;color:#1e293b;font-size:15px;">Today's Arrivals ({{ $todayCheckins->count() }})</div>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:8px;">
                                 @foreach($todayCheckins as $booking)
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#ecfeff,#e0f2fe);border-radius:12px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-radius:12px;">
                                     <div>
                                         <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
                                         <div style="font-size:12px;color:#64748b;">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }} &bull; {{ $booking->nights }} night(s)</div>
                                     </div>
                                     @canDo('checkin.process')
-                                    <a href="{{ route('checkin.show', $booking->id) }}" style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(6,182,212,.3);">Check In</a>
+                                    <a href="{{ route('checkin.show', $booking->id) }}" style="background:linear-gradient(135deg,#c9a96e,#b08d56);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(201,169,110,.3);">Check In</a>
                                     @endCanDo
                                 </div>
                                 @endforeach
@@ -1973,14 +1974,14 @@
                         @if($todayCheckouts->count() > 0)
                         <div class="db-card">
                             <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                                <div style="width:38px;height:38px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-sign-out-alt" style="color:#fff;font-size:14px;"></i>
                                 </div>
                                 <div style="font-weight:800;color:#1e293b;font-size:15px;">Today's Departures ({{ $todayCheckouts->count() }})</div>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:8px;">
                                 @foreach($todayCheckouts as $booking)
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:12px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-radius:12px;">
                                     <div>
                                         <div style="font-weight:700;color:#1e293b;font-size:14px;">{{ $booking->customer?->name ?? '(Deleted Guest)' }}</div>
                                         <div style="font-size:12px;color:#64748b;">{{ $booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($booking->room?->room_number ?? '—')) }}
@@ -1988,7 +1989,7 @@
                                         </div>
                                     </div>
                                     @canDo('checkout.process')
-                                    <a href="{{ route('checkout.show', $booking->id) }}" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(245,158,11,.3);">Check Out</a>
+                                    <a href="{{ route('checkout.show', $booking->id) }}" style="background:linear-gradient(135deg,#c9a96e,#b08d56);color:#fff;font-size:12px;padding:7px 16px;border-radius:10px;text-decoration:none;font-weight:700;box-shadow:0 3px 8px rgba(201,169,110,.3);">Check Out</a>
                                     @endCanDo
                                 </div>
                                 @endforeach
@@ -2033,7 +2034,7 @@
                     function buildHtml(data) {
                         var html = '<div class="tt-date">' + data.date + '</div>';
                         var sections = [
-                            { key: 'checkins',  label: 'Check-In',  color: '#06b6d4' },
+                            { key: 'checkins',  label: 'Check-In',  color: '#c9a96e' },
                             { key: 'checkouts', label: 'Check-Out', color: '#f59e0b' },
                             { key: 'staying',   label: 'In-House',  color: '#10b981' },
                         ];
@@ -2110,9 +2111,9 @@
                 {{-- Day Summary Modal --}}
                 <div id="daySummaryModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.45);" onclick="if(event.target===this)closeDaySummary()">
                     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
-                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-2xl">
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 rounded-t-2xl" style="background: linear-gradient(to right, #1a2332, #2a3545);">
                             <div>
-                                <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-day text-cyan-500 mr-2"></i><span id="dsmDate">—</span></h3>
+                                <h3 class="font-bold text-white"><i class="fas fa-calendar-day text-[#c9a96e] mr-2"></i><span id="dsmDate">—</span></h3>
                                 <p class="text-xs text-gray-400 mt-0.5">Booking activity for this day</p>
                             </div>
                             <button onclick="closeDaySummary()" class="text-gray-400 hover:text-gray-600 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100">
@@ -2120,7 +2121,7 @@
                             </button>
                         </div>
                         <div id="dsmBody" class="overflow-y-auto flex-1 p-5 space-y-4">
-                            <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-cyan-400 text-2xl"></i></div>
+                            <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-[#c9a96e] text-2xl"></i></div>
                         </div>
                     </div>
                 </div>
@@ -2131,7 +2132,7 @@
                 function openDaySummary(ds) {
                     document.getElementById('daySummaryModal').classList.remove('hidden');
                     document.getElementById('dsmDate').textContent = '...';
-                    document.getElementById('dsmBody').innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-cyan-400 text-2xl"></i></div>';
+                    document.getElementById('dsmBody').innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-[#c9a96e] text-2xl"></i></div>';
 
                     var summaryPromise = fetch('{{ route("calendar.day_summary") }}?date=' + ds, { headers: {'X-Requested-With':'XMLHttpRequest'} }).then(r => r.json());
                     var availPromise   = fetch(availabilityRoute + '?date=' + ds, { headers: {'X-Requested-With':'XMLHttpRequest'} }).then(r => r.json());
@@ -2149,7 +2150,7 @@
                                         </span>
                                         <div class="flex-1 min-w-0">
                                             <div class="font-semibold text-gray-800 truncate">${b.guest}</div>
-                                            <div class="text-xs text-gray-400">Room ${b.room} · ${b.type}${b.time_slot ? ' · <span class="text-violet-600 font-medium">'+b.time_slot+'</span>' : ''}</div>
+                                            <div class="text-xs text-gray-400">Room ${b.room} · ${b.type}${b.time_slot ? ' · <span class="font-medium" style="color: #c9a96e;">'+b.time_slot+'</span>' : ''}</div>
                                         </div>
                                         <span class="text-xs bg-${color}-50 text-${color}-700 rounded-full px-2 py-0.5 capitalize font-medium">${b.status.replace('_',' ')}</span>
                                     </a>`).join('');
@@ -2161,27 +2162,27 @@
                                     <div class="space-y-1">${rows}</div>
                                 </div>`;
                             };
-                            html += section('Check-Ins',  'cyan',  'sign-in-alt', data.checkins);
-                            html += section('Check-Outs', 'amber', 'sign-out-alt',data.checkouts);
-                            html += section('In-House',   'green', 'home',        data.staying);
+                            html += section('Check-Ins',  '[#c9a96e]',  'sign-in-alt', data.checkins);
+                            html += section('Check-Outs', '[#c9a96e]', 'sign-out-alt',data.checkouts);
+                            html += section('In-House',   'slate', 'home',        data.staying);
 
                             if (avail.available && avail.available.length > 0) {
                                 let pricingLabel = pt => pt === 'per_slot' ? 'Slot' : (pt === 'per_hour' ? 'Hourly' : 'Nightly');
                                 let availRows = avail.available.map(r => `
-                                    <a href="${r.booking_url}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 transition-colors text-sm">
-                                        <span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                    <a href="${r.booking_url}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[rgba(201,169,110,.06)] transition-colors text-sm">
+                                        <span class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: rgba(201,169,110,.15); color: #c9a96e;">
                                             <i class="fas fa-door-open text-xs"></i>
                                         </span>
                                         <div class="flex-1 min-w-0">
                                             <div class="font-semibold text-gray-800">Room ${r.room_number}</div>
                                             <div class="text-xs text-gray-400">${r.type} · ${pricingLabel(r.pricing_type)}</div>
                                         </div>
-                                        <span class="text-xs bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5 font-medium">Book →</span>
+                                        <span class="text-xs rounded-full px-2 py-0.5 font-medium" style="background: rgba(201,169,110,.1); color: #b08d56;">Book →</span>
                                     </a>`).join('');
                                 if (html) html += '<div class="border-t border-gray-100 my-2"></div>';
                                 html += `<div>
                                     <div class="flex items-center gap-2 mb-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: #c9a96e;"></span>
                                         <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Available Rooms (${avail.available.length})</span>
                                     </div>
                                     <div class="space-y-1">${availRows}</div>
@@ -2356,7 +2357,7 @@
                         if (btn) {
                             btn.style.background = open ? '#f0f9ff' : '#fff';
                             btn.style.borderColor = open ? '#7dd3fc' : '#e2e8f0';
-                            btn.style.color = open ? '#0284c7' : '#475569';
+                            btn.style.color = open ? '#c9a96e' : '#475569';
                         }
                         if (open && !sortable) {
                             initSortable();

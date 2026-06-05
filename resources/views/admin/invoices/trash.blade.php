@@ -22,7 +22,7 @@
     </div>
 
     @if(session('success'))
-    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2">
+    <div class="rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
         <i class="fas fa-check-circle"></i>{{ session('success') }}
     </div>
     @endif
@@ -32,7 +32,7 @@
     </div>
     @endif
 
-    <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 flex items-start gap-2">
+    <div class="rounded-xl px-4 py-3 text-sm flex items-start gap-2" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
         <i class="fas fa-info-circle mt-0.5 flex-shrink-0"></i>
         <span>Deleted invoices are permanently removed after <strong>30 days</strong>. Restoring an invoice also reinstates the booking's payment status.</span>
     </div>
@@ -64,7 +64,8 @@
                 @php
                     $daysLeft  = (int) now()->diffInDays($invoice->deleted_at->addDays(30), false);
                     $expired   = $daysLeft <= 0;
-                    $urgentCss = !$expired && $daysLeft <= 7 ? 'text-amber-600 font-semibold' : 'text-gray-500';
+                    $urgentCss = !$expired && $daysLeft <= 7 ? 'font-semibold' : 'text-gray-500';
+                    $urgentStyle = !$expired && $daysLeft <= 7 ? 'color: #c9a96e;' : '';
                 @endphp
                 <tr class="hover:bg-gray-50 transition-colors {{ $expired ? 'opacity-50' : '' }}">
                     <td class="px-5 py-3 font-mono text-sm font-bold text-gray-700">{{ $invoice->invoice_number }}</td>
@@ -93,7 +94,7 @@
                               onsubmit="return confirm('Restore invoice {{ $invoice->invoice_number }}?')">
                             @csrf
                             <button type="submit"
-                                class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                                class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;" onmouseover="this.style.background='rgba(201,169,110,.12)';" onmouseout="this.style.background='rgba(201,169,110,.08)';">
                                 <i class="fas fa-undo-alt"></i>Restore
                             </button>
                         </form>

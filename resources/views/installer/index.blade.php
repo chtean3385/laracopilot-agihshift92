@@ -63,7 +63,7 @@
 
   {{-- STEP 1 — Database --}}
   <div id="step1">
-    <h2 class="text-lg font-bold text-slate-700 mb-4"><i class="fas fa-database mr-2 text-violet-500"></i>Database Connection</h2>
+    <h2 class="text-lg font-bold text-slate-700 mb-4"><i class="fas fa-database mr-2" style="color: #c9a96e;"></i>Database Connection</h2>
     <div class="grid grid-cols-2 gap-4 mb-4">
       <div class="field col-span-2 sm:col-span-1">
         <label>DB Host</label>
@@ -101,7 +101,7 @@
 
   {{-- STEP 2 — App & Admin --}}
   <div id="step2" class="hidden">
-    <h2 class="text-lg font-bold text-slate-700 mb-4"><i class="fas fa-cog mr-2 text-violet-500"></i>App & Admin Setup</h2>
+    <h2 class="text-lg font-bold text-slate-700 mb-4"><i class="fas fa-cog mr-2" style="color: #c9a96e;"></i>App & Admin Setup</h2>
     <div class="grid grid-cols-2 gap-4 mb-4">
       <div class="field col-span-2 sm:col-span-1">
         <label>App Name</label>
@@ -147,7 +147,7 @@
 
   {{-- STEP 3 — Install --}}
   <div id="step3" class="hidden">
-    <h2 class="text-lg font-bold text-slate-700 mb-4"><i class="fas fa-rocket mr-2 text-violet-500"></i>Install</h2>
+    <h2 class="text-lg font-bold text-slate-700 mb-4"><i class="fas fa-rocket mr-2" style="color: #c9a96e;"></i>Install</h2>
 
     <div class="bg-slate-50 rounded-xl p-4 mb-4 text-sm text-slate-600 border border-slate-100">
       <div class="grid grid-cols-2 gap-1 text-xs">

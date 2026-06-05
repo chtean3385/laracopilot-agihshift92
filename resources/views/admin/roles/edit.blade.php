@@ -16,7 +16,7 @@
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-6">
                 <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-shield-halved text-cyan-500"></i> Role Details
+                    <i class="fas fa-shield-halved text-[#c9a96e]"></i> Role Details
                 </h3>
 
                 <div class="mb-4">
@@ -76,8 +76,8 @@
             <div class="bg-white rounded-2xl shadow-sm overflow-hidden {{ $isDangerZone ? 'border-2 border-red-200' : 'border border-gray-100' }}">
                 <div class="flex items-center justify-between px-6 py-4 {{ $isDangerZone ? 'border-b border-red-100 bg-red-50/50' : 'border-b border-gray-100' }}">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center {{ $isDangerZone ? 'bg-red-100' : 'bg-cyan-50' }}">
-                            <i class="{{ $icon }} text-sm {{ $isDangerZone ? 'text-red-500' : 'text-cyan-600' }}"></i>
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center {{ $isDangerZone ? 'bg-red-100' : '' }}" style="{{ $isDangerZone ? '' : 'background: rgba(201,169,110,.1);' }}">
+                            <i class="{{ $icon }} text-sm {{ $isDangerZone ? 'text-red-500' : '' }}" style="{{ $isDangerZone ? '' : 'color: #c9a96e;' }}"></i>
                         </div>
                         <span class="font-bold {{ $isDangerZone ? 'text-red-700' : 'text-gray-800' }}">{{ $module }}</span>
                         @if($isDangerZone)
@@ -85,7 +85,7 @@
                         @endif
                     </div>
                     <button type="button" onclick="toggleModule('{{ Str::slug($module) }}')"
-                        class="text-xs font-semibold {{ $isDangerZone ? 'text-red-500 hover:text-red-700' : 'text-cyan-600 hover:text-cyan-800' }}">Toggle All</button>
+                        class="text-xs font-semibold {{ $isDangerZone ? 'text-red-500 hover:text-red-700' : '' }}" style="{{ $isDangerZone ? '' : 'color: #c9a96e;' }}">Toggle All</button>
                 </div>
                 <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @foreach($perms as $perm)
@@ -104,12 +104,13 @@
                         <span class="ml-auto text-xs text-red-300 italic">SaaS Admin only</span>
                     </div>
                     @else
-                    <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-cyan-200 hover:bg-cyan-50/30 cursor-pointer transition-all group">
+                    <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#c9a96e]/30 cursor-pointer transition-all group" style="--tw-hover-bg: rgba(201,169,110,.08);">
                         <input type="checkbox"
                             name="permissions[]"
                             value="{{ $perm->slug }}"
                             data-module="{{ Str::slug($module) }}"
-                            class="w-4 h-4 rounded accent-cyan-500"
+                            class="w-4 h-4 rounded"
+                            style="accent-color: #c9a96e;"
                             {{ $isChecked ? 'checked' : '' }}>
                         <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ $perm->label }}</span>
                     </label>

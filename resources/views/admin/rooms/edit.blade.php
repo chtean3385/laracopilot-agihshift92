@@ -8,7 +8,7 @@
     <a href="{{ route('rooms.index') }}" class="btn-secondary text-sm mb-5 inline-flex"><i class="fas fa-arrow-left mr-2"></i>Back to Rooms</a>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100">
-            <h3 class="font-bold text-gray-800"><i class="fas fa-edit text-amber-500 mr-2"></i>Edit Room {{ $room->room_number }}</h3>
+            <h3 class="font-bold text-gray-800"><i class="fas fa-edit mr-2" style="color: #c9a96e;"></i>Edit Room {{ $room->room_number }}</h3>
         </div>
         <form action="{{ route('rooms.update', $room->id) }}" method="POST" class="p-6">
             @csrf @method('PUT')
@@ -36,9 +36,10 @@
                     <label class="form-label">Pricing Mode <span class="text-red-500">*</span></label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         @foreach(['per_night'=>['icon'=>'fa-moon','label'=>'Per Night','sub'=>'Standard nightly rate']] + ($slotModuleOn ? ['per_slot'=>['icon'=>'fa-clock','label'=>'Per Slot','sub'=>'Fixed time-block pricing']] : []) + ($hourlyModuleOn ? ['per_hour'=>['icon'=>'fa-hourglass-half','label'=>'Per Hour','sub'=>'Hourly rate pricing']] : []) as $val=>$info)
-                        <label class="relative flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors pricing-mode-card {{ $curPricing === $val ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-violet-300' }}">
+                        <label class="relative flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors pricing-mode-card {{ $curPricing === $val ? '' : 'border-gray-200 hover:border-gray-300' }}"
+                            style="{{ $curPricing === $val ? 'border-color: #c9a96e; background: rgba(201,169,110,.06);' : '' }}">
                             <input type="radio" name="pricing_type" value="{{ $val }}" class="hidden pricing-mode-radio" {{ $curPricing === $val ? 'checked' : '' }} onchange="onPricingModeChange(this)">
-                            <i class="fas {{ $info['icon'] }} text-violet-500 text-lg w-5 text-center"></i>
+                            <i class="fas {{ $info['icon'] }} text-lg w-5 text-center" style="color: #c9a96e;"></i>
                             <div>
                                 <div class="font-semibold text-gray-800 text-sm">{{ $info['label'] }}</div>
                                 <div class="text-xs text-gray-400">{{ $info['sub'] }}</div>
@@ -87,9 +88,9 @@
 
                 <!-- Meal Options -->
                 <div class="md:col-span-2">
-                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">
+                    <div class="rounded-2xl p-5" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
                         <div class="flex items-center gap-2 mb-4">
-                            <i class="fas fa-utensils text-amber-500"></i>
+                            <i class="fas fa-utensils" style="color: #c9a96e;"></i>
                             <h4 class="font-bold text-gray-700">Meal Options</h4>
                             <span class="text-xs text-gray-400 ml-1">— tick meals included with this room. Price is per guest per night.</span>
                         </div>
@@ -102,9 +103,9 @@
                             <div class="bg-white rounded-xl border border-gray-200 p-4">
                                 <label class="flex items-center gap-3 cursor-pointer mb-3">
                                     <input type="checkbox" name="has_breakfast" value="1" id="cb_breakfast"
-                                        class="w-4 h-4 rounded text-amber-500" onchange="togglePrice('breakfast')"
+                                        class="w-4 h-4 rounded" style="color: #c9a96e;" onchange="togglePrice('breakfast')"
                                         {{ $bfOld ? 'checked' : '' }}>
-                                    <span class="font-semibold text-gray-700"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
+                                    <span class="font-semibold text-gray-700"><i class="fas fa-coffee mr-1" style="color: #c9a96e;"></i>Breakfast</span>
                                 </label>
                                 <div id="bf_price_wrap" class="{{ $bfOld ? '' : 'opacity-40 pointer-events-none' }}">
                                     <label class="text-xs text-gray-500 mb-1 block">Price per night (₹)</label>
@@ -116,9 +117,9 @@
                             <div class="bg-white rounded-xl border border-gray-200 p-4">
                                 <label class="flex items-center gap-3 cursor-pointer mb-3">
                                     <input type="checkbox" name="has_lunch" value="1" id="cb_lunch"
-                                        class="w-4 h-4 rounded text-amber-500" onchange="togglePrice('lunch')"
+                                        class="w-4 h-4 rounded" style="color: #c9a96e;" onchange="togglePrice('lunch')"
                                         {{ $luOld ? 'checked' : '' }}>
-                                    <span class="font-semibold text-gray-700"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
+                                    <span class="font-semibold text-gray-700"><i class="fas fa-sun mr-1" style="color: #c9a96e;"></i>Lunch</span>
                                 </label>
                                 <div id="lunch_price_wrap" class="{{ $luOld ? '' : 'opacity-40 pointer-events-none' }}">
                                     <label class="text-xs text-gray-500 mb-1 block">Price per night (₹)</label>
@@ -130,9 +131,9 @@
                             <div class="bg-white rounded-xl border border-gray-200 p-4">
                                 <label class="flex items-center gap-3 cursor-pointer mb-3">
                                     <input type="checkbox" name="has_dinner" value="1" id="cb_dinner"
-                                        class="w-4 h-4 rounded text-amber-500" onchange="togglePrice('dinner')"
+                                        class="w-4 h-4 rounded" style="color: #c9a96e;" onchange="togglePrice('dinner')"
                                         {{ $diOld ? 'checked' : '' }}>
-                                    <span class="font-semibold text-gray-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
+                                    <span class="font-semibold text-gray-700"><i class="fas fa-moon mr-1" style="color: #c9a96e;"></i>Dinner</span>
                                 </label>
                                 <div id="dinner_price_wrap" class="{{ $diOld ? '' : 'opacity-40 pointer-events-none' }}">
                                     <label class="text-xs text-gray-500 mb-1 block">Price per night (₹)</label>
@@ -147,15 +148,15 @@
 
                 <!-- Extra Bed -->
                 <div class="md:col-span-2">
-                    <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
+                    <div class="rounded-2xl p-5" style="border: 1px solid rgba(122,138,154,.2); background: rgba(122,138,154,.04);">
                         <div class="flex items-center gap-4 flex-wrap">
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-bed text-blue-500"></i>
+                                <i class="fas fa-bed" style="color: #7a8a9a;"></i>
                                 <h4 class="font-bold text-gray-700">Extra Bed</h4>
                             </div>
                             <label class="flex items-center gap-3 cursor-pointer">
                                 <input type="checkbox" name="has_extra_bed" value="1" id="cb_extra_bed"
-                                    class="w-4 h-4 rounded text-blue-500" onchange="toggleExtraBed()"
+                                    class="w-4 h-4 rounded" style="color: #7a8a9a;" onchange="toggleExtraBed()"
                                     {{ old('has_extra_bed', $room->has_extra_bed) ? 'checked' : '' }}>
                                 <span class="font-semibold text-gray-700">Allow extra bed in this room</span>
                             </label>
@@ -180,11 +181,12 @@
 <script>
 function onPricingModeChange(radio) {
     document.querySelectorAll('.pricing-mode-card').forEach(c => {
-        c.classList.remove('border-violet-500', 'bg-violet-50');
+        c.style.borderColor = ''; c.style.background = '';
         c.classList.add('border-gray-200');
     });
-    radio.closest('.pricing-mode-card').classList.add('border-violet-500', 'bg-violet-50');
-    radio.closest('.pricing-mode-card').classList.remove('border-gray-200');
+    var card = radio.closest('.pricing-mode-card');
+    card.style.borderColor = '#c9a96e'; card.style.background = 'rgba(201,169,110,.06)';
+    card.classList.remove('border-gray-200');
     const mode = radio.value;
     const nightWrap  = document.getElementById('pricePerNightWrap');
     const hourlyWrap = document.getElementById('hourlyRateWrap');

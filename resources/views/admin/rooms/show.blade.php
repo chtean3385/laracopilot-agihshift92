@@ -21,10 +21,10 @@
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div class="h-2 -mt-6 -mx-6 mb-6 rounded-t-2xl bg-gradient-to-r
-                @if($room->status == 'available') from-emerald-400 to-teal-500
-                @elseif($room->status == 'occupied') from-red-400 to-rose-500
-                @else from-amber-400 to-yellow-500 @endif"></div>
+            <div class="h-2 -mt-6 -mx-6 mb-6 rounded-t-2xl" style="background: linear-gradient(135deg,
+                @if($room->status == 'available') #10b981, #059669
+                @elseif($room->status == 'occupied') #dc2626, #991b1b
+                @else #c9a96e, #b08d56 @endif);"></div>
             <div class="text-center mb-6">
                 <div class="text-5xl font-black text-gray-800">{{ $room->room_number }}</div>
                 <span class="badge-{{ $room->type_color }} mt-2">{{ ucfirst($room->type) }}</span>
@@ -33,9 +33,9 @@
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                     <span class="text-sm text-gray-500">Status</span>
                     <span class="font-semibold text-sm
-                        @if($room->status == 'available') text-emerald-600
+                        @if($room->status == 'available') text-green-600
                         @elseif($room->status == 'occupied') text-red-600
-                        @else text-amber-600 @endif">{{ ucfirst($room->status) }}</span>
+                        @else" style="color: #c9a96e;" @endif>{{ ucfirst($room->status) }}</span>
                 </div>
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                     <span class="text-sm text-gray-500">Capacity</span>
@@ -49,9 +49,9 @@
                     <span class="text-sm text-gray-500">View</span>
                     <span class="font-semibold text-sm text-gray-700">{{ $room->view ?? 'N/A' }}</span>
                 </div>
-                <div class="flex justify-between items-center p-3 bg-emerald-50 rounded-xl">
+                <div class="flex justify-between items-center p-3 rounded-xl" style="background: rgba(201,169,110,.06);">
                     <span class="text-sm text-gray-500">Price/Night</span>
-                    <span class="font-bold text-emerald-600 text-lg">
+                    <span class="font-bold text-lg" style="color: #c9a96e;">
                         ₹{{ number_format($room->price_per_night) }}
                         @if($rmTaxRate > 0)
                         <span class="block text-xs font-normal text-gray-400">+ {{ $rmTaxRate }}% GST = ₹{{ number_format($room->price_per_night * (1 + $rmTaxRate/100)) }} total</span>
@@ -60,41 +60,41 @@
                 </div>
             </div>
             @if($room->amenities)
-            <div class="mt-4 p-3 bg-cyan-50 rounded-xl">
-                <p class="text-xs font-semibold text-cyan-700 mb-1">Amenities</p>
-                <p class="text-sm text-cyan-600">{{ $room->amenities }}</p>
+            <div class="mt-4 p-3 rounded-xl" style="background: rgba(201,169,110,.08);">
+                <p class="text-xs font-semibold mb-1" style="color: #b08d56;">Amenities</p>
+                <p class="text-sm" style="color: #c9a96e;">{{ $room->amenities }}</p>
             </div>
             @endif
             @if($room->has_breakfast || $room->has_lunch || $room->has_dinner)
-            <div class="mt-4 p-3 bg-amber-50 rounded-xl">
-                <p class="text-xs font-semibold text-amber-700 mb-2"><i class="fas fa-utensils mr-1"></i>Meal Options</p>
+            <div class="mt-4 p-3 rounded-xl" style="background: rgba(201,169,110,.08);">
+                <p class="text-xs font-semibold mb-2" style="color: #b08d56;"><i class="fas fa-utensils mr-1"></i>Meal Options</p>
                 <div class="space-y-1">
                     @if($room->has_breakfast)
                     <div class="flex justify-between text-sm">
-                        <span class="text-gray-600"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
-                        <span class="font-semibold text-amber-700">₹{{ number_format($room->breakfast_price) }}/night</span>
+                        <span class="text-gray-600"><i class="fas fa-coffee mr-1" style="color: #c9a96e;"></i>Breakfast</span>
+                        <span class="font-semibold" style="color: #c9a96e;">₹{{ number_format($room->breakfast_price) }}/night</span>
                     </div>
                     @endif
                     @if($room->has_lunch)
                     <div class="flex justify-between text-sm">
-                        <span class="text-gray-600"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
-                        <span class="font-semibold text-orange-700">₹{{ number_format($room->lunch_price) }}/night</span>
+                        <span class="text-gray-600"><i class="fas fa-sun mr-1" style="color: #c9a96e;"></i>Lunch</span>
+                        <span class="font-semibold" style="color: #c9a96e;">₹{{ number_format($room->lunch_price) }}/night</span>
                     </div>
                     @endif
                     @if($room->has_dinner)
                     <div class="flex justify-between text-sm">
-                        <span class="text-gray-600"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
-                        <span class="font-semibold text-indigo-700">₹{{ number_format($room->dinner_price) }}/night</span>
+                        <span class="text-gray-600"><i class="fas fa-moon mr-1" style="color: #c9a96e;"></i>Dinner</span>
+                        <span class="font-semibold" style="color: #c9a96e;">₹{{ number_format($room->dinner_price) }}/night</span>
                     </div>
                     @endif
                 </div>
             </div>
             @endif
             @if($room->has_extra_bed)
-            <div class="mt-4 p-3 bg-blue-50 rounded-xl">
+            <div class="mt-4 p-3 rounded-xl" style="background: rgba(201,169,110,.06);">
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-600"><i class="fas fa-bed text-blue-400 mr-1"></i>Extra Bed</span>
-                    <span class="font-semibold text-blue-700">₹{{ number_format($room->extra_bed_price) }}/bed/night</span>
+                    <span class="text-gray-600"><i class="fas fa-bed mr-1" style="color: #7a8a9a;"></i>Extra Bed</span>
+                    <span class="font-semibold" style="color: #7a8a9a;">₹{{ number_format($room->extra_bed_price) }}/bed/night</span>
                 </div>
             </div>
             @endif

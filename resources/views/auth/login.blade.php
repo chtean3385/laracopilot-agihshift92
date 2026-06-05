@@ -25,12 +25,12 @@
     <link rel="stylesheet" href="/css/tailwind.min.css">
     <link rel="stylesheet" href="/css/font-awesome.min.css">
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4" style="background: linear-gradient(135deg, #1a2332, #2a3545, #1a2332);">
     <!-- Background pattern -->
     <div class="absolute inset-0 overflow-hidden">
-        <div class="absolute -top-40 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-slate-800/20 rounded-full blur-3xl"></div>
+        <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl" style="background: rgba(201,169,110,.1);"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl" style="background: rgba(176,141,86,.1);"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl" style="background: rgba(26,35,50,.2);"></div>
     </div>
 
     <div class="relative w-full max-w-md">
@@ -38,9 +38,9 @@
         <div class="text-center mb-8">
             <img src="{{ asset('hotel-crm-logo.png') }}" alt="All in One Hotel / Resort CRM"
                  class="w-20 h-20 rounded-3xl shadow-2xl mb-4 mx-auto object-cover"
-                 style="box-shadow:0 8px 32px rgba(6,182,212,.35);">
+                 style="box-shadow:0 8px 32px rgba(201,169,110,.35);">
             <h1 class="text-2xl font-bold text-white">All in One Hotel / Resort CRM</h1>
-            <p class="text-cyan-300 text-sm mt-1">Staff Portal</p>
+            <p class="text-sm mt-1" style="color: #c9a96e;">Staff Portal</p>
         </div>
 
         <!-- Login Form -->
@@ -63,8 +63,8 @@
                             <i class="fas fa-envelope text-slate-400 text-sm"></i>
                         </div>
                         <input type="email" name="email" value="{{ old('email') }}"
-                            class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none transition-all"
-                            placeholder="Enter your email" required autocomplete="email">
+                            class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 pl-11 pr-4 py-3 rounded-xl focus:border-transparent outline-none transition-all"
+                            placeholder="Enter your email" required autocomplete="email" style="--tw-ring-color: #c9a96e;">
                     </div>
                 </div>
 
@@ -75,18 +75,19 @@
                             <i class="fas fa-lock text-slate-400 text-sm"></i>
                         </div>
                         <input type="password" name="password" value=""
-                            class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none transition-all"
-                            placeholder="Enter password" required>
+                            class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 pl-11 pr-4 py-3 rounded-xl focus:border-transparent outline-none transition-all"
+                            placeholder="Enter password" required style="--tw-ring-color: #c9a96e;">
                     </div>
                 </div>
 
                 <button type="submit"
-                    class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3.5 rounded-xl font-bold text-sm hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-cyan-500/25 hover:-translate-y-0.5 transform">
+                    class="w-full text-white py-3.5 rounded-xl font-bold text-sm transition-all duration-200 shadow-lg hover:-translate-y-0.5 transform"
+                    style="background: linear-gradient(to right, #c9a96e, #b08d56);">
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In to CRM
                 </button>
 
                 <div class="text-center mt-4">
-                    <a href="{{ route('password.request') }}" class="text-slate-400 text-sm hover:text-cyan-400 transition-colors">
+                    <a href="{{ route('password.request') }}" class="text-slate-400 text-sm hover:text-[#c9a96e] transition-colors">
                         <i class="fas fa-key mr-1 text-xs"></i> Forgot Password?
                     </a>
                 </div>

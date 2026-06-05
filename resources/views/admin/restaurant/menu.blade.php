@@ -6,7 +6,7 @@
 <div class="content-header">
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
-            <a href="{{ route('restaurant.index') }}" class="text-sm text-blue-600 hover:underline">← Back to Tables</a>
+            <a href="{{ route('restaurant.index') }}" class="text-sm hover:underline" style="color: #c9a96e;">← Back to Tables</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-1">📋 Menu Management</h1>
             <p class="text-gray-500 text-sm">Manage categories and menu items</p>
         </div>
@@ -51,7 +51,7 @@
         </div>
         <div class="flex gap-2">
             <button onclick="openEditCategory({{ $category->id }}, '{{ addslashes($category->name) }}')"
-                class="text-xs text-blue-600 hover:underline">Edit</button>
+                class="text-xs hover:underline" style="color: #c9a96e;">Edit</button>
             <form action="{{ route('restaurant.menu.categories.destroy', $category->id) }}" method="POST"
                 onsubmit="return confirm('Delete this category? Only works if no items exist.')">
                 @csrf @method('DELETE')
@@ -98,7 +98,7 @@
                         @elseif($item->food_type === 'nonveg')
                             <span class="text-red-600">🔴 Non-Veg</span>
                         @else
-                            <span class="text-blue-600">🔵 Beverage</span>
+                            <span style="color: #7a8a9a;">🔵 Beverage</span>
                         @endif
                     </td>
                     <td class="px-4 py-3 text-right font-bold text-gray-800">
@@ -108,12 +108,13 @@
                         <button onclick="toggleItem({{ $item->id }}, this)"
                             class="toggle-btn px-2 py-1 rounded-full text-xs font-medium
                             {{ $item->is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+
                             {{ $item->is_available ? 'Available' : 'Unavailable' }}
                         </button>
                     </td>
                     <td class="px-4 py-3 text-right">
                         <button onclick="openEditItem({{ $item->id }}, '{{ addslashes($item->name) }}', {{ $item->price }}, '{{ $item->food_type }}', '{{ addslashes($item->description ?? '') }}', {{ $item->category_id ?? 'null' }}, '{{ $item->imageUrl() ?? '' }}')"
-                            class="text-xs text-blue-600 hover:underline mr-2">Edit</button>
+                            class="text-xs hover:underline mr-2" style="color: #c9a96e;">Edit</button>
                         <form action="{{ route('restaurant.menu.items.destroy', $item->id) }}" method="POST"
                             class="inline" onsubmit="return confirm('Delete this item?')">
                             @csrf @method('DELETE')

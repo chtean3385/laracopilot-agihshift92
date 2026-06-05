@@ -48,7 +48,7 @@
                                   style="background:rgba(6,182,212,.15);color:#67e8f9;">{{ $option['role'] }}</span>
                         </div>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-500 text-sm group-hover:text-cyan-400 transition-colors"></i>
+                    <i class="fas fa-chevron-right text-slate-500 text-sm group-hover:text-[#c9a96e] transition-colors"></i>
                 </div>
             </button>
         </form>

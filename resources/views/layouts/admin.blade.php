@@ -71,7 +71,7 @@
             width: 260px;
             min-width: 260px;
             height: 100vh;
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+            background: #1a2332;
             display: flex;
             flex-direction: column;
             position: fixed;
@@ -113,8 +113,7 @@
         }
         .nav-link.active {
             color: #fff;
-            background: linear-gradient(90deg, rgba(6,182,212,.25), rgba(59,130,246,.2));
-            border: 1px solid rgba(6,182,212,.3);
+            background: #c9a96e;
         }
         .nav-link .icon {
             width: 32px;
@@ -127,9 +126,8 @@
             flex-shrink: 0;
         }
         .nav-link.active .icon {
-            background: linear-gradient(135deg,#06b6d4,#3b82f6);
+            background: rgba(255,255,255,.15);
             color: #fff;
-            box-shadow: 0 4px 12px rgba(6,182,212,.4);
         }
         .nav-link:not(.active) .icon {
             background: rgba(255,255,255,.05);
@@ -146,7 +144,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .12em;
-            color: #475569;
+            color: #7a8a9a;
             padding: 12px 14px 4px;
         }
         .nav-link { padding: 8px 14px; }
@@ -171,9 +169,8 @@
         .nav-group-toggle:hover { color: #fff; background: rgba(255,255,255,.07); }
         .nav-group-toggle.has-active { color: #fff; }
         .nav-group-toggle.has-active .icon {
-            background: linear-gradient(135deg,#06b6d4,#3b82f6);
+            background: #c9a96e;
             color: #fff;
-            box-shadow: 0 4px 12px rgba(6,182,212,.4);
         }
         .nav-group-toggle .icon {
             width: 32px; height: 32px;
@@ -871,13 +868,13 @@
                     <img src="{{ $settings->logo_url }}" alt="Logo" style="width:42px;height:42px;object-fit:contain;padding:4px;">
                 </div>
                 @else
-                <div style="width:42px;height:42px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(6,182,212,.4);flex-shrink:0;">
+                <div style="width:42px;height:42px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(201,169,110,.4);flex-shrink:0;">
                     <i class="fas fa-umbrella-beach" style="color:#fff;font-size:18px;"></i>
                 </div>
                 @endif
                 <div style="min-width:0;">
                     <div style="color:#fff;font-weight:800;font-size:14px;line-height:1.2;">{{ $settings->resort_name ?? 'Resort CRM' }}</div>
-                    <div style="color:#475569;font-size:11px;margin-top:1px;">{{ $settings->tagline ?? 'Resort & Spa CRM' }}</div>
+                    <div style="color:#7a8a9a;font-size:11px;margin-top:1px;">{{ $settings->tagline ?? 'Resort & Spa CRM' }}</div>
                 </div>
             </div>
         </div>
@@ -891,20 +888,20 @@
         <div style="padding:8px 16px 4px;">
             <form method="POST" action="{{ route('sa.hotel.filter') }}" id="sa-hotel-form">
                 @csrf
-                <div style="background:rgba(124,58,237,.10);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:8px 12px;">
-                    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(196,181,253,.5);margin-bottom:5px;">Hotel Filter</div>
+                <div style="background:rgba(201,169,110,.10);border:1px solid rgba(201,169,110,.25);border-radius:10px;padding:8px 12px;">
+                    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(201,169,110,.5);margin-bottom:5px;">Hotel Filter</div>
                     <div style="display:flex;align-items:center;gap:7px;">
-                        <div style="width:24px;height:24px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <div style="width:24px;height:24px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                             <i class="fas fa-building" style="color:#fff;font-size:10px;"></i>
                         </div>
                         <select name="hotel_id"
                                 onchange="document.getElementById('sa-hotel-form').submit()"
-                                style="background:transparent;border:none;color:#c4b5fd;font-size:12px;font-weight:700;flex:1;min-width:0;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
+                                style="background:transparent;border:none;color:#c9a96e;font-size:12px;font-weight:700;flex:1;min-width:0;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
                             @foreach($saHotels as $h)
-                            <option value="{{ $h->id }}" {{ $saFilterId == $h->id ? 'selected' : '' }} style="background:#1e1b4b;color:#c4b5fd;">{{ $h->name }}</option>
+                            <option value="{{ $h->id }}" {{ $saFilterId == $h->id ? 'selected' : '' }} style="background:#1a2332;color:#c9a96e;">{{ $h->name }}</option>
                             @endforeach
                         </select>
-                        <i class="fas fa-chevron-down" style="color:#7c3aed;font-size:9px;flex-shrink:0;pointer-events:none;"></i>
+                        <i class="fas fa-chevron-down" style="color:#c9a96e;font-size:9px;flex-shrink:0;pointer-events:none;"></i>
                     </div>
                 </div>
             </form>
@@ -914,13 +911,13 @@
             $hotelInitial = strtoupper(substr(session('crm_hotel_name', 'H'), 0, 1));
         @endphp
         <div style="padding:8px 16px 4px;">
-            <div style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:10px;padding:8px 12px;">
-                <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(103,232,249,.5);margin-bottom:5px;">Current Hotel</div>
+            <div style="background:rgba(201,169,110,.08);border:1px solid rgba(201,169,110,.2);border-radius:10px;padding:8px 12px;">
+                <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(201,169,110,.5);margin-bottom:5px;">Current Hotel</div>
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <div style="width:28px;height:28px;background:linear-gradient(135deg,#06b6d4,#0284c7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;">{{ $hotelInitial }}</div>
-                    <span style="color:#67e8f9;font-size:12px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_hotel_name') }}</span>
+                    <div style="width:28px;height:28px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;">{{ $hotelInitial }}</div>
+                    <span style="color:#c9a96e;font-size:12px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ session('crm_hotel_name') }}</span>
                     @if(session('crm_hotel_count', 1) > 1)
-                    <a href="{{ route('select.hotel') }}" style="width:24px;height:24px;background:rgba(6,182,212,.15);border:1px solid rgba(6,182,212,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#67e8f9;font-size:10px;text-decoration:none;flex-shrink:0;transition:background .15s;" title="Switch Hotel" onmouseover="this.style.background='rgba(6,182,212,.3)'" onmouseout="this.style.background='rgba(6,182,212,.15)'">
+                    <a href="{{ route('select.hotel') }}" style="width:24px;height:24px;background:rgba(201,169,110,.15);border:1px solid rgba(201,169,110,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#c9a96e;font-size:10px;text-decoration:none;flex-shrink:0;transition:background .15s;" title="Switch Hotel" onmouseover="this.style.background='rgba(201,169,110,.3)'" onmouseout="this.style.background='rgba(201,169,110,.15)'">
                         <i class="fas fa-exchange-alt"></i>
                     </a>
                     @endif
@@ -1355,7 +1352,7 @@
     <div id="main-wrap">
 
         <!-- Top Bar -->
-        <header style="background:#fff;border-bottom:1px solid #f1f5f9;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+        <header style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.04);">
             <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
                 <!-- Mobile hamburger -->
                 <button onclick="openSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#64748b;flex-shrink:0;" id="hamburger">
@@ -1452,7 +1449,7 @@
                     <span class="topbar-wa-label">Support</span>
                 </a>
                 <div style="position:relative;">
-                    <button onclick="toggleUserMenu()" style="width:36px;height:36px;background:linear-gradient(135deg,#06b6d4,#3b82f6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(6,182,212,.3);cursor:pointer;border:none;flex-shrink:0;">
+                    <button onclick="toggleUserMenu()" style="width:36px;height:36px;background:linear-gradient(135deg,#c9a96e,#b08d56);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 4px 12px rgba(201,169,110,.3);cursor:pointer;border:none;flex-shrink:0;">
                         {{ session('crm_user_avatar','A') }}
                     </button>
                     <div id="user-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);border:1px solid #f1f5f9;min-width:200px;z-index:100;overflow:hidden;">

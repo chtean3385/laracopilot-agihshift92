@@ -27,8 +27,8 @@
 
     @if($slots->isEmpty())
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-        <div class="w-14 h-14 rounded-full bg-violet-50 flex items-center justify-center mx-auto mb-3">
-            <i class="fas fa-clock text-violet-300 text-2xl"></i>
+        <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style="background: rgba(201,169,110,.08);">
+            <i class="fas fa-clock text-2xl" style="color: #c9a96e;"></i>
         </div>
         <p class="text-gray-500 font-medium">No active time slots configured.</p>
         <a href="{{ route('time-slots.index') }}" class="btn-primary mt-4 text-sm inline-flex">
@@ -41,9 +41,9 @@
     </div>
     @else
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50">
+        <div class="px-6 py-4 border-b border-gray-100" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
             <p class="text-sm text-gray-500">
-                <i class="fas fa-door-open text-violet-400 mr-1"></i>
+                <i class="fas fa-door-open mr-1" style="color: #c9a96e;"></i>
                 <strong class="text-gray-700">{{ $rooms->count() }}</strong> slot rooms available.
                 Green = available slots, Red = fully booked.
             </p>
@@ -80,8 +80,8 @@
                             $color       = $pct >= 100 ? 'red' : ($pct >= 60 ? 'amber' : 'green');
                             $bookedRooms = $s['booked_rooms'] ?? [];
                             $freeRooms   = $s['free_rooms']   ?? [];
-                            $colorMap    = ['green'=>'#16a34a','amber'=>'#d97706','red'=>'#dc2626'];
-                            $bgColorMap  = ['green'=>'#f0fdf4','amber'=>'#fffbeb','red'=>'#fff1f2'];
+                            $colorMap    = ['green'=>'#16a34a','amber'=>'#b08d56','red'=>'#dc2626'];
+                            $bgColorMap  = ['green'=>'#f0fdf4','amber'=>'rgba(201,169,110,.08)','red'=>'#fff1f2'];
                         @endphp
                         <td class="px-4 py-3 text-center rpt-slot-cell cursor-help"
                             data-booked="{{ json_encode($bookedRooms) }}"

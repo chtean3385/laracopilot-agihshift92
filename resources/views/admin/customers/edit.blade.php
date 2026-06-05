@@ -7,7 +7,7 @@
 <div class="max-w-4xl">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
-            <h3 class="font-bold text-gray-800"><i class="fas fa-edit text-amber-500 mr-2"></i>Edit: {{ $customer->name }}</h3>
+            <h3 class="font-bold text-gray-800"><i class="fas fa-edit text-[#c9a96e] mr-2"></i>Edit: {{ $customer->name }}</h3>
         </div>
         <form action="{{ route('customers.update', $customer->id) }}" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf @method('PUT')
@@ -43,7 +43,7 @@
                 <div><label class="form-label">Nationality</label><input type="text" name="nationality" value="{{ old('nationality', $customer->nationality) }}" class="form-input"></div>
 
                 <div class="md:col-span-2 border-t border-gray-100 pt-4">
-                    <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-id-card text-cyan-500 mr-2"></i>Identity Proof</h4>
+                    <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-id-card text-[#c9a96e] mr-2"></i>Identity Proof</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="form-label">ID / Document Type <span class="text-red-500">*</span></label>
@@ -72,7 +72,7 @@
                             <input type="file" name="documents[]" multiple accept=".jpg,.jpeg,.png,.pdf" class="form-input" style="padding:8px;">
                             <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>JPG, PNG or PDF · Max 5 MB each · Adds to existing documents</p>
                             @if($customer->documents->count() > 0)
-                            <p class="text-xs text-cyan-600 mt-1">
+                            <p class="text-xs text-[#c9a96e] mt-1">
                                 <i class="fas fa-paperclip mr-1"></i>{{ $customer->documents->count() }} document(s) already on file —
                                 <a href="{{ route('documents.index', $customer->id) }}" class="underline">manage</a>
                             </p>
@@ -83,7 +83,7 @@
 
                 {{-- Travel Details --}}
                 <div class="md:col-span-2 border-t border-gray-100 pt-4">
-                    <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-plane text-cyan-500 mr-2"></i>Travel Details <span class="text-xs text-gray-400 font-normal">(for police report / guest register)</span></h4>
+                    <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-plane text-[#c9a96e] mr-2"></i>Travel Details <span class="text-xs text-gray-400 font-normal">(for police report / guest register)</span></h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="form-label">Arriving From (City)</label>
@@ -114,7 +114,7 @@
                 </div>
 
                 <div class="md:col-span-2 border-t border-gray-100 pt-4">
-                    <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-building text-violet-500 mr-2"></i>Company / Corporate Billing <span class="text-xs text-gray-400 font-normal">(optional — fill for B2B GST invoices)</span></h4>
+                    <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-building mr-2" style="color: #c9a96e;"></i>Company / Corporate Billing <span class="text-xs text-gray-400 font-normal">(optional — fill for B2B GST invoices)</span></h4>
                     <p class="text-xs text-gray-400 mb-4">If the guest is billing to a company, fill these to auto-populate the GST Tax Invoice.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>

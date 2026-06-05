@@ -23,8 +23,8 @@
         box-shadow: none;
     }
     .ts-wrapper.focus .ts-control {
-        border-color: #06b6d4;
-        box-shadow: 0 0 0 3px rgba(6,182,212,.12);
+        border-color: #c9a96e;
+        box-shadow: 0 0 0 3px rgba(201,169,110,.12);
         outline: none;
     }
     .ts-control input {
@@ -58,15 +58,15 @@
         border-top: 5px solid #9ca3af;
         pointer-events: none;
     }
-    .ts-wrapper.open .ts-control::after { border-top: none; border-bottom: 5px solid #06b6d4; }
-    .ts-wrapper.open .ts-control { border-color: #06b6d4; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .ts-wrapper.open .ts-control::after { border-top: none; border-bottom: 5px solid #c9a96e; }
+    .ts-wrapper.open .ts-control { border-color: #c9a96e; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
     .ts-dropdown {
         position: absolute;
         top: 100%;
         left: 0; right: 0;
         z-index: 9999;
         background: #fff;
-        border: 1.5px solid #06b6d4;
+        border: 1.5px solid #c9a96e;
         border-top: none;
         border-bottom-left-radius: 10px;
         border-bottom-right-radius: 10px;
@@ -86,13 +86,13 @@
     }
     .ts-dropdown .option:last-child { border-bottom: none; }
     .ts-dropdown .option:hover,
-    .ts-dropdown .option.active { background: #f0fdfe; color: #0891b2; }
-    .ts-dropdown .option.selected { background: #cffafe; color: #0e7490; font-weight: 500; }
+    .ts-dropdown .option.active { background: rgba(201,169,110,.06); color: #b08d56; }
+    .ts-dropdown .option.selected { background: rgba(201,169,110,.1); color: #a07c4e; font-weight: 500; }
     .ts-dropdown .no-results { padding: 12px 14px; font-size: 13px; color: #9ca3af; text-align: center; }
-    .ts-dropdown .ts-dropdown-content .create { padding: 10px 14px; font-size: 13px; color: #06b6d4; }
+    .ts-dropdown .ts-dropdown-content .create { padding: 10px 14px; font-size: 13px; color: #c9a96e; }
     /* Booking-type pill buttons */
     .btp-btn { color: #6b7280; background: transparent; }
-    .btp-btn.btp-active { background: #fff; color: #0891b2; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+    .btp-btn.btp-active { background: #fff; color: #b08d56; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
     .btp-btn:hover:not(.btp-active) { background: rgba(255,255,255,.55); color: #374151; }
 </style>
 @endpush
@@ -101,11 +101,11 @@
 <div class="max-w-4xl">
     <a href="{{ route('bookings.index') }}" class="btn-secondary text-sm mb-5 inline-flex"><i class="fas fa-arrow-left mr-2"></i>Back to Bookings</a>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 flex items-center justify-between">
-            <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-plus text-cyan-500 mr-2"></i>Booking Details</h3>
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
+            <h3 class="font-bold text-gray-800"><i class="fas fa-calendar-plus mr-2" style="color: #c9a96e;"></i>Booking Details</h3>
             <label class="inline-flex items-center gap-2 cursor-pointer select-none" title="Book entire property for the selected dates">
-                <input type="checkbox" id="wholeHotelToggle" class="w-3.5 h-3.5 accent-amber-500 cursor-pointer" onclick="toggleWholeHotel()"{{ old('is_whole_hotel') == '1' ? ' checked' : '' }}>
-                <span class="text-xs font-medium text-amber-700"><i class="fas fa-hotel mr-1"></i>Whole Hotel / Villa</span>
+                <input type="checkbox" id="wholeHotelToggle" class="w-3.5 h-3.5 cursor-pointer" style="accent-color: #c9a96e;" onclick="toggleWholeHotel()"{{ old('is_whole_hotel') == '1' ? ' checked' : '' }}>
+                <span class="text-xs font-medium" style="color: #b08d56;"><i class="fas fa-hotel mr-1"></i>Whole Hotel / Villa</span>
             </label>
         </div>
         {{-- Validation error banner --}}
@@ -205,7 +205,7 @@
                     <div class="flex items-center justify-between mb-1">
                         <label class="form-label mb-0">Guest <span class="text-red-500">*</span></label>
                         <button type="button" onclick="openQuickGuestModal()"
-                            class="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 hover:text-cyan-800 transition-colors"
+                            class="inline-flex items-center gap-1 text-xs font-semibold transition-colors" style="color: #c9a96e;" onmouseover="this.style.color='#b08d56'" onmouseout="this.style.color='#c9a96e'"
                             title="Add new guest">
                             <i class="fas fa-user-plus text-xs"></i> + Add Guest
                         </button>
@@ -258,8 +258,8 @@
                 @if($slotModuleOn)
                 {{-- Whole Hotel: Arrival Time Slot row (shown only when whole hotel toggle is ON) --}}
                 <div id="whArrivalSlotRow" class="md:col-span-2 hidden">
-                    <div class="border border-amber-200 bg-amber-50 rounded-xl p-4">
-                        <label class="form-label mb-2"><i class="fas fa-clock mr-1 text-amber-500"></i>Arrival Time Slot <span class="text-xs font-normal text-gray-400">(optional — leave blank for full-day check-in)</span></label>
+                    <div class="rounded-xl p-4" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
+                        <label class="form-label mb-2"><i class="fas fa-clock mr-1" style="color: #c9a96e;"></i>Arrival Time Slot <span class="text-xs font-normal text-gray-400">(optional — leave blank for full-day check-in)</span></label>
                         <select name="time_slot_id" id="whArrivalSlotSelect" class="form-input" onchange="syncWhSlotMode()">
                             <option value="">No specific slot (full-day check-in)</option>
                             @foreach($timeSlots as $slot)
@@ -270,7 +270,7 @@
                             @endforeach
                         </select>
                         @error('time_slot_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        <p class="text-xs text-amber-600 mt-2"><i class="fas fa-info-circle mr-1"></i>Select a slot if this booking starts from a specific time on check-in day (e.g. 5pm onward). Same-day bookings with non-overlapping slots can then coexist.</p>
+                        <p class="text-xs mt-2" style="color: #a07c4e;"><i class="fas fa-info-circle mr-1"></i>Select a slot if this booking starts from a specific time on check-in day (e.g. 5pm onward). Same-day bookings with non-overlapping slots can then coexist.</p>
                     </div>
                 </div>
                 @endif
@@ -278,9 +278,9 @@
                 @if($slotModuleOn)
                 {{-- Per Slot fields (time-slot-pricing module) --}}
                 <div id="perSlotFields" class="md:col-span-2 hidden">
-                    <div class="border border-violet-100 bg-violet-50 rounded-2xl p-5 space-y-4">
+                    <div class="rounded-2xl p-5 space-y-4" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
                         <div class="flex items-center gap-2 mb-1">
-                            <i class="fas fa-clock text-violet-500"></i>
+                            <i class="fas fa-clock" style="color: #c9a96e;"></i>
                             <h4 class="font-bold text-gray-700">Slot Booking</h4>
                         </div>
                         <div class="grid grid-cols-1 gap-4">
@@ -303,34 +303,34 @@
                             <label class="form-label">Add-Ons <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
                             <div class="flex flex-wrap gap-3 mt-1">
                                 @foreach($addOns as $ao)
-                                <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-violet-300 transition-colors text-sm">
-                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded text-violet-500 addon-check" data-price="{{ $ao->price }}" onchange="calculateSlotTotal()">
+                                <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-gray-300 transition-colors text-sm">
+                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded addon-check" style="color: #c9a96e;" data-price="{{ $ao->price }}" onchange="calculateSlotTotal()">
                                     <span class="font-medium text-gray-700">{{ $ao->name }}</span>
-                                    <span class="text-violet-600 font-bold">+₹{{ number_format($ao->price) }}</span>
+                                    <span class="font-bold" style="color: #c9a96e;">+₹{{ number_format($ao->price) }}</span>
                                 </label>
                                 @endforeach
                             </div>
                         </div>
                         @endif
-                        <div class="bg-white rounded-xl border border-violet-200 px-4 py-4 space-y-3">
+                        <div class="bg-white rounded-xl border border-gray-200 px-4 py-4 space-y-3">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
-                                    <i class="fas fa-rupee-sign text-violet-500"></i>
+                                    <i class="fas fa-rupee-sign" style="color: #c9a96e;"></i>
                                     <span class="text-sm text-gray-500 font-medium">Calculated Total:</span>
                                 </div>
-                                <span id="slotTotalDisplay" class="text-xl font-bold text-violet-700">—</span>
+                                <span id="slotTotalDisplay" class="text-xl font-bold" style="color: #c9a96e;">—</span>
                             </div>
-                            <div class="border-t border-violet-100 pt-3">
+                            <div class="border-t border-gray-100 pt-3">
                                 <label class="text-sm font-semibold text-gray-700 block mb-1.5">
-                                    <i class="fas fa-pen text-violet-400 mr-1 text-xs"></i>Custom Total (₹)
+                                    <i class="fas fa-pen mr-1 text-xs" style="color: #7a8a9a;"></i>Custom Total (₹)
                                     <span class="text-xs text-gray-400 font-normal ml-1">— override calculated price</span>
                                 </label>
                                 <div class="flex items-center gap-2">
                                     <input type="number" id="slotCustomTotalInput" step="1" min="0"
-                                           class="form-input flex-1 font-bold text-violet-700"
+                                           class="form-input flex-1 font-bold" style="color: #c9a96e;"
                                            placeholder="Enter amount to override">
                                     <button type="button" id="resetSlotTotalBtn" onclick="resetSlotCustomTotal()"
-                                            class="text-xs text-violet-500 hover:text-violet-700 underline hidden whitespace-nowrap">↺ Reset</button>
+                                            class="text-xs underline hidden whitespace-nowrap" style="color: #c9a96e;" onmouseover="this.style.color='#b08d56'" onmouseout="this.style.color='#c9a96e'">↺ Reset</button>
                                 </div>
                             </div>
                         </div>
@@ -341,11 +341,11 @@
                 @if($hourlyModuleOn)
                 {{-- Per Hour fields (hourly-pricing module) --}}
                 <div id="perHourFields" class="md:col-span-2 hidden">
-                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5 space-y-4">
+                    <div class="rounded-2xl p-5 space-y-4" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
                         <div class="flex items-center gap-2 mb-1">
-                            <i class="fas fa-hourglass-half text-amber-500"></i>
+                            <i class="fas fa-hourglass-half" style="color: #c9a96e;"></i>
                             <h4 class="font-bold text-gray-700">Hourly Booking</h4>
-                            <span id="hourlyRateTag" class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold"></span>
+                            <span id="hourlyRateTag" class="text-xs rounded-full px-2 py-0.5 font-semibold" style="background: rgba(201,169,110,.15); color: #b08d56;"></span>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -362,27 +362,27 @@
                             <label class="form-label">Add-Ons <span class="text-gray-400 font-normal text-xs">(optional)</span></label>
                             <div class="flex flex-wrap gap-3 mt-1">
                                 @foreach($addOns as $ao)
-                                <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-amber-300 transition-colors text-sm">
-                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded text-amber-500 addon-check-hour" data-price="{{ $ao->price }}">
+                                <label class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:border-gray-300 transition-colors text-sm">
+                                    <input type="checkbox" name="addon_ids[]" value="{{ $ao->id }}" class="w-4 h-4 rounded addon-check-hour" style="color: #c9a96e;" data-price="{{ $ao->price }}">
                                     <span class="font-medium text-gray-700">{{ $ao->name }}</span>
-                                    <span class="text-amber-600 font-bold">+₹{{ number_format($ao->price) }}</span>
+                                    <span class="font-bold" style="color: #c9a96e;">+₹{{ number_format($ao->price) }}</span>
                                 </label>
                                 @endforeach
                             </div>
                         </div>
                         @endif
-                        <div class="bg-white rounded-xl border border-amber-100 p-4 space-y-3">
-                            <div class="flex items-center gap-2 text-sm text-amber-700">
-                                <i class="fas fa-clock text-amber-500"></i>
+                        <div class="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+                            <div class="flex items-center gap-2 text-sm" style="color: #a07c4e;">
+                                <i class="fas fa-clock" style="color: #c9a96e;"></i>
                                 <span class="font-medium">Billing is calculated at check-out from actual hours. Optionally set a fixed total below to override.</span>
                             </div>
                             <div class="flex items-center gap-3">
                                 <label class="text-sm font-semibold text-gray-600 whitespace-nowrap">Custom Total (₹)</label>
                                 <input type="number" id="hourCustomTotalInput" step="1" min="0"
-                                       class="form-input flex-1 text-amber-700 font-bold"
+                                       class="form-input flex-1 font-bold" style="color: #c9a96e;"
                                        placeholder="Leave blank to calculate at check-out">
                                 <button type="button" id="resetHourTotalBtn" onclick="resetHourCustomTotal()"
-                                        class="text-xs text-amber-500 hover:text-amber-700 underline hidden">↺ Clear</button>
+                                        class="text-xs underline hidden" style="color: #c9a96e;" onmouseover="this.style.color='#b08d56'" onmouseout="this.style.color='#c9a96e'">↺ Clear</button>
                             </div>
                         </div>
                     </div>
@@ -399,33 +399,33 @@
 
                 <!-- Meal Plan Section -->
                 <div class="md:col-span-2" id="mealPlanSection" style="display:none">
-                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">
+                    <div class="rounded-2xl p-5" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
                         <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-utensils text-amber-500"></i>
+                            <i class="fas fa-utensils" style="color: #c9a96e;"></i>
                             <h4 class="font-bold text-gray-700">Meal Plan</h4>
                             <span class="text-xs text-gray-400 ml-1">— prices are per night</span>
                         </div>
                         <div class="flex flex-wrap gap-4">
                             <label id="meal_breakfast_row" class="hidden items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
                                 <input type="checkbox" name="meal_breakfast" value="1" id="meal_breakfast"
-                                    class="w-4 h-4 rounded text-amber-500" onchange="calculateTotal()"
+                                    class="w-4 h-4 rounded" style="color: #c9a96e;" onchange="calculateTotal()"
                                     {{ old('meal_breakfast') ? 'checked' : '' }}>
-                                <span class="font-semibold text-gray-700"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
-                                <span id="meal_breakfast_price" class="text-sm text-amber-600 font-bold"></span>
+                                <span class="font-semibold text-gray-700"><i class="fas fa-coffee mr-1" style="color: #c9a96e;"></i>Breakfast</span>
+                                <span id="meal_breakfast_price" class="text-sm font-bold" style="color: #c9a96e;"></span>
                             </label>
                             <label id="meal_lunch_row" class="hidden items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
                                 <input type="checkbox" name="meal_lunch" value="1" id="meal_lunch"
-                                    class="w-4 h-4 rounded text-orange-500" onchange="calculateTotal()"
+                                    class="w-4 h-4 rounded" style="color: #c9a96e;" onchange="calculateTotal()"
                                     {{ old('meal_lunch') ? 'checked' : '' }}>
-                                <span class="font-semibold text-gray-700"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
-                                <span id="meal_lunch_price" class="text-sm text-orange-600 font-bold"></span>
+                                <span class="font-semibold text-gray-700"><i class="fas fa-sun mr-1" style="color: #c9a96e;"></i>Lunch</span>
+                                <span id="meal_lunch_price" class="text-sm font-bold" style="color: #c9a96e;"></span>
                             </label>
                             <label id="meal_dinner_row" class="hidden items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
                                 <input type="checkbox" name="meal_dinner" value="1" id="meal_dinner"
-                                    class="w-4 h-4 rounded text-indigo-500" onchange="calculateTotal()"
+                                    class="w-4 h-4 rounded" style="color: #c9a96e;" onchange="calculateTotal()"
                                     {{ old('meal_dinner') ? 'checked' : '' }}>
-                                <span class="font-semibold text-gray-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
-                                <span id="meal_dinner_price" class="text-sm text-indigo-600 font-bold"></span>
+                                <span class="font-semibold text-gray-700"><i class="fas fa-moon mr-1" style="color: #c9a96e;"></i>Dinner</span>
+                                <span id="meal_dinner_price" class="text-sm font-bold" style="color: #c9a96e;"></span>
                             </label>
                         </div>
                     </div>
@@ -433,10 +433,10 @@
 
                 <!-- Extra Bed Section -->
                 <div class="md:col-span-2" id="extraBedSection" style="display:none">
-                    <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
+                    <div class="rounded-2xl p-5" style="border: 1px solid rgba(122,138,154,.2); background: rgba(122,138,154,.04);">
                         <div class="flex items-center gap-4 flex-wrap">
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-bed text-blue-500"></i>
+                                <i class="fas fa-bed" style="color: #7a8a9a;"></i>
                                 <h4 class="font-bold text-gray-700">Extra Beds</h4>
                             </div>
                             <div class="flex items-center gap-3">
@@ -444,15 +444,15 @@
                                 <input type="number" name="extra_beds" id="extraBedsInput"
                                     value="{{ old('extra_beds', 0) }}" min="0" max="10"
                                     class="form-input w-20 text-sm text-center" onchange="calculateTotal()">
-                                <span id="extraBedPriceLabel" class="text-sm text-blue-600 font-semibold"></span>
+                                <span id="extraBedPriceLabel" class="text-sm font-semibold" style="color: #7a8a9a;"></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Price Summary -->
-                <div id="priceNightSummary" class="md:col-span-2 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-5 border border-cyan-100">
-                    <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-calculator text-cyan-500 mr-2"></i>Price Summary</h4>
+                <div id="priceNightSummary" class="md:col-span-2 rounded-2xl p-5 border border-gray-100" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
+                    <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-calculator mr-2" style="color: #c9a96e;"></i>Price Summary</h4>
                     <div class="grid grid-cols-3 gap-4 text-center">
                         <div>
                             <div class="text-sm text-gray-500">Nights</div>
@@ -466,24 +466,25 @@
                             <div class="text-sm text-gray-500">Total Amount</div>
                             <input type="number" id="customTotalInput" name="custom_total" step="1" min="0"
                                    value="{{ old('custom_total') }}"
-                                   class="text-2xl font-bold text-cyan-600 bg-transparent border-b-2 border-dashed border-cyan-300 w-full text-center focus:outline-none focus:border-cyan-500 py-0.5"
+                                   class="text-2xl font-bold bg-transparent border-b-2 border-dashed w-full text-center focus:outline-none py-0.5"
+                                   style="color: #c9a96e; border-color: rgba(201,169,110,.3);" style="focus:border-color: #c9a96e;"
                                    placeholder="—">
-                            <div id="mealCostLine" class="text-xs text-amber-600 font-semibold mt-1"></div>
+                            <div id="mealCostLine" class="text-xs font-semibold mt-1" style="color: #a07c4e;"></div>
                             <div class="mt-1 text-center">
                                 <button type="button" id="resetTotalBtn" onclick="resetCustomTotal()"
-                                        class="text-xs text-cyan-500 hover:text-cyan-700 underline hidden">↺ Reset to calculated</button>
+                                        class="text-xs underline hidden" style="color: #c9a96e;" onmouseover="this.style.color='#b08d56'" onmouseout="this.style.color='#c9a96e'">↺ Reset to calculated</button>
                             </div>
                         </div>
                     </div>
                     @if($taxRate > 0)
-                    <div class="mt-3 pt-3 border-t border-cyan-200 space-y-1.5">
+                    <div class="mt-3 pt-3 border-t border-gray-200 space-y-1.5">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">GST ({{ $taxRate }}%)</span>
-                            <span id="gstAmountDisplay" class="font-semibold text-violet-600">—</span>
+                            <span id="gstAmountDisplay" class="font-semibold" style="color: #c9a96e;">—</span>
                         </div>
                         <div class="flex justify-between text-sm font-bold">
                             <span class="text-gray-700">Grand Total (incl. GST)</span>
-                            <span id="grandTotalDisplay" class="text-cyan-700 text-base">—</span>
+                            <span id="grandTotalDisplay" class="text-base" style="color: #1a2332;">—</span>
                         </div>
                     </div>
                     @endif
@@ -518,9 +519,9 @@
 {{-- Quick Add Guest Modal --}}
 <div id="quickGuestModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(0,0,0,.45);" onclick="if(event.target===this)closeQuickGuestModal()">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style="max-height:92vh;" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-2xl">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 rounded-t-2xl" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center flex-shrink-0">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background: #c9a96e;">
                     <i class="fas fa-user-plus text-white text-xs"></i>
                 </div>
                 <div>
