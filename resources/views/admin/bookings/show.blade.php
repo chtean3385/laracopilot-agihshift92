@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $_showSettings = \App\Models\Setting::first();
+    $_showSettings = $settings;
     $_taxRate      = ($_showSettings && !empty($_showSettings->gst_number) && ($_showSettings->tax_rate ?? 0) > 0)
                         ? (float) $_showSettings->tax_rate : 0;
 @endphp
@@ -261,7 +261,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="font-bold text-gray-800 mb-4">Payment Summary</h3>
                     @php
-                        $bSettings          = \App\Models\Setting::first();
+                        $bSettings          = $settings;
                         $bTaxRate           = ($bSettings && $bSettings->gst_number && $bSettings->tax_rate > 0) ? (float) $bSettings->tax_rate : 0;
                         $bExtraChargesTotal = $booking->extraCharges->sum('total_price');
 

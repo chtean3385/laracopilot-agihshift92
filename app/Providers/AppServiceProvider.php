@@ -22,14 +22,19 @@ class AppServiceProvider extends ServiceProvider
         // Fix "Specified key was too long" on MySQL < 5.7.7 / MariaDB < 10.2.2
         Schema::defaultStringLength(191);
 
-        // Share hotel-scoped settings at view render time (after middleware has set context)
+        // Share hotel-scoped settings with all views.
+        // Cache the result in the app container so Setting::first() runs ONCE per request,
+        // not once per view partial (the '*' composer fires for every @include too).
         View::composer('*', function ($view) {
             if (!$view->offsetExists('settings')) {
-                try {
-                    $view->with('settings', \App\Models\Setting::first());
-                } catch (\Throwable $e) {
-                    $view->with('settings', null);
+                if (!app()->bound('crm.settings')) {
+                    try {
+                        app()->instance('crm.settings', \App\Models\Setting::first());
+                    } catch (\Throwable $e) {
+                        app()->instance('crm.settings', null);
+                    }
                 }
+                $view->with('settings', app('crm.settings'));
             }
         });
 
