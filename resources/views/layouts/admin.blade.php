@@ -1376,16 +1376,6 @@
                         <span style="font-size:12px;color:#0f172a;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">{{ session('crm_user_name','Admin') }} · <span style="color:{{ $roleBgTop }};">{{ session('crm_user_role','Admin') }}</span></span>
                     </div>
                 </div>
-
-                {{-- Dashboard Dark Mode Toggle (only on dashboard page) --}}
-                @if(request()->routeIs('dashboard'))
-                <button id="dbThemeToggle" onclick="toggleDashboardTheme()"
-                    title="Toggle Dark Mode"
-                    style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;flex-shrink:0;transition:all .15s;"
-                    onmouseover="this.style.borderColor='#d4af37';this.style.background='#fffbeb'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
-                    <i class="fas fa-moon" id="dbThemeIcon" style="font-size:14px;"></i>
-                </button>
-                @endif
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <div class="topbar-date" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:7px 12px;">
@@ -2431,38 +2421,6 @@ function crmToastManager() {
 window.crmToast = function(type, message, title) {
     window.dispatchEvent(new CustomEvent('crm-toast', { detail: { type, message, title } }));
 };
-
-// ══ Dashboard Dark Mode Toggle (persisted in localStorage) ══
-(function(){
-    if (!document.getElementById('dbThemeToggle')) return; // not on dashboard
-    var key = 'db_dark_mode';
-    var btn = document.getElementById('dbThemeToggle');
-    var icon = document.getElementById('dbThemeIcon');
-    var body = document.body;
-    var main = document.getElementById('main-wrap');
-    var isDark = localStorage.getItem(key) === '1';
-
-    function applyTheme() {
-        if (isDark) {
-            body.classList.add('db-dark');
-            main.style.background = '#08090d';
-            icon.className = 'fas fa-sun';
-            icon.style.color = '#d4af37';
-        } else {
-            body.classList.remove('db-dark');
-            main.style.background = '#f1f5f9';
-            icon.className = 'fas fa-moon';
-            icon.style.color = '#475569';
-        }
-    }
-    applyTheme();
-
-    window.toggleDashboardTheme = function() {
-        isDark = !isDark;
-        localStorage.setItem(key, isDark ? '1' : '0');
-        applyTheme();
-    };
-})();
 </script>
 
 {{-- ApexCharts (self-hosted) — required by dashboard & report charts --}}
