@@ -12,7 +12,7 @@
     .btn-sm{padding:5px 11px;font-size:.78rem;border-radius:7px;}
     .btn-danger{background:#fee2e2;color:#dc2626;border:1px solid #fecaca;}
     .btn-green{background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;}
-    .btn-orange{background:rgba(201,169,110,.08);color:#b08d56;border:1px solid rgba(201,169,110,.2);}
+    .btn-orange{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;}
     .btn-blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;}
     .btn-purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;}
     .alert-banner{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;color:#dc2626;font-size:.88rem;font-weight:600;}

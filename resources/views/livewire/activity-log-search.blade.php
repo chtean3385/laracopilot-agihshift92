@@ -12,7 +12,7 @@
                         placeholder="User name, email, description…"
                     >
                     <div wire:loading.delay wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg class="animate-spin h-4 w-4" style="color: #c9a96e;" fill="none" viewBox="0 0 24 24">
+                        <svg class="animate-spin h-4 w-4 text-cyan-500" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
@@ -59,7 +59,7 @@
             @endif
         </div>
         @if($search || $module || $action || $date || $hotelFilter)
-        <p class="text-xs font-medium mt-3" style="color: #c9a96e;">
+        <p class="text-xs text-cyan-600 font-medium mt-3">
             <i class="fas fa-filter mr-1"></i>Showing {{ $logs->total() }} result(s) — filters active
         </p>
         @endif
@@ -73,7 +73,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">{{ $logs->total() }} entries found</p>
             </div>
             <div class="flex items-center gap-2 text-xs text-gray-400">
-                <i class="fas fa-shield-halved" style="color: #c9a96e;"></i>
+                <i class="fas fa-shield-halved text-cyan-500"></i>
                 Real-time activity tracking
             </div>
         </div>

@@ -6,8 +6,8 @@
 <div class="max-w-2xl">
 
     @if(session('success'))
-    <div class="mb-4 rounded-xl px-4 py-3 flex items-center gap-2 text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
-        <i class="fas fa-check-circle" style="color: #c9a96e;"></i>{{ session('success') }}
+    <div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl px-4 py-3 flex items-center gap-2 text-sm">
+        <i class="fas fa-check-circle text-emerald-500"></i>{{ session('success') }}
     </div>
     @endif
 
@@ -25,9 +25,9 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 flex items-center gap-3" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.1);">
-                <i class="fas fa-edit" style="color: #c9a96e;"></i>
+        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-yellow-50 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <i class="fas fa-edit text-amber-600"></i>
             </div>
             <div>
                 <div class="font-bold text-gray-800">Edit Invoice</div>
@@ -38,8 +38,8 @@
         <form action="{{ route('invoices.update', $invoice->id) }}" method="POST" class="p-6 space-y-5">
             @csrf @method('PUT')
 
-            <div class="rounded-xl p-4 text-sm" style="background: rgba(122,138,154,.04); border: 1px solid rgba(122,138,154,.12); color: #64748b;">
-                <div class="font-semibold mb-2" style="color: #475569;"><i class="fas fa-info-circle mr-1" style="color: #7a8a9a;"></i>Booking reference</div>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600">
+                <div class="font-semibold text-slate-700 mb-2"><i class="fas fa-info-circle mr-1 text-slate-400"></i>Booking reference</div>
                 <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                     <div><span class="text-gray-400">Booking#</span> <span class="font-mono font-bold">{{ $invoice->booking->booking_number }}</span></div>
                     <div><span class="text-gray-400">Room</span> {{ $invoice->booking->is_whole_hotel ? 'Whole Hotel' : ('Room ' . ($invoice->booking->room?->room_number ?? '—')) }}</div>
@@ -97,7 +97,7 @@
             </div>
 
             @if($invoice->notes)
-            <div class="rounded-xl px-4 py-3 text-xs" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+            <div class="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-xs text-amber-700">
                 <span class="font-semibold">Previous notes:</span> {{ $invoice->notes }}
             </div>
             @endif

@@ -23,7 +23,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
             <div class="text-xs text-gray-400 uppercase font-semibold">Total Revenue</div>
-            <div class="text-2xl font-black mt-1" style="color: #c9a96e;">₹{{ number_format($totalRevenue) }}</div>
+            <div class="text-2xl font-black text-emerald-600 mt-1">₹{{ number_format($totalRevenue) }}</div>
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
             <div class="text-xs text-gray-400 uppercase font-semibold">Cash</div>
@@ -109,10 +109,10 @@
                     <tr class="hover:bg-slate-50">
                         <td class="px-6 py-3 text-xs text-gray-500">{{ $p->created_at->format('d M Y') }}</td>
                         <td class="px-6 py-3 text-sm font-medium">{{ $p->booking->customer->name ?? 'N/A' }}</td>
-                        <td class="px-6 py-3 text-xs font-mono text-[#c9a96e]">{{ $p->booking->booking_number ?? 'N/A' }}</td>
+                        <td class="px-6 py-3 text-xs font-mono text-cyan-600">{{ $p->booking->booking_number ?? 'N/A' }}</td>
                         <td class="px-6 py-3 text-sm">
                             @if($isWH)
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style="background: rgba(201,169,110,.15); color: #b08d56;">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
                                     <i class="fas fa-hotel" style="font-size:10px;"></i> Whole Hotel
                                 </span>
                             @else
@@ -120,7 +120,7 @@
                             @endif
                         </td>
                         <td class="px-6 py-3 text-sm">{{ ucfirst($p->payment_method) }}</td>
-                        <td class="px-6 py-3 text-sm font-bold text-right" style="color: #c9a96e;">₹{{ number_format($p->amount) }}</td>
+                        <td class="px-6 py-3 text-sm font-bold text-emerald-600 text-right">₹{{ number_format($p->amount) }}</td>
                     </tr>
                     @empty
                     <tr><td colspan="6" class="px-6 py-12 text-center text-gray-400">No transactions in this period</td></tr>

@@ -7,8 +7,8 @@
     <!-- Stats -->
     <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
         <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(34,197,94,.1);">
-                <i class="fas fa-check-circle text-sm" style="color: #22c55e;"></i>
+            <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
             </div>
             <div>
                 <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['available'] }}</div>
@@ -16,8 +16,8 @@
             </div>
         </div>
         <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(239,68,68,.1);">
-                <i class="fas fa-bed text-sm" style="color: #ef4444;"></i>
+            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-bed text-red-500 text-sm"></i>
             </div>
             <div>
                 <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['occupied'] }}</div>
@@ -25,18 +25,18 @@
             </div>
         </div>
         {{-- Dirty rooms — highlighted in orange when > 0 --}}
-        <div class="{{ $stats['dirty'] > 0 ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-100' }} rounded-xl px-3 py-2.5 shadow-sm border flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {{ $stats['dirty'] > 0 ? 'rgba(176,141,86,.2)' : 'rgba(176,141,86,.1)' }};">
-                <i class="fas fa-broom text-sm" style="color: {{ $stats['dirty'] > 0 ? '#a07c4e' : '#c9a96e' }};"></i>
+        <div class="{{ $stats['dirty'] > 0 ? 'bg-orange-50 border-orange-300' : 'bg-white border-gray-100' }} rounded-xl px-3 py-2.5 shadow-sm border flex items-center gap-2.5">
+            <div class="w-8 h-8 {{ $stats['dirty'] > 0 ? 'bg-orange-200' : 'bg-orange-100' }} rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-broom {{ $stats['dirty'] > 0 ? 'text-orange-600' : 'text-orange-400' }} text-sm"></i>
             </div>
             <div>
-                <div class="text-lg font-bold leading-none {{ $stats['dirty'] > 0 ? 'text-gray-800' : 'text-gray-800' }}" style="{{ $stats['dirty'] > 0 ? 'color: #b08d56;' : '' }}">{{ $stats['dirty'] }}</div>
-                <div class="text-xs {{ $stats['dirty'] > 0 ? 'font-semibold' : 'text-gray-500' }} mt-0.5" style="{{ $stats['dirty'] > 0 ? 'color: #c9a96e;' : '' }}">Needs Cleaning</div>
+                <div class="text-lg font-bold {{ $stats['dirty'] > 0 ? 'text-orange-700' : 'text-gray-800' }} leading-none">{{ $stats['dirty'] }}</div>
+                <div class="text-xs {{ $stats['dirty'] > 0 ? 'text-orange-600 font-semibold' : 'text-gray-500' }} mt-0.5">Needs Cleaning</div>
             </div>
         </div>
         <div class="bg-white rounded-xl px-3 py-2.5 shadow-sm border border-gray-100 flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background: rgba(122,138,154,.1);">
-                <i class="fas fa-tools text-sm" style="color: #7a8a9a;"></i>
+            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-tools text-amber-500 text-sm"></i>
             </div>
             <div>
                 <div class="text-lg font-bold text-gray-800 leading-none">{{ $stats['maintenance'] }}</div>
@@ -63,10 +63,10 @@
                     type="text"
                     wire:model.live.debounce.400ms="search"
                     placeholder="Room #, type, view, amenities..."
-                    class="border border-gray-200 rounded-xl pl-9 pr-9 py-2.5 text-sm outline-none w-64"
+                    class="border border-gray-200 rounded-xl pl-9 pr-9 py-2.5 text-sm focus:ring-2 focus:ring-cyan-500 outline-none w-64"
                 >
                 <div wire:loading.delay wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
-                    <svg class="animate-spin h-4 w-4" style="color: #c9a96e;" fill="none" viewBox="0 0 24 24">
+                    <svg class="animate-spin h-4 w-4 text-cyan-500" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                     </svg>
@@ -98,7 +98,7 @@
     </div>
 
     @if($search || $status || $type)
-    <p class="text-xs font-medium -mt-2" style="color: #c9a96e;">
+    <p class="text-xs text-cyan-600 font-medium -mt-2">
         <i class="fas fa-filter mr-1"></i>Showing {{ $rooms->total() }} result(s) — filters active
     </p>
     @endif
@@ -109,16 +109,11 @@
         @php $isDirty = $room->status === 'dirty'; @endphp
         <div class="bg-white rounded-2xl shadow-sm border {{ $room->status == 'inactive' ? 'border-gray-200 opacity-75' : ($isDirty ? 'border-orange-300' : 'border-gray-100') }} overflow-hidden card-hover {{ $isDirty ? 'ring-2 ring-orange-200' : '' }}">
             <div class="h-3 bg-gradient-to-r
-                @if($room->status == 'available') from-green-400 to-green-500
-                @elseif($room->status == 'occupied') from-red-400 to-red-500
-                @elseif($isDirty) from-gray-400 to-gray-500
+                @if($room->status == 'available') from-emerald-400 to-teal-500
+                @elseif($room->status == 'occupied') from-red-400 to-rose-500
+                @elseif($isDirty) from-orange-400 to-amber-500
                 @elseif($room->status == 'inactive') from-gray-300 to-gray-400
-                @else from-gray-400 to-gray-500 @endif" style="
-                @if($room->status == 'available') background: linear-gradient(to right, #22c55e, #16a34a);
-                @elseif($room->status == 'occupied') background: linear-gradient(to right, #ef4444, #dc2626);
-                @elseif($isDirty) background: linear-gradient(to right, #c9a96e, #b08d56);
-                @elseif($room->status == 'inactive') background: linear-gradient(to right, #d1d5db, #9ca3af);
-                @else background: linear-gradient(to right, #7a8a9a, #64748b); @endif"></div>
+                @else from-amber-400 to-yellow-500 @endif"></div>
             <div class="p-5">
                 <div class="flex items-start justify-between mb-3">
                     <div>
@@ -126,11 +121,11 @@
                         <span class="badge-{{ $room->type_color }} text-xs mt-1">{{ ucfirst($room->type) }}</span>
                     </div>
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                        @if($room->status == 'available') bg-green-100 text-green-700
+                        @if($room->status == 'available') bg-emerald-100 text-emerald-700
                         @elseif($room->status == 'occupied') bg-red-100 text-red-700
-                        @elseif($isDirty) bg-gray-100 text-gray-700
+                        @elseif($isDirty) bg-orange-100 text-orange-700
                         @elseif($room->status == 'inactive') bg-gray-100 text-gray-500
-                        @else bg-gray-100 text-gray-700 @endif">
+                        @else bg-amber-100 text-amber-700 @endif">
                         @if($isDirty)<i class="fas fa-broom mr-1 text-xs"></i>Needs Cleaning
                         @elseif($room->status == 'inactive')<i class="fas fa-ban mr-1 text-xs"></i>{{ ucfirst($room->status) }}
                         @else{{ ucfirst($room->status) }}@endif
@@ -138,25 +133,25 @@
                 </div>
                 <div class="space-y-2 mb-4">
                     <div class="flex items-center gap-2 text-sm text-gray-500">
-                        <i class="fas fa-user w-4" style="color: #c9a96e;"></i>
+                        <i class="fas fa-user text-cyan-400 w-4"></i>
                         {{ $room->capacity }} Guest(s)
                         @if($room->floor) • Floor {{ $room->floor }} @endif
                     </div>
                     @if($room->view)
                     <div class="flex items-center gap-2 text-sm text-gray-500">
-                        <i class="fas fa-binoculars w-4" style="color: #c9a96e;"></i>
+                        <i class="fas fa-binoculars text-cyan-400 w-4"></i>
                         {{ $room->view }}
                     </div>
                     @endif
                     @if($room->pricing_type === 'per_hour')
                     <div class="flex items-center gap-2">
-                        <i class="fas fa-hourglass-half w-4" style="color: #c9a96e;"></i>
+                        <i class="fas fa-hourglass-half text-blue-400 w-4"></i>
                         <span class="text-lg font-bold text-gray-800">₹{{ number_format($room->hourly_rate) }}</span>
                         <span class="text-xs text-gray-400">/hr</span>
                     </div>
                     @elseif($room->pricing_type === 'per_slot')
                     <div class="flex items-center gap-2">
-                        <i class="fas fa-clock w-4" style="color: #c9a96e;"></i>
+                        <i class="fas fa-clock text-violet-400 w-4"></i>
                         @php
                             $cheapestSlot = $room->timeSlots->first();
                             $slotDisplay  = $cheapestSlot
@@ -168,7 +163,7 @@
                     </div>
                     @else
                     <div class="flex items-center gap-2 flex-wrap">
-                        <i class="fas fa-rupee-sign w-4" style="color: #c9a96e;"></i>
+                        <i class="fas fa-rupee-sign text-emerald-400 w-4"></i>
                         <span class="text-lg font-bold text-gray-800">₹{{ number_format($room->price_per_night) }}</span>
                         <span class="text-xs text-gray-400">/night</span>
                         @if($rsTaxRate > 0)
@@ -182,10 +177,10 @@
                 @endif
                 @if($room->has_breakfast || $room->has_lunch || $room->has_dinner || $room->has_extra_bed)
                 <div class="flex flex-wrap gap-1 mb-3">
-                    @if($room->has_breakfast)<span class="text-xs rounded-full px-2 py-0.5" style="background: rgba(201,169,110,.12); color: #b08d56;"><i class="fas fa-coffee mr-0.5"></i>B</span>@endif
-                    @if($room->has_lunch)<span class="text-xs rounded-full px-2 py-0.5" style="background: rgba(201,169,110,.12); color: #b08d56;"><i class="fas fa-sun mr-0.5"></i>L</span>@endif
-                    @if($room->has_dinner)<span class="text-xs rounded-full px-2 py-0.5" style="background: rgba(201,169,110,.12); color: #b08d56;"><i class="fas fa-moon mr-0.5"></i>D</span>@endif
-                    @if($room->has_extra_bed)<span class="text-xs rounded-full px-2 py-0.5" style="background: rgba(122,138,154,.12); color: #7a8a9a;"><i class="fas fa-bed mr-0.5"></i>+Bed</span>@endif
+                    @if($room->has_breakfast)<span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5"><i class="fas fa-coffee mr-0.5"></i>B</span>@endif
+                    @if($room->has_lunch)<span class="text-xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5"><i class="fas fa-sun mr-0.5"></i>L</span>@endif
+                    @if($room->has_dinner)<span class="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5"><i class="fas fa-moon mr-0.5"></i>D</span>@endif
+                    @if($room->has_extra_bed)<span class="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5"><i class="fas fa-bed mr-0.5"></i>+Bed</span>@endif
                 </div>
                 @endif
                 @php
@@ -211,13 +206,13 @@
                 </button>
                 @endif
                 @if(\App\Services\PermissionService::check('rooms.edit'))
-                <a href="{{ route('rooms.edit', $room->id) }}" class="w-full text-center block py-2 rounded-xl text-xs font-semibold mb-2 transition-all" style="background: rgba(201,169,110,.08); color: #c9a96e;" onmouseover="this.style.background='rgba(201,169,110,.12)'" onmouseout="this.style.background='rgba(201,169,110,.08)'">
+                <a href="{{ route('rooms.edit', $room->id) }}" class="w-full text-center block bg-cyan-50 hover:bg-cyan-100 text-cyan-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
                     <i class="fas fa-edit mr-1"></i>Edit Room
                 </a>
                 @if($isOccupied)
                 <button wire:click="forceAvailable({{ $room->id }})"
                     wire:confirm="Reset Room {{ $room->room_number }} to Available? Only do this if the guest has actually left and checkout was not recorded."
-                    class="w-full text-center block py-2 rounded-xl text-xs font-semibold mb-2 transition-all" style="background: rgba(201,169,110,.08); color: #b08d56;" onmouseover="this.style.background='rgba(201,169,110,.12)'" onmouseout="this.style.background='rgba(201,169,110,.08)'">
+                    class="w-full text-center block bg-amber-50 hover:bg-amber-100 text-amber-700 py-2 rounded-xl text-xs font-semibold mb-2 transition-all">
                     <i class="fas fa-unlock mr-1"></i>Force Available
                 </button>
                 @endif
@@ -226,7 +221,7 @@
                     @if(\App\Services\PermissionService::check('rooms.edit'))
                     @if($room->status == 'inactive')
                     <button onclick="confirmActivate({{ $room->id }}, '{{ $room->room_number }}')"
-                        class="flex-1 text-center py-2 rounded-xl text-xs font-semibold transition-all" style="background: rgba(34,197,94,.08); color: #16a34a;" onmouseover="this.style.background='rgba(34,197,94,.12)'" onmouseout="this.style.background='rgba(34,197,94,.08)'">
+                        class="flex-1 text-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-2 rounded-xl text-xs font-semibold transition-all">
                         <i class="fas fa-toggle-on mr-1"></i>Activate
                     </button>
                     @elseif($isOccupied)
@@ -309,18 +304,14 @@ function confirmDeactivate(id, num) {
 }
 
 function confirmActivate(id, num) {
-    document.getElementById('modalHeader').className = 'px-6 py-4 flex items-center gap-3';
-    document.getElementById('modalHeader').style.background = 'rgba(34,197,94,.06)';
-    document.getElementById('modalIconWrap').className = 'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0';
-    document.getElementById('modalIconWrap').style.background = 'rgba(34,197,94,.1)';
-    document.getElementById('modalIcon').className = 'fas fa-toggle-on text-lg';
-    document.getElementById('modalIcon').style.color = '#22c55e';
+    document.getElementById('modalHeader').className = 'px-6 py-4 flex items-center gap-3 bg-emerald-50';
+    document.getElementById('modalIconWrap').className = 'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-100';
+    document.getElementById('modalIcon').className = 'fas fa-toggle-on text-emerald-600 text-lg';
     document.getElementById('modalTitle').textContent = 'Activate Room ' + num;
     document.getElementById('modalMessage').textContent = 'Room ' + num + ' will be marked as available for bookings.';
     var btn = document.getElementById('modalConfirmBtn');
     btn.textContent = 'Yes, Activate';
-    btn.className = 'flex-1 py-2.5 rounded-xl font-semibold text-sm text-white transition-all';
-    btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+    btn.className = 'flex-1 py-2.5 rounded-xl font-semibold text-sm text-white bg-emerald-500 hover:bg-emerald-600 transition-all';
     btn.onclick = function() { document.getElementById('activate-form-' + id).submit(); };
     openModal();
 }

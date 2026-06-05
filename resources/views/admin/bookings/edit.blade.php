@@ -8,10 +8,10 @@
 <div class="max-w-3xl">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         @if($booking->is_whole_hotel)
-        <div class="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
-            <i class="fas fa-hotel" style="color: #c9a96e;"></i>
+        <div class="mb-4 flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+            <i class="fas fa-hotel text-amber-500"></i>
             <span class="font-semibold">Whole Hotel / Villa Booking</span>
-            <span class="text-xs ml-1" style="color: #a07c4e;">— Room selection not applicable</span>
+            <span class="text-xs text-amber-600 ml-1">— Room selection not applicable</span>
         </div>
         @endif
         <form action="{{ route('bookings.update',$booking->id) }}" method="POST" class="space-y-5">
@@ -22,7 +22,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Guest *</label>
-                    <select name="customer_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2" style="--tw-ring-color: rgba(201,169,110,.3);" required>
+                    <select name="customer_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
                         @foreach($customers as $c)
                         <option value="{{ $c->id }}" {{ old('customer_id',$booking->customer_id)==$c->id?'selected':'' }}>{{ $c->name }} — {{ $c->phone }}</option>
                         @endforeach
@@ -31,7 +31,7 @@
                 @if(!$booking->is_whole_hotel)
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">Room *</label>
-                    <select name="room_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2" style="--tw-ring-color: rgba(201,169,110,.3);" required>
+                    <select name="room_id" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
                         @foreach($rooms as $r)
                         @php
                             $rLabel = match($r->pricing_type ?? 'per_night') {
@@ -64,9 +64,9 @@
                 {{-- Per Slot: booking date + time slot --}}
                 @if($pricingType === 'per_slot' && $slotModuleOn)
                 <div class="md:col-span-2">
-                    <div class="rounded-2xl p-5 space-y-4" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
+                    <div class="border border-violet-100 bg-violet-50 rounded-2xl p-5 space-y-4">
                         <div class="flex items-center gap-2 mb-1">
-                            <i class="fas fa-clock" style="color: #c9a96e;"></i>
+                            <i class="fas fa-clock text-violet-500"></i>
                             <h4 class="font-bold text-slate-700">{{ $booking->is_whole_hotel ? 'Whole Hotel / Villa — Slot Booking' : 'Slot Booking' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
@@ -117,12 +117,12 @@
                 {{-- Per Hour: booking date + start time + hours --}}
                 @if($pricingType === 'per_hour' && $hourlyModuleOn)
                 <div class="md:col-span-2">
-                    <div class="rounded-2xl p-5 space-y-4" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5 space-y-4">
                         <div class="flex items-center gap-2 mb-1">
-                            <i class="fas fa-hourglass-half" style="color: #c9a96e;"></i>
+                            <i class="fas fa-hourglass-half text-amber-500"></i>
                             <h4 class="font-bold text-slate-700">Hourly Booking
                                 @if($booking->room)
-                                <span class="text-xs rounded-full px-2 py-0.5 font-semibold ml-1" style="background: rgba(201,169,110,.15); color: #b08d56;">₹{{ number_format($booking->room?->hourly_rate ?? 0) }}/hr</span>
+                                <span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 font-semibold ml-1">₹{{ number_format($booking->room?->hourly_rate ?? 0) }}/hr</span>
                                 @endif
                             </h4>
                         </div>
@@ -136,7 +136,7 @@
                                 <input type="time" name="slot_start_time" value="{{ old('slot_start_time', $booking->slot_start_time) }}" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required>
                             </div>
                         </div>
-                        <p class="text-xs mt-2" style="color: #a07c4e;"><i class="fas fa-clock mr-1"></i>Billing calculated at check-out using actual hours stayed.</p>
+                        <p class="text-xs text-amber-600 mt-2"><i class="fas fa-clock mr-1"></i>Billing calculated at check-out using actual hours stayed.</p>
                     </div>
                 </div>
                 @endif
@@ -161,8 +161,8 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">
                         Total Amount (₹)
                         @if($booking->price_overridden)
-                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border" style="background: rgba(201,169,110,.15); color: #b08d56; border-color: rgba(201,169,110,.2);">
-                            <i class="fas fa-pen mr-1" style="font-size:9px; color: #c9a96e;"></i>Custom price
+                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                            <i class="fas fa-pen text-amber-500 mr-1" style="font-size:9px;"></i>Custom price
                         </span>
                         @endif
                     </label>
@@ -170,14 +170,14 @@
                     <input type="number" name="custom_total" value="{{ old('custom_total', $booking->price_overridden ? $booking->total_amount : '') }}"
                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                            min="0" step="0.01" placeholder="Leave blank to calculate at check-out">
-                    <p class="text-xs mt-1" style="color: #a07c4e;"><i class="fas fa-info-circle mr-1"></i>Set a fixed total to override hourly billing, or leave blank to calculate at check-out.</p>
+                    <p class="text-xs text-amber-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Set a fixed total to override hourly billing, or leave blank to calculate at check-out.</p>
                     @else
                     <input type="number" name="custom_total" value="{{ old('custom_total', $booking->price_overridden ? $booking->total_amount : '') }}"
                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                            min="0" step="0.01" placeholder="{{ $booking->price_overridden ? '' : 'Leave blank to use room rate' }}">
                     <p class="text-xs text-gray-400 mt-1">
                         @if($booking->price_overridden)
-                            <i class="fas fa-pen mr-1" style="color: #c9a96e;"></i>Custom price active — edit to change, clear to revert to room rate.
+                            <i class="fas fa-pen text-amber-500 mr-1"></i>Custom price active — edit to change, clear to revert to room rate.
                         @else
                             Edit to override the room rate (₹{{ number_format($booking->room?->price_per_night ?? 0) }}/night). Leave blank to use standard rate.
                         @endif
@@ -196,10 +196,10 @@
                 @if($pricingType === 'per_night')
                 @if($booking->room && $booking->room->has_extra_bed)
                 <div class="md:col-span-2">
-                    <div class="rounded-2xl p-5" style="border: 1px solid rgba(122,138,154,.2); background: rgba(122,138,154,.04);">
+                    <div class="border border-blue-100 bg-blue-50 rounded-2xl p-5">
                         <div class="flex items-center gap-4 flex-wrap">
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-bed" style="color: #7a8a9a;"></i>
+                                <i class="fas fa-bed text-blue-500"></i>
                                 <h4 class="font-bold text-slate-700">Extra Beds</h4>
                                 <span class="text-xs text-gray-400">— ₹{{ number_format($booking->room->extra_bed_price) }}/bed/night</span>
                             </div>
@@ -215,37 +215,37 @@
                 @endif
                 @if($booking->room && $booking->room->hasMeals())
                 <div class="md:col-span-2">
-                    <div class="rounded-2xl p-5" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
+                    <div class="border border-amber-100 bg-amber-50 rounded-2xl p-5">
                         <div class="flex items-center gap-2 mb-3">
-                            <i class="fas fa-utensils" style="color: #c9a96e;"></i>
+                            <i class="fas fa-utensils text-amber-500"></i>
                             <h4 class="font-bold text-slate-700">Meal Plan</h4>
                         </div>
                         <div class="flex flex-wrap gap-4">
                             @if($booking->room->has_breakfast)
                             <label class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
                                 <input type="checkbox" name="meal_breakfast" value="1"
-                                    class="w-4 h-4 rounded" style="color: #c9a96e;"
+                                    class="w-4 h-4 rounded text-amber-500"
                                     {{ old('meal_breakfast', $booking->meal_breakfast) ? 'checked' : '' }}>
-                                <span class="font-semibold text-slate-700"><i class="fas fa-coffee mr-1" style="color: #c9a96e;"></i>Breakfast</span>
-                                <span class="text-sm font-bold" style="color: #c9a96e;">₹{{ number_format($booking->room->breakfast_price) }}/night</span>
+                                <span class="font-semibold text-slate-700"><i class="fas fa-coffee text-amber-400 mr-1"></i>Breakfast</span>
+                                <span class="text-sm text-amber-600 font-bold">₹{{ number_format($booking->room->breakfast_price) }}/night</span>
                             </label>
                             @endif
                             @if($booking->room->has_lunch)
                             <label class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
                                 <input type="checkbox" name="meal_lunch" value="1"
-                                    class="w-4 h-4 rounded" style="color: #c9a96e;"
+                                    class="w-4 h-4 rounded text-orange-500"
                                     {{ old('meal_lunch', $booking->meal_lunch) ? 'checked' : '' }}>
-                                <span class="font-semibold text-slate-700"><i class="fas fa-sun mr-1" style="color: #c9a96e;"></i>Lunch</span>
-                                <span class="text-sm font-bold" style="color: #c9a96e;">₹{{ number_format($booking->room->lunch_price) }}/night</span>
+                                <span class="font-semibold text-slate-700"><i class="fas fa-sun text-orange-400 mr-1"></i>Lunch</span>
+                                <span class="text-sm text-orange-600 font-bold">₹{{ number_format($booking->room->lunch_price) }}/night</span>
                             </label>
                             @endif
                             @if($booking->room->has_dinner)
                             <label class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 cursor-pointer">
                                 <input type="checkbox" name="meal_dinner" value="1"
-                                    class="w-4 h-4 rounded" style="color: #c9a96e;"
+                                    class="w-4 h-4 rounded text-indigo-500"
                                     {{ old('meal_dinner', $booking->meal_dinner) ? 'checked' : '' }}>
-                                <span class="font-semibold text-slate-700"><i class="fas fa-moon mr-1" style="color: #c9a96e;"></i>Dinner</span>
-                                <span class="text-sm font-bold" style="color: #c9a96e;">₹{{ number_format($booking->room->dinner_price) }}/night</span>
+                                <span class="font-semibold text-slate-700"><i class="fas fa-moon text-indigo-400 mr-1"></i>Dinner</span>
+                                <span class="text-sm text-indigo-600 font-bold">₹{{ number_format($booking->room->dinner_price) }}/night</span>
                             </label>
                             @endif
                         </div>
@@ -255,7 +255,7 @@
                 @endif
             </div>
             <div class="flex gap-3">
-                <button type="submit" class="text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition" style="background: linear-gradient(135deg, #c9a96e, #b08d56);"><i class="fas fa-save mr-2"></i>Update Booking</button>
+                <button type="submit" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition"><i class="fas fa-save mr-2"></i>Update Booking</button>
                 <a href="{{ route('bookings.show',$booking->id) }}" class="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-200 transition">Cancel</a>
             </div>
         </form>

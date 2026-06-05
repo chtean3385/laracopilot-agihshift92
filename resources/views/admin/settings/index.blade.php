@@ -10,10 +10,10 @@
         </div>
         {{-- GST misconfiguration warning banner --}}
         @if(($settings->invoice_style ?? 'modern') === 'gst' && (empty($settings->gst_number) || (float)($settings->tax_rate ?? 0) == 0))
-        <div class="mx-6 mt-6 p-4 rounded-xl flex gap-3" style="background: rgba(201,169,110,.08); border: 2px solid #c9a96e;">
-            <i class="fas fa-exclamation-triangle text-lg mt-0.5 flex-shrink-0" style="color: #c9a96e;"></i>
-            <div class="text-sm" style="color: #b08d56;">
-                <p class="font-bold mb-1" style="color: #1a2332;">GST Invoice is ON — but required fields are missing!</p>
+        <div class="mx-6 mt-6 p-4 bg-amber-50 border-2 border-amber-400 rounded-xl flex gap-3">
+            <i class="fas fa-exclamation-triangle text-amber-500 text-lg mt-0.5 flex-shrink-0"></i>
+            <div class="text-sm text-amber-800">
+                <p class="font-bold text-amber-900 mb-1">GST Invoice is ON — but required fields are missing!</p>
                 <ul class="list-disc list-inside space-y-0.5">
                     @if(empty($settings->gst_number))
                         <li><strong>GST Number</strong> is empty — invoices will print without a GSTIN.</li>
@@ -22,7 +22,7 @@
                         <li><strong>GST Rate (Tax Rate)</strong> is 0% — no GST will be added to any billing.</li>
                     @endif
                 </ul>
-                <p class="mt-2" style="color: #a07c4e;">Fill in both fields below and save, otherwise GST will never be charged or shown on invoices.</p>
+                <p class="mt-2 text-amber-700">Fill in both fields below and save, otherwise GST will never be charged or shown on invoices.</p>
             </div>
         </div>
         @endif
@@ -33,14 +33,14 @@
 
             {{-- Logo Upload Section --}}
             <div class="mb-6 pb-6 border-b border-gray-100">
-                <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-image text-[#c9a96e] mr-2"></i>Resort Logo</h4>
+                <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-image text-cyan-500 mr-2"></i>Resort Logo</h4>
                 <div class="flex items-start gap-6">
                     <div class="flex-shrink-0">
                         @if($settings->logo_url)
                             <img src="{{ $settings->logo_url }}" alt="Resort Logo"
                                  class="w-24 h-24 object-contain rounded-2xl border border-gray-200 bg-gray-50 p-2">
                         @else
-                            <div class="w-24 h-24 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, #c9a96e, #b08d56);">
+                            <div class="w-24 h-24 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center">
                                 <i class="fas fa-umbrella-beach text-white text-3xl"></i>
                             </div>
                         @endif
@@ -122,23 +122,23 @@
             </div>
             {{-- Invoice Print Style --}}
             <div class="mt-8 pt-6 border-t border-gray-100">
-                <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-file-invoice mr-2" style="color: #c9a96e;"></i>Invoice Print Style</h4>
+                <h4 class="font-bold text-gray-700 mb-4"><i class="fas fa-file-invoice text-violet-500 mr-2"></i>Invoice Print Style</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? '' : 'border-gray-200' }}" style="{{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'border-color: #c9a96e; background: rgba(201,169,110,.06);' : '' }}" onmouseover="if(!this.querySelector('input').checked) this.style.borderColor='rgba(201,169,110,.3)';" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='';" onclick="setStyle('modern')">
+                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('modern')">
                         <input type="radio" name="invoice_style" value="modern" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'modern' ? 'checked' : '' }}>
                         <div>
                             <div class="font-bold text-gray-700 text-sm">Modern</div>
                             <div class="text-xs text-gray-400 mt-0.5">Clean card layout with dark header. Works for all hotels.</div>
                         </div>
                     </label>
-                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'gst' ? '' : 'border-gray-200' }}" style="{{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'gst' ? 'border-color: #c9a96e; background: rgba(201,169,110,.06);' : '' }}" onmouseover="if(!this.querySelector('input').checked) this.style.borderColor='rgba(201,169,110,.3)';" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='';" onclick="setStyle('gst')">
+                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'gst' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('gst')">
                         <input type="radio" name="invoice_style" value="gst" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'gst' ? 'checked' : '' }}>
                         <div>
                             <div class="font-bold text-gray-700 text-sm">GST Tax Invoice</div>
                             <div class="text-xs text-gray-400 mt-0.5">Formal Indian GST format with CGST/SGST split, HSN codes, bank details &amp; advance summary.</div>
                         </div>
                     </label>
-                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'compact' ? '' : 'border-gray-200' }}" style="{{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'compact' ? 'border-color: #c9a96e; background: rgba(201,169,110,.06);' : '' }}" onmouseover="if(!this.querySelector('input').checked) this.style.borderColor='rgba(201,169,110,.3)';" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='';" onclick="setStyle('compact')">
+                    <label class="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'compact' ? 'border-violet-400 bg-violet-50' : 'border-gray-200 hover:border-violet-200' }}" onclick="setStyle('compact')">
                         <input type="radio" name="invoice_style" value="compact" class="mt-1" {{ old('invoice_style', $settings->invoice_style ?? 'modern') === 'compact' ? 'checked' : '' }}>
                         <div>
                             <div class="font-bold text-gray-700 text-sm">Compact (Classic)</div>
@@ -159,7 +159,7 @@
 
             {{-- Bank & Invoice Details --}}
             <div class="mt-8 pt-6 border-t border-gray-100">
-                <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-university mr-2" style="color: #c9a96e;"></i>Bank &amp; GST Invoice Details</h4>
+                <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-university text-emerald-500 mr-2"></i>Bank &amp; GST Invoice Details</h4>
                 <p class="text-xs text-gray-400 mb-4">Required for GST Tax Invoice format. Also printed on bank transfer receipts.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -199,37 +199,35 @@
 
             {{-- Guest Self-Service (QR) --}}
             <div class="mt-8 pt-6 border-t border-gray-100">
-                <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-qrcode mr-2" style="color: #c9a96e;"></i>Guest Self-Service (QR)</h4>
+                <h4 class="font-bold text-gray-700 mb-1"><i class="fas fa-qrcode text-violet-500 mr-2"></i>Guest Self-Service (QR)</h4>
                 <p class="text-xs text-gray-400 mb-4">When enabled, guests can scan a QR code to fill in their own check-in details or submit a checkout request. Turn these off if you prefer staff to handle all check-in/out manually.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {{-- QR Check-In toggle --}}
-                    <label class="flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all {{ ($settings->qr_checkin_enabled ?? true) ? '' : 'border-gray-200 bg-gray-50' }}" id="qr-checkin-label" style="{{ ($settings->qr_checkin_enabled ?? true) ? 'border-color: #c9a96e; background: rgba(201,169,110,.06);' : '' }}">
+                    <label class="flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all {{ ($settings->qr_checkin_enabled ?? true) ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-gray-50' }}" id="qr-checkin-label">
                         <div>
-                            <div class="font-bold text-gray-700 text-sm"><i class="fas fa-door-open mr-1" style="color: #c9a96e;"></i> QR Self Check-In</div>
+                            <div class="font-bold text-gray-700 text-sm"><i class="fas fa-door-open mr-1 text-violet-500"></i> QR Self Check-In</div>
                             <div class="text-xs text-gray-400 mt-0.5">Guests scan QR → fill travel details → staff assigns room. Also controls the WhatsApp self-checkin link sent on booking.</div>
                         </div>
                         <div class="flex-shrink-0">
                             <input type="hidden" name="qr_checkin_enabled" value="0">
                             <input type="checkbox" name="qr_checkin_enabled" value="1" id="qr-checkin-toggle"
                                 {{ ($settings->qr_checkin_enabled ?? true) ? 'checked' : '' }}
-                                class="w-5 h-5 rounded"
-                                style="accent-color: #c9a96e;"
-                                onchange="var lbl=document.getElementById('qr-checkin-label');if(this.checked){lbl.style.borderColor='#c9a96e';lbl.style.background='rgba(201,169,110,.06)';lbl.classList.remove('border-gray-200','bg-gray-50');}else{lbl.style.borderColor='';lbl.style.background='';lbl.classList.add('border-gray-200','bg-gray-50');}">
+                                class="w-5 h-5 rounded accent-violet-600"
+                                onchange="document.getElementById('qr-checkin-label').className=this.checked?'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-violet-400 bg-violet-50':'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-gray-200 bg-gray-50'">
                         </div>
                     </label>
                     {{-- QR Check-Out toggle --}}
-                    <label class="flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all {{ ($settings->qr_checkout_enabled ?? true) ? '' : 'border-gray-200 bg-gray-50' }}" id="qr-checkout-label" style="{{ ($settings->qr_checkout_enabled ?? true) ? 'border-color: #c9a96e; background: rgba(201,169,110,.06);' : '' }}">
+                    <label class="flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all {{ ($settings->qr_checkout_enabled ?? true) ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-gray-50' }}" id="qr-checkout-label">
                         <div>
-                            <div class="font-bold text-gray-700 text-sm"><i class="fas fa-sign-out-alt mr-1" style="color: #c9a96e;"></i> QR Self Check-Out</div>
+                            <div class="font-bold text-gray-700 text-sm"><i class="fas fa-sign-out-alt mr-1 text-violet-500"></i> QR Self Check-Out</div>
                             <div class="text-xs text-gray-400 mt-0.5">Guests access a checkout page via link/QR to submit their payment intent. Staff still confirms and completes the checkout.</div>
                         </div>
                         <div class="flex-shrink-0">
                             <input type="hidden" name="qr_checkout_enabled" value="0">
                             <input type="checkbox" name="qr_checkout_enabled" value="1" id="qr-checkout-toggle"
                                 {{ ($settings->qr_checkout_enabled ?? true) ? 'checked' : '' }}
-                                class="w-5 h-5 rounded"
-                                style="accent-color: #c9a96e;"
-                                onchange="var lbl=document.getElementById('qr-checkout-label');if(this.checked){lbl.style.borderColor='#c9a96e';lbl.style.background='rgba(201,169,110,.06)';lbl.classList.remove('border-gray-200','bg-gray-50');}else{lbl.style.borderColor='';lbl.style.background='';lbl.classList.add('border-gray-200','bg-gray-50');}">
+                                class="w-5 h-5 rounded accent-violet-600"
+                                onchange="document.getElementById('qr-checkout-label').className=this.checked?'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-violet-400 bg-violet-50':'flex items-center justify-between gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all border-gray-200 bg-gray-50'">
                         </div>
                     </label>
                 </div>
@@ -262,10 +260,10 @@
                 var lbl = r.closest('label');
                 if (r.value === val) {
                     r.checked = true;
-                    lbl.style.borderColor = '#c9a96e'; lbl.style.background = 'rgba(201,169,110,.06)';
+                    lbl.classList.add('border-violet-400','bg-violet-50');
                     lbl.classList.remove('border-gray-200');
                 } else {
-                    lbl.style.borderColor = ''; lbl.style.background = '';
+                    lbl.classList.remove('border-violet-400','bg-violet-50');
                     lbl.classList.add('border-gray-200');
                 }
             });

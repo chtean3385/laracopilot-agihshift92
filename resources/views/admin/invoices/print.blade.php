@@ -37,7 +37,7 @@
             </div>
         </div>
         {{-- WebView tip (shown only in WebView) --}}
-        <div id="webview-tip" style="display:none;" class="max-w-3xl mx-auto mt-2 px-3 py-2 rounded-lg text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+        <div id="webview-tip" style="display:none;" class="max-w-3xl mx-auto mt-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700">
             📱 Tap <strong>Download PDF</strong> to save the invoice to your device.
         </div>
     </div>
@@ -57,14 +57,14 @@
                     @endif
                     <div>
                         <div class="text-lg sm:text-xl font-black">{{ $settings->resort_name ?? 'Azure Paradise Resort' }}</div>
-                        @if($settings && $settings->tagline)<div class="text-xs font-semibold mb-1" style="color: #c9a96e;">{{ $settings->tagline }}</div>@endif
+                        @if($settings && $settings->tagline)<div class="text-cyan-400 text-xs font-semibold mb-1">{{ $settings->tagline }}</div>@endif
                         <div class="text-slate-400 text-xs sm:text-sm">{{ $settings->address ?? '' }}</div>
                         <div class="text-slate-400 text-xs sm:text-sm">{{ $settings->phone ?? '' }}</div>
                         @if($settings && $settings->gst_number)<div class="text-slate-400 text-xs mt-1">GST: {{ $settings->gst_number }}</div>@endif
                     </div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                    <div class="text-xl sm:text-2xl font-black" style="color: #c9a96e;">INVOICE</div>
+                    <div class="text-xl sm:text-2xl font-black text-cyan-400">INVOICE</div>
                     <div class="text-slate-300 font-mono text-sm">{{ $invoice->invoice_number }}</div>
                     <div class="text-slate-400 text-xs mt-1">{{ $invoice->issued_at ? $invoice->issued_at->format('d M Y') : now()->format('d M Y') }}</div>
                 </div>
@@ -84,7 +84,7 @@
                 </div>
                 <div class="sm:text-right">
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Booking</p>
-                    <p class="font-mono text-sm font-bold" style="color: #c9a96e;">{{ $invoice->booking->booking_number }}</p>
+                    <p class="font-mono text-cyan-600 text-sm font-bold">{{ $invoice->booking->booking_number }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->is_whole_hotel ? 'Whole Hotel / Villa' : ('Room ' . ($invoice->booking->room?->room_number ?? '')) }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->check_in_date->format('d M Y') }} → {{ $invoice->booking->check_out_date->format('d M Y') }}</p>
                     <p class="text-gray-600 text-sm">{{ $invoice->booking->nights }} night(s)</p>
@@ -196,20 +196,20 @@
                     @endif
                     @endif
                     <div class="flex justify-between border-t pt-1"><span class="font-bold">Total</span><span class="font-bold">₹{{ number_format($grandTotal) }}</span></div>
-                    <div class="flex justify-between" style="color: #c9a96e;"><span>Amount Paid</span><span class="font-bold">₹{{ number_format($invoice->paid_amount) }}</span></div>
+                    <div class="flex justify-between text-emerald-600"><span>Amount Paid</span><span class="font-bold">₹{{ number_format($invoice->paid_amount) }}</span></div>
                     @if($overpayment > 0)
-                    <div class="flex justify-between" style="color: #b08d56;"><span>Overpayment / Credit Due</span><span class="font-bold">₹{{ number_format($overpayment) }}</span></div>
+                    <div class="flex justify-between text-purple-600"><span>Overpayment / Credit Due</span><span class="font-bold">₹{{ number_format($overpayment) }}</span></div>
                     @endif
                     <div class="flex justify-between border-t pt-1 font-black text-base">
                         <span>Balance Due</span>
-                        <span class="{{ $displayBalance > 0 ? 'text-red-500' : '' }}" style="{{ $displayBalance <= 0 ? 'color: #c9a96e;' : '' }}">₹{{ number_format($displayBalance) }}</span>
+                        <span class="{{ $displayBalance > 0 ? 'text-red-500' : 'text-emerald-600' }}">₹{{ number_format($displayBalance) }}</span>
                     </div>
                 </div>
             </div>
 
             @if($invoice->booking->special_requests)
             <div class="mt-5 pt-4 border-t border-gray-100">
-                <p class="text-xs font-bold uppercase mb-1" style="color: #b08d56;">Special Requests</p>
+                <p class="text-xs font-bold text-amber-700 uppercase mb-1">Special Requests</p>
                 <p class="text-sm text-gray-600">{{ $invoice->booking->special_requests }}</p>
             </div>
             @endif
@@ -217,7 +217,7 @@
             @if($invoice->booking->checkin_notes || $invoice->booking->checkout_notes)
             <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 @if($invoice->booking->checkin_notes)
-                <div><p class="text-xs font-bold uppercase mb-1" style="color: #b08d56;">Check-In Notes</p><p class="text-xs text-gray-600">{{ $invoice->booking->checkin_notes }}</p></div>
+                <div><p class="text-xs font-bold text-blue-600 uppercase mb-1">Check-In Notes</p><p class="text-xs text-gray-600">{{ $invoice->booking->checkin_notes }}</p></div>
                 @endif
                 @if($invoice->booking->checkout_notes)
                 <div><p class="text-xs font-bold text-slate-600 uppercase mb-1">Check-Out Notes</p><p class="text-xs text-gray-600">{{ $invoice->booking->checkout_notes }}</p></div>
@@ -227,10 +227,10 @@
 
             <div class="mt-6 text-center">
                 @php $displayStatus = $displayBalance <= 0 ? 'paid' : ($invoice->paid_amount > 0 ? 'partial' : 'unpaid'); @endphp
-                <span class="px-4 py-1 rounded-full text-xs font-bold {{ $displayStatus == 'paid' ? '' : ($displayStatus == 'partial' ? '' : 'bg-red-100 text-red-700') }}" style="{{ $displayStatus == 'paid' ? 'background: rgba(201,169,110,.15); color: #b08d56;' : ($displayStatus == 'partial' ? 'background: rgba(201,169,110,.15); color: #b08d56;' : '') }}">
+                <span class="px-4 py-1 rounded-full text-xs font-bold {{ $displayStatus == 'paid' ? 'bg-emerald-100 text-emerald-700' : ($displayStatus == 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
                     {{ strtoupper($displayStatus) }}
                 </span>
-                @if($overpayment > 0)<p class="text-xs mt-1" style="color: #b08d56;">Credit of ₹{{ number_format($overpayment) }} to be refunded.</p>@endif
+                @if($overpayment > 0)<p class="text-xs text-purple-500 mt-1">Credit of ₹{{ number_format($overpayment) }} to be refunded.</p>@endif
             </div>
 
             <div class="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">

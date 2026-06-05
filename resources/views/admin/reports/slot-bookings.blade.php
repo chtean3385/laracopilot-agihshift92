@@ -42,8 +42,8 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Bookings</span>
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.1);">
-                    <i class="fas fa-calendar-check text-sm" style="color: #c9a96e;"></i>
+                <div class="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center">
+                    <i class="fas fa-calendar-check text-violet-500 text-sm"></i>
                 </div>
             </div>
             <div class="text-3xl font-extrabold text-gray-800">{{ $totalBookings }}</div>
@@ -52,8 +52,8 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Revenue</span>
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.1);">
-                    <i class="fas fa-rupee-sign text-sm" style="color: #c9a96e;"></i>
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    <i class="fas fa-rupee-sign text-emerald-500 text-sm"></i>
                 </div>
             </div>
             <div class="text-3xl font-extrabold text-gray-800">₹{{ number_format($totalRevenue) }}</div>
@@ -62,8 +62,8 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Avg per Booking</span>
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.1);">
-                    <i class="fas fa-chart-bar text-sm" style="color: #c9a96e;"></i>
+                <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <i class="fas fa-chart-bar text-amber-500 text-sm"></i>
                 </div>
             </div>
             <div class="text-3xl font-extrabold text-gray-800">₹{{ number_format($avgRevenue) }}</div>
@@ -72,8 +72,8 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Now</span>
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.1);">
-                    <i class="fas fa-door-open text-sm" style="color: #c9a96e;"></i>
+                <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
+                    <i class="fas fa-door-open text-green-500 text-sm"></i>
                 </div>
             </div>
             <div class="text-3xl font-extrabold text-gray-800">{{ $statusBreakdown['checked_in'] ?? 0 }}</div>
@@ -84,8 +84,8 @@
     {{-- Per-Slot Breakdown --}}
     @if(!empty($slotBreakdown) && $totalBookings > 0)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
-            <i class="fas fa-layer-group" style="color: #c9a96e;"></i>
+        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 flex items-center gap-3">
+            <i class="fas fa-layer-group text-violet-500"></i>
             <h3 class="font-bold text-gray-800">Per-Slot Breakdown</h3>
             <span class="text-xs text-gray-400 ml-auto">{{ $from->format('d M') }} – {{ $to->format('d M Y') }}</span>
         </div>
@@ -96,8 +96,8 @@
                 $pct = $totalRevenue > 0 ? round($sb['revenue'] / $totalRevenue * 100) : 0;
             @endphp
             <div class="px-6 py-4 flex items-center gap-4">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background: rgba(201,169,110,.1);">
-                    <i class="fas fa-clock text-sm" style="color: #c9a96e;"></i>
+                <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                    <i class="fas fa-clock text-violet-400 text-sm"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
@@ -105,20 +105,20 @@
                         <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{{ $sb['slot']->start_time }}–{{ $sb['slot']->end_time }}</span>
                         @foreach($sb['statuses'] as $status => $cnt)
                         <span class="text-xs rounded-full px-2 py-0.5 font-medium
-                            {{ $status === 'checked_in' ? '' : ($status === 'confirmed' ? '' : 'bg-gray-100 text-gray-600') }}" style="{{ $status === 'checked_in' ? 'background: rgba(201,169,110,.1); color: #b08d56;' : ($status === 'confirmed' ? 'background: rgba(201,169,110,.1); color: #b08d56;' : '') }}">
+                            {{ $status === 'checked_in' ? 'bg-green-100 text-green-700' : ($status === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600') }}">
                             {{ $cnt }} {{ ucfirst(str_replace('_',' ',$status)) }}
                         </span>
                         @endforeach
                     </div>
                     <div class="mt-2 flex items-center gap-2">
                         <div class="flex-1 bg-gray-100 rounded-full h-1.5" style="max-width:200px;">
-                            <div class="h-1.5 rounded-full" style="width:{{ $pct }}%; background: #c9a96e;"></div>
+                            <div class="bg-violet-500 h-1.5 rounded-full" style="width:{{ $pct }}%;"></div>
                         </div>
                         <span class="text-xs text-gray-400">{{ $pct }}% of revenue</span>
                     </div>
                 </div>
                 <div class="text-right shrink-0">
-                    <div class="font-bold text-lg" style="color: #c9a96e;">₹{{ number_format($sb['revenue']) }}</div>
+                    <div class="font-bold text-violet-700 text-lg">₹{{ number_format($sb['revenue']) }}</div>
                     <div class="text-xs text-gray-400">{{ $sb['count'] }} {{ Str::plural('booking', $sb['count']) }}</div>
                 </div>
             </div>
@@ -133,12 +133,12 @@
         <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50 flex items-center gap-3">
             <i class="fas fa-list text-gray-500"></i>
             <h3 class="font-bold text-gray-800">Slot Bookings</h3>
-            <span class="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full" style="background: rgba(201,169,110,.1); color: #b08d56;">{{ $totalBookings }}</span>
+            <span class="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">{{ $totalBookings }}</span>
         </div>
         @if($bookings->isEmpty())
         <div class="p-12 text-center">
-            <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style="background: rgba(201,169,110,.08);">
-                <i class="fas fa-calendar-times text-2xl" style="color: #c9a96e;"></i>
+            <div class="w-14 h-14 rounded-full bg-violet-50 flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-calendar-times text-violet-200 text-2xl"></i>
             </div>
             <p class="text-gray-500 font-medium">No slot bookings found for this period.</p>
             <p class="text-gray-400 text-sm mt-1">Try adjusting the date range or slot filter above.</p>
@@ -161,8 +161,8 @@
                     @foreach($bookings as $b)
                     @php
                         $statusColors = [
-                            'confirmed'   => '',
-                            'checked_in'  => '',
+                            'confirmed'   => 'bg-blue-100 text-blue-700',
+                            'checked_in'  => 'bg-green-100 text-green-700',
                             'checked_out' => 'bg-gray-100 text-gray-600',
                             'cancelled'   => 'bg-red-100 text-red-600',
                         ];
@@ -170,7 +170,7 @@
                     @endphp
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3">
-                            <a href="{{ route('bookings.show', $b->id) }}" class="font-semibold hover:text-[#b08d56]" style="color: #c9a96e;">{{ $b->booking_number }}</a>
+                            <a href="{{ route('bookings.show', $b->id) }}" class="font-semibold text-violet-600 hover:text-violet-800">{{ $b->booking_number }}</a>
                         </td>
                         <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $b->booking_date?->format('D, d M Y') }}</td>
                         <td class="px-4 py-3">
@@ -197,7 +197,7 @@
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
                         <td colspan="6" class="px-4 py-3 text-right font-semibold text-gray-600">Total Revenue:</td>
-                        <td class="px-4 py-3 text-right font-extrabold text-base" style="color: #c9a96e;">₹{{ number_format($totalRevenue) }}</td>
+                        <td class="px-4 py-3 text-right font-extrabold text-violet-700 text-base">₹{{ number_format($totalRevenue) }}</td>
                     </tr>
                 </tfoot>
             </table>

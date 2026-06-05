@@ -97,7 +97,7 @@
     <a href="{{ route('payments.index') }}" class="btn-secondary text-sm mb-5 inline-flex"><i class="fas fa-arrow-left mr-2"></i>Back</a>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100">
-            <h3 class="font-bold text-gray-800"><i class="fas fa-credit-card mr-2" style="color: #c9a96e;"></i>Payment Details</h3>
+            <h3 class="font-bold text-gray-800"><i class="fas fa-credit-card text-emerald-500 mr-2"></i>Payment Details</h3>
         </div>
         <form action="{{ route('payments.store') }}" method="POST" class="p-6 space-y-5">
             @csrf
@@ -141,19 +141,19 @@
                 <textarea name="notes" rows="2" class="form-input" placeholder="Optional notes..."></textarea>
             </div>
             @if(\App\Models\Module::isEnabled('payment_links'))
-            <div class="rounded-xl p-4 space-y-3" style="border: 1px solid rgba(201,169,110,.15); background: rgba(201,169,110,.06);">
-                <p class="text-xs font-bold uppercase tracking-wide" style="color: #c9a96e;"><i class="fas fa-bolt mr-1"></i>Digital Payment Options</p>
+            <div class="border border-violet-100 bg-violet-50 rounded-xl p-4 space-y-3">
+                <p class="text-xs font-bold text-violet-600 uppercase tracking-wide"><i class="fas fa-bolt mr-1"></i>Digital Payment Options</p>
                 <div class="flex gap-3 flex-wrap">
                     <button type="button" onclick="pmShowUpiQr()"
-                        class="inline-flex items-center gap-2 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-all" style="background: linear-gradient(135deg, #1a2332, #2a3545);">
+                        class="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-all">
                         <i class="fas fa-qrcode"></i>Show UPI QR
                     </button>
                     <button type="button" id="pmRzpBtn" onclick="pmCreateRzpLink()"
-                        class="inline-flex items-center gap-2 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-all" style="background: linear-gradient(135deg, #c9a96e, #b08d56);">
+                        class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-all">
                         <i class="fas fa-link"></i>Send Razorpay Link
                     </button>
                 </div>
-                <p class="text-xs" style="color: #b08d56;">UPI QR: guest scans and pays in person · Razorpay: send a link remotely</p>
+                <p class="text-xs text-violet-500">UPI QR: guest scans and pays in person · Razorpay: send a link remotely</p>
             </div>
             @endif
 
@@ -182,19 +182,19 @@
 {{-- UPI QR Modal --}}
 <div id="pmUpiModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4" style="display:none;">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1a2332, #2a3545);">
+        <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <i class="fas fa-qrcode text-xl" style="color: #c9a96e;"></i>
+                <i class="fas fa-qrcode text-white text-xl"></i>
                 <div>
                     <h3 class="font-bold text-white">UPI Payment</h3>
-                    <p class="text-xs" style="color: rgba(201,169,110,.7);">Guest scans to pay instantly</p>
+                    <p class="text-violet-200 text-xs">Guest scans to pay instantly</p>
                 </div>
             </div>
             <button onclick="pmCloseUpi()" class="text-white/70 hover:text-white text-xl font-bold">&times;</button>
         </div>
         <div id="pmUpiBody" class="p-6 text-center">
             <div class="flex items-center justify-center h-32">
-                <div class="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent" style="border-color: #c9a96e;"></div>
+                <div class="animate-spin rounded-full h-10 w-10 border-2 border-violet-500 border-t-transparent"></div>
             </div>
         </div>
     </div>
@@ -203,12 +203,12 @@
 {{-- Razorpay Modal --}}
 <div id="pmRzpModal" class="fixed inset-0 z-50 items-center justify-center bg-black/50 backdrop-blur-sm p-4" style="display:none;">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #1a2332, #2a3545);">
+        <div class="bg-gradient-to-r from-blue-500 to-cyan-600 px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <i class="fas fa-link text-xl" style="color: #c9a96e;"></i>
+                <i class="fas fa-link text-white text-xl"></i>
                 <div>
                     <h3 class="font-bold text-white">Razorpay Payment Link</h3>
-                    <p class="text-xs" style="color: rgba(201,169,110,.7);">Send link to guest for remote payment</p>
+                    <p class="text-blue-200 text-xs">Send link to guest for remote payment</p>
                 </div>
             </div>
             <button onclick="pmCloseRzp()" class="text-white/70 hover:text-white text-xl font-bold">&times;</button>
@@ -232,7 +232,7 @@ function pmShowUpiQr() {
         .then(r => r.json())
         .then(cfg => {
             if (cfg.error) {
-                document.getElementById('pmUpiBody').innerHTML = '<p class="text-red-500 font-semibold py-6">' + cfg.error + '<br><a href="/payment-links/config" class="underline text-sm mt-1 block" style="color: #c9a96e;">Configure Payment Links</a></p>';
+                document.getElementById('pmUpiBody').innerHTML = '<p class="text-red-500 font-semibold py-6">' + cfg.error + '<br><a href="/payment-links/config" class="text-violet-500 underline text-sm mt-1 block">Configure Payment Links</a></p>';
                 return;
             }
             var note   = 'Advance Payment';
@@ -247,7 +247,7 @@ function pmShowUpiQr() {
                 '<p class="text-sm text-gray-500 mt-1">' + cfg.upi_name + '</p>' +
                 '<p class="text-xs text-gray-400 font-mono mt-0.5">' + cfg.upi_id + '</p>' +
                 '<p class="text-xs text-gray-400 mt-3">GPay · PhonePe · Paytm · any UPI app</p>' +
-                '<button onclick="pmCloseUpi()" class="mt-3 w-full py-2 text-sm font-semibold text-gray-500 rounded-xl transition" style="background: rgba(201,169,110,.08);">Close</button>';
+                '<button onclick="pmCloseUpi()" class="mt-3 w-full py-2 text-sm font-semibold text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition">Close</button>';
             pmLoadQrLib(function() {
                 new QRCode(document.getElementById('pmQrCanvas'), {
                     text: upiUrl, width: 208, height: 208,
@@ -298,7 +298,7 @@ function pmCreateRzpLink() {
     .then(r => r.json())
     .then(data => {
         if (data.error) {
-            document.getElementById('pmRzpBody').innerHTML = '<p class="text-red-500 font-semibold py-4 text-center">' + data.error + '<br><a href="/payment-links/config" class="underline text-sm mt-1 block" style="color: #c9a96e;">Configure Razorpay</a></p>';
+            document.getElementById('pmRzpBody').innerHTML = '<p class="text-red-500 font-semibold py-4 text-center">' + data.error + '<br><a href="/payment-links/config" class="text-blue-500 underline text-sm mt-1 block">Configure Razorpay</a></p>';
             return;
         }
         pmShowRzpLink(data.link);
@@ -311,14 +311,14 @@ function pmCreateRzpLink() {
 function pmShowRzpLink(url) {
     document.getElementById('pmRzpBody').innerHTML =
         '<div class="space-y-4">' +
-        '<div class="rounded-xl p-3 text-center" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15);"><i class="fas fa-check-circle text-xl mb-1" style="color: #c9a96e;"></i><p class="font-bold text-sm" style="color: #b08d56;">Payment Link Created!</p></div>' +
-        '<div class="rounded-xl p-3 flex items-center gap-2" style="background: rgba(201,169,110,.04); border: 1px solid rgba(201,169,110,.1);">' +
+        '<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center"><i class="fas fa-check-circle text-emerald-500 text-xl mb-1"></i><p class="font-bold text-emerald-700 text-sm">Payment Link Created!</p></div>' +
+        '<div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center gap-2">' +
         '<input type="text" value="' + url + '" id="pmRzpLinkInput" readonly class="flex-1 bg-transparent text-xs font-mono text-gray-700 outline-none truncate">' +
-        '<button onclick="pmCopyRzpLink()" class="flex-shrink-0 text-white px-3 py-1.5 rounded-lg text-xs font-semibold" style="background: linear-gradient(135deg, #c9a96e, #b08d56);"><i class="fas fa-copy mr-1"></i>Copy</button>' +
+        '<button onclick="pmCopyRzpLink()" class="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"><i class="fas fa-copy mr-1"></i>Copy</button>' +
         '</div>' +
-        '<a href="https://wa.me/?text=' + encodeURIComponent('Please complete your payment: ' + url) + '" target="_blank" class="flex items-center justify-center gap-2 text-white w-full py-2.5 rounded-xl font-semibold text-sm" style="background: linear-gradient(135deg, #1a2332, #2a3545);">' +
+        '<a href="https://wa.me/?text=' + encodeURIComponent('Please complete your payment: ' + url) + '" target="_blank" class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white w-full py-2.5 rounded-xl font-semibold text-sm">' +
         '<i class="fab fa-whatsapp"></i>Share via WhatsApp</a>' +
-        '<button onclick="pmCloseRzp()" class="w-full py-2 text-sm" style="color: #7a8a9a;">Close</button>' +
+        '<button onclick="pmCloseRzp()" class="w-full py-2 text-sm text-gray-500 hover:text-gray-700">Close</button>' +
         '</div>';
 }
 
@@ -327,8 +327,8 @@ function pmCopyRzpLink() {
     navigator.clipboard.writeText(input.value).then(() => {
         var btn = input.nextElementSibling;
         btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-        btn.style.background = 'linear-gradient(135deg, #c9a96e, #b08d56)';
-        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy mr-1"></i>Copy'; btn.style.background = 'linear-gradient(135deg, #c9a96e, #b08d56)'; }, 2000);
+        btn.classList.replace('bg-blue-500','bg-emerald-500');
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy mr-1"></i>Copy'; btn.classList.replace('bg-emerald-500','bg-blue-500'); }, 2000);
     });
 }
 

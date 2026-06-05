@@ -24,8 +24,8 @@
         @foreach($documents as $doc)
         <div style="background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #f1f5f9;padding:18px;">
             <div style="display:flex;align-items:start;gap:12px;margin-bottom:14px;">
-                <div style="width:42px;height:42px;border-radius:10px;background:{{ str_contains($doc->file_type ?? '','pdf') ? '#fee2e2' : 'rgba(201,169,110,.1)' }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fas {{ str_contains($doc->file_type ?? '','pdf') ? 'fa-file-pdf text-red-500' : 'fa-file-image' }}" style="font-size:18px; color: {{ str_contains($doc->file_type ?? '','pdf') ? '#dc2626' : '#c9a96e' }};"></i>
+                <div style="width:42px;height:42px;border-radius:10px;background:{{ str_contains($doc->file_type ?? '','pdf') ? '#fee2e2' : '#dbeafe' }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas {{ str_contains($doc->file_type ?? '','pdf') ? 'fa-file-pdf text-red-500' : 'fa-file-image text-blue-500' }}" style="font-size:18px;"></i>
                 </div>
                 <div style="min-width:0;">
                     <div style="font-weight:700;font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $doc->document_type }}</div>

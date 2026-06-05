@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-3xl space-y-6">
     @if(session('success'))
-    <div class="px-5 py-3 rounded-xl text-sm font-medium flex items-center gap-2" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.2); color: #b08d56;">
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-5 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
         <i class="fas fa-check-circle"></i>{{ session('success') }}
     </div>
     @endif
@@ -15,10 +15,10 @@
 
         {{-- UPI Section --}}
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between" style="background: linear-gradient(135deg, rgba(201,169,110,.08), rgba(176,141,86,.06));">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.15);">
-                        <i class="fas fa-qrcode text-lg" style="color: #c9a96e;"></i>
+                    <div class="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-qrcode text-violet-600 text-lg"></i>
                     </div>
                     <div>
                         <h3 class="font-bold text-gray-800">UPI QR Code</h3>
@@ -27,7 +27,7 @@
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="upi_enabled" value="1" class="sr-only peer" {{ $config->upi_enabled ? 'checked' : '' }}>
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#c9a96e]"></div>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     <span class="ml-2 text-sm font-medium text-gray-600">Enable</span>
                 </label>
             </div>
@@ -44,7 +44,7 @@
                            class="form-input" placeholder="Azure Paradise Resort">
                     <p class="text-xs text-gray-400 mt-1">Shown to guest on UPI payment screen</p>
                 </div>
-                <div class="md:col-span-2 rounded-xl p-4 text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+                <div class="md:col-span-2 bg-violet-50 border border-violet-100 rounded-xl p-4 text-sm text-violet-700">
                     <p class="font-semibold mb-1"><i class="fas fa-info-circle mr-1"></i>How it works</p>
                     <p>On any invoice with a balance due, a <strong>UPI QR</strong> button appears. Click it to show a QR code — the guest scans it and pays instantly. The amount is pre-filled. No account sign-up needed.</p>
                 </div>
@@ -53,10 +53,10 @@
 
         {{-- Razorpay Section --}}
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between" style="background: linear-gradient(to right, #1a2332, #2a3545);">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-cyan-50 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(201,169,110,.15);">
-                        <i class="fas fa-link text-lg" style="color: #c9a96e;"></i>
+                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-link text-blue-600 text-lg"></i>
                     </div>
                     <div>
                         <h3 class="font-bold text-gray-800">Razorpay Payment Links</h3>
@@ -65,7 +65,7 @@
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="razorpay_enabled" value="1" class="sr-only peer" {{ $config->razorpay_enabled ? 'checked' : '' }}>
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#c9a96e]"></div>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                     <span class="ml-2 text-sm font-medium text-gray-600">Enable</span>
                 </label>
             </div>
@@ -83,19 +83,19 @@
                     </div>
                 </div>
 
-                <div class="rounded-xl p-4 space-y-2 text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.2); color: #b08d56;">
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-2 text-sm text-blue-700">
                     <p class="font-semibold"><i class="fas fa-info-circle mr-1"></i>Setup Steps</p>
                     <ol class="list-decimal ml-4 space-y-1">
                         <li>Sign up at <a href="https://razorpay.com" target="_blank" class="underline font-medium">razorpay.com</a> (free account)</li>
                         <li>Go to <strong>Settings → API Keys → Generate Key</strong></li>
                         <li>Copy your <strong>Key ID</strong> and <strong>Key Secret</strong> above</li>
                         <li>For auto-payment recording, set webhook URL in Razorpay dashboard to:<br>
-                            <code class="bg-white border rounded px-2 py-0.5 text-xs font-mono select-all" style="border-color: rgba(201,169,110,.3);">{{ route('payment_links.razorpay.webhook') }}</code>
+                            <code class="bg-white border border-blue-200 rounded px-2 py-0.5 text-xs font-mono select-all">{{ route('payment_links.razorpay.webhook') }}</code>
                         </li>
                     </ol>
                 </div>
 
-                <div class="rounded-xl p-4 text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.2); color: #b08d56;">
+                <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-700">
                     <p class="font-semibold"><i class="fas fa-bolt mr-1"></i>How it works</p>
                     <p>On any invoice, click <strong>Send Razorpay Link</strong> — a unique payment link is generated for the exact balance due. Copy and share it via WhatsApp or email. When the guest pays, the invoice auto-updates to paid.</p>
                 </div>

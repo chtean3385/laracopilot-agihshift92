@@ -17,7 +17,7 @@
     </div>
 
     @if(session('success'))
-    <div class="mb-4 rounded-lg px-4 py-3 text-sm font-medium" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+    <div class="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm font-medium">
         {{ session('success') }}
     </div>
     @endif
@@ -78,12 +78,12 @@
                     <div class="mt-4 flex items-center gap-6">
                         <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                             <input type="checkbox" name="show_room_photos" value="1" @checked(old('show_room_photos', $ws->show_room_photos))
-                                class="rounded border-gray-300" style="color: #c9a96e;" focus:ring="rgba(201,169,110,.2)">
+                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-200">
                             Show Room Photos
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                             <input type="checkbox" name="show_prices" value="1" @checked(old('show_prices', $ws->show_prices))
-                                class="rounded border-gray-300" style="color: #c9a96e;" focus:ring="rgba(201,169,110,.2)">
+                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-200">
                             Show Prices
                         </label>
                     </div>
@@ -109,7 +109,7 @@
                     <div class="mt-4">
                         <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                             <input type="checkbox" name="auto_confirm" value="1" @checked(old('auto_confirm', $ws->auto_confirm))
-                                class="rounded border-gray-300" style="color: #c9a96e;" focus:ring="rgba(201,169,110,.2)">
+                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-200">
                             <span>
                                 <span class="font-medium">Auto-Confirm Bookings</span>
                                 <span class="text-gray-400 text-xs ml-1">(Skip website_pending status)</span>
@@ -127,7 +127,7 @@
                         <input type="checkbox" name="require_advance_payment" value="1"
                             @checked(old('require_advance_payment', $ws->require_advance_payment))
                             id="requirePaymentCheck"
-                            class="rounded border-gray-300" style="color: #c9a96e;">
+                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-200">
                         <span class="font-medium">Require Advance Payment</span>
                     </label>
 
@@ -137,13 +137,13 @@
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Advance Amount (₹)</label>
                                 <input type="number" name="advance_payment_amount" min="0" step="0.01"
                                     value="{{ old('advance_payment_amount', $ws->advance_payment_amount) }}"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400">
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">UPI ID</label>
                                 <input type="text" name="upi_id" value="{{ old('upi_id', $ws->upi_id) }}"
                                     placeholder="yourname@upi"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400">
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
                             </div>
                         </div>
                         <div>
@@ -159,7 +159,7 @@
 
                 <div class="flex justify-end">
                     <button type="submit"
-                        class="text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition" style="background: linear-gradient(135deg, #c9a96e, #b08d56);">
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition">
                         Save Settings
                     </button>
                 </div>
@@ -171,13 +171,13 @@
 
             {{-- Pending bookings --}}
             @if($pendingCount > 0)
-            <div class="rounded-xl p-4" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.2);">
-                <p class="text-sm font-bold" style="color: #1a2332;">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p class="text-sm font-bold text-amber-800">
                     {{ $pendingCount }} Website Booking{{ $pendingCount > 1 ? 's' : '' }} Pending
                 </p>
-                <p class="text-xs mt-0.5" style="color: #b08d56;">Confirm and assign rooms from the Bookings page.</p>
+                <p class="text-xs text-amber-600 mt-0.5">Confirm and assign rooms from the Bookings page.</p>
                 <a href="{{ route('bookings.index') }}?status=website_pending"
-                   class="mt-2 inline-block text-xs font-semibold underline" style="color: #a07c4e;">View pending →</a>
+                   class="mt-2 inline-block text-xs font-semibold text-amber-700 underline">View pending →</a>
             </div>
             @endif
 
@@ -191,7 +191,7 @@
                 </div>
                 <button onclick="copyCode('scriptCode')" data-code="{{ htmlspecialchars('<script src=&quot;'.url("/widget/{$slug}/embed.js").'&quot;></script>') }}"
                     id="scriptCode"
-                    class="w-full text-center text-xs font-semibold rounded-lg py-1.5 transition mb-4" style="color: #c9a96e; background: rgba(201,169,110,.08);" onmouseover="this.style.color='#b08d56';this.style.background='rgba(201,169,110,.12)'" onmouseout="this.style.color='#c9a96e';this.style.background='rgba(201,169,110,.08)'">
+                    class="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg py-1.5 transition mb-4">
                     Copy Script Tag
                 </button>
 
@@ -201,13 +201,13 @@
                 </div>
                 <button onclick="copyCode('iframeCode')" data-code="{{ htmlspecialchars('<iframe src=&quot;'.url("/book/{$slug}/iframe").'&quot; width=&quot;100%&quot; height=&quot;700&quot; frameborder=&quot;0&quot; style=&quot;border-radius:16px&quot;></iframe>') }}"
                     id="iframeCode"
-                    class="w-full text-center text-xs font-semibold rounded-lg py-1.5 transition mb-4" style="color: #c9a96e; background: rgba(201,169,110,.08);" onmouseover="this.style.color='#b08d56';this.style.background='rgba(201,169,110,.12)'" onmouseout="this.style.color='#c9a96e';this.style.background='rgba(201,169,110,.08)'">
+                    class="w-full text-center text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg py-1.5 transition mb-4">
                     Copy iFrame Code
                 </button>
 
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Direct Booking Page</p>
                 <a href="{{ url("/book/{$slug}") }}" target="_blank"
-                    class="block text-xs hover:underline break-all mb-1" style="color: #c9a96e;" onmouseover="this.style.color='#b08d56'" onmouseout="this.style.color='#c9a96e'">
+                    class="block text-xs text-indigo-600 hover:underline break-all mb-1">
                     {{ url("/book/{$slug}") }}
                 </a>
                 <a href="{{ url("/book/{$slug}") }}" target="_blank"
@@ -217,9 +217,9 @@
             </div>
 
             {{-- Quick Tips --}}
-            <div class="rounded-xl p-4" style="background: rgba(201,169,110,.06); border: 1px solid rgba(201,169,110,.15);">
-                <h3 class="text-sm font-bold mb-2" style="color: #1a2332;">How it works</h3>
-                <ul class="text-xs space-y-1.5" style="color: #b08d56;">
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                <h3 class="text-sm font-bold text-blue-800 mb-2">How it works</h3>
+                <ul class="text-xs text-blue-700 space-y-1.5">
                     <li>• Guest selects dates and sees available room types</li>
                     <li>• Fills in details and submits booking</li>
                     <li>• Booking appears in CRM as <strong>Website Pending</strong></li>

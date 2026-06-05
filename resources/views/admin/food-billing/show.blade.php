@@ -11,7 +11,7 @@
             <i class="fas fa-arrow-left text-lg"></i>
         </a>
         <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm" style="background: linear-gradient(135deg, #c9a96e, #b08d56);">
+            <div class="w-11 h-11 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm">
                 {{ $booking->room?->room_number ?? '?' }}
             </div>
             <div>
@@ -22,7 +22,7 @@
     </div>
 
     @if(session('success'))
-    <div class="mb-4 px-4 py-3 rounded-xl text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+    <div class="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm">
         <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
     </div>
     @endif
@@ -36,8 +36,8 @@
     @if($booking->extraCharges->count() > 0)
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-50 flex items-center justify-between">
-            <h3 class="font-bold text-gray-700 text-sm"><i class="fas fa-receipt mr-2" style="color: #c9a96e;"></i>Food &amp; Extra Bill</h3>
-            <span class="text-xs font-bold px-3 py-0.5 rounded-full" style="background: rgba(201,169,110,.15); color: #b08d56;">
+            <h3 class="font-bold text-gray-700 text-sm"><i class="fas fa-receipt text-amber-500 mr-2"></i>Food &amp; Extra Bill</h3>
+            <span class="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-0.5 rounded-full">
                 ₹{{ number_format($booking->extraCharges->sum('total_price')) }} total
             </span>
         </div>
@@ -78,7 +78,7 @@
     @endif
 
     @else
-    <div class="rounded-2xl px-5 py-4 text-sm mb-4" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+    <div class="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-4 text-sm text-amber-700 mb-4">
         <i class="fas fa-info-circle mr-2"></i>No food or extra charges added yet for this room.
     </div>
     @endif
@@ -86,7 +86,7 @@
     {{-- Add charge form --}}
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-50">
-            <h3 class="font-bold text-gray-700 text-sm"><i class="fas fa-plus-circle mr-2" style="color: #c9a96e;"></i>Add Charge</h3>
+            <h3 class="font-bold text-gray-700 text-sm"><i class="fas fa-plus-circle text-amber-500 mr-2"></i>Add Charge</h3>
         </div>
         <form method="POST" action="{{ route('bookings.extra_charges.store', $booking) }}" class="px-5 py-4 space-y-4">
             @csrf

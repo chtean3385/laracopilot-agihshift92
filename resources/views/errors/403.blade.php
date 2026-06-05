@@ -29,7 +29,7 @@
                 <a href="javascript:history.back()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">
                     <i class="fas fa-arrow-left text-xs"></i> Go Back
                 </a>
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all" style="background: linear-gradient(135deg, #c9a96e, #b08d56);" onmouseover="this.style.background='linear-gradient(135deg, #b08d56, #a07c4e)'" onmouseout="this.style.background='linear-gradient(135deg, #c9a96e, #b08d56)'">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">
                     <i class="fas fa-home text-xs"></i> Dashboard
                 </a>
             </div>

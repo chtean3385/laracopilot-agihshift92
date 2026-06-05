@@ -199,7 +199,7 @@
                 <button onclick="linkBooking()" class="btn-secondary text-sm">Save</button>
             </div>
             @if($order->booking_id)
-            <p class="text-xs mt-2" style="color: #c9a96e;">✅ Linked to room — bill will be added to room invoice</p>
+            <p class="text-xs text-green-600 mt-2">✅ Linked to room — bill will be added to room invoice</p>
             @endif
         </div>
         @endif
@@ -302,16 +302,16 @@
         </div>
 
         @if($order->isOpen() && !$order->isPendingApproval() && !$order->isPaid())
-        <div class="rounded-xl p-4 text-sm" style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.15); color: #b08d56;">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
             <p class="font-medium mb-1">Next Steps</p>
             <p>1. Add items from menu</p>
             <p>2. Send to kitchen</p>
             <p>3. Generate bill when done</p>
         </div>
         @elseif($order->isPendingApproval())
-        <div style="background: rgba(201,169,110,.08); border: 1px solid rgba(201,169,110,.2); border-radius: 12px; padding: 14px; font-size: 13px; color: #b08d56;">
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:13px;color:#9a3412;">
             <p style="font-weight:700;margin-bottom:4px;">⏳ Awaiting your approval</p>
-            <p style="font-size:12px;">Use the gold panel to Approve or Decline this guest order.</p>
+            <p style="font-size:12px;">Use the orange panel to Approve or Decline this guest order.</p>
         </div>
         @elseif($order->isPaid())
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;font-size:13px;color:#15803d;">
