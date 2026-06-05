@@ -680,7 +680,6 @@
                     </div>
                 </div>
                 @endif{{-- !isRestaurantOnly — customize bar & panel --}}
-                --}}
 
                 {{-- ── OTA Email Alerts — OUTSIDE dbMain so JS reorder can't push them down ── --}}
                 @php
