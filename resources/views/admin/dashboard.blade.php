@@ -679,8 +679,6 @@
                         @endforeach
                     </div>
                 </div>
-                @endif{{-- !isRestaurantOnly — customize bar & panel --}}
-
                 {{-- ── OTA Email Alerts — OUTSIDE dbMain so JS reorder can't push them down ── --}}
                 @php
                     $epEnabled  = \App\Models\Module::isEnabled('email-parser');
