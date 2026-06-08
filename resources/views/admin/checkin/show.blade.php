@@ -777,7 +777,7 @@ function savePrimarySig() {
         return;
     }
     var dataUrl = canvas.toDataURL('image/png');
-    fetch('{{ $booking->customer?->id ? route("customers.signature", $booking->customer->id) : "#" }}', {
+    fetch('{{ route("customers.signature", $booking->id) }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ signature: dataUrl })
