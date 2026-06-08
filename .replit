@@ -35,7 +35,7 @@ DB_PASSWORD = "password"
 APP_ENV = "production"
 APP_DEBUG = "false"
 APP_URL = "https://resort.dreamstechnology.in"
-APP_KEY = "base64:kVaJPN8ttGlh6do80Hl7tcVmRq0LorbReoE9o0NsFxI="
+APP_KEY = "base64:NZ5Yz5LDAMcq/1gdsSxblXQDbl0GWqTmdR053zUSbFE="
 DB_CONNECTION = "pgsql"
 CRON_SECRET = "11073c9e78260af3a72e8833bcb4683fc324e49e13ecc50b"
 
