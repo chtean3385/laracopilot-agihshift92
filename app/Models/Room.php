@@ -18,9 +18,11 @@ class Room extends Model
         'has_lunch',     'lunch_price',
         'has_dinner',    'dinner_price',
         'has_extra_bed', 'extra_bed_price',
+        'is_active', 'photo_url',
     ];
 
     protected $casts = [
+        'is_active'        => 'boolean',
         'price_per_night'  => 'decimal:2',
         'hourly_rate'      => 'decimal:2',
         'capacity'         => 'integer',

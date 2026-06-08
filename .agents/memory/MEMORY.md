@@ -3,3 +3,5 @@
 - [View composer N+1 settings](view-composer-n1.md) — View::composer('*') fires for every @include partial; must cache in app container to avoid 30-50 Setting::first() queries per page.
 - [Checkout payment stale collection](checkout-payment-stale.md) — eager-loaded payments collection misses the payment created in the same request; track amount separately and add to sum.
 - [Build order: safe-migrate before optimize](build-order.md) — safe-migrate calls view:clear; run it BEFORE optimize or view cache is wiped immediately after being built.
+- [Nginx Livewire location block ordering](nginx-livewire-location-order.md) — Livewire location block MUST come before the static \.(css|js) regex block; nginx first-match-wins otherwise 404s the JS route.
+- [Rooms is_active column](rooms-is-active-column.md) — rooms table has both status='inactive' AND is_active boolean; booking dropdowns must filter both explicitly.
