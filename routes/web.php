@@ -382,11 +382,11 @@ Route::post('/channel-manager/bookings/{id}/cancel',      [\App\Http\Controllers
 // ── Booking Guests (Police Register) ────────────────────────────────────────
 Route::post('/bookings/{bookingId}/guests',                        [\App\Http\Controllers\Admin\BookingGuestController::class, 'store']          )->name('booking.guests.store');
 Route::delete('/bookings/{bookingId}/guests/{guestId}',           [\App\Http\Controllers\Admin\BookingGuestController::class, 'destroy']        )->name('booking.guests.destroy');
-Route::post('/bookings/{bookingId}/guests/{guestId}/signature',   [\App\Http\Controllers\Admin\BookingGuestController::class, 'saveSignature']  )->name('booking.guests.signature');
+Route::post('/bookings/{bookingId}/guests/{guestId}/sign',        [\App\Http\Controllers\Admin\BookingGuestController::class, 'saveSignature']  )->name('booking.guests.signature');
 Route::post('/bookings/{bookingId}/guests/{guestId}/document',    [\App\Http\Controllers\Admin\BookingGuestController::class, 'uploadDoc']      )->name('booking.guests.document');
 Route::get('/bookings/{bookingId}/guests/{guestId}/document',     [\App\Http\Controllers\Admin\BookingGuestController::class, 'downloadDoc']    )->name('booking.guests.document.download');
-// Primary guest (customer) signature
-Route::post('/customers/{customerId}/signature',                   [\App\Http\Controllers\Admin\CustomerController::class, 'saveSignature']     )->name('customers.signature');
+// Primary guest (customer) sign
+Route::post('/customers/{customerId}/sign',                        [\App\Http\Controllers\Admin\CustomerController::class, 'saveSignature']     )->name('customers.signature');
 
 // ── Public Booking Widget (no auth, no hotel-context, CSRF exempted via bootstrap/app.php) ──
 Route::withoutMiddleware([

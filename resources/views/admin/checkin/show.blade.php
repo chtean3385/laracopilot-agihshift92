@@ -668,7 +668,7 @@ function saveSig(guestId) {
         alert('Please draw the signature first before saving.');
         return;
     }
-    fetch('/bookings/' + ciBookingId + '/guests/' + guestId + '/signature', {
+    fetch('/bookings/' + ciBookingId + '/guests/' + guestId + '/sign', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ signature: canvas.toDataURL('image/png') })
