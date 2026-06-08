@@ -784,7 +784,7 @@
         if (!roomId || !date) return;
 
         fetch('/bookings/available-time-slots?room_id=' + encodeURIComponent(roomId) + '&date=' + encodeURIComponent(date), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -1226,7 +1226,7 @@
         }
 
         fetch('/bookings/available-rooms?' + params.toString(), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
         })
         .then(function(r) { return r.json(); })
         .then(function(data) { updateRoomDropdown(data.unavailable_room_ids || []); })

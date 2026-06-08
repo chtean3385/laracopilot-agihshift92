@@ -386,7 +386,7 @@ Route::post('/bookings/{bookingId}/guests/{guestId}/signature',   [\App\Http\Con
 Route::post('/bookings/{bookingId}/guests/{guestId}/document',    [\App\Http\Controllers\Admin\BookingGuestController::class, 'uploadDoc']      )->name('booking.guests.document');
 Route::get('/bookings/{bookingId}/guests/{guestId}/document',     [\App\Http\Controllers\Admin\BookingGuestController::class, 'downloadDoc']    )->name('booking.guests.document.download');
 // Primary guest (customer) signature
-Route::post('/guests/{customerId}/signature',                      [\App\Http\Controllers\Admin\CustomerController::class, 'saveSignature']     )->name('customers.signature');
+Route::post('/customers/{customerId}/signature',                   [\App\Http\Controllers\Admin\CustomerController::class, 'saveSignature']     )->name('customers.signature');
 
 // ── Public Booking Widget (no auth, no hotel-context, CSRF exempted via bootstrap/app.php) ──
 Route::withoutMiddleware([
