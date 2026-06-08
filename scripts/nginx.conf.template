@@ -50,6 +50,15 @@ http {
 
         client_max_body_size 20M;
 
+        # Livewire's JS/CSS endpoints are dynamic PHP routes, NOT real files on disk.
+        # This MUST appear before the static-file location below because nginx regex
+        # locations are matched in order of appearance — the first matching regex wins.
+        # If the static-file rule (\.(css|js)$) came first, /livewire-*/livewire.js
+        # would be served as a static file and return 404.
+        location ~ ^/livewire-[^/]+/ {
+            try_files $uri /index.php?$query_string;
+        }
+
         # Static files served directly — no PHP involved
         location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp|pdf|zip)$ {
             expires 30d;
