@@ -670,7 +670,7 @@ function saveSig(guestId) {
     }
     fetch('/bookings/' + ciBookingId + '/guests/' + guestId + '/signature', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+        headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ signature: canvas.toDataURL('image/png') })
     })
     .then(function(r) { return r.json(); })
@@ -779,7 +779,7 @@ function savePrimarySig() {
     var dataUrl = canvas.toDataURL('image/png');
     fetch('/guests/{{ $booking->customer?->id ?? 0 }}/signature', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+        headers: { 'X-CSRF-TOKEN': ciCsrf, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ signature: dataUrl })
     })
     .then(function(r) { return r.json(); })

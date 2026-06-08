@@ -116,11 +116,13 @@ class BookingController extends Controller
         if (!session('crm_logged_in')) return redirect()->route('login');
         $customers = Customer::orderBy('name')->get();
 
-        // Show all non-maintenance rooms. Actual date-overlap availability is
-        // checked via the AJAX availableRooms() endpoint when dates are selected,
-        // so the static room status must NOT pre-filter per-night rooms here —
-        // an "occupied" room today may be free for future dates.
+        // Show all non-maintenance, active rooms. Inactive rooms are deactivated
+        // intentionally and must never appear in any booking dropdown.
+        // Actual date-overlap availability is checked via the AJAX availableRooms()
+        // endpoint when dates are selected, so "occupied" rooms today may still
+        // appear (they may be free for future dates) — but inactive rooms must not.
         $rooms = Room::where('status', '!=', 'maintenance')
+            ->where('is_active', true)
             ->orderBy('room_number')
             ->get();
 
@@ -529,7 +531,7 @@ class BookingController extends Controller
     {
         if (!session('crm_logged_in')) return redirect()->route('login');
         $booking = Booking::with(['customer', 'room', 'payments', 'invoice', 'bookingGuests', 'timeSlot', 'bookingAddOns', 'extraCharges', 'paymentReferences', 'groupedBookings.room'])->findOrFail($id);
-        $rooms   = Room::where('status', '!=', 'maintenance')->orderBy('room_number')->get();
+        $rooms   = Room::where('status', '!=', 'maintenance')->where('is_active', true)->orderBy('room_number')->get();
         return view('admin.bookings.show', compact('booking', 'rooms'));
     }
 
@@ -548,11 +550,11 @@ class BookingController extends Controller
         $hourlyModuleOn = $bookingHotelId ? \App\Models\Module::withoutGlobalScopes()
             ->where('hotel_id', $bookingHotelId)->where('slug', 'hourly-pricing')->where('is_enabled', true)->exists() : false;
 
-        // Only show rooms of the same pricing_type to keep pricing context stable.
+        // Only show active rooms of the same pricing_type to keep pricing context stable.
         $pricingType = $booking->is_whole_hotel
             ? ($booking->whole_hotel_pricing_type ?? 'per_night')
             : ($booking->room?->pricing_type ?? 'per_night');
-        $rooms = Room::where('pricing_type', $pricingType)->orderBy('room_number')->get();
+        $rooms = Room::where('pricing_type', $pricingType)->where('is_active', true)->orderBy('room_number')->get();
 
         $timeSlots = $slotModuleOn ? \App\Models\HotelTimeSlot::where('is_active', true)->ordered()->get() : collect();
         return view('admin.bookings.edit', compact('booking', 'customers', 'rooms', 'slotModuleOn', 'hourlyModuleOn', 'timeSlots'));
@@ -819,7 +821,7 @@ class BookingController extends Controller
         $whPricingType = $request->input('whole_hotel_pricing_type', 'per_night');
         if (!$slotModuleOn) $whPricingType = 'per_night';
 
-        $allRooms      = Room::where('hotel_id', $hotelId)->where('status', '!=', 'maintenance')->get();
+        $allRooms      = Room::where('hotel_id', $hotelId)->where('status', '!=', 'maintenance')->where('is_active', true)->get();
         $bookingPrefix = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', session('crm_hotel_name', 'HOT')), 0, 3));
         $bookingNumber = $bookingPrefix . '-BK-' . strtoupper(substr(uniqid(), -6));
 

@@ -1294,6 +1294,7 @@
         if (stillAvail.length > 0) {
             roomTS.setValue(stillAvail, true);
             restoreRoomDataAttrs();
+            calculateTotal(); // recalculate after room dropdown is rebuilt with dates set
         } else if (prevVals.length > 0) {
             updatePricingUI(); // clears pricing display for now-booked rooms
         }
