@@ -99,9 +99,20 @@ class AuthController extends Controller
         try {
             $secret = Crypt::decryptString($user->totp_secret);
         } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            // APP_KEY changed — the stored secret is unreadable. Self-heal: clear 2FA
+            // state and let the admin log in with password only, then re-enroll.
+            DB::table('users')->where('id', $userId)->update([
+                'totp_enabled' => false,
+                'totp_secret'  => null,
+                'updated_at'   => now(),
+            ]);
+            DB::table('platform_recovery_codes')->where('user_id', $userId)->delete();
+
             $request->session()->forget('platform_2fa_pending_user_id');
-            return redirect()->route('platform.login')
-                ->withErrors(['email' => '2FA configuration error. Please contact your administrator.']);
+            $this->completeLogin($request, $user);
+
+            return redirect()->route('platform.settings.2fa')
+                ->with('warning', 'Your 2FA secret could not be decrypted (APP_KEY may have changed). You have been logged in — please re-enroll 2FA now.');
         }
         $google2fa = app('pragmarx.google2fa');
 
